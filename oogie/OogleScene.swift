@@ -16,6 +16,7 @@
 import Foundation
 import SceneKit
 
+var OVtempo = 135 //Move to params ASAP
 
 struct OogieScene : Codable {
     var name    : String

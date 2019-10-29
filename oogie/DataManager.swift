@@ -17,11 +17,14 @@
 //  8/24 added shapes / scenes subfolders
 //  9/3  add texture cache subfolder, made all get*Directory funcs public
 //  9/15 add dump
+// 10/27 pull (most) fatals, replace w/ delegate callbacks
+//         still have fatals on methods with dynamic types!
 import Foundation
+
+
 
 public class DataManager {
 
-    
     //======(DataManager)=============================================
     // Must be called ONCE before any subfolders are accessed!
     static func createSubfolders()
@@ -53,7 +56,8 @@ public class DataManager {
         if let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
             return url
         }else{
-            fatalError("Unable to access document directory")
+            self.gotDMError(msg: "Unable to access document directory")
+            return URL(fileURLWithPath: "") //Empty for now?
         }
     }
 
@@ -63,7 +67,8 @@ public class DataManager {
         if let url = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
             return url
         }else{
-            fatalError("Unable to access cache directory")
+            self.gotDMError(msg: "Unable to access cache directory")
+            return URL(fileURLWithPath: "") //Empty for now?
         }
     }
     
@@ -127,7 +132,7 @@ public class DataManager {
             FileManager.default.createFile(atPath: url2.path, contents: data, attributes: nil)
             
         }catch{
-            fatalError(error.localizedDescription)
+            self.gotDMError(msg: error.localizedDescription)
         }
     }
     
@@ -141,7 +146,7 @@ public class DataManager {
             let dstring  = String(data: jsonData, encoding: String.Encoding.utf8)
             print(dstring!)
         }catch{
-            fatalError(error.localizedDescription)
+            self.gotDMError(msg: error.localizedDescription)
         }
     } //end dump
 
@@ -160,7 +165,7 @@ public class DataManager {
             FileManager.default.createFile(atPath: url.path, contents: data, attributes: nil)
             
         }catch{
-            fatalError(error.localizedDescription)
+            self.gotDMError(msg: error.localizedDescription)
         }
         
     }
@@ -190,17 +195,18 @@ public class DataManager {
     
     //======(DataManager)=============================================
     // Load any kind of codable objects, needs URL
+    // 10/27 OUCH! How do I return on an error w/o a fatal?
     static func load <T:Decodable> (_ url : URL , with fileName:String, with type:T.Type) -> T {
         let url2 = url.appendingPathComponent(fileName, isDirectory: false)
         if !FileManager.default.fileExists(atPath: url2.path) {
             fatalError("File not found at path \(url2.path)")
-        }        
+        }
         if let data = FileManager.default.contents(atPath: url2.path) {
             do {
                 let model = try JSONDecoder().decode(type, from: data)
                 return model
             }catch{
-                fatalError(error.localizedDescription)
+                fatalError( error.localizedDescription)
             }
             
         }else{
@@ -211,6 +217,7 @@ public class DataManager {
  
     //======(DataManager)=============================================
     // Load any kind of codable objects
+    // 10/27 OUCH! How do I return on an error w/o a fatal?
     static func loadFromDocs <T:Decodable> (_ fileName:String, with type:T.Type) -> T {
         let url = getDocumentDirectory().appendingPathComponent(fileName, isDirectory: false)
         if !FileManager.default.fileExists(atPath: url.path) {
@@ -228,7 +235,6 @@ public class DataManager {
         }else{
             fatalError("Data unavailable at path \(url.path)")
         }
-        
     }
     
     
@@ -237,16 +243,16 @@ public class DataManager {
     static func loadData (_ fileName:String) -> Data? {
         let url = getDocumentDirectory().appendingPathComponent(fileName, isDirectory: false)
         if !FileManager.default.fileExists(atPath: url.path) {
-            fatalError("File not found at path \(url.path)")
+            self.gotDMError(msg: "File not found at path \(url.path)")
         }
         
         if let data = FileManager.default.contents(atPath: url.path) {
             return data
             
         }else{
-            fatalError("Data unavailable at path \(url.path)")
+             self.gotDMError(msg:"Data unavailable at path \(url.path)")
         }
-        
+        return nil
     }
     
     //======(DataManager)=============================================
@@ -315,9 +321,24 @@ public class DataManager {
             do {
                 try FileManager.default.removeItem(at: url)
             }catch{
-                fatalError(error.localizedDescription)
+                self.gotDMError(msg: error.localizedDescription)
             }
         }
     }
+    
+    //======(DataManager)=============================================
+    // 10/27 shows error but only briefly!
+    static func gotDMError(msg: String)
+    {
+        print("Data Manager Error: \(msg)")
+        let alertController = UIAlertController(title: "DataManager Error", message: msg, preferredStyle: UIAlertControllerStyle.alert)
+        alertController.addAction(UIAlertAction(title: "Close", style: UIAlertActionStyle.cancel, handler: nil))
+
+        let alertWindow = UIWindow(frame: UIScreen.main.bounds)
+        alertWindow.rootViewController = UIViewController()
+        alertWindow.windowLevel = UIWindowLevelAlert + 1;
+        alertWindow.makeKeyAndVisible()
+        alertWindow.rootViewController?.present(alertController, animated: false, completion: nil)
+    } //end gotDMError
     
 } //end DataManager

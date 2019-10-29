@@ -36,7 +36,7 @@
 //  Oct 22/23 added shape texture xyoffset scale, works OK now
 //  Oct 25  redo shape rotation speed
 //  Oct 26  break out addVoice , addShape, implement clone shape
-//  Oct 27  add clone voice
+//  Oct 27  add clone voice, longpress for shape/voice popups
 import UIKit
 import SceneKit
 import Photos
@@ -44,7 +44,7 @@ import Photos
 let pi = 3.141592627
 let twoPi = 6.2831852
 
-class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
+class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIGestureRecognizerDelegate {
 
     
 
@@ -62,12 +62,15 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
     var soloVoiceID = ""
     var touchLocation = CGPoint()
     var touchDown     = false //10/26
+    var latestTouch   = UITouch()
     var testSample = 8
     @IBAction func testSelect(_ sender: Any) {
-        print("test : \(testSample)")
-        (sfx() as! soundFX).playNote(32, Int32(testSample), PERCUSSION_VOICE)
-        testSample = testSample + 1
-        if testSample > 29 {testSample = 8}
+//        print("test : \(testSample)")
+//        (sfx() as! soundFX).playNote(32, Int32(testSample), PERCUSSION_VOICE)
+//        testSample = testSample + 1
+//        if testSample > 29 {testSample = 8}
+        //asdf
+//        DataManager.gotDMError(msg: "duh")
     }
     @IBOutlet weak var resetButton: UIButton!
     @IBOutlet weak var menuButton: UIButton!
@@ -148,12 +151,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
     let masterPitch = 0 //WILL BECOME An Appdelegate field
     let quantTime = 0  //using this or what?
     let MAX_CBOX_FRAMES = 20 //where does this go?
-
-    let cannedSynths = [
-        "SineWave","Sawtooth","SquareWave","RampWave",
-         "Mellow","Bubbles","Casio","SoftSynth"
-    ]
-    
     
     //=====<oogie2D mainVC>====================================================
     override func viewDidLoad() {
@@ -180,9 +177,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
         sceneView.allowsCameraControl = true
         
         // 10/27 add longpress...
-//        let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: "duhhh:")
-//        self.view.addGestureRecognizer(longPressRecognizer)
-
+        let lpgr = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
+        lpgr.minimumPressDuration = 0.5
+        lpgr.delaysTouchesBegan = true
+        lpgr.delegate = self
+        self.view.addGestureRecognizer(lpgr)
         
         _ = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.playAllMarkers), userInfo:  nil, repeats: true)
         
@@ -267,7 +266,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
     
     //=====<oogie2D mainVC>====================================================
     // 10/16 we can only create voices AFTER samples load!
-    @objc func samplesLoaded(notification: NSNotification){
+    @objc func samplesLoaded(notification: NSNotification)
+    {
         print("samples loaded...")
         //DHS 10/16 create our scene?
         create3DScene(scene: scene)
@@ -279,9 +279,20 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
         pLabel.fadeIn()  //interpret user tap as wanting to see more info
     }
 
-    @objc func duhhh(sender: UILongPressGestureRecognizer)
+    //=====<oogie2D mainVC>====================================================
+    //MARK: - UILongPressGestureRecognizer Action -
+    @objc func handleLongPress(gestureReconizer: UILongPressGestureRecognizer)
     {
-        print("longpressed")
+        if gestureReconizer.state != UIGestureRecognizer.State.ended {
+            //10/29 make sure we are on an object!
+            let sceneView = skView!
+            touchLocation = latestTouch.location(in: sceneView)
+            guard let nodeHitTest = sceneView.hitTest(touchLocation, options: nil).first else {return}
+            if whatWeBeEditing == "voice" { voiceMenu() }
+            if whatWeBeEditing == "shape" { shapeMenu() }
+        }
+        else {
+        }
     }
 
     //=====<oogie2D mainVC>====================================================
@@ -544,15 +555,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
         }
     }
     
-    //=======>ARKit MainVC===================================
-    // this should be independent of other shape changes
-    func updateSelected3DShapeSpeed ()
-    {
-        if let sshape = shapes[selectedShapeName]
-        {
-            sshape.setTimerSpeed(rs: selectedShape.rotSpeed)
-        }
-    }  //end updateSelected3DShapeSpeed
     
     //=======>ARKit MainVC===================================
     func updateSelected3DShape ()
@@ -664,7 +666,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
                 needUpdate = false
                 newSpeed   = true
             case "rotationtype": selectedShape.rotation = dknobval
-                needUpdate = false
+                setRotationTypeForSelectedShape()
+                newSpeed   = true
             case "xpos": selectedShape.xPos         = dknobval
             case "ypos": selectedShape.yPos         = dknobval
             case "zpos": selectedShape.zPos         = dknobval
@@ -675,7 +678,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
             default: needRefresh = false
             }
             if needUpdate { updateSelected3DShape () }
-            if newSpeed   { updateSelected3DShapeSpeed() } //10/25
+            if newSpeed   { setRotationSpeedForSelectedShape(s : selectedShape.rotSpeed)}
+ 
         }
 
         if needRefresh
@@ -697,6 +701,32 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
             }
         } //end needRefresh
     } //end setNewParamValue
+    
+    //=======>ARKit MainVC===================================
+    // 10/29 types: manual, BPMX1..8
+    func setRotationTypeForSelectedShape()
+    {
+        var rspeed = 8.0
+        var irot = Int(selectedShape.rotation)
+        if irot > 0
+        {
+            if irot > 8 {irot = 8}
+            rspeed = 60.0 / Double(OVtempo) //time for one beat
+            rspeed = rspeed * 4.0 * Double(irot) //4/4 timing, apply rot type
+        }
+        //OK set up rotation
+        setRotationSpeedForSelectedShape(s : rspeed)
+    } //end setRotationTypeForSelectedShape
+    
+    //=======>ARKit MainVC===================================
+    func setRotationSpeedForSelectedShape(s : Double)
+    {
+        if let sshape = shapes[selectedShapeName]
+        {
+            selectedShape.rotSpeed = s
+            sshape.setTimerSpeed(rs: selectedShape.rotSpeed)
+        }
+    } //end setRotationSpeedForSelectedShape
     
     //=======>ARKit MainVC===================================
     // Looks up a synth patch, changes current voice
@@ -944,19 +974,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
     // 10/17 there isnt a real double-tap detector, so instead
     //  we will use touchesMoved to put up a popup for the marker...
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        //print("touchesmoved")
         guard let touch = touches.first else {return}
-        let sceneView = skView!
-        let testLocation = touch.location(in: sceneView)
-        if abs(testLocation.x - touchLocation.x) < 50 {return}
-        //print("tmmm \(testLocation)")
-        guard let nodeHitTest = sceneView.hitTest(testLocation, options: nil).first else {return}
-        let hitNode = nodeHitTest.node
-        if let name = hitNode.name
-        {
-            if name.contains("shape")  { shapeMenu() }  //10/26 Found a shape? put up menu
-            else if name.contains("marker") { voiceMenu() } //Found a marker? put up menu
-        }
+        latestTouch = touch
     } //end touchesMoved
     
     //=======>ARKit MainVC===================================
@@ -968,9 +987,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
     // Used to select items in the AR 3D world...
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else {return}
+        latestTouch = touch
         touchDown = false
         let sceneView = skView!
-        touchLocation = touch.location(in: sceneView)
+        touchLocation = latestTouch.location(in: sceneView)
         //print("tb \(touchLocation)")
         guard let nodeHitTest = sceneView.hitTest(touchLocation, options: nil).first else {return}
         let hitNode = nodeHitTest.node
@@ -1346,7 +1366,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
     func addVoiceToScene(nextOVS : OVStruct , name : String, op : String)
     {
 //        if let voiceShape = OVScene.shapes[nextOVS.shapeName] //Get corresponding shape for this voice
-        print("vn \(nextOVS.name)")
         if let voiceShape = sceneShapes[nextOVS.shapeName] //10/27 redu Get corresponding
         {
             var newOVS    = nextOVS
@@ -1397,7 +1416,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
                     allMarkers.append(nextMarker)
                     latHandle.addChildNode(nextMarker)
                     // DHS 9/26 set angles from voice XY coords...
-                    print("ll euler \(nextVoice.OVS.yCoord) , \(nextVoice.OVS.xCoord) ")
                     latHandle.eulerAngles = SCNVector3Make(0, 0, Float(nextVoice.OVS.yCoord))
                     lonHandle.eulerAngles = SCNVector3Make(0, Float(nextVoice.OVS.xCoord), 0)
                     latHandles[newName] = latHandle
@@ -1666,22 +1684,31 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate {
             }
         }
     } //end updateMarkerPosition
-
     
-
+    
     //=====<oogie2D mainVC>====================================================
-    // Loads 8 basic synths
-    func loadCannedSynths()
+    //DIAGNOSTIC: Write out empty synth patches by name, still need to fill
+    //  in voice details!
+    func writeSynthPatches()
     {
-        var pptr = 1
-        for sname in cannedSynths
-        {
-           //9/7 redpo  OV.OOP.name = sname
-            print (" save synth \(sname)")
-            pptr = pptr + 1
+        let sNames : [String] = [
+            "SineWave","Sawtooth","SquareWave","RampWave",
+            "Mellow","Bubbles","Casio","SoftSynth"
+        ]
+        for name in sNames{
+            var oop     = OogiePatch()
+            oop.name    = name
+            oop.attack  = 0
+            oop.decay   = 0
+            oop.sustain = 0
+            oop.release = 0
+            oop.sLevel  = 0
+            oop.duty    = 0
+            oop.wave    = 0
+            oop.type    = Int(SYNTH_VOICE)
+            oop.saveItem() //Write it out!
         }
-
-    }
+    } //end writeSynthPatches
     
     //=====<oogie2D mainVC>====================================================
     //DIAGNOSTIC: Write out fresh patches for all General MIDI samples...
