@@ -97,6 +97,28 @@ public class DataManager {
     }
 
     //======(DataManager)=============================================
+    static func getSceneDirectoryContents() //-> String[]
+    {
+        do {
+            let url = getSceneDirectory()
+            let files = try FileManager.default.contentsOfDirectory(atPath: url.path)
+            print("files \(files)")
+            //            var modelObjects = [T]()
+//
+//            for fileName in files {
+//                modelObjects.append(loadPatch( url: url, with:fileName, with: type))
+//            }
+//
+//            return modelObjects
+            
+            
+        }catch{
+            fatalError("could not load any files")
+        }
+       // return []
+    }
+    
+    //======(DataManager)=============================================
     static func savePatch <T:Encodable> (_ object:T, with fileName:String) {
         print("savePatch \(getPatchDirectory())/\(fileName))")
         save(object , with: getPatchDirectory(), with: fileName)

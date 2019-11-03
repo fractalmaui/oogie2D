@@ -37,6 +37,9 @@
 //  Oct 25  redo shape rotation speed
 //  Oct 26  break out addVoice , addShape, implement clone shape
 //  Oct 27  add clone voice, longpress for shape/voice popups
+//  Oct 29  set marker icon type in create, add version# in menu, finish rotation type
+//           add handleTouch,
+//  Nov 3   fix xcoord bug in getShapeColor
 import UIKit
 import SceneKit
 import Photos
@@ -58,6 +61,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     @IBOutlet weak var textField: UITextField!
     var fadeTimer = Timer()
     var pLabel = infoText()
+    //10/29 version #
+    var version = ""
+    var build   = ""
     //10/17 solo
     var soloVoiceID = ""
     var touchLocation = CGPoint()
@@ -65,6 +71,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     var latestTouch   = UITouch()
     var testSample = 8
     @IBAction func testSelect(_ sender: Any) {
+        DataManager.getSceneDirectoryContents()
 //        print("test : \(testSample)")
 //        (sfx() as! soundFX).playNote(32, Int32(testSample), PERCUSSION_VOICE)
 //        testSample = testSample + 1
@@ -253,6 +260,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
         textField.isHidden = true
         textField.delegate = self
         
+        version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
+        build = Bundle.main.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as! String
+        
         //10/16 add notification to see when samples are loaded...
         NotificationCenter.default.addObserver(self, selector: #selector(self.samplesLoaded(notification:)), name: Notification.Name("samplesLoadedNotification"), object: nil)
     } //end viewDidLoad
@@ -284,12 +294,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     @objc func handleLongPress(gestureReconizer: UILongPressGestureRecognizer)
     {
         if gestureReconizer.state != UIGestureRecognizer.State.ended {
-            //10/29 make sure we are on an object!
-            let sceneView = skView!
-            touchLocation = latestTouch.location(in: sceneView)
-            guard let nodeHitTest = sceneView.hitTest(touchLocation, options: nil).first else {return}
-            if whatWeBeEditing == "voice" { voiceMenu() }
-            if whatWeBeEditing == "shape" { shapeMenu() }
+            let pp = gestureReconizer.location(ofTouch: 0, in: self.view)
+            // 11/3 make sure longpress is near original touch spot!
+            if ((abs(pp.x - touchLocation.x) < 40) &&
+                (abs(pp.y - touchLocation.y) < 40))
+            {
+                if whatWeBeEditing == "voice" { voiceMenu() }
+                if whatWeBeEditing == "shape" { shapeMenu() }
+            }
         }
         else {
         }
@@ -624,7 +636,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
                 {
                     workString = getSelectedFieldStringForKnobValue (kv : knobValue)
                     changeVoiceType(typeString:workString , needToRefreshOriginalValue: needToRefreshOriginalValue)
-                    selectedMarker.updateType(newType : workString)
+                    selectedMarker.updateTypeString(newType : workString)
                 }
             case "key":
                 if intChoiceChanged{
@@ -989,9 +1001,19 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
         guard let touch = touches.first else {return}
         latestTouch = touch
         touchDown = false
-        let sceneView = skView!
+        handleTouch(touch: touch)
+    } //end touchesBegan
+    
+    //=====<oogie2D mainVC>====================================================
+    //10/29 called by touchesDown
+    func handleTouch(touch:UITouch)
+    {
+        //  user selects object they are long touching on!
+        // Make all of this a subroutine called handleTouches!!!
+        print("touchesBegan \(touch)")
+        guard let sceneView  = skView else {return}
         touchLocation = latestTouch.location(in: sceneView)
-        //print("tb \(touchLocation)")
+        print("touchlocation \(touchLocation)")
         guard let nodeHitTest = sceneView.hitTest(touchLocation, options: nil).first else {return}
         let hitNode = nodeHitTest.node
         if let name = hitNode.name
@@ -1039,6 +1061,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
                     // is a shape selected? deselect!
                     if whatWeBeEditing == "shape" { selectedSphere.unHighlight() }
                     // is a different marker selected? deselect!
+                    print(" sm hilite \(selectedMarker.highlighted) smname \(selectedMarkerName) nmname \(newMarker.name)")
                     if selectedMarker.highlighted &&
                         selectedMarkerName != newMarker.name
                         { selectedMarker.unHighlight() }
@@ -1069,8 +1092,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
                 } //end if selected...
             } //end if name
         }    // end if let name
-    } //end touchesBegan
-    
+
+    }
+
+
+
+
+
+    //=====<oogie2D mainVC>====================================================
     func deselectVoice()
     {
         paramKnob.isHidden      = true
@@ -1092,7 +1121,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     //=====<oogie2D mainVC>====================================================
     func menu()
     {
-        let alert = UIAlertController(title: "Menu", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        let tstr = "Menu (V" + version + ")"
+        let alert = UIAlertController(title: tstr, message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "Load New Scene", style: .default, handler: { action in
             print("Load New Scene...")
             self.OVScene = DataManager.loadScene("default", with: OogieScene.self)
@@ -1121,9 +1151,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     // voice popup... various functions
     func voiceMenu()
     {
+        let alert = UIAlertController(title: self.selectedVoice.OVS.name, message: nil, preferredStyle: UIAlertControllerStyle.alert)
         var tstr = "Solo"
         if soloVoiceID != "" {tstr = "UnSolo"}
-        let alert = UIAlertController(title: "Voice Menu", message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: tstr, style: .default, handler: { action in
             if self.soloVoiceID == ""
             {
@@ -1160,7 +1190,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     // 10/26 shape popup... various functions
     func shapeMenu()
     {
-        let alert = UIAlertController(title: "Shape Menu", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        let alert = UIAlertController(title: self.selectedShape.name, message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "Clone", style: .default, handler: { action in
             self.addShapeToScene(shape: self.selectedShape, name: "", op: "clone")
         }))
@@ -1365,7 +1395,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     // 10/26 break out for cloning / creating / etc
     func addVoiceToScene(nextOVS : OVStruct , name : String, op : String)
     {
-//        if let voiceShape = OVScene.shapes[nextOVS.shapeName] //Get corresponding shape for this voice
         if let voiceShape = sceneShapes[nextOVS.shapeName] //10/27 redu Get corresponding
         {
             var newOVS    = nextOVS
@@ -1412,7 +1441,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
                     #elseif VERSION_AR
                     nextMarker.position = SCNVector3Make(0.5, 0, 0);
                     #endif
-
+                    //10/29 here we have int type, not string...
+                    nextMarker.updateTypeInt(newTypeInt: Int32(nextVoice.OOP.type))
                     allMarkers.append(nextMarker)
                     latHandle.addChildNode(nextMarker)
                     // DHS 9/26 set angles from voice XY coords...
@@ -1638,17 +1668,17 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     func getShapeColor(shape: SphereShape, xCoord : Double , yCoord : Double , angle : Double) -> (R:Int , G:Int , B:Int , A:Int)
     {
         let aoff = Double.pi / 2.0  //10/25 why are we a 1/4 turn off?
-        var xpercent = (angle + aoff) / twoPi
-        xpercent = xpercent + xCoord
-        //xpercent = xpercent - 0.125 //why rotate 1/8??
-        xpercent = -1.0 * xpercent //      and flip X direction
+        // 11/3 fix math error in xpercent!
+        var xpercent = (angle + aoff - xCoord) / twoPi  //11/3 apply xcoord B4 dividing!
+        xpercent = -1.0 * xpercent                     //  and flip X direction
         //Keep us in range 0..1
-        while xpercent > 1.0 {xpercent = xpercent - 1}
-        while xpercent < 0.0 {xpercent = xpercent + 1}
+        while xpercent > 1.0 {xpercent = xpercent - 1.0}
+        while xpercent < 0.0 {xpercent = xpercent + 1.0}
         let ypercent = 1.0 - ((yCoord + .pi/2) / .pi)
         let bmpX = Int(Double(shape.bmp.wid) * xpercent)
         let bmpY = Int(Double(shape.bmp.hit) * ypercent) //9/15 redo!
         let cp = CGPoint(x: bmpX, y: bmpY)
+        //print("gsc[\(shape.name)] cp \(cp)")
         let pColor = shape.bmp.getPixelColor(pos: cp) //pColor is class member
         //Sloppy! need to get RGB though...
         var pr : CGFloat = 0.0

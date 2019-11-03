@@ -22,8 +22,6 @@ protocol TextureVCDelegate
 }
 
 
-
-
 class TextureVC: UIViewController,UICollectionViewDataSource,
     UICollectionViewDelegate,UICollectionViewDelegateFlowLayout,
     UIImagePickerControllerDelegate, UINavigationControllerDelegate

@@ -14,6 +14,7 @@
 //  9/30 add torus animate on highlight
 //  10/11 add nameplates
 //  10/27 add unHighlight
+//  10/29 add updateTypeInt to support scene creation
 //  Try to animate torus on select / deselect:
 //   https://developer.apple.com/documentation/scenekit/animation/animating_scenekit_content
 import UIKit
@@ -43,6 +44,11 @@ class Marker: SCNNode {
     var panelNodes : [SCNNode] = []
     var zoomed = false
 
+    let synthIcon   = UIImage(named: "synthIcon")
+    let sampleIcon  = UIImage(named: "sampleIcon")
+    let percIcon    = UIImage(named: "percIcon")
+    let percKitIcon = UIImage(named: "percKitIcon")
+    
     
     //-------(Marker)-------------------------------------
     override init() {
@@ -332,7 +338,7 @@ class Marker: SCNNode {
         }
         
         typeCube = SCNBox()
-        typeCube.firstMaterial?.emission.contents = UIImage(named: "synthIcon")
+        typeCube.firstMaterial?.emission.contents = synthIcon
         typeCube.firstMaterial?.diffuse.contents = UIColor.black //DHS 10/10 looks better this way
         cubeNode = SCNNode(geometry: typeCube)
         cubeNode.position = SCNVector3(0, 0.17,0)
@@ -401,18 +407,38 @@ class Marker: SCNNode {
         boxPanel.firstMaterial?.emission.contents = ii
     } //end updatePanels
 
-    
     //-------(Marker)-------------------------------------
-    func updateType(newType : String)
+    // 10/29 look at voice type, setup icon on marker cube
+    func updateTypeInt(newTypeInt : Int32)
     {
         var texture = UIImage(named: "synthIcon")
-        let slc     =  newType.lowercased()
-        if      slc == "sample" {texture = UIImage(named: "sampleIcon")}
-        else if slc == "percussion" {texture = UIImage(named: "percIcon")}
-        else if slc == "perckit" {texture = UIImage(named: "percKitIcon")}
-//        else if slc == "harmony" {texture = UIImage(named: "Harmony")} TBD
+        switch newTypeInt
+        {
+        case SYNTH_VOICE:      texture = UIImage(named: "synthIcon")
+        case SAMPLE_VOICE:     texture = UIImage(named: "sampleIcon")
+        case PERCUSSION_VOICE: texture = UIImage(named: "percIcon")
+        case PERCKIT_VOICE:    texture = UIImage(named: "percKitIcon")
+        default:               texture = UIImage(named: "synthIcon")
+        }
         typeCube.firstMaterial?.emission.contents = texture
-    }
+    } //end updateTypeInt
+    
+    //-------(Marker)-------------------------------------
+    // 10/29 redo, pass buck to updateTypeInt
+    func updateTypeString(newType : String)
+    {
+        let slc  =  newType.lowercased()
+        var tint : Int32 = 0
+        switch slc
+        {
+        case "synth" : tint = SYNTH_VOICE
+        case "sample" : tint = SAMPLE_VOICE
+        case "percussion" : tint = PERCUSSION_VOICE
+        case "perckit" : tint = PERCKIT_VOICE
+        default: tint = SYNTH_VOICE
+        }
+        updateTypeInt(newTypeInt: tint)
+    } //end updateTypeString
     
     //-------(Marker)-------------------------------------
     func animateSelectOut()

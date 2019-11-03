@@ -13,9 +13,10 @@ struct PipeStruct : Codable {
     var toObject     : String    //  same format
     var fromChannel  : String
     var toParam      : String
-    var loRange      : Double
-    var hiRange      : Double
-    
+    var loRange      : Double    //hi/lo ranges convert incoming
+    var hiRange      : Double    // channel data to desired output range
+    var delay        : Int       //delay is in frames (30fps default)
+
     //======(OogiePipe)=============================================
     init()
     {
@@ -25,6 +26,7 @@ struct PipeStruct : Codable {
         toParam     = "nada"
         loRange     = 0.0
         hiRange     = 1.0
+        delay       = 0
     }
 }
 
