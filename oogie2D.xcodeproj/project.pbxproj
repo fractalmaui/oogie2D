@@ -60,6 +60,7 @@
 		72DCE765235538C200E7102C /* oog2-stripey00t.png in Resources */ = {isa = PBXBuildFile; fileRef = 72DCE764235538C200E7102C /* oog2-stripey00t.png */; };
 		72DEB0A42320C049005A9505 /* chex4x4.png in Resources */ = {isa = PBXBuildFile; fileRef = 72DEB0A22320C049005A9505 /* chex4x4.png */; };
 		72DEB0A52320C049005A9505 /* rainbowRing.png in Resources */ = {isa = PBXBuildFile; fileRef = 72DEB0A32320C049005A9505 /* rainbowRing.png */; };
+		72E463E823702E3D003360D6 /* chooserVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72E463E723702E3D003360D6 /* chooserVC.swift */; };
 		72EE838323125D7B00FFAAE1 /* OogleScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72EE838223125D7B00FFAAE1 /* OogleScene.swift */; };
 /* End PBXBuildFile section */
 
@@ -128,6 +129,7 @@
 		72DCE764235538C200E7102C /* oog2-stripey00t.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "oog2-stripey00t.png"; sourceTree = "<group>"; };
 		72DEB0A22320C049005A9505 /* chex4x4.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = chex4x4.png; sourceTree = "<group>"; };
 		72DEB0A32320C049005A9505 /* rainbowRing.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = rainbowRing.png; sourceTree = "<group>"; };
+		72E463E723702E3D003360D6 /* chooserVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = chooserVC.swift; sourceTree = "<group>"; };
 		72EE838223125D7B00FFAAE1 /* OogleScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogleScene.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -170,6 +172,7 @@
 				725F033F22E304E700A6A5FD /* audio */,
 				5226E90F1FD4481B00C72C21 /* AppDelegate.swift */,
 				5226E9111FD4481B00C72C21 /* ViewController.swift */,
+				72E463E723702E3D003360D6 /* chooserVC.swift */,
 				7255495D232365A70054A522 /* TextureVC.swift */,
 				72554960232369E90054A522 /* TextureCell.swift */,
 				5226E9131FD4481B00C72C21 /* Main.storyboard */,
@@ -375,6 +378,7 @@
 				72AFB97E23070B640009A577 /* OogieShape.swift in Sources */,
 				72D3D69822F69C61001EACA7 /* OogiePatch.swift in Sources */,
 				5262740E1FD44F3400790D87 /* SphereShape.swift in Sources */,
+				72E463E823702E3D003360D6 /* chooserVC.swift in Sources */,
 				7237FEB22306952B000A571A /* OVStruct.swift in Sources */,
 				724C877F231F8587008E4625 /* texCache.swift in Sources */,
 				72554961232369E90054A522 /* TextureCell.swift in Sources */,

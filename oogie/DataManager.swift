@@ -96,28 +96,19 @@ public class DataManager {
         return getDocumentDirectory().appendingPathComponent("voices")
     }
 
-    //======(DataManager)=============================================
-    static func getSceneDirectoryContents() //-> String[]
+     //======(DataManager)=============================================
+    static func getSceneDirectoryContents() -> [String]
     {
         do {
             let url = getSceneDirectory()
             let files = try FileManager.default.contentsOfDirectory(atPath: url.path)
-            print("files \(files)")
-            //            var modelObjects = [T]()
-//
-//            for fileName in files {
-//                modelObjects.append(loadPatch( url: url, with:fileName, with: type))
-//            }
-//
-//            return modelObjects
-            
-            
+            return files
         }catch{
-            fatalError("could not load any files")
+            fatalError("could not find scene directory")
         }
        // return []
     }
-    
+
     //======(DataManager)=============================================
     static func savePatch <T:Encodable> (_ object:T, with fileName:String) {
         print("savePatch \(getPatchDirectory())/\(fileName))")

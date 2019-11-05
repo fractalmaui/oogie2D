@@ -49,6 +49,7 @@ class infoText: UIView {
 
     let wwhit = 70
     var fieldType = TSTRING_TTYPE
+    var fadeTimer = Timer() //11/4
 
     
     override init(frame: CGRect) {
@@ -142,6 +143,12 @@ class infoText: UIView {
         
     }
     
+    //=======>ARKit MainVC===================================
+    @objc func fadeOutTick()
+    {
+        fadeOut()
+    }
+
     
     //------<infoText>-----------------------------------------
     func fadeIn()
@@ -155,6 +162,10 @@ class infoText: UIView {
             self.infoView.alpha = 1
         }, completion: { finished in
             self.fadingIn = false
+            self.fadeTimer.invalidate() //Get rid of any older timer
+            //If knob is inactive for 4 seconds fadeout info
+            self.fadeTimer = Timer.scheduledTimer(timeInterval: 3.0, target: self, selector: #selector(self.fadeOutTick), userInfo:  nil, repeats: false)
+
             //print("fadein DONE : clear fadein flag")
         })
     }
@@ -210,6 +221,7 @@ class infoText: UIView {
     //------<infoText>-----------------------------------------
     func updateLabelOnly(lStr:String)
     {
+        fadeIn() //11/4 checked for redundancy, OK here now
         TLWarning.isHidden   = true
         TRWarning.isHidden   = true
         TLlabel.isHidden     = true
@@ -221,7 +233,7 @@ class infoText: UIView {
     //------<infoText>-----------------------------------------
     func updateit(value:Double)
     {
-        //fadeIn()
+        fadeIn() //11/4 checked for redundancy, OK here now
         var workVal = value
         var minErr  = false
         var maxErr  = false

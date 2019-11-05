@@ -517,7 +517,7 @@ short *audioRecBuffer;
         sBufs[which] = NULL;
     }
     int totalFrames = sNumPackets * sChans;
-    //NSLog(@" ...Malloc sbufs[%d] size %lu",which,sNumPackets * sChans * sizeof(float));
+    NSLog(@" ...Malloc sbufs[%d] size %lu",which,sNumPackets * sChans * sizeof(float));
 	sBufs[which] = malloc(totalFrames * sizeof(float)); //DHS 10/6
 	if (!sBufs[which]) return;
     sBufLens[which] = totalFrames;
@@ -1713,7 +1713,7 @@ short *audioRecBuffer;
     //aaand filename...
     NSURL *sampleURL = [p2 URLByAppendingPathComponent:fileName];
     
-    //NSLog(@" sampleURL is %@",sampleURL);
+    NSLog(@" sampleURL is %@",sampleURL);
 //    fileURL = [[NSURL alloc] initFileURLWithPath: p3];
 //    NSLog(@" file [%@]",fileURL.absoluteString);
     err = AudioFileOpenURL ((__bridge CFURLRef) sampleURL, kAudioFileReadPermission,0,&fileID);
@@ -1785,8 +1785,8 @@ short *audioRecBuffer;
     sampleSize =  readsize;
     if (!err)  AudioFileClose(fileID);
     gotSample = 1;
-    //if (err != 0) NSLog(@" loadsample error: %d",(int)err);
-    //else NSLog(@" ...load sample OK");
+    if (err != 0) NSLog(@" loadsample error: %d",(int)err);
+    else NSLog(@" ...load sample OK");
     //    NSLog(@" dump of sample %@========================",fileName);
     //    for (int i=0;i<64;i++) NSLog(@" swave[%d] %x",i,swave[i]);
     return;

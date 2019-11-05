@@ -53,15 +53,10 @@ class oogieBmp: NSObject {
         guard let pixelData = image.cgImage?.dataProvider?.data else { return UIColor(red: 0, green: 0, blue: 0, alpha: 0)}
         let data: UnsafePointer<UInt8> = CFDataGetBytePtr(pixelData)
         //11/2 apply texture XY offset before or after scaling?
-        //print("posxy \(pos.x),\(pos.y)")
         //11/3 texture xyoffset must be in bmp w/h coordinate space!
-        var xcoord : Double = Double(pos.x)
-        var ycoord : Double = Double(pos.y)
-        xcoord *= xscale
-        ycoord *= yscale
-        xcoord += Double(pixelsWide)*xoff
-        ycoord += Double(pixelsHigh)*yoff
-        let pixelInfo: Int = ((pixelsWide * (Int(ycoord)%hit)) + (Int(xcoord)%wid)) * 4
+        let xcoord : Double = (Double(pos.x) * xscale) + Double(pixelsWide)*xoff
+        let ycoord : Double = (Double(pos.y) * yscale) + Double(pixelsHigh)*yoff
+        let pixelInfo: Int  = ((pixelsWide * (Int(ycoord)%hit)) + (Int(xcoord)%wid)) * 4
         if (pixelInfo < 0)  //9/15 saw krash here
         {
             print("Error in getPixelColor: negative index!")
@@ -71,8 +66,7 @@ class oogieBmp: NSObject {
                             green: CGFloat(data[pixelInfo + 1]) / 255.0,
                             blue: CGFloat(data[pixelInfo + 2]) / 255.0,
                             alpha: CGFloat(data[pixelInfo + 3]) / 255.0)
-        //print("   gpc xy \(pos.x),\(pos.y) -> RGB \(color)")
         return color
-    }
+    } //end getPixelColor
 
 }

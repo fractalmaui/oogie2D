@@ -40,25 +40,27 @@
 //  Oct 29  set marker icon type in create, add version# in menu, finish rotation type
 //           add handleTouch,
 //  Nov 3   fix xcoord bug in getShapeColor
+//          fix shape params reset -> update , add cancelEdit
+//  Nov 4   add file chooser, load/save/save as scene,
+//            move fadein/out to paramLabel, fixed clearScene
 import UIKit
 import SceneKit
 import Photos
 
-let pi = 3.141592627
+let pi    = 3.141592627
 let twoPi = 6.2831852
 
-class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIGestureRecognizerDelegate {
-
-    
+class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate {
 
     @IBOutlet weak var skView: SCNView!
     @IBOutlet weak var spnl: synthPanel!
-    
-
     @IBOutlet weak var editButtonView: UIView!
     @IBOutlet weak var paramKnob: Knob!
-    
     @IBOutlet weak var textField: UITextField!
+    @IBOutlet weak var resetButton: UIButton!
+    @IBOutlet weak var menuButton: UIButton!
+    @IBOutlet weak var editButton: UIButton!
+
     var fadeTimer = Timer()
     var pLabel = infoText()
     //10/29 version #
@@ -71,7 +73,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     var latestTouch   = UITouch()
     var testSample = 8
     @IBAction func testSelect(_ sender: Any) {
-        DataManager.getSceneDirectoryContents()
+        self.pLabel.updateLabelOnly(lStr:"Clear Scene...")
+//        DataManager.getSceneDirectoryContents()
 //        print("test : \(testSample)")
 //        (sfx() as! soundFX).playNote(32, Int32(testSample), PERCUSSION_VOICE)
 //        testSample = testSample + 1
@@ -79,9 +82,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
         //asdf
 //        DataManager.gotDMError(msg: "duh")
     }
-    @IBOutlet weak var resetButton: UIButton!
-    @IBOutlet weak var menuButton: UIButton!
-    @IBOutlet weak var editButton: UIButton!
     //Constructed shapes / handles
     var allMarkers    : [Marker]     = []
     var latHandles    = Dictionary<String, SCNNode>()
@@ -144,6 +144,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
 
     let scene           = SCNScene()
     var OVScene         = OogieScene()
+    var OVSceneName     = "default"
     var selectedVoice   = OogieVoice()
     var selectedMarker  = Marker()
     var selectedSphere  = SphereShape()  //10/18
@@ -330,8 +331,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
 
             //DEBUG!
             if selectedFieldMax == selectedFieldMin {print("ERROR: no param range")}
-            
-            pLabel.isHidden = selectedFieldType    == "text"
+            //DHS 11/4 No hide?
+            //pLabel.isHidden = selectedFieldType    == "text"
             textField.isHidden = selectedFieldType != "text"
 
             
@@ -408,11 +409,27 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     //=====<oogie2D mainVC>====================================================
     // Texture Segue called just above... get textureVC handle here...
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        cancelEdit()  //Editing? Not any more!
+
         if segue.identifier == "textureSegue" {
             if let nextViewController = segue.destination as? TextureVC {
                     nextViewController.delegate = self
             }
         }
+        // 11/4 add scene chooser
+        else if segue.identifier == "chooserLoadSegue" {
+            if let chooser = segue.destination as? chooserVC {
+                chooser.delegate = self
+                chooser.mode     = "load"
+            }
+        }
+        else if segue.identifier == "chooserSaveSegue" {
+            if let chooser = segue.destination as? chooserVC {
+                chooser.delegate = self
+                chooser.mode     = "save"
+            }
+        }
+
     }
 
     
@@ -470,7 +487,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     //=======>ARKit MainVC===================================
     //Param knob change...
     @IBAction func paramChanged(_ sender: Any) {
-        pLabel.fadeIn()
         knobValue = paramKnob.value //Assume value is pre-clamped to range
         //Whata mess? Double or flost, pick simetohing!
         oldKnobValue = paramKnob.value
@@ -486,16 +502,16 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
             let fname = selectedFieldName.lowercased()
             setNewParamValue(fname: fname,newval: knobValue)
         } //end else
-        fadeTimer.invalidate() //Get rid of any older timer
-        //If knob is inactive for 4 seconds fadeout info
-        fadeTimer = Timer.scheduledTimer(timeInterval: 4.03, target: self, selector: #selector(self.fadeOutParamLabel), userInfo:  nil, repeats: false)
+//        fadeTimer.invalidate() //Get rid of any older timer
+//        //If knob is inactive for 4 seconds fadeout info
+//        fadeTimer = Timer.scheduledTimer(timeInterval: 4.03, target: self, selector: #selector(self.fadeOutParamLabel), userInfo:  nil, repeats: false)
     }
     
     //=======>ARKit MainVC===================================
-    @objc func fadeOutParamLabel()
-    {
-        pLabel.fadeOut()
-    }
+//    @objc func fadeOutParamLabel()
+//    {
+//        pLabel.fadeOut()
+//    }
     
     
     //=======>ARKit MainVC===================================
@@ -825,11 +841,18 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
         } //end voice
         else if whatWeBeEditing == "shape"
         {
+            var needUpdate = true
+            var newSpeed   = false
             switch (selectedFieldName.lowercased())
             {
             case "texture" : selectedShape.texture  = oldS
+                needUpdate = false
             case "rotation": selectedShape.rotSpeed =  oldD
+                needUpdate = false
+                newSpeed   = true
             case "rotationtype": selectedShape.rotation = oldD
+                needUpdate = false
+                newSpeed   = true
             case "xpos":       selectedShape.xPos = oldD
             case "ypos":       selectedShape.yPos = oldD
             case "zpos":       selectedShape.zPos = oldD
@@ -839,6 +862,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
             case "texyscale":  selectedShape.vScale = oldD
             default: print("restoreLastParam: bad shape ptype")
             }
+            if needUpdate { updateSelected3DShape () }
+            if newSpeed   { setRotationSpeedForSelectedShape(s : selectedShape.rotSpeed)}
         } //end shape
 
     } //end restoreLastParamValue
@@ -1010,10 +1035,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     {
         //  user selects object they are long touching on!
         // Make all of this a subroutine called handleTouches!!!
-        print("touchesBegan \(touch)")
         guard let sceneView  = skView else {return}
         touchLocation = latestTouch.location(in: sceneView)
-        print("touchlocation \(touchLocation)")
         guard let nodeHitTest = sceneView.hitTest(touchLocation, options: nil).first else {return}
         let hitNode = nodeHitTest.node
         if let name = hitNode.name
@@ -1033,11 +1056,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
                     {
                         selectedSphere = testShape
                         selectedSphere.toggleHighlight()
-                        whatWeBeEditing = ""
                         //Wow is this redundant?
                         selectedSphere.updatePanels(nameStr: selectedSphere.name!)
                         if selectedSphere.highlighted  //hilited? Set up edit
                         {
+                            self.pLabel.updateLabelOnly(lStr:"Selected " + self.selectedSphere.name!)
                             if let smname = selectedSphere.name
                             {
                                 if let testShape = sceneShapes[smname] //got legit voice?
@@ -1048,7 +1071,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
                                 }
                             }
                         }
-
+                        else
+                        {
+                            cancelEdit() //11/3
+                            whatWeBeEditing = ""
+                        }
                     }
                 } //end selectedobjectindex...
             } //end name... shape
@@ -1061,19 +1088,18 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
                     // is a shape selected? deselect!
                     if whatWeBeEditing == "shape" { selectedSphere.unHighlight() }
                     // is a different marker selected? deselect!
-                    print(" sm hilite \(selectedMarker.highlighted) smname \(selectedMarkerName) nmname \(newMarker.name)")
                     if selectedMarker.highlighted &&
                         selectedMarkerName != newMarker.name
                         { selectedMarker.unHighlight() }
                     selectedMarker = newMarker           // get our marker...
                     selectedMarker.toggleHighlight()
-                    whatWeBeEditing = ""
                     if selectedMarker.highlighted  //hilited? Set up edit
                     {
                         if let smname = selectedMarker.name
                         {
                             if let testVoice = sceneVoices[smname] //got legit voice?
                             {
+                                self.pLabel.updateLabelOnly(lStr:"Selected " + smname)
                                 selectedVoice = testVoice //Get associated voice for this marker
                                 selectedMarkerName = smname //points to OVS struct in scene
                                 selectedMarker.updatePanels(nameStr: selectedMarkerName) //10/11 add name panels
@@ -1087,7 +1113,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
                     }
                     else //not highlighted? close edit
                     {
-                        deselectVoice()
+                        cancelEdit() //DHS 11/3 if editing, cancel
+                        whatWeBeEditing = ""
+                        updateUIForDeselectVoiceOrShape()
                     }
                 } //end if selected...
             } //end if name
@@ -1100,11 +1128,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
 
 
     //=====<oogie2D mainVC>====================================================
-    func deselectVoice()
+    func updateUIForDeselectVoiceOrShape()
     {
         paramKnob.isHidden      = true
         editButtonView.isHidden = true
-
     }
     
     
@@ -1123,17 +1150,18 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     {
         let tstr = "Menu (V" + version + ")"
         let alert = UIAlertController(title: tstr, message: nil, preferredStyle: UIAlertControllerStyle.alert)
-        alert.addAction(UIAlertAction(title: "Load New Scene", style: .default, handler: { action in
-            print("Load New Scene...")
-            self.OVScene = DataManager.loadScene("default", with: OogieScene.self)
-        }))
         alert.addAction(UIAlertAction(title: "Clear Scene", style: .default, handler: { action in
-            print("Clear Scene...")
             self.clearScene()
         }))
+        alert.addAction(UIAlertAction(title: "Load Scene", style: .default, handler: { action in
+            self.performSegue(withIdentifier: "chooserLoadSegue", sender: self)
+        }))
         alert.addAction(UIAlertAction(title: "Save Scene", style: .default, handler: { action in
-            print("Save Scene...")
-            self.packupSceneAndSave()
+            self.packupSceneAndSave(name:self.OVSceneName)
+            self.pLabel.updateLabelOnly(lStr:"Saved " + self.OVSceneName)
+        }))
+        alert.addAction(UIAlertAction(title: "Save Scene As...", style: .default, handler: { action in
+            self.performSegue(withIdentifier: "chooserSaveSegue", sender: self)
         }))
         alert.addAction(UIAlertAction(title: "Textures...", style: .default, handler: { action in
             self.performSegue(withIdentifier: "textureSegue", sender: self)
@@ -1164,7 +1192,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
                 self.soloVoiceID = ""
             }
             self.selectedMarker.toggleHighlight()
-            self.deselectVoice()
+            self.updateUIForDeselectVoiceOrShape()
         }))
 
         tstr = "Mute"
@@ -1172,7 +1200,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
         alert.addAction(UIAlertAction(title: tstr, style: .default, handler: { action in
             self.selectedVoice.muted = !self.selectedVoice.muted
             self.selectedMarker.toggleHighlight()
-            self.deselectVoice()
+            self.updateUIForDeselectVoiceOrShape()
         }))
         alert.addAction(UIAlertAction(title: "Clone", style: .default, handler: { action in
             self.addVoiceToScene(nextOVS: self.selectedVoice.OVS, name: "", op: "clone")
@@ -1267,7 +1295,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
         self.present(alert, animated: true, completion: nil)
-
     }
     
     //=====<oogie2D mainVC>====================================================
@@ -1275,8 +1302,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     {
         let alert = UIAlertController(title: "Clear Current Scene?", message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
-            self.OVScene.clearScene()
+            self.clearAllNodes(scene:self.scene)  // Clear any SCNNodes
+            self.OVScene.clearScene()       //   and scene structs
             self.clearAllNodes(scene: self.scene)
+            self.pLabel.updateLabelOnly(lStr:"Clear Scene...")
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
@@ -1290,6 +1319,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
         scene.rootNode.enumerateChildNodes { (node, _) in
             node.removeFromParentNode()
         }
+        allMarkers.removeAll() //DHS 11/4 blow away all 3D references
+        latHandles.removeAll()
+        lonHandles.removeAll()
+        shapes.removeAll()
+
     } //end clearAllNodes
     
     
@@ -1501,7 +1535,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
 
     
     //=====<oogie2D mainVC>====================================================
-    func packupSceneAndSave()
+    func packupSceneAndSave(name:String)
     {
         //10/26 first we need to clean target...
         OVScene.voices.removeAll()
@@ -1515,7 +1549,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
         {
             OVScene.shapes[name] = nextShape
         }
-        DataManager.saveScene(self.OVScene, with: "default")
+        DataManager.saveScene(self.OVScene, with: name)
     } //end packupSceneAndSave
 
     
@@ -1630,24 +1664,25 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
         }
         else //editing? cancel! restore old value to field!
         {
-            restoreLastParamValue(oldD: lastFieldDouble,oldS: lastFieldString) //DHS 10/10
-            if selectedFieldType == "double"  //update marker as needed...
-            {
-                if whatWeBeEditing == "voice"
-                {
-                    updateSelected3DMarker ()
-                }
-                else if whatWeBeEditing == "shape"
-                {
-                    updateSelected3DShape ()
-                }
-            }
-            knobMode = 0 //back to select mode
-            updateWheelAndParamButtons()
+            cancelEdit()
         }
-    }
+    } //end buttonSelect
     
 
+    //=====<oogie2D mainVC>====================================================
+    func cancelEdit()
+    {
+        restoreLastParamValue(oldD: lastFieldDouble,oldS: lastFieldString) //DHS 10/10
+        if selectedFieldType == "double"  //update marker as needed...
+        {
+            if whatWeBeEditing == "voice"      { updateSelected3DMarker () }
+            else if whatWeBeEditing == "shape" { updateSelected3DShape  () }
+        }
+        knobMode = 0 //back to select mode
+        updateWheelAndParamButtons()
+        // 11/3 why is this separate from updateWheel..????
+        updateUIForDeselectVoiceOrShape()
+    } //end cancelEdit
     
     //=====<oogie2D mainVC>====================================================
     // take unit xy coords from voice, apply to our sphere..
@@ -1748,6 +1783,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
         {
             for name in pNames{
                 let patchName = name as! String
+                print("write GM patch \(patchName)...")
                 var oop     = OogiePatch()
                 oop.name    = patchName
                 oop.attack  = 0
@@ -1819,7 +1855,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
             (sfx() as! soundFX).setSynthRelease(Int32(oov.OOP.release));
             (sfx() as! soundFX).setSynthDuty(Int32(oov.OOP.duty));
 
-            //DHS 10/14 set up pointer to percussion sample...
+            //DHS 10/14 set up pointer to GM sample...
             oov.bufferPointer = Int((sfx() as! soundFX).getGMBuffer(oov.OOP.name))
             (sfx() as! soundFX).buildEnvelope(Int32(oov.bufferPointer)); //arg whichvoice?
         }
@@ -1993,7 +2029,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
     //--------<TextureVCDelegate.-------------------------------------
     func cancelled()
     {
-        print("cancelled...")
         editSelect(editButton) // back to param select...
     }
     
@@ -2006,8 +2041,24 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,UIG
             sshape.name           = name // save texture name
             selectedShape.texture = name
             editSelect(editButton)              // leave edit mode
-            print("selected...\(sceneVoices)")
         }
+    }
+
+    //Delegate callback from Chooser...
+    func choseFile(name: String)
+    {
+        OVSceneName  = name
+        self.OVScene = DataManager.loadScene(OVSceneName, with: OogieScene.self)
+        self.clearAllNodes(scene:scene)  // Clear any SCNNodes
+        self.create3DScene(scene:scene) //  then create new scene from file
+        pLabel.updateLabelOnly(lStr:"Loaded " + OVSceneName)
+    }
+
+    //Delegate callback from Chooser...
+    func needToSaveFile(name: String) {
+        OVSceneName = name
+        self.packupSceneAndSave(name:OVSceneName)
+        pLabel.updateLabelOnly(lStr:"Saved " + OVSceneName)
     }
 
 } //end vc class, line 1413 as of 10/10

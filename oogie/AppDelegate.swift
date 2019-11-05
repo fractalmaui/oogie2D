@@ -83,8 +83,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
         let gurl = Bundle.main.resourceURL!.appendingPathComponent("GeneralMidi").path
         do {
             let files = try FileManager.default.contentsOfDirectory(atPath: gurl)
-            //print("contents of GMIDI folder...")
-            //print(files)
+            print("contents of GMIDI folder...")
+            print(files)
         }catch{
             fatalError("error: no GMidi!")
         }
