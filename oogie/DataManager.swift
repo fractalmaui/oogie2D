@@ -19,6 +19,7 @@
 //  9/15 add dump
 // 10/27 pull (most) fatals, replace w/ delegate callbacks
 //         still have fatals on methods with dynamic types!
+// 11/4  add patchExists
 import Foundation
 
 
@@ -96,6 +97,32 @@ public class DataManager {
         return getDocumentDirectory().appendingPathComponent("voices")
     }
 
+    //======(DataManager)=============================================
+    // 11/6 gets a variety of folder contents, whichDIr determines ...
+    static func getDirectoryContents(whichDir : String) -> [String]
+    {
+        var fileNamez : [String] = []
+        do {
+            var url = URL(fileURLWithPath: "") //Start w/ empty path
+            //Get Scene Directory contents
+            if whichDir == "scene" { url = getSceneDirectory() }
+            else if whichDir == "gmidi"
+            {
+                url = (Bundle.main.resourceURL?.appendingPathComponent("GeneralMidi"))!
+            }
+            else if whichDir == "percussion"
+            {
+                url = (Bundle.main.resourceURL?.appendingPathComponent("Percussion"))!
+            }
+            fileNamez = try FileManager.default.contentsOfDirectory(atPath: url.path)
+            return fileNamez
+        }catch{
+            fatalError("could not find \(whichDir) directory")
+        }
+
+    } //end getDirectoryContents
+    
+    
      //======(DataManager)=============================================
     static func getSceneDirectoryContents() -> [String]
     {
@@ -193,6 +220,13 @@ public class DataManager {
     static func sceneExists( fileName:String) -> Bool
     {
         let url = getSceneDirectory().appendingPathComponent(fileName, isDirectory: false)
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+    
+    //======(DataManager)=============================================
+    static func patchExists( fileName:String) -> Bool
+    {
+        let url = getPatchDirectory().appendingPathComponent(fileName, isDirectory: false)
         return FileManager.default.fileExists(atPath: url.path)
     }
     
@@ -344,14 +378,14 @@ public class DataManager {
     static func gotDMError(msg: String)
     {
         print("Data Manager Error: \(msg)")
-        let alertController = UIAlertController(title: "DataManager Error", message: msg, preferredStyle: UIAlertControllerStyle.alert)
-        alertController.addAction(UIAlertAction(title: "Close", style: UIAlertActionStyle.cancel, handler: nil))
-
-        let alertWindow = UIWindow(frame: UIScreen.main.bounds)
-        alertWindow.rootViewController = UIViewController()
-        alertWindow.windowLevel = UIWindowLevelAlert + 1;
-        alertWindow.makeKeyAndVisible()
-        alertWindow.rootViewController?.present(alertController, animated: false, completion: nil)
+//        let alertController = UIAlertController(title: "DataManager Error", message: msg, preferredStyle: UIAlertControllerStyle.alert)
+//        alertController.addAction(UIAlertAction(title: "Close", style: UIAlertActionStyle.cancel, handler: nil))
+//
+//        let alertWindow = UIWindow(frame: UIScreen.main.bounds)
+//        alertWindow.rootViewController = UIViewController()
+//        alertWindow.windowLevel = UIWindowLevelAlert + 1;
+//        alertWindow.makeKeyAndVisible()
+//        alertWindow.rootViewController?.present(alertController, animated: false, completion: nil)
     } //end gotDMError
     
 } //end DataManager

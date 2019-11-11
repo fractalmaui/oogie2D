@@ -234,7 +234,7 @@ class OogieVoice: NSObject {
     func savePatch (name:String)
     {
         OOP.name = name
-        OOP.saveItem()
+        OOP.saveItem(filename:name)
     }
 
     //-----------(oogieVoice)=============================================

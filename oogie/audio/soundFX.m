@@ -18,6 +18,8 @@
 //   Look for "Memory Management"  and enable Guard Malloc
 // DHS 09/22/19: Redo sample load for oogie, loads from internal folders
 // DHS 10/6     Add GM Names, getGMName func
+// DHS 11/6     move GeneralMidiNames to Misc subfolder
+// DHS 11/9     add getWorkBuffer, getEnvelopeForDisplay
 #include "soundFX.h"
 
 @implementation soundFX
@@ -113,6 +115,12 @@ int HH,LL,SS;  //Used in rgb -> HLS
 } //end releaseAllNotesByWaveNum
 
 //=====(soundFX)==========================================
+- (void) releaseAllNotes
+{
+    [synth releaseAllNotes];
+} //end releaseAllNotes 
+
+//=====(soundFX)==========================================
 - (void) setMasterLevel : (float) level
 {
     [synth setMasterLevel : level];
@@ -145,6 +153,13 @@ int HH,LL,SS;  //Used in rgb -> HLS
     
 }
 
+
+//=====(soundFX)==========================================
+//  DHS 11/9
+-(NSArray *) getEnvelopeForDisplay: (int) which : (int) size
+{
+    return [synth getEnvelopeForDisplay:which :size];
+}
 //=====(soundFX)==========================================
 //Sloppy!
 -(int) getPercussionTriggerKey : (NSString *)name
@@ -181,6 +196,13 @@ int HH,LL,SS;  //Used in rgb -> HLS
     return [percBufferDict allKeys];
 }
 
+//=====(soundFX)==========================================
+//DHS 11/9
+-(int) getWorkBuffer
+{
+    return (MAX_SAMPLES - 1);
+}
+
 
 //=====(soundFX:synth convenience functions)==========================================
 //  Is there an easier way???
@@ -189,9 +211,9 @@ int HH,LL,SS;  //Used in rgb -> HLS
 {
     [synth buildaWaveTable:a1 :a2];
 }
--(void) buildEnvelope: (int) a1
+-(void) buildEnvelope: (int) a1 : (BOOL) a2
 {
-    [synth buildEnvelope:a1];
+    [synth buildEnvelope:a1:a2];
 }
 -(int)  getSynthNoteCount
 {
@@ -506,8 +528,8 @@ int HH,LL,SS;  //Used in rgb -> HLS
 -(NSMutableDictionary*) loadGeneralMidiNames
 {
     NSError *error;
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"GeneralMidiNames" ofType:@"txt" inDirectory:@"GeneralMidi"];
-    //NSLog(@"loadGeneralMidiNames...%@",path);
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"GeneralMidiNames" ofType:@"txt" inDirectory:@"Misc"];
+    NSLog(@"loadGeneralMidiNames...%@",path);
     NSFileManager *fileManager = [NSFileManager defaultManager];
     if (![fileManager fileExistsAtPath:path])
     {
@@ -998,6 +1020,17 @@ int dtp;
         //NSLog(@" hls %d %d %d",HH,LL,SS);
     }
 } //end RGBtoHLS
+
+//DHS 11/9
+-(void) copyBuffer : (int) from : (int) to : (BOOL) clear
+{
+    [synth copyBuffer:from : to : clear];
+}
+
+-(void) copyEnvelope : (int) from : (int) to;
+{
+    [synth copyEnvelope:from :to];
+}
 
 //DHS 10/10/19 el dumpo
 - (void) dumpBuffer : (int) which : (int) dsize;

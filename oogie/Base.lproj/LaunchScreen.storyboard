@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14490.70" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
-    <device id="retina6_1" orientation="portrait">
-        <adaptation id="fullscreen"/>
-    </device>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="15400" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14490.49"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15404"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -18,28 +16,47 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="dawgj.jpg" translatesAutoresizingMaskIntoConstraints="NO" id="3Qb-h0-xEh">
-                                <rect key="frame" x="0.0" y="44" width="414" height="818"/>
-                            </imageView>
-                            <label opaque="NO" userInteractionEnabled="NO" alpha="0.69999999999999996" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="   oogie2D" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vvF-Fd-S5A">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="   oogie2D" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vvF-Fd-S5A">
                                 <rect key="frame" x="0.0" y="144" width="414" height="59"/>
-                                <color key="backgroundColor" red="0.92511662939999995" green="1" blue="0.26393129399999998" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="backgroundColor" red="0.0" green="0.0" blue="0.25098039215686274" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="59" id="1hb-bv-uSN"/>
+                                    <constraint firstAttribute="width" secondItem="vvF-Fd-S5A" secondAttribute="height" multiplier="414:59" id="QFD-DO-ori"/>
                                 </constraints>
-                                <fontDescription key="fontDescription" type="system" pointSize="49"/>
-                                <nil key="textColor"/>
+                                <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="49"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="oogieLogoNotes.png" translatesAutoresizingMaskIntoConstraints="NO" id="3Qb-h0-xEh">
+                                <rect key="frame" x="0.0" y="44" width="414" height="818"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="3Qb-h0-xEh" secondAttribute="height" multiplier="207:409" id="u46-FI-6A1"/>
+                                </constraints>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vN2-gq-wgi">
+                                <rect key="frame" x="0.0" y="796" width="415" height="70"/>
+                                <string key="text">(C) 2019 fractallonomy, inc
+All Rights Reserved.</string>
+                                <fontDescription key="fontDescription" type="system" pointSize="18"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
                         </subviews>
-                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
+                            <constraint firstItem="3Qb-h0-xEh" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="5tL-kq-ZRc"/>
                             <constraint firstItem="3Qb-h0-xEh" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="7JA-ek-x9q"/>
+                            <constraint firstItem="3Qb-h0-xEh" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="A3o-0i-1xO"/>
                             <constraint firstItem="vvF-Fd-S5A" firstAttribute="width" secondItem="Ze5-6b-2t3" secondAttribute="width" id="FOa-YB-6wH"/>
                             <constraint firstItem="3Qb-h0-xEh" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="Rsn-me-kAa"/>
+                            <constraint firstAttribute="trailing" secondItem="vN2-gq-wgi" secondAttribute="trailing" constant="-1" id="V3A-fe-4dk"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="3Qb-h0-xEh" secondAttribute="bottom" id="XcT-OB-DU4"/>
+                            <constraint firstItem="vN2-gq-wgi" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="XlK-Qr-1fP"/>
                             <constraint firstItem="vvF-Fd-S5A" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="bOc-7N-AIb"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="vN2-gq-wgi" secondAttribute="bottom" constant="40" id="bsK-lG-RbG"/>
+                            <constraint firstItem="vvF-Fd-S5A" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="h0N-fN-8gG"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="3Qb-h0-xEh" secondAttribute="trailing" id="ljc-j1-U9T"/>
+                            <constraint firstItem="vvF-Fd-S5A" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="ut1-Kh-VJV"/>
                             <constraint firstItem="vvF-Fd-S5A" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="100" id="w8C-Kz-OwC"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
@@ -51,6 +68,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="dawgj.jpg" width="1105" height="1619"/>
+        <image name="oogieLogoNotes.png" width="512" height="512"/>
     </resources>
 </document>

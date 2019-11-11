@@ -18,6 +18,7 @@
 		7208A4C922E2C7F3000AA144 /* Marker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7208A4C822E2C7F3000AA144 /* Marker.swift */; };
 		722753CA2333766300A2DC29 /* dog.wav in Resources */ = {isa = PBXBuildFile; fileRef = 722753C92333766300A2DC29 /* dog.wav */; };
 		722BB24522F3B2C900D990B2 /* synthPanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = 722BB24422F3B2C900D990B2 /* synthPanel.xib */; };
+		72372EDE2373DC890065F58A /* Misc in Resources */ = {isa = PBXBuildFile; fileRef = 72372EDD2373DC890065F58A /* Misc */; };
 		7237D6B1230FC49F00A38D63 /* AllPatches.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7237D6B0230FC49F00A38D63 /* AllPatches.swift */; };
 		7237FEB22306952B000A571A /* OVStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7237FEB12306952B000A571A /* OVStruct.swift */; };
 		723B1AB12333406A00AAD931 /* vwhorn44k.wav in Resources */ = {isa = PBXBuildFile; fileRef = 723B1AB02333406A00AAD931 /* vwhorn44k.wav */; };
@@ -35,6 +36,12 @@
 		725F034B22E304E700A6A5FD /* soundFX.m in Sources */ = {isa = PBXBuildFile; fileRef = 725F034522E304E700A6A5FD /* soundFX.m */; };
 		725F034C22E304E700A6A5FD /* oogieMidiStubs.m in Sources */ = {isa = PBXBuildFile; fileRef = 725F034622E304E700A6A5FD /* oogieMidiStubs.m */; };
 		726323F52339FBDB00F393D4 /* PercKitPatches in Resources */ = {isa = PBXBuildFile; fileRef = 726323F42339FBDB00F393D4 /* PercKitPatches */; };
+		72632E49237889C200867962 /* oogieLogoNotes.png in Resources */ = {isa = PBXBuildFile; fileRef = 72632E48237889C200867962 /* oogieLogoNotes.png */; };
+		726CA86F2376566300C382AE /* PatchEditVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726CA86E2376566200C382AE /* PatchEditVC.swift */; };
+		726CA8712376566800C382AE /* helpVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726CA8702376566800C382AE /* helpVC.swift */; };
+		726CA8742376580300C382AE /* rhArrow.png in Resources */ = {isa = PBXBuildFile; fileRef = 726CA872237657FF00C382AE /* rhArrow.png */; };
+		726CA8752376580300C382AE /* helpit.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 726CA8732376580100C382AE /* helpit.jpg */; };
+		726CA877237658A600C382AE /* dnArrow.png in Resources */ = {isa = PBXBuildFile; fileRef = 726CA876237658A600C382AE /* dnArrow.png */; };
 		727A5612233996D80095BA90 /* synthIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 727A560E233996D70095BA90 /* synthIcon.png */; };
 		727A5613233996D80095BA90 /* percIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 727A560F233996D80095BA90 /* percIcon.png */; };
 		727A5614233996D80095BA90 /* sampleIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 727A5610233996D80095BA90 /* sampleIcon.png */; };
@@ -43,6 +50,8 @@
 		727F08DD2367B5B80054C517 /* OogiePipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727F08DC2367B5B80054C517 /* OogiePipe.swift */; };
 		727F08DF23680A8E0054C517 /* PipeStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727F08DE23680A8E0054C517 /* PipeStruct.swift */; };
 		7283A65D234085400088560D /* infoText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7283A65C234085400088560D /* infoText.swift */; };
+		728D0B1A2377B67D003CC45A /* icon256.png in Resources */ = {isa = PBXBuildFile; fileRef = 728D0B192377B67D003CC45A /* icon256.png */; };
+		728D0B1C2377B804003CC45A /* oogieLogo.png in Resources */ = {isa = PBXBuildFile; fileRef = 728D0B1B2377B804003CC45A /* oogieLogo.png */; };
 		72AE3D612360A516008EEEB7 /* tp.png in Resources */ = {isa = PBXBuildFile; fileRef = 72AE3D602360A515008EEEB7 /* tp.png */; };
 		72AFB97E23070B640009A577 /* OogieShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72AFB97D23070B640009A577 /* OogieShape.swift */; };
 		72B3E89D2342ECA300F30AB7 /* dawgj.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 72B3E89C2342ECA300F30AB7 /* dawgj.jpg */; };
@@ -78,6 +87,7 @@
 		721FAF3C2338795000DC3091 /* GMidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GMidi.h; sourceTree = "<group>"; };
 		722753C92333766300A2DC29 /* dog.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dog.wav; sourceTree = "<group>"; };
 		722BB24422F3B2C900D990B2 /* synthPanel.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = synthPanel.xib; sourceTree = "<group>"; };
+		72372EDD2373DC890065F58A /* Misc */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Misc; sourceTree = "<group>"; };
 		7237D6B0230FC49F00A38D63 /* AllPatches.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllPatches.swift; sourceTree = "<group>"; };
 		7237FEB12306952B000A571A /* OVStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OVStruct.swift; sourceTree = "<group>"; };
 		723B1AB02333406A00AAD931 /* vwhorn44k.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = vwhorn44k.wav; sourceTree = "<group>"; };
@@ -103,6 +113,12 @@
 		725F034822E304E700A6A5FD /* SynthDave.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SynthDave.h; sourceTree = "<group>"; };
 		725F035E22E305CC00A6A5FD /* oogie2D-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "oogie2D-Bridging-Header.h"; sourceTree = "<group>"; };
 		726323F42339FBDB00F393D4 /* PercKitPatches */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PercKitPatches; sourceTree = "<group>"; };
+		72632E48237889C200867962 /* oogieLogoNotes.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = oogieLogoNotes.png; sourceTree = "<group>"; };
+		726CA86E2376566200C382AE /* PatchEditVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PatchEditVC.swift; sourceTree = "<group>"; };
+		726CA8702376566800C382AE /* helpVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = helpVC.swift; sourceTree = "<group>"; };
+		726CA872237657FF00C382AE /* rhArrow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = rhArrow.png; sourceTree = "<group>"; };
+		726CA8732376580100C382AE /* helpit.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = helpit.jpg; sourceTree = "<group>"; };
+		726CA876237658A600C382AE /* dnArrow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = dnArrow.png; sourceTree = "<group>"; };
 		727A560E233996D70095BA90 /* synthIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = synthIcon.png; sourceTree = "<group>"; };
 		727A560F233996D80095BA90 /* percIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = percIcon.png; sourceTree = "<group>"; };
 		727A5610233996D80095BA90 /* sampleIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sampleIcon.png; sourceTree = "<group>"; };
@@ -112,6 +128,8 @@
 		727F08DC2367B5B80054C517 /* OogiePipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogiePipe.swift; sourceTree = "<group>"; };
 		727F08DE23680A8E0054C517 /* PipeStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipeStruct.swift; sourceTree = "<group>"; };
 		7283A65C234085400088560D /* infoText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = infoText.swift; sourceTree = "<group>"; };
+		728D0B192377B67D003CC45A /* icon256.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon256.png; sourceTree = "<group>"; };
+		728D0B1B2377B804003CC45A /* oogieLogo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = oogieLogo.png; sourceTree = "<group>"; };
 		72AE3D602360A515008EEEB7 /* tp.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = tp.png; sourceTree = "<group>"; };
 		72AFB97D23070B640009A577 /* OogieShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogieShape.swift; sourceTree = "<group>"; };
 		72B3E89C2342ECA300F30AB7 /* dawgj.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = dawgj.jpg; sourceTree = "<group>"; };
@@ -172,7 +190,9 @@
 				725F033F22E304E700A6A5FD /* audio */,
 				5226E90F1FD4481B00C72C21 /* AppDelegate.swift */,
 				5226E9111FD4481B00C72C21 /* ViewController.swift */,
+				726CA86E2376566200C382AE /* PatchEditVC.swift */,
 				72E463E723702E3D003360D6 /* chooserVC.swift */,
+				726CA8702376566800C382AE /* helpVC.swift */,
 				7255495D232365A70054A522 /* TextureVC.swift */,
 				72554960232369E90054A522 /* TextureCell.swift */,
 				5226E9131FD4481B00C72C21 /* Main.storyboard */,
@@ -218,6 +238,7 @@
 		725F034D22E3054300A6A5FD /* Samples */ = {
 			isa = PBXGroup;
 			children = (
+				72372EDD2373DC890065F58A /* Misc */,
 				727EDCE22335C0D70028B011 /* moog01.wav */,
 				722753C92333766300A2DC29 /* dog.wav */,
 				723B1AB6233341C000AAD931 /* bub1.wav */,
@@ -244,6 +265,12 @@
 		72EE83812312536B00FFAAE1 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				72632E48237889C200867962 /* oogieLogoNotes.png */,
+				728D0B1B2377B804003CC45A /* oogieLogo.png */,
+				728D0B192377B67D003CC45A /* icon256.png */,
+				726CA876237658A600C382AE /* dnArrow.png */,
+				726CA8732376580100C382AE /* helpit.jpg */,
+				726CA872237657FF00C382AE /* rhArrow.png */,
 				72AE3D602360A515008EEEB7 /* tp.png */,
 				72DCE764235538C200E7102C /* oog2-stripey00t.png */,
 				72B3E89C2342ECA300F30AB7 /* dawgj.jpg */,
@@ -323,14 +350,17 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				726CA8742376580300C382AE /* rhArrow.png in Resources */,
 				72DB6EAE2329C56B005406DC /* rightBevel.png in Resources */,
 				72DEB0A52320C049005A9505 /* rainbowRing.png in Resources */,
 				726323F52339FBDB00F393D4 /* PercKitPatches in Resources */,
 				727A5612233996D80095BA90 /* synthIcon.png in Resources */,
 				72B3E89D2342ECA300F30AB7 /* dawgj.jpg in Resources */,
+				726CA877237658A600C382AE /* dnArrow.png in Resources */,
 				72AE3D612360A516008EEEB7 /* tp.png in Resources */,
 				72DB6EB02329C56B005406DC /* bottomBevel.png in Resources */,
 				5226E91A1FD4481B00C72C21 /* LaunchScreen.storyboard in Resources */,
+				728D0B1A2377B67D003CC45A /* icon256.png in Resources */,
 				72DCE765235538C200E7102C /* oog2-stripey00t.png in Resources */,
 				7249379B230468F00053BC79 /* SynthPatches in Resources */,
 				5226E9241FD44A5600C72C21 /* star.png in Resources */,
@@ -341,10 +371,13 @@
 				72D4A29723332C45002C4D45 /* Percussion in Resources */,
 				725F033A22E2FF2500A6A5FD /* spectrumGradient.png in Resources */,
 				720110AD232B5D5A00E02CCE /* fineGear.png in Resources */,
+				72632E49237889C200867962 /* oogieLogoNotes.png in Resources */,
+				72372EDE2373DC890065F58A /* Misc in Resources */,
 				5226E9171FD4481B00C72C21 /* Assets.xcassets in Resources */,
 				72C3D672234F074800560EC4 /* wheel01.png in Resources */,
 				72C91CE0235835B1009858F1 /* GMPatches in Resources */,
 				72D4A29623332C45002C4D45 /* GeneralMidi in Resources */,
+				728D0B1C2377B804003CC45A /* oogieLogo.png in Resources */,
 				725F033E22E3036400A6A5FD /* sg2.png in Resources */,
 				727A5615233996D80095BA90 /* percKitIcon.png in Resources */,
 				5226E9151FD4481B00C72C21 /* Main.storyboard in Resources */,
@@ -352,6 +385,7 @@
 				722753CA2333766300A2DC29 /* dog.wav in Resources */,
 				723B1AB7233341C100AAD931 /* bub1.wav in Resources */,
 				722BB24522F3B2C900D990B2 /* synthPanel.xib in Resources */,
+				726CA8752376580300C382AE /* helpit.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -371,8 +405,10 @@
 				727F08DF23680A8E0054C517 /* PipeStruct.swift in Sources */,
 				72DB6EAA2329C4CA005406DC /* Knob.swift in Sources */,
 				72D04B0122E6C232001922E2 /* OogieVoice.swift in Sources */,
+				726CA8712376566800C382AE /* helpVC.swift in Sources */,
 				7208A4C922E2C7F3000AA144 /* Marker.swift in Sources */,
 				725F034B22E304E700A6A5FD /* soundFX.m in Sources */,
+				726CA86F2376566300C382AE /* PatchEditVC.swift in Sources */,
 				7255495E232365A70054A522 /* TextureVC.swift in Sources */,
 				727F08DD2367B5B80054C517 /* OogiePipe.swift in Sources */,
 				72AFB97E23070B640009A577 /* OogieShape.swift in Sources */,

@@ -29,6 +29,8 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     var filez : [String] = []
     var chosenFile = ""
     var newName = ""
+    var chooserFolder = "scenes" //Default to scenes
+
 
     //---(chooserVC)--------------------------------------
     override func viewDidLoad() {
@@ -36,7 +38,8 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         table.delegate = self
         table.dataSource = self
         //get folder contents...
-        filez = DataManager.getSceneDirectoryContents()
+//        static func getDirectoryContents(whichDir : String) -> [String]
+        filez = DataManager.getDirectoryContents(whichDir: chooserFolder)
         saveButton.isHidden = true //NO NEED? (mode == "load")
         if mode == "load"
         {

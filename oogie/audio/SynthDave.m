@@ -26,6 +26,7 @@
 // DHS 10/6      fix bug in fillBuffer, use buffer type to determine synth buffer
 //                 wraparound as opposed to assuming synths occupy low 8 buffers exclusively
 // DHS 10/17     add support for sample envelopes
+// DHS 11/9      add buildInPlace arg to buildEnvelope, copyBuffer, copyEnvelope
 #import <QuartzCore/CABase.h>
 #import "SynthDave.h"
 #include "oogieMidiStubs.h"
@@ -89,6 +90,8 @@ float lvolbuf[16];
 float rvolbuf[16];
 int lrvolptr,lrvolmod;
 AudioFileID WAVfileID;
+int copyingBuffer;
+int copyingEnvelope;
 
 short *audioRecBuffer;
 
@@ -172,7 +175,7 @@ short *audioRecBuffer;
         aFactor             = 0.0f;
         bFactor             = 0.0f;
         recording = reclength = recptr = recsize = 0;
-        
+        copyingBuffer = copyingEnvelope = -1;
         //NSLog(@" null out audioRecBuffer...");
         audioRecBuffer = NULL;       
         recFileName = NULL;
@@ -554,37 +557,120 @@ short *audioRecBuffer;
 
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
-- (void)buildEnvelope:(int)which 
+// 11/9 Destructive copy!
+-(void) copyBuffer : (int) from : (int) to : (BOOL) clear
+{
+    copyingBuffer = to;
+    //Free mem if needed
+    if (clear)
+    {
+        free(sBufs[to]);
+        sBufs[to] = NULL;
+    }
+    int blen = sBufLens[from];
+    sBufs[to] = malloc(blen * sizeof(float));
+    if (!sBufs[to]) return;
+    //NSLog(@"copy buffer from %d to %d  size [%d]",from,to,blen);
+    for (int i=0;i<blen;i++)
+    {
+        //if (i % 16 == 0) NSLog(@"...%f",sBufs[from][i]);
+        sBufs[to][i] = sBufs[from][i];
+    }
+    sBufLens[to]  = sBufLens[from];
+    sBufChans[to] = sBufChans[from];
+    copyingBuffer = -1;
+
+} //end copyBuffer
+
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+// 11/9 Destructive copy!
+-(void) copyEnvelope : (int) from : (int) to
+{
+    copyingEnvelope = to;
+//    NSLog(@"copy envelope from %d to %d",from,to);
+    //Free mem if needed
+    if (sEnvs[to] != NULL)
+    {
+        free(sEnvs[to]);
+        sEnvs[to] = NULL;
+    }
+    int elen = envLength[from];
+    sEnvs[to] = malloc(elen * sizeof(float));
+    if (!sEnvs[to]) return;
+    for (int i=0;i<elen;i++)
+    {
+        //if (i % 16 == 0) NSLog(@"...%f",sEnvs[from][i]);
+        sEnvs[to][i] = sEnvs[from][i];
+    }
+    envLength[to] = envLength[from];
+    //REDUNDANT?
+    envDataLength[to] = envDataLength[from];
+    
+    //NSLog(@" elen[%d] %d vs datalen %d",to,envLength[to] ,envDataLength[to] );
+    envIsUp[to]   = 1;
+    sElen[to] = sElen[from];
+    copyingEnvelope = -1;
+
+
+} //end copyEnvelope
+
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+// 11/9
+-(NSArray *) getEnvelopeForDisplay: (int) which : (int) size
+{
+    if (size < 2 || envLength[which] < 2) return nil;
+    NSMutableArray *a = [[NSMutableArray alloc]init];
+    int optr = 0;
+    int op = 0;
+    int phase = 0;
+    int duhsize = attackLength + decayLength + sustainLength + releaseLength;
+    //int elen = envLength[which];
+    float bcf = (float)duhsize / (float)size;
+    //bcf = bcf / 4; //Account for size?
+    for (int i=0;i<size;i++) //fill output
+    {
+        optr = (int)((float) i * bcf);
+        if      (optr <  attackLength) phase = 0;
+        else if (optr < (attackLength + decayLength)) phase = 1;
+        else if (optr < (attackLength + decayLength+sustainLength)) phase = 2;
+        else phase = 3;
+        float fff = sEnvs[which][optr];
+        if (phase != op) fff = -1.0; //Mark phase change
+        op = phase;
+        [a addObject:[NSNumber numberWithFloat: fff]];
+    }
+    return [NSArray arrayWithArray:a];
+} //end getEnvelopeForDisplay
+
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+- (void)buildEnvelope:(int)which : (BOOL) buildInPlace
 {
     //DHS 10/17 avoid redundant calls:
-    if (envDataLength[which] > 0) return;
+    if (!buildInPlace && envDataLength[which] > 0) return;
 	// All envelopes are same length, with data from 0.0 to 1.0. 
 	//  Each synth voice will have a corresponding envelope? 
 	// Because lower tones last longer than higher tones, we will use a delta
 	// value to step through this table. MIDI note number 64 has delta = 1.0f.
 	float envsave;
 	int i,savei,esize;
-	int attackLength, decayLength , sustainLength, releaseLength;
     //envelope was in use? Clobber it!
-    if (sEnvs[which] != NULL)
+    if (sEnvs[which] != NULL && !buildInPlace)
     {
         NSLog(@"  ...free env %d...",which);
         free(sEnvs[which]);
         sEnvs[which] = NULL;
     }
-	if (1)  
+    envLength[which] = (int)sampleRate * 2;  // 2? seconds DHS MAKE IT BIG
+    envIsUp[which] = 1;
+    if (envLength[which] && (sEnvs[which] == NULL)) //Need to allocate?
 	{
-		envLength[which] = (int)sampleRate * 2;  // 2? seconds DHS MAKE IT BIG
-		envIsUp[which] = 1;
-	}
-    if (envLength[which]) //Legal Envelope length? getit
-	{
+        //NSLog(@" malloc env [%d] size %d",which,envLength[which]);
         esize = envLength[which]*sizeof(float);
 		sEnvs[which] = (float*)malloc(esize);
 		if (!sEnvs[which]) return;
         sElen[which] = esize;
 	}
-    else {
+    else if (!envLength[which]) {
         //NSLog(@" error in buildEnvelope: zero env length, which %d",which);
         return;
     }
@@ -637,9 +723,12 @@ short *audioRecBuffer;
 		{
             if (i > sElen[which]) break;   //OUCH! Shouldn't happen
             sEnvs[which][i] = envsave - envsave*((float)(i-savei) / releaseLength);
-            //NSLog(@" ...Renv[%d] %f",i,sEnvs[which][i]);
 		}
-	//DHS WHY doesn't i already have the length here...???
+//    for (int i=0;i<256;i++)
+//    {
+//      NSLog(@" ...env[%d] %f",i,sEnvs[which][i]);
+//    }
+    //DHS WHY doesn't i already have the length here...???
 	envDataLength[which] = i + releaseLength;
 }  //end buildEnvelope
 
@@ -1085,7 +1174,8 @@ short *audioRecBuffer;
 	SInt16* p = (SInt16*)buffer;
 	int f,n,a,c,wn;
     int sbc;
-	float sValue,sValue2,ml,mr,b,sl,sr,envValue; 
+	float sValue,sValue2,ml,mr,b,sl,sr,envValue;
+    
 	//double startTime = CACurrentMediaTime();
     sValue = sValue2 = 0.0f; //DHS 7/10/15 Compiler warnings
 	// We are going to render the frames one-by-one. For each frame, we loop
@@ -1098,6 +1188,10 @@ short *audioRecBuffer;
 		ml = mr = 0.0f;  // the mixed value for this frame
 		for (n = 0; n < MAX_TONE_EVENTS; ++n)
 		{
+            if (tones[n].state != STATE_INACTIVE )
+            {
+                int duh = 0;
+            }
 			if (tones[n].state == STATE_MONOFADEOUT)  // fading out in mono mode?
             {
                 tones[n].gain *= 0.5; //attenuate gain by half each sample (TUNE IF NEEDED)...
@@ -1123,7 +1217,7 @@ short *audioRecBuffer;
             if (tones[n].toneType == SYNTH_VOICE || tones[n].needsEnvelope) //0 - 7: synths...we need an envelope
 			{
                 if (tones[n].infinite) envValue = 1.0;
-                else
+                else if (copyingEnvelope != wn) //11/9 don't access envelope on copy!
                 {
                     a = (int)tones[n].envStep;   // integer part
                     b = tones[n].envStep - a;  // decimal part
@@ -1181,14 +1275,6 @@ short *audioRecBuffer;
 					c = a;
 				}
 			}
-//            sValue = 0;
-//			if (sbc == 1) //mono...
-//				sValue = (1.0f - b)*sBufs[wn][a] + b*sBufs[wn][c];
-//			else if (sbc == 2) //stereo...
-//			{
-//				sValue  = (1.0f - b)*sBufs[wn][2*a] + b*sBufs[wn][2*c];
-//				sValue2 = (1.0f - b)*sBufs[wn][1+2*a] + b*sBufs[wn][1+2*c];
-//			}
 			// Wrap round when we get to the end of the sine look-up table.
 			if (tones[n].toneType == SYNTH_VOICE) //0 - 7: synths...
 			{
@@ -1239,18 +1325,21 @@ short *audioRecBuffer;
             if (tones[n].state != STATE_INACTIVE) //DHS 6/6/17
             {
                 sValue = 0;
-                if (sbc == 1) //mono...
-                    sValue = (1.0f - b)*sBufs[wn][a] + b*sBufs[wn][c];
-                else if (sbc == 2) //stereo...
+                if (copyingBuffer != wn) //11/9 Dont access on a copy!
                 {
-                    sValue  = (1.0f - b)*sBufs[wn][2*a] + b*sBufs[wn][2*c];
-                    sValue2 = (1.0f - b)*sBufs[wn][1+2*a] + b*sBufs[wn][1+2*c];
+                    if (sbc == 1) //mono...
+                        sValue = (1.0f - b)*sBufs[wn][a] + b*sBufs[wn][c];
+                    else if (sbc == 2) //stereo...
+                    {
+                        sValue  = (1.0f - b)*sBufs[wn][2*a] + b*sBufs[wn][2*c];
+                        sValue2 = (1.0f - b)*sBufs[wn][1+2*a] + b*sBufs[wn][1+2*c];
+                    }
                 }
-                
                 // Calculate the final sample value.
                 //  we need to fill Left/Right buffers EVEN with mono samples!
                 sl = sValue * envValue * tones[n].gain  * tones[n].lpan;
-                // NSLog(@" sl: %f %f %f %f",sValue,envValue,tones[n].gain,tones[n].lpan);
+                //if (lrvolmod % 256 == 0)
+                //      NSLog(@" sl: %f %f %f %f",sValue,envValue,tones[n].gain,tones[n].lpan);
                 sr = 0;
                 if (sbc == 1) //mono...
                     sr = sValue * envValue * tones[n].gain  * tones[n].rpan;

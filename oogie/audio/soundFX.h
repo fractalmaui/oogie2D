@@ -57,13 +57,18 @@
 -(void) loadAudioBKGDForOOGIE : (int) immediateSampleNum;
 -(void) loadAudioForOOGIE;
 -(NSMutableDictionary*) loadGeneralMidiNames;
+-(void) copyBuffer : (int) from : (int) to : (BOOL) clear;
+-(void) copyEnvelope : (int) from : (int) to;
+
 - (void) dumpBuffer : (int) which : (int) dsize;
 
 -(void) glintmusic : (int) whichizzit : (int) psx;
 -(NSString*) getGMName : (int) buffer;
+-(NSArray *) getEnvelopeForDisplay: (int) which : (int) size;
 -(int) getPercussionTriggerKey : (NSString *)name;
 -(int) getPercussionBuffer     : (NSString *)name;
 -(int) getGMBuffer     : (NSString *)name;
+-(int) getWorkBuffer;
 -(NSArray*) getGMBufferNames;
 -(NSArray*) getPercussionBufferNames;
 - (void)makePercSound : (int) which : (int) note; //DHS 9/22 test
@@ -74,6 +79,7 @@
 - (void) makeTicSoundWithPitch : (int) which : (int) pitch;
 - (void) muzak : (int)which : (int) mtimeoff;
 - (void) releaseAllNotesByWaveNum : (int) which;
+- (void)releaseAllNotes;
 - (void) setSoundFileName : (int) index : (NSString *)sfname;
 - (void) setMasterLevel : (float) level;
 - (void) setPan : (int) pan;
@@ -86,7 +92,7 @@
 - (void) stop;
 
 //DHS 2019: Synth convenience functions, for oogie/swift
--(void) buildEnvelope: (int) a1;
+- (void)buildEnvelope:(int)a1 : (BOOL) a2;
 -(void) buildaWaveTable : (int) a1 : (int) a2;
 -(int)  getSynthNoteCount;
 -(int)  getSynthUniqueCount;

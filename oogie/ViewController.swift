@@ -43,6 +43,8 @@
 //          fix shape params reset -> update , add cancelEdit
 //  Nov 4   add file chooser, load/save/save as scene,
 //            move fadein/out to paramLabel, fixed clearScene
+//  Nov 8   Add patch Editor
+//  Nov 9   add isPlaying flag, on in viewDidLoad, off in prepare(ForSegue
 import UIKit
 import SceneKit
 import Photos
@@ -50,7 +52,7 @@ import Photos
 let pi    = 3.141592627
 let twoPi = 6.2831852
 
-class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate {
+class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate,patchEditVCDelegate {
 
     @IBOutlet weak var skView: SCNView!
     @IBOutlet weak var spnl: synthPanel!
@@ -62,6 +64,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     @IBOutlet weak var editButton: UIButton!
 
     var fadeTimer = Timer()
+    var colorTimer = Timer()
     var pLabel = infoText()
     //10/29 version #
     var version = ""
@@ -152,7 +155,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     //For creating new shapes
     var shapeClockPos  : Int = 0   //0 = noon 1 = 3pm etc
-
+    var isPlaying = false
 
 
     let pitchShiftDefault = 0 //WILL BECOME An Appdelegate field
@@ -190,8 +193,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         lpgr.delaysTouchesBegan = true
         lpgr.delegate = self
         self.view.addGestureRecognizer(lpgr)
-        
-        _ = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.playAllMarkers), userInfo:  nil, repeats: true)
         
         //Get our default scene, move to appdelegate?
         if DataManager.sceneExists(fileName : "default")
@@ -266,12 +267,25 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         
         //10/16 add notification to see when samples are loaded...
         NotificationCenter.default.addObserver(self, selector: #selector(self.samplesLoaded(notification:)), name: Notification.Name("samplesLoadedNotification"), object: nil)
+
+        colorTimer = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.playAllMarkers), userInfo:  nil, repeats: true)
     } //end viewDidLoad
-    
+
     
     //=====<oogie2D mainVC>====================================================
     override var supportedInterfaceOrientations:UIInterfaceOrientationMask {
         return UIInterfaceOrientationMask(rawValue: UIInterfaceOrientationMask.portrait.rawValue | UIInterfaceOrientationMask.portraitUpsideDown.rawValue)
+    }
+
+    //=====<oogie2D mainVC>====================================================
+    func startPlayingMusic()
+    {
+        isPlaying = true
+    }
+    //=====<oogie2D mainVC>====================================================
+    func stopPlayingMusic()
+    {
+        isPlaying = false   //NO Sounds!
     }
 
     
@@ -331,8 +345,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
             //DEBUG!
             if selectedFieldMax == selectedFieldMin {print("ERROR: no param range")}
-            //DHS 11/4 No hide?
-            //pLabel.isHidden = selectedFieldType    == "text"
             textField.isHidden = selectedFieldType != "text"
 
             
@@ -406,11 +418,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //print("editmode \(knobMode)")
     } //end editSelect
     
+    
+
     //=====<oogie2D mainVC>====================================================
     // Texture Segue called just above... get textureVC handle here...
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         cancelEdit()  //Editing? Not any more!
-
+        stopPlayingMusic()
         if segue.identifier == "textureSegue" {
             if let nextViewController = segue.destination as? TextureVC {
                     nextViewController.delegate = self
@@ -429,9 +443,23 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 chooser.mode     = "save"
             }
         }
+        //11/8
+        else if segue.identifier == "EditPatchSegue" {
+            if let nextViewController = segue.destination as? PatchEditVC {
+                    nextViewController.delegate = self
+            }
+        }
 
     }
 
+    override func unwind(for unwindSegue: UIStoryboardSegue, towardsViewController subsequentVC: UIViewController) {
+        print("unwind from segue")
+    }
+    //=====<oogie2D mainVC>====================================================
+    override func canPerformUnwindSegueAction(_ action: Selector, from fromViewController: UIViewController, sender: Any?) -> Bool {
+        print("can? unwind from segue")
+        return false
+    }
     
     //=====<oogie2D mainVC>====================================================
     func resetKnobToNewValues(kv:Float , mn : Float , mx : Float)
@@ -1121,11 +1149,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             } //end if name
         }    // end if let name
 
-    }
-
-
-
-
+    } //end handleTouch
 
     //=====<oogie2D mainVC>====================================================
     func updateUIForDeselectVoiceOrShape()
@@ -1150,6 +1174,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         let tstr = "Menu (V" + version + ")"
         let alert = UIAlertController(title: tstr, message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        alert.addAction(UIAlertAction(title: "Patch Editor", style: .default, handler: { action in
+            self.performSegue(withIdentifier: "EditPatchSegue", sender: self)
+        }))
         alert.addAction(UIAlertAction(title: "Clear Scene", style: .default, handler: { action in
             self.clearScene()
         }))
@@ -1157,7 +1184,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.performSegue(withIdentifier: "chooserLoadSegue", sender: self)
         }))
         alert.addAction(UIAlertAction(title: "Save Scene", style: .default, handler: { action in
-            self.packupSceneAndSave(name:self.OVSceneName)
+            self.packupSceneAndSave(sname:self.OVSceneName)
             self.pLabel.updateLabelOnly(lStr:"Saved " + self.OVSceneName)
         }))
         alert.addAction(UIAlertAction(title: "Save Scene As...", style: .default, handler: { action in
@@ -1535,7 +1562,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     
     //=====<oogie2D mainVC>====================================================
-    func packupSceneAndSave(name:String)
+    func packupSceneAndSave(sname:String)
     {
         //10/26 first we need to clean target...
         OVScene.voices.removeAll()
@@ -1549,7 +1576,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             OVScene.shapes[name] = nextShape
         }
-        DataManager.saveScene(self.OVScene, with: name)
+        DataManager.saveScene(self.OVScene, with: sname)
     } //end packupSceneAndSave
 
     
@@ -1575,13 +1602,20 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
         return ""
     } //end findShape
+    
 
     //=====<oogie2D mainVC>====================================================
     // Get color samples, output music!
     // called by timer repeatedly...
     @objc func playAllMarkers()
     {
-        if (allMarkers.count == 0) {return;}
+        //WTF? this is different from any advice online!
+        let vc = self.presentedViewController
+        if vc == nil   //MainVC is on top...
+        {
+            if !isPlaying {startPlayingMusic()}
+        }
+        if (allMarkers.count == 0 || vc != nil) {return;}
 
         //iterate thru dictionary of voices...
         for counter in 0...allMarkers.count-1
@@ -1771,7 +1805,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             oop.duty    = 0
             oop.wave    = 0
             oop.type    = Int(SYNTH_VOICE)
-            oop.saveItem() //Write it out!
+            oop.saveItem(filename:name) //Write it out!
         }
     } //end writeSynthPatches
     
@@ -1794,7 +1828,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 oop.duty    = 0
                 oop.wave    = 0
                 oop.type    = Int(SAMPLE_VOICE)
-                oop.saveItem() //Write it out!
+                oop.saveItem(filename:patchName) //Write it out!
             }
         }
     } //end writeGMPatches
@@ -1818,7 +1852,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 oop.duty    = 0
                 oop.wave    = 0
                 oop.type    = Int(PERCUSSION_VOICE)
-                oop.saveItem() //Write it out!
+                oop.saveItem(filename:patchName) //Write it out!
             }
         }
     } //end writePercussionPatches
@@ -1839,7 +1873,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             (sfx() as! soundFX).setSynthDuty(Int32(oov.OOP.duty));
             //print("build wave/env ADSR \(oov.OOP.attack) :  \(oov.OOP.decay) :  \(oov.OOP.sustain) :  \(oov.OOP.release)")
             (sfx() as! soundFX).buildaWaveTable(0,Int32(oov.OOP.wave));  //args whichvoice,whichsynth
-            (sfx() as! soundFX).buildEnvelope(0); //arg whichvoice?
+            (sfx() as! soundFX).buildEnvelope(0,false); //arg whichvoice?
         }
         else if (oov.OOP.type == PERCUSSION_VOICE)
         {
@@ -1857,7 +1891,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
             //DHS 10/14 set up pointer to GM sample...
             oov.bufferPointer = Int((sfx() as! soundFX).getGMBuffer(oov.OOP.name))
-            (sfx() as! soundFX).buildEnvelope(Int32(oov.bufferPointer)); //arg whichvoice?
+            (sfx() as! soundFX).buildEnvelope(Int32(oov.bufferPointer),false); //arg whichvoice?
         }
     } //end setupSynthOrSample
     
@@ -2057,8 +2091,22 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //Delegate callback from Chooser...
     func needToSaveFile(name: String) {
         OVSceneName = name
-        self.packupSceneAndSave(name:OVSceneName)
+        self.packupSceneAndSave(sname:OVSceneName)
         pLabel.updateLabelOnly(lStr:"Saved " + OVSceneName)
+    }
+
+    
+    //--------<patchEditVCDelegate.-------------------------------------
+    func patchEditVCSavePatchNow(name : String)
+    {
+        print("save NOW")
+
+    }
+
+    //--------<patchEditVCDelegate.-------------------------------------
+    func patchEditVCDone(namez : [String] , userPatch : Bool, allNew : Bool)
+    {
+        print("done")
     }
 
 } //end vc class, line 1413 as of 10/10

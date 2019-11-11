@@ -18,6 +18,7 @@
 //  DHS 8/9/13: First Release? WOW! Within a week from inception!
 // DHS 1/23/14: ARC-based version for RoadieTrip
 // DHS 10/17/19 add envelope support for samples
+// DHS 11/9     add copyBuffer
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioUnit/AudioUnit.h>
 #import <AudioToolbox/AudioFile.h>
@@ -145,6 +146,9 @@ ToneEvent;
 	int envDataLength[MAX_SAMPLES];      ///< amount of table space taken up by env...
 	int envIsUp[MAX_SAMPLES]; //DHS 1/8/13: this was a single var...
 	int detune;         ///< overall detune flag...
+    //Last ADSR length
+    int attackLength, decayLength , sustainLength, releaseLength;
+
 	ToneEvent tones[MAX_TONE_EVENTS];
     int queuePtr,arpPtr;
     int arpPlayPtr;
@@ -187,6 +191,9 @@ ToneEvent;
 @property (nonatomic, assign) int poly;
 
 
+-(void) copyBuffer : (int) from : (int) to : (BOOL) clear;
+-(void) copyEnvelope : (int) from : (int) to;
+
 
 -(void)startRecording:(int)newlen;
 -(void)stopRecording:(int)cancel;
@@ -201,6 +208,7 @@ ToneEvent;
 - (float)getLVolume ;
 - (float)getRVolume ;
 -(NSString *)getAudioOutputFileName;
+-(NSArray *) getEnvelopeForDisplay: (int) which : (int) size;
 
 //DHS set master tune
 - (void)setMasterTune:(int)nt;
@@ -225,7 +233,7 @@ ToneEvent;
 
 - (int)clearBuffer:(void*)buffer frames:(int)frames;
 - (int)fillBuffer:(void*)buffer frames:(int)frames;
-- (void)buildEnvelope:(int)which ;
+- (void)buildEnvelope:(int)which : (BOOL) buildInPlace;
 - (void)buildaWaveTable: (int) which :(int) type;
 - (void)buildSampleTable:(int) which;
 - (void)buildRampTable: (int) which;

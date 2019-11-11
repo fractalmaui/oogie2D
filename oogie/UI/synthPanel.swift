@@ -197,7 +197,7 @@ class synthPanel: UIView {
         (sfx() as! soundFX).setSynthRelease(Int32(OV.OOP.release));
         (sfx() as! soundFX).setSynthDuty(Int32(OV.OOP.duty));
         (sfx() as! soundFX).buildaWaveTable(0,Int32(OV.OOP.wave));  //args whichvoice,whichsynth
-        (sfx() as! soundFX).buildEnvelope(0); //arg whichvoice?
+        (sfx() as! soundFX).buildEnvelope(0,false); //arg whichvoice?
     }
 
 }

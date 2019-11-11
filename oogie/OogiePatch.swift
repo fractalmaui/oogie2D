@@ -68,11 +68,11 @@ struct OogiePatch : Codable {
     
     
     //======(OogiePatch)=============================================
-    // Patch gets saved by name
-    func saveItem() {
-        DataManager.savePatch(self, with: name) //itemIdentifier.uuidString)
+    // 11/8 Patch gets saved by name
+    func saveItem(filename : String) {
+        DataManager.savePatch(self, with: filename) //itemIdentifier.uuidString)
     }
-    
+
   
 
     //======(OogiePatch)=============================================
