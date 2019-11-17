@@ -20,6 +20,9 @@
 //   this becomes the "bigHeight". The view then can be toggled between this and
 //   the "smallHeight".  Note there are 2 different types of animations used,
 //   CABasicAnimation and UIView.animate(with...
+//  11/13 add envelopeChanged flag in setupSynthOrSample, now env shows up on load
+//  11/15 add subfolders to builtin saves, add save info prompt
+//  11/16 get patchname again when save is hit, in case KB is up
 import UIKit
 
 protocol patchEditVCDelegate
@@ -88,6 +91,12 @@ class PatchEditVC: UIViewController,
 
     @IBOutlet weak var nameText: UITextField!
     @IBOutlet weak var titleView: UIView!
+    
+    @IBOutlet weak var bTLabel: UILabel!
+    @IBOutlet weak var tTLabel: UILabel!
+    
+    @IBOutlet weak var cancelButton: UIButton!
+    @IBOutlet weak var factoryButton: UIButton!
     @IBOutlet weak var scrollView: UIScrollView!
     @IBOutlet weak var adsrToggle: UISwitch!
     @IBOutlet weak var typePicker: UIPickerView!
@@ -112,9 +121,17 @@ class PatchEditVC: UIViewController,
     @IBOutlet weak var pkSlider7: UISlider!
     @IBOutlet weak var pkSlider8: UISlider!
     
+
+    @IBOutlet weak var prevButton: UIButton!
+    
+    @IBOutlet weak var nextButton: UIButton!
+    
+    @IBOutlet weak var loadButton: UIButton!
+    @IBOutlet weak var saveButton: UIButton!
+    @IBOutlet weak var arpPicker: UIPickerView!
     @IBOutlet weak var adsrImage: UIImageView!
     var delegate: patchEditVCDelegate?
-
+    var chooserMode = "load"
     
     var viewz = Dictionary<Int, ViewSetup>() //Hashed by UIView Tag
     let rhArrow = UIImage.init(named: "rhArrow")
@@ -124,8 +141,13 @@ class PatchEditVC: UIViewController,
     let wtypePickerValues = ["Sine", "Sawtooth", "Square" , "Ramp" , "Noise"]
     let playPickerValues  = ["Off", "Basic", "Scale" , "Octaves" , "Random"]
 
+    let umsg = "This patch exists. If you write over it the old patch will be lost."
+    let bmsg = "This is a Built-In patch. If you write over it the old patch will be replaced. You can restore later from Factory Settings."
+
+    
     var patchName = "default"
-    var opatch = OogiePatch()
+    var patchInfo = PatchieInfo()
+    var opatch    = OogiePatch()
     var needToUseADSR = false
     var patchNamez : [String] = []
     var userPatch = false
@@ -160,6 +182,7 @@ class PatchEditVC: UIViewController,
     let octaveNotes = [28,40,52,64,76,88,100]
     //Audio Sound Effects...
     var sfx = soundFX.sharedInstance
+    var allP = AllPatches.sharedInstance
 
     //=====PatchEditorVC===========================================
     override func viewDidLoad() {
@@ -190,8 +213,48 @@ class PatchEditVC: UIViewController,
         sustainSlider.isContinuous = gotFastCode
         slevelSlider.isContinuous  = gotFastCode
         releaseSlider.isContinuous = gotFastCode
+        
+        playTestNote(midiNote: 64) //Ping! makes full UI OK
 
-    } //end gotFastCode
+        
+        //Place bottom buttons / knobs automagically...
+        let csz = UIScreen.main.bounds.size;
+        let viewWid = csz.width   //10/27 enforce portrait aspect ratio!
+        let viewHit = csz.height
+
+        //11/16 Cosmetic: Line up bottom buttons...
+        // start at Bottom Left, go across to right
+        let steppie = 3
+        var x       = 0
+        var bwh     = 60
+        var y       = Int(viewHit) - 120
+        loadButton.layer.cornerRadius = CGFloat(bwh/2)
+        loadButton.frame =  CGRect(x: x , y: y, width: bwh, height: bwh)
+        
+        x+=(bwh + steppie)
+        saveButton.layer.cornerRadius = CGFloat(bwh/2)
+        saveButton.frame = CGRect(x: x , y: y, width: bwh, height: bwh)
+
+        x+=(bwh + steppie)
+        prevButton.layer.cornerRadius = CGFloat(bwh/2)
+        prevButton.frame = CGRect(x: x , y: y, width: bwh, height: bwh)
+
+        x+=(bwh + steppie)
+        nextButton.layer.cornerRadius = CGFloat(bwh/2)
+        nextButton.frame = CGRect(x: x , y: y, width: bwh, height: bwh)
+
+        //RH Bottom, layout going to left...
+        x = Int(viewWid) - bwh
+        cancelButton.layer.cornerRadius = CGFloat(bwh/2)
+        cancelButton.frame = CGRect(x: x , y: y, width: bwh, height: bwh)
+
+        bwh += 40 //go wider for the stepper
+        x   -= (bwh + steppie)
+        y   -= 20 //stagger up 1/3 button hite
+        playPicker.frame = CGRect(x: x , y: y , width: bwh, height: bwh)
+        updateForPatchInfo() //11/12 set factory button if needed
+
+    } //end viewDidLoad
     
     //=====PatchEditorVC===========================================
     override var canBecomeFirstResponder: Bool
@@ -200,47 +263,85 @@ class PatchEditVC: UIViewController,
     }
 
     //=====PatchEditorVC===========================================
+    @IBAction func prevSelect(_ sender: Any) {
+        print("get next patch??")
+    }
+    
+    //=====PatchEditorVC===========================================
+    @IBAction func nextSelect(_ sender: Any) {
+        print("get prev patch??")
+    }
+    
+    //=====PatchEditorVC===========================================
+    //Triggered by Load button
+    @IBAction func loadSelect(_ sender: Any) {
+        sampleChooserTag = -1
+        //chooser?
+        //try test for now
+        //asdf
+        chooserMode = "loadAllPatches"
+        self.performSegue(withIdentifier: "chooserSegue", sender: self)
+//
+//        let patchie = DataManager.loadPatch(url: DataManager.getPatchDirectory(), with: "default", with: OogiePatch.self)
+            
+//
+//            url:DataManager.getPatchDirectory() ,
+//
+//
+//        (url: DataManager.getPatchDirectory(),
+//                                            with: "default", with: OogiePatch)
+//        print("patchie \(patchie)")
+    }
+    //=====PatchEditorVC===========================================
     @IBAction func testSelect(_ sender: Any) {
         if playLooping {stopTestLoop()}
         playTestNote(midiNote : 64)
     }
     
     //=====PatchEditorVC===========================================
-    func updateADSRDisplay()
-    {
-        print("udpate adsr")
-        let asize = 256
-        let NNvalz = (sfx() as! soundFX).getEnvelopeForDisplay( 255  , Int32(asize))
-        //OUCH. comes back as array of nsnumbers
-        var valz : [Float] = []
-        
-        for val in NNvalz!
-        {
-            if let nn = val as? NSNumber
-            {
-                //                print("nn \(nn.floatValue)")
-                valz.append(nn.floatValue)
-            }
-        }
-        print("OK update image")
-        adsrImage.image = createADSRImage(frame:adsrImage.frame,vals: valz)
-        
+    @IBAction func factoryReset(_ sender: Any) {
+        print("factory reset!")
     }
     
     //=====PatchEditorVC===========================================
-    //Not  used....
-//    func flash(duh:UIButton)
-//    {
-//        let fl = CABasicAnimation(keyPath:"opacity")
-//        fl.duration = 0/3
-//        fl.fromValue = 1
-//        fl.toValue = 0.1
-//        fl.timingFunction = CAMediaTimingFunction(name:.easeInEaseOut)
-//        fl.autoreverses = true
-//        fl.repeatCount = 2
-//        duh.layer.add(fl,forKey:nil)
-//    }
-
+    func getFreshPatchinfo() -> PatchieInfo
+    {
+        if let pinfo = allP.patchInfoDict[opatch.name] {return pinfo}
+        return PatchieInfo()
+    }
+    
+    //=====PatchEditorVC===========================================
+    // called from setupSynthOrSample
+    func updateADSRDisplay()
+    {
+        let asize = 256
+        guard let NNvalz = (sfx() as! soundFX).getEnvelopeForDisplay( 255  , Int32(asize))
+            else {return}
+        //OUCH. comes back as array of nsnumbers
+        var valz : [Float] = []
+        for val in NNvalz  //should be an array of nsnumber floats
+        {
+            if let nn = val as? NSNumber { valz.append(nn.floatValue) }
+        }
+        adsrImage.image = createADSRImage(frame:adsrImage.frame,vals: valz)
+    } //end updateADSRDisplay
+    
+    //=====PatchEditorVC===========================================
+    //11/12 needed at load time or if patch name changes
+    func updateForPatchInfo()
+    {
+        //Try to get patch info for this patch
+        patchInfo = getFreshPatchinfo()
+        factoryButton.isHidden = true
+        var s = "User Patch"
+        if patchInfo.builtin {s = "Builtin Patch"}
+        print(patchInfo)
+        //Update BOTH contrasting labels...
+        bTLabel.text = s
+        tTLabel.text = s
+        factoryButton.isHidden = !patchInfo.factorySettingWasChanged
+    } //end updateForPatchInfo
+    
     //=====PatchEditorVC===========================================
     // Rotates one of our arrow button background +/- 90 degrees
     func rotate90(bb:UIButton, clockwise : Bool , dur : Double)
@@ -259,8 +360,6 @@ class PatchEditVC: UIViewController,
         }
         ar.fromValue = v0
         ar.toValue   = v1
-//11/8 WTF???        ar.timingFunction = CAMediaTimingFunction(name:CAMediaTiming.easeInEaseOut)
-//            .easeInEaseOut)
         CATransaction.setCompletionBlock {
             var i = self.rhArrow
             if clockwise {i = self.dnArrow}
@@ -279,13 +378,18 @@ class PatchEditVC: UIViewController,
         stopTestLoop()
         dismiss(animated: true, completion: nil)
         self.parent?.viewDidLayoutSubviews() //Need to goose parent?
-//        [self.parentViewController viewDidAppear:animated];
     }
 
     //=====PatchEditorVC===========================================
+    // Triggered by "Save" button
     @IBAction func okSelect(_ sender: Any) {
         stopTestLoop()
-        checkPatchAndSave()
+        //Get patch name in case kb is up...
+        if let t = nameText.text
+        {
+            patchName = t
+            checkPatchAndSave()
+        }
     }
 
     //=====PatchEditorVC===========================================
@@ -321,6 +425,7 @@ class PatchEditVC: UIViewController,
     @IBAction func loadSampleSelect(_ sender: Any) {
         let button = sender as! UIButton
         sampleChooserTag = button.tag
+        chooserMode = "load"
         self.performSegue(withIdentifier: "chooserSegue", sender: self)
     }
 
@@ -328,7 +433,7 @@ class PatchEditVC: UIViewController,
     //=====PatchEditorVC===========================================
      @IBAction func adsrChanged(_ sender: Any) {
         let t = sender as! UISwitch
-        needToUseADSR = t.isOn
+        needToUseADSR = !t.isOn
         envelopeChanged = true
      }
 
@@ -367,14 +472,16 @@ class PatchEditVC: UIViewController,
         if segue.identifier == "chooserSegue" {
             if let chooser = segue.destination as? chooserVC {
                 chooser.delegate = self
+                //DETERMINE which chooser folder need?
                 var folder = "gmidi"
                 //handle the 8 percKit chooser boxes...
                 //  also sample box if patch type is percussion
-                if sampleChooserTag < 39 || opatch.type == PERCUSSION_VOICE
-                      {folder = "percussion"}
-                
+                if sampleChooserTag == -1  //Load button? look for patches
+                   { folder = "patches" }
+                else if sampleChooserTag < 39 || opatch.type == PERCUSSION_VOICE
+                   { folder = "percussion"}
                 chooser.chooserFolder = folder
-                chooser.mode     = "load"
+                chooser.mode          = chooserMode
             }
         }
         else if segue.identifier == "helpSegue" {
@@ -404,7 +511,7 @@ class PatchEditVC: UIViewController,
         slevelSlider.setValue(Float(opatch.sLevel), animated: true)
         releaseSlider.setValue(Float(opatch.release), animated: true)
         sOffsetSlider.setValue(Float(opatch.sampleOffset), animated: true)
-
+        
         for i in 1...8 //Find perc labels, get tag, load w/ proper data
         {
             let pkLabel = scrollView.viewWithTag(i)
@@ -412,6 +519,12 @@ class PatchEditVC: UIViewController,
                 pkl.text = opatch.percLoox[i-1]
             }
         }
+        //11/11 fill in sample label by tag...
+        let sampLabel = scrollView.viewWithTag(9)
+        if let sl = sampLabel as? UILabel{
+            sl.text = opatch.name
+        }
+
         let fdiv : Float = 1.0 / 255.0  //Huh? WTF? arent pans 0-255?
         pkSlider1.value = Float(opatch.percLooxPans[0]) * fdiv
         pkSlider2.value = Float(opatch.percLooxPans[1]) * fdiv
@@ -498,8 +611,8 @@ class PatchEditVC: UIViewController,
         updateViewArrows()
         updateViewFrames()
         
-        adsrToggle.isEnabled = (needADSR)
-        
+        adsrToggle.isEnabled = needADSR
+        adsrImage.isHidden   = !needADSR
     } //end updateViewsBasedOnPatchType
     
     //=====PatchEditorVC===========================================
@@ -610,14 +723,30 @@ class PatchEditVC: UIViewController,
     //=====PatchEditorVC===========================================
     func playTestNote(midiNote : Int)
     {
-        print("play note \(midiNote)")
+        //print("play note \(midiNote)")
         setupSynthOrSample()
-        let bptr = (sfx() as! soundFX).getWorkBuffer()
+        var bptr = (sfx() as! soundFX).getWorkBuffer()
         (sfx() as! soundFX).setSynthGain(128)
         (sfx() as! soundFX).setSynthPan(128)
-
-        (sfx() as! soundFX).playNote(Int32(midiNote), Int32(bptr) ,Int32(opatch.type))  
-
+        var noteToPlay = midiNote
+        
+        if (opatch.type == SAMPLE_VOICE)
+        {
+            let gMidiOffset = allP.getOffsetForGMPatch(name:opatch.name)
+            noteToPlay = noteToPlay + gMidiOffset
+            (sfx() as! soundFX).setSynthSampOffset(Int32(opatch.sampleOffset))
+        }
+        else if (opatch.type == PERCKIT_VOICE)
+        {
+            var octave = (midiNote - 20) / 12
+            if (octave < 0 || octave > 7) {octave = 0}
+            let pName = opatch.percLoox[octave]
+            //Dont use work buffer, use built-in samples
+            bptr  = (sfx() as! soundFX).getPercussionBuffer(pName.lowercased())
+            noteToPlay = 64
+            (sfx() as! soundFX).setSynthPan(Int32(opatch.percLooxPans[octave]))
+        }
+        (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(opatch.type))
      } //end playTestNote
     
     //=====PatchEditorVC===========================================
@@ -649,10 +778,8 @@ class PatchEditVC: UIViewController,
     {
         playTimer.invalidate()
         playLooping = false
-
-        /* STUBBED:
+        playPicker.selectRow(0, inComponent: 0, animated:false)
         (sfx() as! soundFX).releaseAllNotes()
-        */
     }
     
     //=====PatchEditorVC===========================================
@@ -691,23 +818,36 @@ class PatchEditVC: UIViewController,
     // if patch file exists, prompts for action, saves otherwise
     func checkPatchAndSave()
     {
-        if DataManager.patchExists(fileName: patchName) { replacePatchPrompt()  }
-        else
+        //11/14 use allpatches test for exist
+        if allP.patchExists(name:patchName) { replacePatchPrompt()  }
+        else //New patches go to user area!! asdf
         {
             allNew = false //Indicate we have at least one replaced patch!
-            packupAndSavePatch()
+            patchInfo.category = "US" //This patch just became a user patch!
+            packupAndSavePatch(pName:patchName)
         }
     } //end checkPatchAndSave
     
     //=====PatchEditorVC===========================================
     func replacePatchPrompt()
     {
-        let alert = UIAlertController(title: "Patch Exists, Replace?", message: "Old Patch will be permanently removed", preferredStyle: UIAlertController.Style.alert)
+        var msg = umsg //user message
+        if let pi = allP.patchInfoDict[patchName] //Got info?
+        {
+            if pi.builtin { msg = bmsg}  //izzit builtin? set message
+        }
+        else
+        {
+            print("Err: looking up patch")
+        }
+        //FIX 11/14  if PatchieInfo
+        let alert = UIAlertController(title: "Patch \(patchName) Exists, Replace?", message: msg,
+                                      preferredStyle: UIAlertController.Style.alert)
         alert.addAction(UIAlertAction(title: "Replace", style: .default, handler: { action in
-            self.packupAndSavePatch()
+            self.packupAndSavePatch(pName:self.patchName)
         }))
-        alert.addAction(UIAlertAction(title: "Rename", style: .default, handler: { action in
-            self.resetScrollAndPromptForPatchName()
+        alert.addAction(UIAlertAction(title: "Make Copy", style: .default, handler: { action in
+            self.packupAndSaveCopyOfPatch()
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
@@ -723,9 +863,19 @@ class PatchEditVC: UIViewController,
     }
     
     //=====PatchEditorVC===========================================
-    // Assumes patch OK to save...
-    func packupAndSavePatch()
+    //Look at patchName, get fresh copy name from allpatches
+    func packupAndSaveCopyOfPatch()
     {
+        let nname = allP.getNewNameForCopy(n : patchName)
+        packupAndSavePatch(pName: nname) //Save with our new name
+    } //end packupAndSaveCopyOfPatch
+
+    
+    //=====PatchEditorVC===========================================
+    // Assumes patch OK to save...
+    func packupAndSavePatch(pName:String)
+    {
+        _ = opatch //debug
         //Samples with no ADSR, clear some fields
         if (opatch.type == SAMPLE_VOICE) && (!needToUseADSR)
         {
@@ -735,12 +885,35 @@ class PatchEditVC: UIViewController,
             opatch.sLevel  = 0
             opatch.release = 0
         }
+        let ufolder = DataManager.getPatchDirectory() //user patch area...
+        print("user folder \(ufolder)")
+
+        //        patchInfo = getFreshPatchinfo()
+        //get a folder destination...
+        _ = patchInfo //for debugger
+        _ = allP.getCategoryFolderName(n: patchInfo.category)
         //Note patchName is different from internal name
-        opatch.saveItem(filename: patchName)
+        opatch.saveItem(filename: pName , cat: patchInfo.category)
         //Add filename to our saved names array...
-        if !patchNamez.contains(patchName) {patchNamez.append(patchName)}
-        delegate?.patchEditVCSavePatchNow(name: patchName)
+        if !patchNamez.contains(patchName) {patchNamez.append(pName)}
+        delegate?.patchEditVCSavePatchNow(name: pName)
+        // 11/13 mark change in allpatches...
+        allP.changedAPatch (name:pName)
+        showSavedPatchAlert()   //11/15
+
+        //asdf
+    } //end packupAndSavePatch
+
+    //=====PatchEditorVC===========================================
+    func showSavedPatchAlert()
+    {
+        let alert = UIAlertController(title: "Saved Patch \(patchName)", message: "",
+                                      preferredStyle: UIAlertController.Style.alert)
+        alert.addAction(UIAlertAction(title: "OI", style: .default, handler: { action in
+        }))
+        self.present(alert, animated: true, completion: nil)
     }
+    
     
     
     //Work functions...
@@ -763,10 +936,11 @@ class PatchEditVC: UIViewController,
         for val in vals
         {
             var nextval = val
-            if val == -1 //next phase of envelope? switch color
+            if val < 0 //next phase of envelope? switch color
             {
                 nextval = oldval
-                segment = segment + 1
+                segment = Int(abs(val)) //We send segment back in the adsr output!
+                segment = min(3,max(0,segment))
             }
             let yval = CGFloat(nextval)*yscale
             let r = CGRect(x: x, y: yscale-yval , width: step, height: yval)
@@ -785,7 +959,7 @@ class PatchEditVC: UIViewController,
     {
         let wbptr = (sfx() as! soundFX).getWorkBuffer()
         var bptr = 0
-        //print("setupSynthOrSample \(opatch.attack)")
+        print("setupSynthOrSample \(opatch.type)")
         if opatch.type == SYNTH_VOICE
         {
             (sfx() as! soundFX).setSynthAttack(Int32(opatch.attack));
@@ -796,8 +970,20 @@ class PatchEditVC: UIViewController,
             (sfx() as! soundFX).setSynthDuty(Int32(opatch.duty));
             //print("build wave/env ADSR \(opatch.attack) :  \(opatch.decay) :  \(opatch.sustain) :  \(opatch.release)")
             (sfx() as! soundFX).buildaWaveTable(Int32(bptr),Int32(opatch.wave));  //args whichvoice,whichsynth
+            //print("SYNTH Build Envelope \(opatch.name) bptr \(Int(bptr))")
             (sfx() as! soundFX).buildEnvelope(Int32(bptr),true); //arg whichvoice?
+            envelopeChanged = true  //11/13
             //print("swave \(opatch.wave)")
+        }
+        else if (opatch.type == PERCKIT_VOICE)
+        {
+            var topMidi = 100 // oov.OVS.topMidi
+            var botMidi = 16  //oov.OVS.bottomMidi
+            if (topMidi - botMidi < 10) //Handle illegal crap, thuis should be ELSEWHERE!!!
+            {
+                botMidi = 16
+                topMidi = 100
+            }
         }
         else if (opatch.type == PERCUSSION_VOICE)
         {
@@ -806,25 +992,34 @@ class PatchEditVC: UIViewController,
         }
         else if (opatch.type == SAMPLE_VOICE)
         {
-            (sfx() as! soundFX).setSynthAttack(Int32(opatch.attack)); //10/17 add ADSR
-            (sfx() as! soundFX).setSynthDecay(Int32(opatch.decay));
-            (sfx() as! soundFX).setSynthSustain(Int32(opatch.sustain));
+            needToUseADSR = envelopeChanged //user changing envelope? apply to sample
+            print("needadsr \(needToUseADSR)")
+            // in synth, if ADSR are all zero, envelope is ignored
+            let aaa = needToUseADSR ? opatch.attack  : 0
+            let ddd = needToUseADSR ? opatch.decay   : 0
+            let sss = needToUseADSR ? opatch.sustain : 0
+            let rrr = needToUseADSR ? opatch.release : 0
+            (sfx() as! soundFX).setSynthAttack(Int32(aaa)); //10/17 add ADSR
+            (sfx() as! soundFX).setSynthDecay(Int32(ddd));
+            (sfx() as! soundFX).setSynthSustain(Int32(sss));
             (sfx() as! soundFX).setSynthSustainL(Int32(opatch.sLevel));
-            (sfx() as! soundFX).setSynthRelease(Int32(opatch.release));
+            (sfx() as! soundFX).setSynthRelease(Int32(rrr));
             (sfx() as! soundFX).setSynthDuty(Int32(opatch.duty));
 
             //DHS 10/14 set up pointer to GM sample...
             bptr = Int((sfx() as! soundFX).getGMBuffer(opatch.name))
-            print("pn \(opatch.name) bptr \(Int(bptr))")
+            //print("Build Envelope \(opatch.name) bptr \(Int(bptr))")
             (sfx() as! soundFX).buildEnvelope(Int32(bptr),true); //arg whichvoice?
+            envelopeChanged = true  //11/13
         }
         if bufferChanged
             {(sfx() as! soundFX).copyBuffer(Int32(bptr),Int32(wbptr),needNewBuffer) //Don't need this every time?
                 bufferChanged = false
                 needNewBuffer = false
             }
-        if envelopeChanged
+        if envelopeChanged && (opatch.type == SYNTH_VOICE || opatch.type == SAMPLE_VOICE)
             {(sfx() as! soundFX).copyEnvelope(Int32(bptr),Int32(wbptr)) //Don't need this every time?
+                print("done did copy envelope \(bptr) -> \(wbptr)")
                 envelopeChanged = false
                 updateADSRDisplay()
             }
@@ -876,50 +1071,100 @@ class PatchEditVC: UIViewController,
    
     //---<UITextFieldDelegate>--------------------------------------
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        print("start editing text \(textField.tag)")
+        //print("start editing text \(textField.tag)")
         textField.text = "" //Clear shit out
         return true
     }
     
     //---<UITextFieldDelegate>--------------------------------------
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        print("return on text \(textField.tag)")
+        //print("return on text \(textField.tag)")
         textField.resignFirstResponder() //dismiss kb if up
         setTextParamByTag(textField: textField)
+        updateForPatchInfo() //11/12 set factory button if needed
         return true
     }
 
     //---<UITextFieldDelegate>--------------------------------------
     @IBAction func textChanged(_ sender: Any) {
         let tf = sender as! UITextField
-        print("changed \(tf.tag)")
+        //print("text field changed \(tf.tag)")
+        //11/15 make sure name is updated
+        setTextParamByTag(textField: tf)
+
     }
 
-    //Delegate callback from Chooser...
-    func choseFile(name: String)
+    func handleIncomingSampleName(name:String)
     {
         print("chose \(name)")
         let ss = name.split(separator: ".")
-        if ss.count < 2 {return}
-        let fname = String(ss[0]).lowercased()
-        //OK button was pressed to get sample,
-        // had tag 31...38?
-        // corresponds to a label with tag 1..8
-        //set label!
-        let index = sampleChooserTag-31  //Which field?
-        if index < 8
+        var fname = name  //start assuming we just name...
+        if ss.count == 2 //name consists of pair separated by a dot?
+        {   fname = String(ss[0]).lowercased() }   //use first field
+        
+        //Choose a patch? Different from sample choosing!
+        if sampleChooserTag == -1
         {
-            opatch.percLoox[index] = fname
+            print("loading patch \(name)...")
+            patchName = name //Assumes file exists, was just chosen!
+            opatch    = DataManager.loadPatch(url: DataManager.getPatchDirectory(), with: patchName, with: OogiePatch.self)
+            setFieldsFromPatch()  //Redo UI
+            playTestNote(midiNote: 64) //need to ping!
         }
-        else if index == 8 //Sample name
+        else //Sample / PercKit patch name? just store name
         {
-            opatch.name = fname
+            print("handle incoming sample name...")
+            //button to get sample, tag 31...38?
+            // matches label        tag  1... 8
+            //set label!
+            let index = sampleChooserTag-31  //Which field?
+            if index < 8
+            {
+                opatch.percLoox[index] = fname
+            }
+            else if index == 8 //Sample name
+            {
+                opatch.name = fname
+            }
+            //Set matching text field in UI
+            let pkLabel = scrollView.viewWithTag(index+1)
+            if let pkl = pkLabel as? UILabel{
+                pkl.text = fname
+            }
+            
+        } //end else
+        
+    }
+
+    
+    //---<chooserDelegate>--------------------------------------
+    //Delegate callback from Chooser... handles multiple
+    //   filetypes
+    func choseFile(name: String)
+    {
+        if chooserMode == "loadAllPatches"
+        {
+            print("setupfor file \(name)")
+            opatch = allP.getPatchByName(name: name)
+            allP.dumpBuiltinPatch(n: name)
+            patchName = name
+            //ADSR present? Use it! 11/13
+            needToUseADSR = (opatch.attack  > 0)  || (opatch.decay   > 0) ||
+                            (opatch.sustain > 0)  || (opatch.release > 0) ||
+                            (opatch.sLevel  > 0)
+            DispatchQueue.main.async {   //UI stuff goes on main thread
+                self.setFieldsFromPatch()
+                self.updateForPatchInfo()  //ask allpatches if new patch info came in
+
+                self.updateViewsBasedOnPatchType() //this changes subview sizes!
+                self.playTestNote(midiNote: 64)
+            }
         }
-        //Set matching text field in UI
-        let pkLabel = scrollView.viewWithTag(index+1)
-        if let pkl = pkLabel as? UILabel{
-            pkl.text = fname
+        else //sample name?
+        {
+            handleIncomingSampleName(name: name)
         }
+       //patch load? Do we need to update EVERYTHING?
         //For sample reload
         needNewBuffer = true
         bufferChanged = true
@@ -927,6 +1172,7 @@ class PatchEditVC: UIViewController,
 
     }
 
+    //---<chooserDelegate>--------------------------------------
     //Delegate callback from Chooser...
     func needToSaveFile(name: String) {
 

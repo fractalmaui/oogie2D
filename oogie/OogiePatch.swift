@@ -69,11 +69,28 @@ struct OogiePatch : Codable {
     
     //======(OogiePatch)=============================================
     // 11/8 Patch gets saved by name
-    func saveItem(filename : String) {
-        DataManager.savePatch(self, with: filename) //itemIdentifier.uuidString)
+    func saveItem(filename : String , cat : String) {
+        DataManager.savePatch(self, with: filename , cat:cat) //itemIdentifier.uuidString)
     }
 
   
+    //======(OogiePatch)=============================================
+    func isEqualTo (s : OogiePatch) -> Bool
+    {
+        var result = true
+        result = result && (self.name != s.name)
+        result = result && (self.type != s.type)
+        result = result && (self.wave != s.wave)
+        result = result && (self.attack != s.attack)
+        result = result && (self.decay != s.decay)
+        result = result && (self.sustain != s.sustain)
+        result = result && (self.sLevel != s.sLevel)
+        result = result && (self.release != s.release)
+        result = result && (self.sampleOffset != s.sampleOffset)
+        result = result && (self.percLoox != s.percLoox)
+        result = result && (self.percLooxPans != s.percLooxPans)
+        return result
+    }
 
     //======(OogiePatch)=============================================
     // Hmm not sure here!

@@ -17,6 +17,7 @@
 //  9/26 add loadDefaultPatchForVoiceType, sfx reference
 //  10/4  add panFixed, etc in setInputColor
 //  10/9  add name field
+//  11/14 new arg to patch:saveItem
 
 import Foundation
 
@@ -173,7 +174,7 @@ class OogieVoice: NSObject {
         var patchNames = [String]()
         patchNames.append("Patch")
         patchNames.append("string")
-        var dict = allP.patchDictionary             //assume synth patches...
+        var dict = allP.synthPatchDictionary             //assume synth patches...
         if OOP.type == PERCKIT_VOICE
         {
             dict = allP.percKitPatchDictionary     //need percKit patches instead?
@@ -231,11 +232,11 @@ class OogieVoice: NSObject {
 
     
     //-----------(oogieVoice)=============================================
-    func savePatch (name:String)
-    {
-        OOP.name = name
-        OOP.saveItem(filename:name)
-    }
+//    func savePatch (name:String)
+//    {
+//        OOP.name = name
+//        OOP.saveItem(filename:name, cat:"GM") //11/14 new arg
+//    }
 
     //-----------(oogieVoice)=============================================
     // called when user switches type, need to reset synth/samples/whatever...

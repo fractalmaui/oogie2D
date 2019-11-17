@@ -45,6 +45,8 @@
 //            move fadein/out to paramLabel, fixed clearScene
 //  Nov 8   Add patch Editor
 //  Nov 9   add isPlaying flag, on in viewDidLoad, off in prepare(ForSegue
+//  Nov 14  new arg to patch.saveItem
+//  Nov 16  add new icon set
 import UIKit
 import SceneKit
 import Photos
@@ -75,8 +77,19 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var touchDown     = false //10/26
     var latestTouch   = UITouch()
     var testSample = 8
+    var chooserMode = "loadAllPatches"
+    
     @IBAction func testSelect(_ sender: Any) {
-        self.pLabel.updateLabelOnly(lStr:"Clear Scene...")
+        let u1 = DataManager.getBuiltinPatchFolderPath ( subfolder : "GMPatches" , isFactory : true)
+        let u2 = DataManager.getBuiltinPatchFolderPath ( subfolder : "GMPatches" , isFactory : false)
+        let u3 = DataManager.getBuiltinPatchFolderPath ( subfolder : "SynthPatches" , isFactory : true)
+        let u4 = DataManager.getBuiltinPatchFolderPath ( subfolder : "PercKitPatches" , isFactory : false)
+//print("u1..4 \(u1), \(u2), \(u3), \(u4)")
+        
+        self.performSegue(withIdentifier: "chooserLoadSegue", sender: self)
+
+        //reloadAllPatchesInScene()
+        //self.pLabel.updateLabelOnly(lStr:"Clear Scene...")
 //        DataManager.getSceneDirectoryContents()
 //        print("test : \(testSample)")
 //        (sfx() as! soundFX).playNote(32, Int32(testSample), PERCUSSION_VOICE)
@@ -142,7 +155,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     //All patches: singleton, holds built-in and locally saved patches...
     var allP = AllPatches.sharedInstance
-    
+    var recentlyEditedPatches : [String] = []
     var tc = texCache.sharedInstance //9/3 texture cache
 
     let scene           = SCNScene()
@@ -434,7 +447,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         else if segue.identifier == "chooserLoadSegue" {
             if let chooser = segue.destination as? chooserVC {
                 chooser.delegate = self
-                chooser.mode     = "load"
+                chooser.mode     = chooserMode //11/12 test loadPatches
+                //chooser.mode     = "load" //asdf
             }
         }
         else if segue.identifier == "chooserSaveSegue" {
@@ -447,10 +461,15 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         else if segue.identifier == "EditPatchSegue" {
             if let nextViewController = segue.destination as? PatchEditVC {
                     nextViewController.delegate = self
+                //plass in selected patch if popup appeared...
+                if whatWeBeEditing == "voice"
+                    {nextViewController.opatch = self.selectedVoice.OOP //10/18
+                     nextViewController.patchName = self.selectedVoice.OVS.patchName
+                    }
             }
         }
 
-    }
+    } //end prepareForSegue
 
     override func unwind(for unwindSegue: UIStoryboardSegue, towardsViewController subsequentVC: UIViewController) {
         print("unwind from segue")
@@ -917,6 +936,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         if (vArray.count < 3) {return} //avoid krash
         selectedFieldName = vArray[0] as! String
         selectedFieldType = vArray[1] as! String
+        let sfname = selectedFieldName.lowercased()  //type, patch, etc...
         if selectedFieldType == "double" && vArray.count > 6 //Get double range / default
         {
             selectedFieldMin     = Float(vArray[2] as! Double)
@@ -929,12 +949,24 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             selectedFieldStringVals.removeAll()
             selectedFieldDisplayVals.removeAll()
-            for i in 2...vArray.count-1
+            //Preload list of options with user choices if possible...
+            if sfname == "patch" //11/16 look for user patches to choose
+            {
+                //11/16 get user shtuff first?
+                let yuserPatches = allP.getUserPatchesForVoiceType(type: selectedVoice.OOP.type)
+                //print("got uptch type\(selectedVoice.OOP.type) \(yuserPatches)")
+                for (name,p) in yuserPatches  //for each, add to string / display arrays
+                {
+                    selectedFieldStringVals.append(name)
+                    selectedFieldDisplayVals.append(name)
+                }
+            }
+            for i in 2...vArray.count-1 //OK add more fields from params or built-in filenames
             {
                 let fname = vArray[i] as! String
                 selectedFieldStringVals.append(fname)
                 //10/26 handle GM SAMPLE patches specially..
-                if selectedFieldName.lowercased() == "patch" &&
+                if sfname == "patch" &&
                     selectedVoice.OOP.type == SAMPLE_VOICE
                 {
                     selectedFieldDisplayVals.append( //try to get instrument name...
@@ -943,7 +975,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 else // non-patches, just display the field strings
                 { selectedFieldDisplayVals.append(fname) }
             }
-            if selectedFieldName == "patch"
+            //New patch defaults? OK for every type?  11/16
+            if sfname == "patch"   //11/16 wow this needs new stuff!!
             {
                 var wstring = "bubbles" //Get default patch name for selected voice type
                 if selectedVoice.OOP.type == PERCKIT_VOICE {wstring = "kit1"}
@@ -955,6 +988,32 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         getLastParamValue(fname : selectedFieldName.lowercased()) //10/12 Load up current param
         //print("sfsv \(selectedFieldStringVals)   sfdv \(selectedFieldDisplayVals)")
     } //end loadCurrentVoiceParams
+    
+    //=======>ARKit MainVC===================================
+    //SHIT. no clue. do I read in gm patches, percussion patches, what?
+    //11/16 look at all voices. if patch name matches, reload the OOP part
+    //   of that voice and save it back into the sceneVoices dict...
+    func reloadAllPatchesInScene(namez : [String])
+    {
+        //HYUB HH?? WTF? why cant i find new patch loaded htere!
+        for (name,voice) in sceneVoices
+        {
+            let nnnn = voice.OVS.patchName
+            if namez.contains(nnnn)  // is this a patch of interest?
+            {
+                let ppp = allP.getPatchByName(name: nnnn)
+                if ppp != nil
+                {
+                    print("  ...reloading patch\(nnnn)")
+                    voice.OOP         = ppp   //reset voice patch, and save back to scene dictionary
+                    sceneVoices[name] = voice
+                }
+
+            } //end if namez
+        }    //end for
+
+    }
+
     
     
     //=======>ARKit MainVC===================================
@@ -1181,6 +1240,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.clearScene()
         }))
         alert.addAction(UIAlertAction(title: "Load Scene", style: .default, handler: { action in
+            var chooserMode = "load"
             self.performSegue(withIdentifier: "chooserLoadSegue", sender: self)
         }))
         alert.addAction(UIAlertAction(title: "Save Scene", style: .default, handler: { action in
@@ -1188,6 +1248,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.pLabel.updateLabelOnly(lStr:"Saved " + self.OVSceneName)
         }))
         alert.addAction(UIAlertAction(title: "Save Scene As...", style: .default, handler: { action in
+            var chooserMode = "load"
             self.performSegue(withIdentifier: "chooserSaveSegue", sender: self)
         }))
         alert.addAction(UIAlertAction(title: "Textures...", style: .default, handler: { action in
@@ -1207,6 +1268,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func voiceMenu()
     {
         let alert = UIAlertController(title: self.selectedVoice.OVS.name, message: nil, preferredStyle: UIAlertControllerStyle.alert)
+
+            alert.addAction(UIAlertAction(title: "Edit this Patch...", style: .default, handler: { action in
+                self.performSegue(withIdentifier: "EditPatchSegue", sender: self)
+        }))
+
         var tstr = "Solo"
         if soloVoiceID != "" {tstr = "UnSolo"}
         alert.addAction(UIAlertAction(title: tstr, style: .default, handler: { action in
@@ -1805,7 +1871,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             oop.duty    = 0
             oop.wave    = 0
             oop.type    = Int(SYNTH_VOICE)
-            oop.saveItem(filename:name) //Write it out!
+            oop.saveItem(filename:name, cat:"GM") //Write it out! 11/14 new arg
         }
     } //end writeSynthPatches
     
@@ -1828,7 +1894,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 oop.duty    = 0
                 oop.wave    = 0
                 oop.type    = Int(SAMPLE_VOICE)
-                oop.saveItem(filename:patchName) //Write it out!
+                oop.saveItem(filename:patchName, cat:"GM") //Write it out! 11/14 new arg
             }
         }
     } //end writeGMPatches
@@ -1852,7 +1918,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 oop.duty    = 0
                 oop.wave    = 0
                 oop.type    = Int(PERCUSSION_VOICE)
-                oop.saveItem(filename:patchName) //Write it out!
+                oop.saveItem(filename:patchName, cat:"GM") //Write it out! 11/14 new arg
             }
         }
     } //end writePercussionPatches
@@ -1891,7 +1957,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
             //DHS 10/14 set up pointer to GM sample...
             oov.bufferPointer = Int((sfx() as! soundFX).getGMBuffer(oov.OOP.name))
-            (sfx() as! soundFX).buildEnvelope(Int32(oov.bufferPointer),false); //arg whichvoice?
+            //11/16 got any ADSR? Build!
+            if  (oov.OOP.attack  != 0) || (oov.OOP.decay   != 0) ||
+                (oov.OOP.sustain != 0) || (oov.OOP.release != 0)
+            {
+                (sfx() as! soundFX).buildEnvelope(Int32(oov.bufferPointer),false); //arg whichvoice?
+            }
         }
     } //end setupSynthOrSample
     
@@ -2081,11 +2152,21 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //Delegate callback from Chooser...
     func choseFile(name: String)
     {
-        OVSceneName  = name
-        self.OVScene = DataManager.loadScene(OVSceneName, with: OogieScene.self)
-        self.clearAllNodes(scene:scene)  // Clear any SCNNodes
-        self.create3DScene(scene:scene) //  then create new scene from file
-        pLabel.updateLabelOnly(lStr:"Loaded " + OVSceneName)
+        if chooserMode == "loadAllPatches"
+        {
+            let ppp = allP.getPatchByName(name: name)
+            print("ppp \(ppp)")
+        }
+        else //handle scene?
+        {
+            //asdf
+            OVSceneName  = name
+            self.OVScene = DataManager.loadScene(OVSceneName, with: OogieScene.self)
+            self.clearAllNodes(scene:scene)  // Clear any SCNNodes
+            self.create3DScene(scene:scene) //  then create new scene from file
+            pLabel.updateLabelOnly(lStr:"Loaded " + OVSceneName)
+        }
+
     }
 
     //Delegate callback from Chooser...
@@ -2107,6 +2188,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func patchEditVCDone(namez : [String] , userPatch : Bool, allNew : Bool)
     {
         print("done")
+        //save recently edited patches
+        recentlyEditedPatches = namez //copy in array of namez
+        if !allNew  //Did user replace a patch?
+        {
+            reloadAllPatchesInScene(namez : namez)
+        }
+        
     }
 
 } //end vc class, line 1413 as of 10/10

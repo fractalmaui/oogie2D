@@ -520,7 +520,7 @@ short *audioRecBuffer;
         sBufs[which] = NULL;
     }
     int totalFrames = sNumPackets * sChans;
-    NSLog(@" ...Malloc sbufs[%d] size %lu",which,sNumPackets * sChans * sizeof(float));
+    //NSLog(@" ...Malloc sbufs[%d] size %lu",which,sNumPackets * sChans * sizeof(float));
 	sBufs[which] = malloc(totalFrames * sizeof(float)); //DHS 10/6
 	if (!sBufs[which]) return;
     sBufLens[which] = totalFrames;
@@ -615,7 +615,8 @@ short *audioRecBuffer;
 } //end copyEnvelope
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
-// 11/9
+// 11/11: BUG: if decay is set to 0 then the sustain gets decay color!
+//      redid to pass segment back as negative indicator!
 -(NSArray *) getEnvelopeForDisplay: (int) which : (int) size
 {
     if (size < 2 || envLength[which] < 2) return nil;
@@ -624,18 +625,18 @@ short *audioRecBuffer;
     int op = 0;
     int phase = 0;
     int duhsize = attackLength + decayLength + sustainLength + releaseLength;
-    //int elen = envLength[which];
     float bcf = (float)duhsize / (float)size;
-    //bcf = bcf / 4; //Account for size?
     for (int i=0;i<size;i++) //fill output
     {
         optr = (int)((float) i * bcf);
-        if      (optr <  attackLength) phase = 0;
-        else if (optr < (attackLength + decayLength)) phase = 1;
-        else if (optr < (attackLength + decayLength+sustainLength)) phase = 2;
-        else phase = 3;
+        if (optr > attackLength) phase = 1;
+        if (optr > attackLength + decayLength) phase = 2;
+        if (optr > attackLength + decayLength+sustainLength) phase = 3;
         float fff = sEnvs[which][optr];
-        if (phase != op) fff = -1.0; //Mark phase change
+        if (phase != op)
+        {
+            fff = -1.0 * (float)phase; //Mark phase change
+        }
         op = phase;
         [a addObject:[NSNumber numberWithFloat: fff]];
     }
@@ -653,6 +654,17 @@ short *audioRecBuffer;
 	// value to step through this table. MIDI note number 64 has delta = 1.0f.
 	float envsave;
 	int i,savei,esize;
+    attackLength  = (int)(ATTACK_TIME  * sampleRate);  // attack
+    decayLength   = (int)(DECAY_TIME   * sampleRate);  // decay
+    sustainLength = (int)(SUSTAIN_TIME * sampleRate);  // sustain
+    releaseLength = (int)(RELEASE_TIME * sampleRate);  // release
+    //DHS 11/16 zero envelope? BailL!
+    if ( (attackLength  == 0) && (decayLength   == 0) &&
+         (sustainLength == 0) && (releaseLength == 0) )
+    {
+        NSLog(@"  ...allzero ENV %d...",which);
+        return;
+    }
     //envelope was in use? Clobber it!
     if (sEnvs[which] != NULL && !buildInPlace)
     {
@@ -676,10 +688,6 @@ short *audioRecBuffer;
     }
     //NSLog(@"  build env %d len %d...",which,envLength[which]);
 	
-	attackLength  = (int)(ATTACK_TIME  * sampleRate);  // attack
-	decayLength   = (int)(DECAY_TIME   * sampleRate);  // decay
-	sustainLength = (int)(SUSTAIN_TIME * sampleRate);  // sustain
-	releaseLength = (int)(RELEASE_TIME * sampleRate);  // release
 //	NSLog(@" TOP ADSR============= %d %d %d %d %f",
 //		  attackLength,decayLength,sustainLength,releaseLength ,sampleRate);
 
@@ -942,7 +950,13 @@ short *audioRecBuffer;
         {
             tones[n].infinite = infinite;
         }
-        tones[n].needsEnvelope = (type == SYNTH_VOICE || type == SAMPLE_VOICE); //10/17
+        BOOL needsEnvelope = (type == SYNTH_VOICE || type == SAMPLE_VOICE);  
+        //11/10 but for all zeroes, bail on envelope!
+        if (ATTACK_TIME == 0.0 &&
+            DECAY_TIME == 0.0 &&
+            SUSTAIN_TIME == 0.0 &&
+            RELEASE_TIME == 0.0) needsEnvelope = FALSE;
+        tones[n].needsEnvelope = needsEnvelope;
         tones[n].un       = newUnique;
 
         // DUH! we need to know WHICH synth voice to track during portamento!?!?!
@@ -1002,7 +1016,7 @@ short *audioRecBuffer;
         tones[n].toneType = SYNTH_VOICE;
         tones[n].state    = STATE_PRESSED;
         // NO NOTE!  tones[n].midiNote = midiNote;
-        tones[n].phase    = 0.0f;
+        tones[n].phase    = 0.0f; //DHS What about sample offset?
         tones[n].pitch    = pitch;
         [self incrVoiceCount:n];
         tones[n].envStep    = 0.0f;
@@ -1802,7 +1816,7 @@ short *audioRecBuffer;
     //aaand filename...
     NSURL *sampleURL = [p2 URLByAppendingPathComponent:fileName];
     
-    NSLog(@" sampleURL is %@",sampleURL);
+    //NSLog(@" sampleURL is %@",sampleURL);
 //    fileURL = [[NSURL alloc] initFileURLWithPath: p3];
 //    NSLog(@" file [%@]",fileURL.absoluteString);
     err = AudioFileOpenURL ((__bridge CFURLRef) sampleURL, kAudioFileReadPermission,0,&fileID);
@@ -1875,7 +1889,7 @@ short *audioRecBuffer;
     if (!err)  AudioFileClose(fileID);
     gotSample = 1;
     if (err != 0) NSLog(@" loadsample error: %d",(int)err);
-    else NSLog(@" ...load sample OK");
+    //else NSLog(@" ...load sample OK");
     //    NSLog(@" dump of sample %@========================",fileName);
     //    for (int i=0;i<64;i++) NSLog(@" swave[%d] %x",i,swave[i]);
     return;

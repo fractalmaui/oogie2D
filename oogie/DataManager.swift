@@ -20,6 +20,7 @@
 // 10/27 pull (most) fatals, replace w/ delegate callbacks
 //         still have fatals on methods with dynamic types!
 // 11/4  add patchExists
+// 11/13 replaced loadSynthpatches... with loadSynthPatchesToDict..
 import Foundation
 
 
@@ -106,6 +107,10 @@ public class DataManager {
             var url = URL(fileURLWithPath: "") //Start w/ empty path
             //Get Scene Directory contents
             if whichDir == "scene" { url = getSceneDirectory() }
+            else if whichDir == "patches"
+            {
+                url = getPatchDirectory()
+            }
             else if whichDir == "gmidi"
             {
                 url = (Bundle.main.resourceURL?.appendingPathComponent("GeneralMidi"))!
@@ -135,12 +140,36 @@ public class DataManager {
         }
        // return []
     }
+    
+    //=====(AllPatches)=============================================
+    // Just a lookup. could use case i guess
+    static func getCategoryFolderName (n : String) -> String
+    {
+        var                  name = "SynthPatches"
+        if      (n == "PE") {name = "PercussionPatches"}
+        else if (n == "PK") {name = "PercKitPatches"}
+        else if (n == "GM") {name = "GMPatches"}
+        return name
+    } //end getCategoryFolderName
+
 
     //======(DataManager)=============================================
-    static func savePatch <T:Encodable> (_ object:T, with fileName:String) {
-        print("savePatch \(getPatchDirectory())/\(fileName))")
-        save(object , with: getPatchDirectory(), with: fileName)
-    }
+    // 11/14 add category for access to different folders
+    static func savePatch <T:Encodable> (_ object:T, with fileName:String , cat : String) {
+
+        var purl = URL(fileURLWithPath:"")
+        if (cat != "US") //Builtin patch? Get folder
+        {
+            let pstr = getBuiltinPatchFolderPath(subfolder: getCategoryFolderName(n:cat), isFactory: false)
+            purl = URL(fileURLWithPath: pstr)
+        }
+        else //User area may change! may have subfolders eventually..
+        {
+            purl = getPatchDirectory() //user patch area...
+        }
+        print("save patch \(purl)/\(fileName) cat \(cat)")
+        save(object , with: purl, with: fileName)
+    } //end savePatch
     
     //======(DataManager)=============================================
     static func saveShape <T:Encodable> (_ object:T, with fileName:String) {
@@ -301,34 +330,63 @@ public class DataManager {
         }
         return nil
     }
-    
-    //======(DataManager)=============================================
-    static func loadLocalSynthPatches <T:Decodable> (_ type:T.Type) -> [T] {
-        let purl = Bundle.main.resourceURL!.appendingPathComponent("SynthPatches").path
-        return loadAll( url: URL.init(fileURLWithPath: purl) , with:type)
-    }
-    
-    //======(DataManager)=============================================
-    static func loadLocalPercussionPatches <T:Decodable> (_ type:T.Type) -> [T] {
-        let purl = Bundle.main.resourceURL!.appendingPathComponent("PercussionPatches").path
-        return loadAll( url: URL.init(fileURLWithPath: purl) , with:type)
-    }
-    
-    //======(DataManager)=============================================
-    static func loadLocalPercKitPatches <T:Decodable> (_ type:T.Type) -> [T] {
-        let purl = Bundle.main.resourceURL!.appendingPathComponent("PercKitPatches").path
-        return loadAll( url: URL.init(fileURLWithPath: purl) , with:type)
-    }
-    
-    //======(DataManager)=============================================
-    static func loadLocalGMPatches <T:Decodable> (_ type:T.Type) -> [T] {
-        let purl = Bundle.main.resourceURL!.appendingPathComponent("GMPatches").path
-        return loadAll( url: URL.init(fileURLWithPath: purl) , with:type)
-    }
-    
 
     //======(DataManager)=============================================
-    static func loadAllPatches <T:Decodable> (_ type:T.Type) -> [T] {
+    static func getBuiltinPatchFolderPath ( subfolder : String , isFactory : Bool) -> String
+    {
+        var path = "" //URL(fileURLWithPath: "")
+        if isFactory   //Add factory subpath if needed
+        {
+            path = Bundle.main.resourceURL!.appendingPathComponent("FactorySettings").path
+            path = path + "/" + subfolder //Now add proper subpath...
+        }
+        else
+        {
+            path = Bundle.main.resourceURL!.appendingPathComponent(subfolder).path
+        }
+        return path //URL(fileURLWithPath: path)
+    } //end getBuiltinPatchFolderPath
+
+    //======(DataManager)=============================================
+    static func loadUpDictWithPatchesFromSubfolder  <T:Decodable> (_ type:T.Type , subFolder : String , fromFactory : Bool) -> Dictionary<String, T>
+    {
+        let purl = getBuiltinPatchFolderPath (subfolder:subFolder , isFactory : fromFactory)
+        return  loadAllToDict ( url: URL.init(fileURLWithPath: purl) , with:type)
+    }
+    
+    //======(DataManager)=============================================
+    static func loadBuiltinSynthPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
+    {
+        return loadUpDictWithPatchesFromSubfolder(type, subFolder: "SynthPatches", fromFactory:     fromFactory)
+    }
+
+    
+    //======(DataManager)=============================================
+    static func loadBuiltinPercussionPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
+    {
+        return loadUpDictWithPatchesFromSubfolder(type, subFolder: "PercussionPatches", fromFactory:     fromFactory)
+    }
+     
+    //======(DataManager)=============================================
+    static func loadBuiltinPercKitPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
+    {
+        return loadUpDictWithPatchesFromSubfolder(type, subFolder: "PercKitPatches", fromFactory:     fromFactory)
+    }
+
+    //======(DataManager)=============================================
+    static func loadBuiltinGMPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
+    {
+        return loadUpDictWithPatchesFromSubfolder(type, subFolder: "GMPatches", fromFactory:     fromFactory)
+    }
+    
+    //======(DataManager)=============================================
+    static func loadAllPatchesToDict <T:Decodable> (_ type:T.Type) -> Dictionary<String, T>
+    {
+        return  loadAllToDict ( url: getPatchDirectory() , with:type)
+    }
+
+    //======(DataManager)=============================================
+    static func loadAllPatchesToArray <T:Decodable> (_ type:T.Type) -> [T] {
         return loadAll( url: getPatchDirectory() , with:type)
     }
     
@@ -337,6 +395,26 @@ public class DataManager {
         return loadAll( url: getVoiceDirectory() , with:type)
     }
     
+    //======(DataManager)=============================================
+    //Load all files of type to dict, indexed by name
+    static func loadAllToDict <T:Decodable> ( url:URL , with type:T.Type) ->
+                Dictionary<String, T>
+    {
+        do {
+            let files = try FileManager.default.contentsOfDirectory(atPath: url.path)
+            
+            var ourDict = Dictionary<String, T>()
+            
+            for fileName in files {
+                ourDict[fileName] = loadPatch( url: url, with:fileName, with: type)
+//                modelObjects.append(loadPatch( url: url, with:fileName, with: type))
+            }
+            return ourDict
+        }catch{
+            fatalError("loadAllToDict:bad load")
+        }
+    } //end loadAllToDict
+
 
     //======(DataManager)=============================================
     // Load all files from a directory, needs URL
