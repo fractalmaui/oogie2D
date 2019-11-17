@@ -47,6 +47,8 @@
 //  Nov 9   add isPlaying flag, on in viewDidLoad, off in prepare(ForSegue
 //  Nov 14  new arg to patch.saveItem
 //  Nov 16  add new icon set
+//  Nov 17  mods to chooser , allPatches, oogiePatch CI BACK from oogieIR
+
 import UIKit
 import SceneKit
 import Photos
@@ -2168,6 +2170,17 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
 
     }
+    
+    
+    //---<chooserDelegate>--------------------------------------
+    // 11/17 new delegate return w/ filenames from chooser
+    func newFolderContents(c: [String])
+    {
+       // patchNamez = c
+       // patchNum = 0
+
+    }
+
 
     //Delegate callback from Chooser...
     func needToSaveFile(name: String) {

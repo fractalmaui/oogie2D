@@ -13,6 +13,7 @@
 //  9/23 made percLoox into strings
 //  10/14 pull wtype, redundant w/ wave!
 //  10/15 add dump
+//  11/17 add gotAllZeroes
 
 import Foundation
 struct OogiePatch : Codable {
@@ -98,6 +99,13 @@ struct OogiePatch : Codable {
         DataManager.delete( itemIdentifier.uuidString)
     }
     
+    //======(OogiePatch)=============================================
+    //11/17 Should i include slevel?
+    func gotAllZeroes() -> Bool
+    {
+        return attack == 0.0 && decay == 0.0 &&
+               sustain == 0.0 && release == 0.0
+    }
     //======(OogiePatch)=============================================
 //    mutating func markAsCompleted() {
 //        self.completed = true

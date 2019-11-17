@@ -129,6 +129,14 @@ private init()
     loadGMOffsets() //11/10 compute octave / note offsets...
     print("...allpatches loaded")
 }
+    //=====(AllPatches)=============================================
+    //  11/17 add new incoming patch, could be any type, only have name here!
+    func addNewUserPatch (p : OogiePatch , n : String)
+    {
+        //asdf
+        if patchExists(name:n) {return} //Bail on dupe! (should complain?)
+        yuserPatchDictionary[n] = p //Done!
+    }
     
     //=====(AllPatches)=============================================
     func dumpBuiltinPatch (n : String)

@@ -951,8 +951,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "474"
             endingLineNumber = "474"
-            landmarkName = "unwind(for:towardsViewController:)"
-            landmarkType = "7">
+            landmarkName = "ViewController"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -1652,7 +1652,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1035"
             endingLineNumber = "1035"
-            landmarkName = "pickerView(_:numberOfRowsInComponent:)"
+            landmarkName = "setupSynthOrSample()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -1972,7 +1972,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "707"
             endingLineNumber = "707"
-            landmarkName = "updateViewArrows()"
+            landmarkName = "animateViewFrames(tag:ydel:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -2020,8 +2020,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1071"
             endingLineNumber = "1071"
-            landmarkName = "PatchEditVC"
-            landmarkType = "3">
+            landmarkName = "pickerView(_:didSelectRow:inComponent:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -2036,7 +2036,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "352"
             endingLineNumber = "352"
-            landmarkName = "rotate90(bb:clockwise:dur:)"
+            landmarkName = "updateForPatchInfo()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -2180,7 +2180,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "446"
             endingLineNumber = "446"
-            landmarkName = "sliderChanged(_:)"
+            landmarkName = "adsrChanged(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -2196,7 +2196,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "880"
             endingLineNumber = "880"
-            landmarkName = "packupAndSavePatch(pName:)"
+            landmarkName = "resetScrollAndPromptForPatchName()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -2308,7 +2308,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "318"
             endingLineNumber = "318"
-            landmarkName = "updateADSRDisplay()"
+            landmarkName = "getFreshPatchinfo()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -2340,7 +2340,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "870"
             endingLineNumber = "870"
-            landmarkName = "packupAndSaveCopyOfPatch()"
+            landmarkName = "replacePatchPrompt()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -2356,7 +2356,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "834"
             endingLineNumber = "834"
-            landmarkName = "replacePatchPrompt()"
+            landmarkName = "setTextParamByTag(textField:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -2372,8 +2372,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "835"
             endingLineNumber = "835"
-            landmarkName = "replacePatchPrompt()"
-            landmarkType = "7">
+            landmarkName = "PatchEditVC"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -2420,8 +2420,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1157"
             endingLineNumber = "1157"
-            landmarkName = "choseFile(name:)"
-            landmarkType = "7">
+            landmarkName = "PatchEditVC"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -2436,7 +2436,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1148"
             endingLineNumber = "1148"
-            landmarkName = "choseFile(name:)"
+            landmarkName = "handleIncomingSampleName(name:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -2548,8 +2548,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "822"
             endingLineNumber = "822"
-            landmarkName = "checkPatchAndSave()"
-            landmarkType = "7">
+            landmarkName = "PatchEditVC"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -2564,7 +2564,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "844"
             endingLineNumber = "844"
-            landmarkName = "replacePatchPrompt()"
+            landmarkName = "checkPatchAndSave()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -2580,7 +2580,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "825"
             endingLineNumber = "825"
-            landmarkName = "checkPatchAndSave()"
+            landmarkName = "setTextParamByTag(textField:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -2596,7 +2596,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "879"
             endingLineNumber = "879"
-            landmarkName = "packupAndSavePatch(pName:)"
+            landmarkName = "resetScrollAndPromptForPatchName()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -2612,7 +2612,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1082"
             endingLineNumber = "1082"
-            landmarkName = "textFieldShouldReturn(_:)"
+            landmarkName = "pickerView(_:didSelectRow:inComponent:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

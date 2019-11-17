@@ -11,6 +11,7 @@ import Foundation
 
 protocol chooserDelegate
 {
+    func newFolderContents(c: [String])
     func choseFile(name: String)
     func needToSaveFile(name: String)
 }
@@ -111,6 +112,8 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
 
     //---(chooserVC)--------------------------------------
     @IBAction func cancelSelect(_ sender: Any) {
+        //pass list of patches to delegate
+        self.delegate?.newFolderContents(c: filez)
         cancelAndDismiss()
     }
     
