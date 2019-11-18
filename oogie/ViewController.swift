@@ -48,7 +48,7 @@
 //  Nov 14  new arg to patch.saveItem
 //  Nov 16  add new icon set
 //  Nov 17  mods to chooser , allPatches, oogiePatch CI BACK from oogieIR
-
+//          move lat/lon handles to marker SCNNode object
 import UIKit
 import SceneKit
 import Photos
@@ -90,20 +90,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         
         self.performSegue(withIdentifier: "chooserLoadSegue", sender: self)
 
-        //reloadAllPatchesInScene()
-        //self.pLabel.updateLabelOnly(lStr:"Clear Scene...")
-//        DataManager.getSceneDirectoryContents()
-//        print("test : \(testSample)")
-//        (sfx() as! soundFX).playNote(32, Int32(testSample), PERCUSSION_VOICE)
-//        testSample = testSample + 1
-//        if testSample > 29 {testSample = 8}
-        //asdf
-//        DataManager.gotDMError(msg: "duh")
     }
     //Constructed shapes / handles
     var allMarkers    : [Marker]     = []
-    var latHandles    = Dictionary<String, SCNNode>()
-    var lonHandles    = Dictionary<String, SCNNode>() //parent of latHandle and marker!
     var selectedUids  : [String]     = []
     var sceneVoices   = Dictionary<String, OogieVoice>()
     var shapes        = Dictionary<String, SphereShape>()  //10/21
@@ -343,7 +332,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //print("reset to default \(selectedFieldDefault)")
         restoreLastParamValue(oldD: Double(selectedFieldDefault),oldS: selectedFieldDefaultString) //DHS 10/10
         knobValue = Float(selectedFieldDefault)  //9/17 make sure knob is set to param value
-        updateSelected3DMarker ()
+        //DHS 11/17 old updateSelected3DMarker ()
+        selectedMarker.updateLatLon(lat: selectedVoice.OVS.yCoord, lon: selectedVoice.OVS.xCoord)
         resetKnobToNewValues(kv:knobValue , mn : selectedFieldMin , mx : selectedFieldMax)
     }
 
@@ -450,7 +440,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             if let chooser = segue.destination as? chooserVC {
                 chooser.delegate = self
                 chooser.mode     = chooserMode //11/12 test loadPatches
-                //chooser.mode     = "load" //asdf
+                //chooser.mode     = "load"
             }
         }
         else if segue.identifier == "chooserSaveSegue" {
@@ -618,19 +608,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
     } //end getLastParamValue
     
-    //=======>ARKit MainVC===================================
-    // 10/21 switch to dict for latHandles,etc
-    func updateSelected3DMarker ()
-    {
-        if let llatHandle = latHandles[selectedMarkerName]
-        {
-            if let llonHandle = lonHandles[selectedMarkerName]
-            {
-                llatHandle.eulerAngles = SCNVector3Make(0, 0, Float(selectedVoice.OVS.yCoord))
-                llonHandle.eulerAngles = SCNVector3Make(0, Float(selectedVoice.OVS.xCoord), 0)
-            }
-        }
-    }
     
     
     //=======>ARKit MainVC===================================
@@ -690,10 +667,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             {
             case "latitude":
                 selectedVoice.OVS.yCoord = dknobval
-                updateSelected3DMarker ()
+                selectedMarker.updateLatLon(lat: selectedVoice.OVS.yCoord, lon: selectedVoice.OVS.xCoord)
+                //DHS 11/17 OLD updateSelected3DMarker ()
             case "longitude":
                 selectedVoice.OVS.xCoord = dknobval
-                updateSelected3DMarker ()
+                selectedMarker.updateLatLon(lat: selectedVoice.OVS.yCoord, lon: selectedVoice.OVS.xCoord)
+                //DHS 11/17 OLD updateSelected3DMarker ()
             case "patch":
                 if intChoiceChanged{ changeVoicePatch(name:getSelectedFieldStringForKnobValue (kv : knobValue))}
             case "type":
@@ -1371,12 +1350,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func deleteVoice(voice:OogieVoice)
     {
         let name = voice.OVS.name
-        if let lonHandle = lonHandles[name] //3D marker is child of this...
-        {
-            lonHandle.removeFromParentNode()    //Blow away 3d Shape/children
-            allMarkers.remove(at: selectedObjectIndex)
-            sceneVoices.removeValue(forKey: name)
-        }
+        //DHS 11/17 latlon handles gone
+        allMarkers.remove(at: selectedObjectIndex)
+        sceneVoices.removeValue(forKey: name)
     } //end deleteVoice
 
 
@@ -1415,8 +1391,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             node.removeFromParentNode()
         }
         allMarkers.removeAll() //DHS 11/4 blow away all 3D references
-        latHandles.removeAll()
-        lonHandles.removeAll()
         shapes.removeAll()
 
     } //end clearAllNodes
@@ -1553,32 +1527,16 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             //Hmm is default always a sphere< should defauls scene use sphere as primitive name?
             if voiceShape.primitive == "sphere" || voiceShape.primitive == "default" //Sphere has 2 handles...
             {
-                let lonHandle = SCNNode()
-                let latHandle = SCNNode()
                 if let shape3D = shapes[nextVoice.OVS.shapeName] //10/21 find shape 3d object
                 {
-                    shape3D.addChildNode(lonHandle) //10/21 add handle to shape parent
-                    lonHandle.addChildNode(latHandle)
                     //Lat / Lon Marker to select color
                     let nextMarker = Marker()
                     nextMarker.name = newName //9/16 point to voice
-                    let theta = -pi/2.0 //Point bottom of cone marker at earth
-                    nextMarker.rotation = SCNVector4Make(0, 0, 1, Float(theta))
-                    //10/24 position varies by platform
-                    #if VERSION_2D
-                    nextMarker.position = SCNVector3Make(1.0, 0, 0);
-                    #elseif VERSION_AR
-                    nextMarker.position = SCNVector3Make(0.5, 0, 0);
-                    #endif
                     //10/29 here we have int type, not string...
                     nextMarker.updateTypeInt(newTypeInt: Int32(nextVoice.OOP.type))
                     allMarkers.append(nextMarker)
-                    latHandle.addChildNode(nextMarker)
-                    // DHS 9/26 set angles from voice XY coords...
-                    latHandle.eulerAngles = SCNVector3Make(0, 0, Float(nextVoice.OVS.yCoord))
-                    lonHandle.eulerAngles = SCNVector3Make(0, Float(nextVoice.OVS.xCoord), 0)
-                    latHandles[newName] = latHandle
-                    lonHandles[newName] = lonHandle
+                    shape3D.addChildNode(nextMarker)
+                    nextMarker.updateLatLon(lat: nextVoice.OVS.yCoord, lon: nextVoice.OVS.xCoord)
                 }
                 else
                 {
@@ -1752,8 +1710,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     // Menu / etc button bottom left
     @IBAction func buttonSelect(_ sender: Any) {
-       // updateMarkerPosition(lat: 0,lon: 0)
-        
         if (knobMode == 0) //User not editing a parameter? this is a menu button
         {
             //GM BASS 44.1khz  WtF? won't play
@@ -1777,7 +1733,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         restoreLastParamValue(oldD: lastFieldDouble,oldS: lastFieldString) //DHS 10/10
         if selectedFieldType == "double"  //update marker as needed...
         {
-            if whatWeBeEditing == "voice"      { updateSelected3DMarker () }
+            if whatWeBeEditing == "voice"      {
+                    //DHS 11/17 old updateSelected3DMarker ()
+                selectedMarker.updateLatLon(lat: selectedVoice.OVS.yCoord, lon: selectedVoice.OVS.xCoord)
+            }
             else if whatWeBeEditing == "shape" { updateSelected3DShape  () }
         }
         knobMode = 0 //back to select mode
@@ -1790,10 +1749,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // take unit xy coords from voice, apply to our sphere..
     func updatePointer()
     {
-        //print("XYCoord \(OV.OVS.xCoord),\(OV.OVS.yCoord)")
- //9/7 redpo        let lonAngle = twoPi * OV.OVS.xCoord
- //9/7 redpo        let latAngle = -pi   * OV.OVS.yCoord + pi/2
- //9/7 redpo        updateMarkerPosition(lat:Double(latAngle) , lon: Double(lonAngle))
     }
 
     
@@ -1837,20 +1792,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }
 
 
-    //=====<oogie2D mainVC>====================================================
-    // update marker position, brute force
-    func updateMarkerPosition (lat : Double,lon : Double)
-    {
-        //8/23 Rotate our marker handles to position marker at lat/lon
-        if let llonHandle = lonHandles[selectedMarkerName]
-        {
-            if let llatHandle = latHandles[selectedMarkerName]
-            {
-                llonHandle.eulerAngles = SCNVector3Make(0, Float(lon), 0)
-                llatHandle.eulerAngles = SCNVector3Make(0, 0, Float(lat))
-            }
-        }
-    } //end updateMarkerPosition
     
     
     //=====<oogie2D mainVC>====================================================
@@ -2161,7 +2102,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
         else //handle scene?
         {
-            //asdf
             OVSceneName  = name
             self.OVScene = DataManager.loadScene(OVSceneName, with: OogieScene.self)
             self.clearAllNodes(scene:scene)  // Clear any SCNNodes

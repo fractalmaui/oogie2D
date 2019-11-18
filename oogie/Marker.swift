@@ -15,6 +15,7 @@
 //  10/11 add nameplates
 //  10/27 add unHighlight
 //  10/29 add updateTypeInt to support scene creation
+//  11/17 move lat/lon rotation handles here
 //  Try to animate torus on select / deselect:
 //   https://developer.apple.com/documentation/scenekit/animation/animating_scenekit_content
 import UIKit
@@ -37,6 +38,9 @@ class Marker: SCNNode {
     var torus2       = SCNTorus()
     var torusNode1   = SCNNode()
     var torusNode2   = SCNNode()
+    var lonHandle    = SCNNode()   //11/17 from mainVC
+    var latHandle    = SCNNode()
+
     var uid = ""
     let showHueIndicator = false
     let boxSize : CGFloat =  0.02
@@ -53,13 +57,21 @@ class Marker: SCNNode {
     //-------(Marker)-------------------------------------
     override init() {
         super.init()
-        
+        //11/17 first add our rotational handles
+        self.addChildNode(lonHandle)
+        lonHandle.addChildNode(latHandle)
         let allShapes = createMarker()
+        let theta = -pi/2.0 //Point bottom of cone marker at earth
+        allShapes.rotation = SCNVector4Make(0, 0, 1, Float(theta))
+        //DHS 11/17 back to cluge? Why no offset in createMarker?
+        #if VERSION_2D
+        allShapes.position = SCNVector3Make(1.1, 0, 0);
+        #elseif VERSION_AR
+        allShapes.position = SCNVector3Make(0.5, 0, 0);
+        #endif
+        latHandle.addChildNode(allShapes)
         uid = "marker_" + ProcessInfo.processInfo.globallyUniqueString
         allShapes.name = uid
-        self.addChildNode(allShapes)
-//WTF? Too small!
-//        self.scale = SCNVector3(0.5,0.5,0.5) //Shrink down by half
         self.scale = SCNVector3(1,1,1) //Shrink down by half
 
     }
@@ -247,7 +259,15 @@ class Marker: SCNNode {
         torus1.firstMaterial?.emission.contents  = tcolor
         torus2.firstMaterial?.emission.contents  = tcolor
     }
-
+    
+    //-------(Marker)-------------------------------------
+    func updateLatLon (lat : Double,lon : Double)
+    {
+       lonHandle.eulerAngles = SCNVector3Make(0, Float(lon), 0)
+       latHandle.eulerAngles = SCNVector3Make(0, 0, Float(lat))
+    } //end updateMarkerPosition
+    
+    
     //-------(Marker)-------------------------------------
     func updatePetals( rval:Int, gval:Int, bval:Int,
                        cval:Int, mval:Int, yval:Int,
@@ -291,7 +311,8 @@ class Marker: SCNNode {
         
         hitSphere.firstMaterial?.diffuse.contents = UIColor.clear
         let sphereNode = SCNNode(geometry:hitSphere)
-        sphereNode.position = SCNVector3(0,0.1,0) //DHS 10/17 adjust cone so tip is truly at bottom
+        //DHS 11/17 this doesnt work anymore. see cluge above WTF???
+       // sphereNode.position = SCNVector3(0,0.1,0) //DHS 10/17 adjust cone so tip is truly at bottom
 
         mainCone = SCNCone(topRadius: 0.1, bottomRadius: 0.0, height: 0.2)
         let testColor = UIColor.white
