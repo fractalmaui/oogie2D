@@ -49,6 +49,8 @@
 //  Nov 16  add new icon set
 //  Nov 17  mods to chooser , allPatches, oogiePatch CI BACK from oogieIR
 //          move lat/lon handles to marker SCNNode object
+//  Nov 18  moved playColors out to oogieVoice, more efficient
+//          but what about masterPitch and quantTime?
 import UIKit
 import SceneKit
 import Photos
@@ -272,7 +274,29 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //10/16 add notification to see when samples are loaded...
         NotificationCenter.default.addObserver(self, selector: #selector(self.samplesLoaded(notification:)), name: Notification.Name("samplesLoadedNotification"), object: nil)
 
-        colorTimer = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.playAllMarkers), userInfo:  nil, repeats: true)
+        let useOldTImer = 1
+        if useOldTImer > 0
+        {
+            
+            colorTimer = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.playAllMarkers), userInfo:  nil, repeats: true)
+            
+        }
+        else //11/18 wtf? need bkgd timer
+        {
+                    //11/18 Try running colortimer in background....
+                    //dispatchMain()
+                    
+                    
+            //           dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            //               //run function methodRunAfterBackground
+            //               NSTimer* t = [NSTimer scheduledTimerWithTimeInterval:10 target:self selector:@selector(methodRunAfterBackground) userInfo:nil repeats:NO];
+            //               [[NSRunLoop currentRunLoop] addTimer:t forMode:NSDefaultRunLoopMode];
+            //               [[NSRunLoop currentRunLoop] run];
+            //           });
+                    
+        }
+        
+        
     } //end viewDidLoad
 
     
@@ -1635,6 +1659,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // called by timer repeatedly...
     @objc func playAllMarkers()
     {
+        //=================================================================
+        //STOOPID place for this. how about a .30 second timer
+        // that starts on any segue, but then if  starts
+        // the music, then the timer gets invalidated
+        //=================================================================
         //WTF? this is different from any advice online!
         let vc = self.presentedViewController
         if vc == nil   //MainVC is on top...
@@ -1672,7 +1701,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     //Update marker output to 3D
                     nextMarker.setColorRGB(rr: rgbaTuple.R, gg: rgbaTuple.G, bb: rgbaTuple.B)
                     setupSynthOrSample(oov: workVoice) //load synth ADSR, send note out
-                    if playColors(oov: workVoice , rr: rgbaTuple.R, gg: rgbaTuple.G, bb: rgbaTuple.B)
+                    // 11/18 move playcolors to voice
+                   if workVoice.playColors(rr: rgbaTuple.R, gg: rgbaTuple.G, bb: rgbaTuple.B)
                     { nextMarker.updateActivity() } //DHS 10/22 animate marker each note played..
                 }
             }
@@ -1909,148 +1939,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
     } //end setupSynthOrSample
     
-    //=====<oogie2D mainVC>====================================================
-    // uses color and voice params to produce music
-    func playColors(oov : OogieVoice , rr : Int ,gg : Int ,bb : Int) -> Bool
-    {
-        var inkeyNote = 0
-        var inkeyOldNote = 0
-        var midiNote = 64
-        oov.setInputColor(chr: rr, chg: gg, chb: bb)
-        midiNote  = oov.midiNote
-        let nchan = oov.nchan
-        let pchan = oov.pchan
-        let vchan = oov.vchan
-        //DHS TEST ONLY!!! this should be modulated by vchan ? depending on voice mode
-        (sfx() as! soundFX).setSynthGain(128)
-        
-        var noteWasPlayed = false
-        
-        //NSLog("....npvchan %d %d %d",nchan,pchan,vchan)
-        let vt    = oov.OOP.type
-        if midiNote > 0 //Play something?
-        {
-            //NSLog("Midinote %d",midiNote)
-            (sfx() as! soundFX).setSynthMIDI(Int32(oov.OVS.midiDevice), Int32(oov.OVS.midiChannel)) //chan: 0-16
-            let nc = (sfx() as! soundFX).getSynthNoteCount()
-            inkeyOldNote = oov.oldNote
-            inkeyNote    = Int((sfx() as! soundFX).makeSureNoteis(inKey: Int32(oov.OVS.keySig),Int32(midiNote)))
-            // Mono: Handle releasing old note...
-            if oov.OVS.poly == 1 {(sfx() as! soundFX).releaseNote(Int32(inkeyOldNote),0)} //2nd arg, WTF??
-            //TBD....[synth setTimetrax:OVgettimetrax(vloop)];
-            //New note outside tolerance?
-            //print(" toler check: nchan \(nchan) lnchan \(oov.lnchan) nc \(nc) thresh \(oov.OVS.thresh)",nchan,oov.lnchan,nc )
 
-            var mono = 1
-            if oov.OVS.poly != 0 { mono = 0 }
-            
-            if (abs (nchan - oov.lnchan) > 1) && nc < 20  //TEST LOW TOLER
-//            if (abs (nchan - oov.lnchan) > 2*oov.OVS.thresh) && nc < 20  //dhs was 12
-            {
-                (sfx() as! soundFX).setSynthMono(Int32(mono))
-                (sfx() as! soundFX).setSynthMonoUN(Int32(oov.uniqueCount))
-                var noteToPlay = -1
-                var bptr = 0
-                //-------SYNTH: built-in canned wave samples--------------------------
-                if vt == SYNTH_VOICE
-                {
-                    (sfx() as! soundFX).setSynthGain(Int32(Double(vchan) * 0.7 * oov.OVS.level))
-                    if oov.OVS.panMode != 11  //No fixed pan? Use pchan
-                    {
-                        (sfx() as! soundFX).setSynthPan(Int32(pchan))
-                    }
-                    else //Forced pan?
-                    {
-                        (sfx() as! soundFX).setSynthPan(Int32(oov.OVS.panFixed))
-                    }
-                    //portamento?
-                    (sfx() as! soundFX).setSynthSampOffset(Int32(oov.OVS.sampleOffset))
-                    inkeyNote = inkeyNote + masterPitch
-                    noteToPlay = inkeyNote
-                } //End synth block
-                else if vt == HARMONY_VOICE
-                {
-                } //end harmony block
-                else if vt == SAMPLE_VOICE //10/16 add GM samples
-                {
-                    (sfx() as! soundFX).setSynthGain(Int32(Double(vchan) * 0.7 * oov.OVS.level))
-                    (sfx() as! soundFX).setSynthDetune(1);
-                    (sfx() as! soundFX).setSynthPan(Int32(pchan))
-                    bptr = oov.bufferPointer
-                    inkeyNote = inkeyNote + masterPitch
-                    noteToPlay = inkeyNote
-                    //ok playit
-                    if quantTime == 0 //No Quant, play now
-                    {
-                        (sfx() as! soundFX).playNote(Int32(inkeyNote), Int32(bptr) ,Int32(vt)) //Play Middle C for now...
-                    }
-                    else
-                    {
-                        (sfx() as! soundFX).queueNote(Int32(inkeyNote), Int32(bptr) ,Int32(vt))
-                    }
-                    noteWasPlayed = true
-                } //end sample block 9/22
-                else if vt == PERCUSSION_VOICE
-                {
-                    (sfx() as! soundFX).setSynthGain(Int32(Double(vchan) * 0.7 * oov.OVS.level))
-                    (sfx() as! soundFX).setSynthDetune(0);
-                    // 9/27 no trigger key,just trigger of tolerance..
-                        (sfx() as! soundFX).setSynthPan(Int32(pchan))
-                        bptr = oov.bufferPointer
-                        noteToPlay = 32
-                        //ok playit
-                        if quantTime == 0 //No Quant, play now
-                        {
-                            (sfx() as! soundFX).playNote(32, Int32(bptr) ,Int32(vt)) //Play Middle C for now...
-                        }
-                        else
-                        {
-                            (sfx() as! soundFX).queueNote(32, Int32(bptr) ,Int32(vt))
-                        }
-                        noteWasPlayed = true
-                } //end percussion block
-                else if vt == PERCKIT_VOICE
-                {
-                    var topMidi = oov.OVS.topMidi
-                    var botMidi = oov.OVS.bottomMidi
-                    if (topMidi - botMidi < 10) //Handle illegal crap, thuis should be ELSEWHERE!!!
-                    {
-                        botMidi = 16
-                        topMidi = 100
-                    }
-                    var octave = (nchan - botMidi) / 20 // 12 //get octave
-                    octave = max(min(octave,7),0)
-                    //10/15  CRASH HERE!!!
-                    bptr = oov.bufferPointerSet[octave]
-                    //print("note \(nchan) oct \(octave) bptr \(bptr)")
-                    noteToPlay = 32
-
-                } //end perckit block
-                
-                if noteToPlay != -1
-                {
-                    if quantTime == 0 //No Quant, play now
-                    {
-                        (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(vt))
-                    }
-                    else
-                    {
-                        (sfx() as! soundFX).queueNote(32, Int32(bptr) ,Int32(vt))
-                    }
-                    noteWasPlayed = true
-                    oov.lastnoteplayed = inkeyNote
-
-                }
-                oov.uniqueCount = Int((sfx() as! soundFX).getSynthUniqueCount())
-                oov.hiLiteFrame = MAX_CBOX_FRAMES
-                oov.oldNote = nchan
-                oov.saveColors()
-            } //end abs toler check
-        } //end midinote...
-        return noteWasPlayed
-    } //end playColors
-    
-    
     
     //------<UITextFieldDelegate>-------------------------
     // 10/9  UITExtFieldDelegate...

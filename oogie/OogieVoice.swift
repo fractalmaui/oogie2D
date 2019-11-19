@@ -18,6 +18,7 @@
 //  10/4  add panFixed, etc in setInputColor
 //  10/9  add name field
 //  11/14 new arg to patch:saveItem
+//  11/18 move playColors in ... what about masterPitch and quantTime?
 
 import Foundation
 
@@ -32,6 +33,8 @@ let  SYNTHS_DEFAULT    = 20.0
 let  SYNTHSL_DEFAULT   = 40.0
 let  SYNTHR_DEFAULT    = 20.0
 let  SYNTHDUTY_DEFAULT = 50.0
+
+let MAX_CBOX_FRAMES = 20 //11/18 for playColors support 
 
 //Parameter area... this is how the user gets at 3d objects from the UI
 //Parmas: Name,Type,Min,Max,Default,DisplayMult,DisplayOffset?? (string params need a list of items)
@@ -119,6 +122,8 @@ class OogieVoice: NSObject {
     var KK  = 0
     var YY  = 0
     
+    let masterPitch = 0 //DHS 11/18
+    let quantTime = 0   //DHS 11/18
     //-----------(oogieVoice)=============================================
     override init() {
         super.init()
@@ -230,14 +235,162 @@ class OogieVoice: NSObject {
         OVS.saveItem()
     }
 
+    //-----------(oogieVoice)=============================================
+    // 11/18 move in from mainvC. heavy lifter, lots of crap brought together
+    //  needs masterPitch. should it be an arg or class member?
+    func playColors( rr : Int ,gg : Int ,bb : Int) -> Bool
+    {
+        var inkeyNote = 0
+        var inkeyOldNote = 0
+        //this sets midiNote! 
+        setInputColor(chr: rr, chg: gg, chb: bb)
+        //DHS TEST ONLY!!! this should be modulated by vchan ? depending on voice mode
+        (sfx() as! soundFX).setSynthGain(128)
+        
+        var noteWasPlayed = false
+        bufferPointer = 0;
+        if OOP.type == PERCUSSION_VOICE
+        {
+            bufferPointer = Int((sfx() as! soundFX).getPercussionBuffer(OOP.name))
+        }
+        else if OOP.type == SAMPLE_VOICE
+        {
+            bufferPointer = Int((sfx() as! soundFX).getGMBuffer(OOP.name))
+        }
+        
+        //NSLog("....npvchan %d %d %d",nchan,pchan,vchan)
+        let vt    = OOP.type
+        if midiNote > 0 //Play something?
+        {
+            NSLog("OVPlayColors:Midinote %d",midiNote)
+            (sfx() as! soundFX).setSynthMIDI(Int32(OVS.midiDevice), Int32(OVS.midiChannel)) //chan: 0-16
+            let nc = (sfx() as! soundFX).getSynthNoteCount()
+            inkeyOldNote = oldNote
+            inkeyNote    = Int((sfx() as! soundFX).makeSureNoteis(inKey: Int32(OVS.keySig),Int32(midiNote)))
+            // Mono: Handle releasing old note...
+            if OVS.poly == 1 {(sfx() as! soundFX).releaseNote(Int32(inkeyOldNote),0)} //2nd arg, WTF??
+            //TBD....[synth setTimetrax:OVgettimetrax(vloop)];
+            //New note outside tolerance?
+            //print(" toler check: nchan \(nchan) lnchan \(lnchan) nc \(nc) thresh \(OVS.thresh)",nchan,lnchan,nc )
+            
+            var mono = 1
+            if OVS.poly != 0 { mono = 0 }
+            
+            if (abs (nchan - lnchan) > 1) && nc < 20  //TEST LOW TOLER
+                //            if (abs (nchan - lnchan) > 2*OVS.thresh) && nc < 20  //dhs was 12
+            {
+                (sfx() as! soundFX).setSynthMono(Int32(mono))
+                (sfx() as! soundFX).setSynthMonoUN(Int32(uniqueCount))
+                var noteToPlay = -1
+                var bptr = 0
+                //-------SYNTH: built-in canned wave samples--------------------------
+                if vt == SYNTH_VOICE
+                {
+                    (sfx() as! soundFX).setSynthGain(Int32(Double(vchan) * 0.7 * OVS.level))
+                    if OVS.panMode != 11  //No fixed pan? Use pchan
+                    {
+                        (sfx() as! soundFX).setSynthPan(Int32(pchan))
+                    }
+                    else //Forced pan?
+                    {
+                        (sfx() as! soundFX).setSynthPan(Int32(OVS.panFixed))
+                    }
+                    //portamento?
+                    (sfx() as! soundFX).setSynthSampOffset(Int32(OVS.sampleOffset))
+                    inkeyNote = inkeyNote + masterPitch
+                    noteToPlay = inkeyNote
+                } //End synth block
+                else if vt == HARMONY_VOICE
+                {
+                } //end harmony block
+                else if vt == SAMPLE_VOICE //10/16 add GM samples
+                {
+                    (sfx() as! soundFX).setSynthGain(Int32(Double(vchan) * 0.7 * OVS.level))
+                    (sfx() as! soundFX).setSynthDetune(1);
+                    (sfx() as! soundFX).setSynthPan(Int32(pchan))
+                    bptr = bufferPointer
+                    inkeyNote = inkeyNote + masterPitch
+                    noteToPlay = inkeyNote
+                    //ok playit
+                    if quantTime == 0 //No Quant, play now
+                    {
+                        (sfx() as! soundFX).playNote(Int32(inkeyNote), Int32(bptr) ,Int32(vt)) //Play Middle C for now...
+                    }
+                    else
+                    {
+                        (sfx() as! soundFX).queueNote(Int32(inkeyNote), Int32(bptr) ,Int32(vt))
+                    }
+                    noteWasPlayed = true
+                } //end sample block 9/22
+                else if vt == PERCUSSION_VOICE
+                {
+                    (sfx() as! soundFX).setSynthGain(Int32(Double(vchan) * 0.7 * OVS.level))
+                    (sfx() as! soundFX).setSynthDetune(0);
+                    // 9/27 no trigger key,just trigger of tolerance..
+                    (sfx() as! soundFX).setSynthPan(Int32(pchan))
+                    bptr = bufferPointer
+                    noteToPlay = 32
+                    //ok playit
+                    if quantTime == 0 //No Quant, play now
+                    {
+                        (sfx() as! soundFX).playNote(32, Int32(bptr) ,Int32(vt)) //Play Middle C for now...
+                    }
+                    else
+                    {
+                        (sfx() as! soundFX).queueNote(32, Int32(bptr) ,Int32(vt))
+                    }
+                    noteWasPlayed = true
+                } //end percussion block
+                else if vt == PERCKIT_VOICE
+                {
+                    var topMidi = OVS.topMidi
+                    var botMidi = OVS.bottomMidi
+                    if (topMidi - botMidi < 10) //Handle illegal crap, thuis should be ELSEWHERE!!!
+                    {
+                        botMidi = 16
+                        topMidi = 100
+                    }
+                    var octave = (nchan - botMidi) / 20 // 12 //get octave
+                    octave = max(min(octave,7),0)
+                    //10/15  CRASH HERE!!!
+                    bptr = bufferPointerSet[octave]
+                    //print("note \(nchan) oct \(octave) bptr \(bptr)")
+                    noteToPlay = 32
+                    
+                } //end perckit block
+                
+                if noteToPlay != -1
+                {
+                    if quantTime == 0 //No Quant, play now
+                    {
+                        (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(vt))
+                    }
+                    else
+                    {
+                        (sfx() as! soundFX).queueNote(32, Int32(bptr) ,Int32(vt))
+                    }
+                    noteWasPlayed = true
+                    lastnoteplayed = inkeyNote
+                    
+                }
+                uniqueCount = Int((sfx() as! soundFX).getSynthUniqueCount())
+                hiLiteFrame = MAX_CBOX_FRAMES
+                oldNote = nchan
+                saveColors()
+            } //end abs toler check
+        } //end midinote...
+        return noteWasPlayed
+    } //end playColors
+    
+    
     
     //-----------(oogieVoice)=============================================
-//    func savePatch (name:String)
-//    {
-//        OOP.name = name
-//        OOP.saveItem(filename:name, cat:"GM") //11/14 new arg
-//    }
-
+    //    func savePatch (name:String)
+    //    {
+    //        OOP.name = name
+    //        OOP.saveItem(filename:name, cat:"GM") //11/14 new arg
+    //    }
+    
     //-----------(oogieVoice)=============================================
     // called when user switches type, need to reset synth/samples/whatever...
     func loadDefaultsForNewType(nt : String)
