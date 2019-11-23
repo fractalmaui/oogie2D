@@ -105,8 +105,8 @@ public class DataManager {
         var fileNamez : [String] = []
         do {
             var url = URL(fileURLWithPath: "") //Start w/ empty path
-            //Get Scene Directory contents
-            if whichDir == "scene" { url = getSceneDirectory() }
+            //Get Scene Directory contents 11/22
+            if whichDir == "scenes" { url = getSceneDirectory() }
             else if whichDir == "patches"
             {
                 url = getPatchDirectory()

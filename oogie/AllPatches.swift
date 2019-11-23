@@ -272,7 +272,6 @@ private init()
             GMOIffsetDictionary[pname] = 64 - offset
             print("offset [\(pname)] \(GMOIffsetDictionary[pname])")
         }
-        print(" allll fone w offsets")
     } //end loadGMOffsets
     
     //=====(AllPatches)=============================================

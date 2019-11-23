@@ -43,6 +43,7 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
 
     var window: UIWindow?
+    
 
     //Audio Sound Effects...
     var sfx = soundFX.sharedInstance

@@ -58,6 +58,10 @@ import Photos
 let pi    = 3.141592627
 let twoPi = 6.2831852
 
+//Scene unpacked params live here for now...
+var OVtempo = 135 //Move to params ASAP
+
+
 class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate,patchEditVCDelegate {
 
     @IBOutlet weak var skView: SCNView!
@@ -205,11 +209,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         if DataManager.sceneExists(fileName : "default")
         {
             self.OVScene = DataManager.loadScene("default", with: OogieScene.self)
+            self.OVScene.unpackParams()       //DHS 11/22 unpack scene params
             print("...load default scene")
         }
         else
         {
             self.OVScene.createDefaultScene(sname: "default")
+            self.OVScene.setDefaultParams()
             print("...no default scene found, create!")
         }
         spnl = UINib(nibName: "synthPanel", bundle: .main).instantiate(withOwner: nil, options: nil).first as? synthPanel
@@ -450,14 +456,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         else if segue.identifier == "chooserLoadSegue" {
             if let chooser = segue.destination as? chooserVC {
                 chooser.delegate = self
-                chooser.mode     = chooserMode //11/12 test loadPatches
-                //chooser.mode     = "load"
+                chooser.mode     = chooserMode
             }
         }
         else if segue.identifier == "chooserSaveSegue" {
             if let chooser = segue.destination as? chooserVC {
                 chooser.delegate = self
-                chooser.mode     = "save"
+                chooser.mode     = chooserMode
             }
         }
         //11/8
@@ -1232,7 +1237,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.clearScene()
         }))
         alert.addAction(UIAlertAction(title: "Load Scene", style: .default, handler: { action in
-            var chooserMode = "load"
+            self.chooserMode = "load" //11/22
             self.performSegue(withIdentifier: "chooserLoadSegue", sender: self)
         }))
         alert.addAction(UIAlertAction(title: "Save Scene", style: .default, handler: { action in
@@ -1240,7 +1245,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.pLabel.updateLabelOnly(lStr:"Saved " + self.OVSceneName)
         }))
         alert.addAction(UIAlertAction(title: "Save Scene As...", style: .default, handler: { action in
-            var chooserMode = "load"
+            self.chooserMode = "save" //11/22
             self.performSegue(withIdentifier: "chooserSaveSegue", sender: self)
         }))
         alert.addAction(UIAlertAction(title: "Textures...", style: .default, handler: { action in
@@ -1613,6 +1618,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             OVScene.shapes[name] = nextShape
         }
+        OVScene.packParams() //11/22 need to pack some stuff up first!
         DataManager.saveScene(self.OVScene, with: sname)
     } //end packupSceneAndSave
 
@@ -2003,12 +2009,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             OVSceneName  = name
             self.OVScene = DataManager.loadScene(OVSceneName, with: OogieScene.self)
+            self.OVScene.unpackParams()       //DHS 11/22 unpack scene params
             self.clearAllNodes(scene:scene)  // Clear any SCNNodes
             self.create3DScene(scene:scene) //  then create new scene from file
             pLabel.updateLabelOnly(lStr:"Loaded " + OVSceneName)
         }
 
-    }
+    } //e nd choseFile
     
     
     //---<chooserDelegate>--------------------------------------

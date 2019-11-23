@@ -12,22 +12,24 @@
 //
 //  9/15   add dump
 // 10/27   redu createDefaultScene
-
+// 11/22   add version , params strings
 import Foundation
 import SceneKit
 
-var OVtempo = 135 //Move to params ASAP
-
 struct OogieScene : Codable {
     var name    : String
+    var version : String
+    var params  : String
     var shapes  : Dictionary<String, OogieShape>
     var voices  : Dictionary<String, OVStruct>
-
     
     //======(OogieScene)=============================================
     init()
     {
         name    = "scene000"
+        //11/22 add version / params
+        version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
+        params  = ""
         shapes  = Dictionary<String, OogieShape>()
         voices  = Dictionary<String, OVStruct>()
     }
@@ -56,17 +58,80 @@ struct OogieScene : Codable {
         shapes[shape.name]  = shape
     } //end createDefaultScene
 
-
     //======(OogieScene)=============================================
     // Scene gets saved by name
-    func saveItem() {
+    mutating func saveItem() {
+        packParams() //11/22
         DataManager.saveScene(self, with: name)
     }
     
     //======(OogieScene)=============================================
+    // 11/22 scene params exist separately in viewController for now,
+    //  they get packed up into a string at save time...
+    func setDefaultParams()
+    {
+        OVtempo = 135
+    }
+    
+    //======(OogieScene)=============================================
+    // 11/22 params format: name:value,name:value,...
+    mutating func packParams()
+    {
+        params = packIntParam(n: "tempo",vi: OVtempo)
+    } //end packParams
+    
+    //======(OogieScene)=============================================
+    // 11/22
+    func unpackParams()
+    {
+        //break up params first...
+        let ss = params.split(separator: ",")  //fields separated by commas
+        for s in ss //Get each field...
+        {
+            var fieldName = ""  //we will get 2 strings, L/R side of colon separator
+            var fieldVal  = ""
+            let pp        = s.split(separator:":")
+            if pp.count == 2 //2 subfields?
+            {
+                fieldName = String(pp[0])
+                fieldVal  = String(pp[1])
+                // Prepare numeric fields if needed...
+                var intFieldVal = 0
+                if let ivf = Int(fieldVal)
+                {
+                    intFieldVal = ivf
+                }
+                switch fieldName.lowercased()
+                {
+                    case "tempo" : OVtempo = intFieldVal
+                    default      : break;
+                }
+            }
+        }
+    } //end unpackParams
+    
+    //======(OogieScene)=============================================
+    // 11/22
+    func packIntParam(n:String , vi:Int) -> String
+    {
+        return String(format: "%@:%d", n,vi)
+    }
+    
+    //======(OogieScene)=============================================
+    // 11/22
+    func packDoubleParam(n:String , vd:Int) -> String
+    {
+        return String(format: "%@:%4.2f", n,vd)
+    }
+    
+
+    //======(OogieScene)=============================================
     func dump()
     {
         DataManager.dump(self)
+        // 11/22
+        print("Params...")
+        print("  tempo: \(OVtempo)")
     }
 
 }

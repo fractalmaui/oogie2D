@@ -85,7 +85,7 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
             filez = DataManager.getDirectoryContents(whichDir: chooserFolder)
             for _ in 0...filez.count-1 {typez.append(4)} //11/13 add sample type
         }
-        print("chooser folder \(chooserFolder)")
+        //print("chooser folder \(chooserFolder)")
         saveButton.isHidden = true //NO NEED? (mode == "load")        
         if mode == "loadAllPatches"
         {
