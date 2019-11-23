@@ -733,29 +733,29 @@ class PatchEditVC: UIViewController,
     } //end updateViewArrows
     
     //=====PatchEditorVC===========================================
+    // NOTE synth must be set up first!
     func playTestNote(midiNote : Int)
     {
-        print("play note \(midiNote)")
+        //print("play note \(midiNote)")
         setupSynthOrSample()
         var bptr = (sfx() as! soundFX).getWorkBuffer()
         (sfx() as! soundFX).setSynthGain(128)
         (sfx() as! soundFX).setSynthPan(128)
-        var noteToPlay = midiNote
-        
+        var noteToPlay  = midiNote
+        //some patches need octave changes
+        let gMidiOffset = allP.getOffsetForGMPatch(name:opatch.name)
+        //print("name \(opatch.name) offset \(gMidiOffset)")
         if (opatch.type == SAMPLE_VOICE)
         {
-            //11/16 still need to add offsets for 11025HZ perc samples!
-            let gMidiOffset = allP.getOffsetForGMPatch(name:opatch.name)
-            noteToPlay = noteToPlay + gMidiOffset
             (sfx() as! soundFX).setSynthSampOffset(Int32(opatch.sampleOffset))
-            (sfx() as! soundFX).setSynthDetune(1);  //11/17 detuneable!
-            }
-            else if (opatch.type == PERCUSSION_VOICE)
-            {
-                (sfx() as! soundFX).setSynthDetune(0); //11/17 no detune!
-            }
-            else if (opatch.type == PERCKIT_VOICE)
-            {
+            (sfx() as! soundFX).setSynthDetune(1);
+        }
+        else if (opatch.type == PERCUSSION_VOICE)
+        {
+            (sfx() as! soundFX).setSynthDetune(0); //11/17 no detune!
+        }
+        else if (opatch.type == PERCKIT_VOICE)
+        {
             var octave = (midiNote - 20) / 12
             if (octave < 0 || octave > 7) {octave = 0}
             let pName = opatch.percLoox[octave]
@@ -765,6 +765,51 @@ class PatchEditVC: UIViewController,
             (sfx() as! soundFX).setSynthPan(Int32(opatch.percLooxPans[octave]))
             (sfx() as! soundFX).setSynthDetune(0);  //11/17 no detune???
         }
+        //Apply octave offset, if any..
+        noteToPlay = noteToPlay + gMidiOffset
+        //print("final note to play \(noteToPlay)")
+        (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(opatch.type))
+    } //end playTestNote
+
+    //=====PatchEditorVC===========================================
+    func playTestNote2(midiNote : Int)
+    {
+        print("play note \(midiNote) needadsr \(needToUseADSR)")
+        setupSynthOrSample()
+        var bptr = (sfx() as! soundFX).getWorkBuffer()
+        (sfx() as! soundFX).setSynthGain(128)
+        (sfx() as! soundFX).setSynthPan(128)
+        var noteToPlay = midiNote
+        
+        //11/16 still need to add offsets for 11025HZ perc samples!
+        var  gMidiOffset = 0
+        (sfx() as! soundFX).setSynthDetune(1);  //11/17 detuneable!
+        // 11/22 redid logic here, perc and sample both need gmidioffset for various reasons
+        if (opatch.type == PERCUSSION_VOICE)
+        {
+            gMidiOffset = allP.getOffsetForGMPatch(name:opatch.name)
+            (sfx() as! soundFX).setSynthDetune(0); //11/17 no detune!
+        }
+        else if (opatch.type == SAMPLE_VOICE)
+        {
+            gMidiOffset = allP.getOffsetForGMPatch(name:opatch.name)
+            (sfx() as! soundFX).setSynthSampOffset(Int32(opatch.sampleOffset))
+            (sfx() as! soundFX).setSynthDetune(1);
+        }
+        else if (opatch.type == PERCKIT_VOICE)
+        {
+            var octave = (midiNote - 20) / 12
+            if (octave < 0 || octave > 7) {octave = 0}
+            let pName = opatch.percLoox[octave]
+            //11/22 perc kit is special, has a bunch of names!
+            gMidiOffset = allP.getOffsetForGMPatch(name:pName)
+            //Dont use work buffer, use built-in samples
+            bptr  = (sfx() as! soundFX).getPercussionBuffer(pName.lowercased())
+            noteToPlay = 64
+            (sfx() as! soundFX).setSynthPan(Int32(opatch.percLooxPans[octave]))
+            (sfx() as! soundFX).setSynthDetune(0);  //11/17 no detune???
+        }
+        noteToPlay = noteToPlay + gMidiOffset
         (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(opatch.type))
      } //end playTestNote
     
@@ -1025,10 +1070,13 @@ class PatchEditVC: UIViewController,
 
             //DHS 10/14 set up pointer to GM sample...
             bptr = Int((sfx() as! soundFX).getGMBuffer(opatch.name))
-            //print("Build Envelope \(opatch.name) bptr \(Int(bptr))")
-            (sfx() as! soundFX).buildEnvelope(Int32(bptr),true); //arg whichvoice?
-            envelopeChanged = true  //11/13
-        }
+            if needToUseADSR
+            {
+                //print("Build Envelope \(opatch.name) bptr \(Int(bptr))")
+                (sfx() as! soundFX).buildEnvelope(Int32(bptr),true); //arg whichvoice?
+                envelopeChanged = true  //11/13
+            }
+        } //end else voice type
         if bufferChanged
             {(sfx() as! soundFX).copyBuffer(Int32(bptr),Int32(wbptr),needNewBuffer) //Don't need this every time?
                 bufferChanged = false
@@ -1162,7 +1210,6 @@ class PatchEditVC: UIViewController,
 
     func loadPatchFromChooserAndUpdateUI (name : String)
     {
-        print("setupfor file \(name)")
         opatch = allP.getPatchByName(name: name)
         allP.dumpBuiltinPatch(n: name)
         patchName = name
@@ -1170,6 +1217,8 @@ class PatchEditVC: UIViewController,
         needToUseADSR = (opatch.attack  > 0)  || (opatch.decay   > 0) ||
                         (opatch.sustain > 0)  || (opatch.release > 0) ||
                         (opatch.sLevel  > 0)
+        print("setupfor file \(name) adsr \(needToUseADSR)")
+
         DispatchQueue.main.async {   //UI stuff goes on main thread
             self.setFieldsFromPatch()
             self.updateForPatchInfo()  //ask allpatches if new patch info came in
@@ -1186,16 +1235,15 @@ class PatchEditVC: UIViewController,
     //   filetypes
     func choseFile(name: String)
     {
-        if patchNamez.count > 0  //11/17
-        {
-            if let pn = patchNamez.index(of: name) //got a legit find?
-            {
-                patchNum = pn
-            }
-        }
-
         if chooserMode == "loadAllPatches"
         {
+            if patchNamez.count > 0  //11/17
+            {
+                if let pn = patchNamez.index(of: name) //got a legit find?
+                {
+                    patchNum = pn
+                }
+            }
             loadPatchFromChooserAndUpdateUI(name: name)
         }
         else //sample name?

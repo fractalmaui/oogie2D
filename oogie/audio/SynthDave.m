@@ -549,6 +549,7 @@ short *audioRecBuffer;
     //DHS 10/5 WTF? Sample rates seem to vary widely!
     int properRate = 44100;
     if (lastSampleRate > 11000 && lastSampleRate < 12000) properRate = 11025;
+    NSLog(@"SAMPLE RATES lsr %d rate %d",lastSampleRate,properRate);
     sRates[which]   = properRate;
     if (err) sBufLens[which] = 8192; //STOOPID SIZE!
 	sBufChans[which] = 2; //always stereo
@@ -573,11 +574,12 @@ short *audioRecBuffer;
     //NSLog(@"copy buffer from %d to %d  size [%d]",from,to,blen);
     for (int i=0;i<blen;i++)
     {
-        //if (i % 16 == 0) NSLog(@"...%f",sBufs[from][i]);
+        //if (i % 256 == 0) NSLog(@"    [%d]->[%d]...%f",from,to,sBufs[from][i]);
         sBufs[to][i] = sBufs[from][i];
     }
     sBufLens[to]  = sBufLens[from];
     sBufChans[to] = sBufChans[from];
+    sRates[to]    = sRates[from]; //11/22
     copyingBuffer = -1;
 
 } //end copyBuffer
@@ -872,17 +874,6 @@ short *audioRecBuffer;
 {
     int n,foundit=0;
     newUnique++;
-    //struct timeval tv;
-    //static long oldm=0L;
-    //long deltat=0L;
-    //long microseconds = 0L;
-    //if(gettimeofday(&tv, NULL) == 0)
-    //{
-    //    microseconds = 1000000*tv.tv_sec + tv.tv_usec ;
-    //    deltat = microseconds - oldm;
-        //NSLog(@"pn %d [%ld] d[%ld] ",midiNote,microseconds,deltat);
-    //    oldm = microseconds;
-    //}
 //    NSLog(@"...play note %d, duration %4.2f type %d, buf %d , srate %d, blen %d dt %d mlevel %f",
 //                       midiNote,
 //                    (float)(sBufLens[wnum]/2)/(float)sRates[wnum],
@@ -892,8 +883,12 @@ short *audioRecBuffer;
         NSLog(@" ERROR: buffer[%d] empty",wnum); //DHS 9/18 diagnostic, delete later    
         return;
     }
-    if (sRates[wnum] == 11025)  midiNote-=24;//10/5 Low rate? Pop us DOWN a couple octaves?
-    // June 14 '13
+    //DHS 11/22 does this work on non-pitch shifted samples???
+    if (sRates[wnum] == 11025)
+    {
+        midiNote -= 24;
+        detune = TRUE; //force detune for weird sample rates
+    }
     if (midiNote < 1 || midiNote > 255) return;
     //uniqueVoiceCounter++;  //keep track of nth voice...
     if (_mono) //ok mono means find old voice and stop it!
@@ -930,7 +925,7 @@ short *audioRecBuffer;
         tones[n].pitch    = pitches[midiNote];
         //NSLog(@".. note %d ,pitch %f   ",midiNote, pitches[midiNote]);
         [self incrVoiceCount:n];
-        if (1 || type == SAMPLE_VOICE)
+        if (type == SAMPLE_VOICE)
         { if (detune)
             tones[n].phase    = (int)((float)SAMPLE_OFFSET * 0.005 * (float)sBufLens[wnum]); //compute offset
         }
@@ -1106,6 +1101,15 @@ short *audioRecBuffer;
     return numSVoices;
     
 }
+
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+// 11/22 add srate to keep track of weird samples rates
+-(int) getSRate : (int) bptr
+{
+    if (bptr < 0 || bptr > MAX_SAMPLES ) return 44100;
+    return sRates[bptr];
+}
+
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 - (int)getNeedToMailAudioFile 
@@ -1380,10 +1384,7 @@ short *audioRecBuffer;
         //DHS feb 2013: Store latest audio output in a volume buffer...
         lrvolmod++;
 //LIVE DUMP: TURN OFF FOR DELIVERY!!!===================
-//        if (lrvolmod % 256 == 0)
-//        {
-//            NSLog(@" frame %d LR %f %f",f,ml,mr);
-//        }
+ //      if (lrvolmod % 256 == 0)  { NSLog(@" frame %d LR %f %f",f,ml,mr); }
 //======================================================
         //take sample every 8 frames...
         if (lrvolmod % 8 == 0)
@@ -1697,24 +1698,18 @@ short *audioRecBuffer;
 	int sws;
 	char duhchar[8];
 	UInt32 theSize,outNumBytes,readsize;
-	UInt64 packetCount,bCount;
+	UInt64 packetCount,bCount,bitRate;
     NSURL *fileURL = nil;
 	AudioStreamBasicDescription outFormat;
 	UInt32 thePropSize = sizeof(outFormat);
-    //NSLog(@" ..sample name %@ type %@",name,type);
+    NSLog(@" ..sample name %@ type %@",name,type);
     if ([type  isEqual: @"WEB"]) //we're pulling sample down from web?
         {
-            //fileURL = [[NSURL alloc] initWithString:name]; //file not found?
-            if (name == NULL)
-            {   //NSLog(@" ..sample load error 2");
-                return;
-            }
+            if (name == NULL) return;
             fileURL = [[NSURL alloc] initFileURLWithPath: name];  //file not found!
-            //NSLog(@" pull webfile %@",name);
         }
     else 
         {
-            //NSLog(@" sfpath %@:%@",name,type);
             NSString *soundFilePath  = [[NSBundle mainBundle] pathForResource:name ofType:type];
             if (soundFilePath == NULL)
             {   NSLog(@" ..sample load: bad path %@.%@",name,type);
@@ -1727,9 +1722,6 @@ short *audioRecBuffer;
 	if (err)
 	{  
        //if (err == kAudioFileFileNotFoundError)
-       //    NSLog(@" ..sample file not found err %d",(int)err);
-       // else
-       //     NSLog(@" ..sample load error %d",(int)err);
 		return;
 	}
 	// NSLog(@"File ID %d %x",fileID,fileID);
@@ -1739,16 +1731,19 @@ short *audioRecBuffer;
     lastSampleRate = (int)outFormat.mSampleRate; //DHS 10/5
     theSize = outFormat.mFormatID;
 	memcpy(duhchar,&theSize,4);
-	//NSLog(@" ...format str %s",duhchar);
+    
+    err = AudioFileGetProperty(fileID, kAudioFilePropertyBitRate,
+                               &theSize, &bitRate);
+	NSLog(@" ...samplerate %d vs bitrate %d",lastSampleRate,bitRate);
 	// if (outFormat.mFormatID == kAudioFormatMPEG4AAC)  NSLog(@" ..found mp4 format..");
 	// if (outFormat.mFormatID == kAudioFormatLinearPCM) NSLog(@" ..found linear PCM format..");
 	sChans = outFormat.mChannelsPerFrame;
 	theSize = sizeof(packetCount);
 	err = AudioFileGetProperty(fileID, kAudioFilePropertyAudioDataPacketCount,
 							   &theSize, &packetCount);	
-    //NSLog(@"LS:[%@]duration %4.2f mSampleRate %d packetCount %llu mBytesPerPacket %d chans %d",name,
-    //      (float)(packetCount/sChans)/(float)outFormat.mSampleRate,
-    //      (int)outFormat.mSampleRate,packetCount,(int)outFormat.mBytesPerPacket,outFormat.mChannelsPerFrame);
+    NSLog(@"LS:[%@]duration %4.2f mSampleRate %d packetCount %llu mBytesPerPacket %d chans %d",name,
+          (float)(packetCount/sChans)/(float)outFormat.mSampleRate,
+          (int)outFormat.mSampleRate,packetCount,(int)outFormat.mBytesPerPacket,outFormat.mChannelsPerFrame);
     bCount = 0;
 	theSize = sizeof(bCount);
 	if (!err) err = AudioFileGetProperty(fileID, kAudioFilePropertyAudioDataByteCount,
@@ -1806,7 +1801,7 @@ short *audioRecBuffer;
     char duhchar[8];
     UInt32 theSize,outNumBytes,readsize;
     UInt64 packetCount,bCount;
-    NSURL *fileURL = nil;
+    //NSURL *fileURL = nil;
     AudioStreamBasicDescription outFormat;
     UInt32 thePropSize = sizeof(outFormat);
     //Start at main bundle...
@@ -1816,9 +1811,6 @@ short *audioRecBuffer;
     //aaand filename...
     NSURL *sampleURL = [p2 URLByAppendingPathComponent:fileName];
     
-    //NSLog(@" sampleURL is %@",sampleURL);
-//    fileURL = [[NSURL alloc] initFileURLWithPath: p3];
-//    NSLog(@" file [%@]",fileURL.absoluteString);
     err = AudioFileOpenURL ((__bridge CFURLRef) sampleURL, kAudioFileReadPermission,0,&fileID);
     
     if (err)
@@ -1827,32 +1819,24 @@ short *audioRecBuffer;
             NSLog(@" ..sample file load err %d",(int)err);
         return;
     }
-    // NSLog(@"File ID %d %x",fileID,fileID);
-    // read size and format
-    //Sept 19, 2019 : WTF! New samples 44.1K dont load. only 11025 works!
+    //Get format, size
     AudioFileGetProperty(fileID, kAudioFilePropertyDataFormat, &thePropSize, &outFormat);
-    //NSLog(@"LSP:mSampleRate %d mBytesPerPacket %d chans %d",
-    //      (int)outFormat.mSampleRate,(int)outFormat.mBytesPerPacket,outFormat.mChannelsPerFrame);
+    lastSampleRate = (int)outFormat.mSampleRate; //DHS 10/5
     theSize = outFormat.mFormatID;
     memcpy(duhchar,&theSize,4);
-    //NSLog(@" ...format str %s",duhchar);
     // if (outFormat.mFormatID == kAudioFormatMPEG4AAC)  NSLog(@" ..found mp4 format..");
     // if (outFormat.mFormatID == kAudioFormatLinearPCM) NSLog(@" ..found linear PCM format..");
     sChans = outFormat.mChannelsPerFrame;
     theSize = sizeof(packetCount);
     err = AudioFileGetProperty(fileID, kAudioFilePropertyAudioDataPacketCount,
                                &theSize, &packetCount);
-    //errnum = 0;
-    //if (err) errnum = 1;
     bCount = 0;
     theSize = sizeof(bCount);
     if (!err) err = AudioFileGetProperty(fileID, kAudioFilePropertyAudioDataByteCount,
                                          &theSize, &bCount);
-    //if (err) errnum = 2;
-    //if (err) NSLog(@" LoadSample Err:%d",(int)err);
+    NSLog(@"ERRR 3 %d",err);
     sPacketSize = (int)bCount;
     sNumPackets = (int)packetCount;
-    //NSLog(@" loadSample: sNumPackets %d   sChans %d bcount %d max %d",sNumPackets, sChans,bCount,MAX_SAMPLE_SIZE);
     //DHS we have to tell caller about this!!!
     if (bCount > MAX_SAMPLE_SIZE)
     {

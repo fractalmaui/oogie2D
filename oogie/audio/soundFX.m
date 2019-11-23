@@ -169,6 +169,20 @@ int HH,LL,SS;  //Used in rgb -> HLS
 }
 
 //=====(soundFX)==========================================
+// 11/22 look up in synth, from buffer loads
+-(int) getSampleRate : (NSString*)name : (int) type
+{
+    int bptr = 0;
+    if (type == PERCUSSION_VOICE)
+        bptr = [self getPercussionBuffer : name ];
+    else if (type == SAMPLE_VOICE)
+        bptr = [self getGMBuffer : name ];
+    if (bptr != 0) return [synth getSRate:bptr];
+    else return 44100;
+}
+
+
+//=====(soundFX)==========================================
 //Sloppy!
 -(int) getPercussionBuffer : (NSString *)name
 {
@@ -571,7 +585,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
 //=========(soundFX)========================================================================
 // Major overhaul, needs to look at local folders and possibly folders on device...
 //   loads in background, assume samples arent ready for a lil while!
-//   maybe add notification when done?
+//   sends samplesLoadedNotification when done
 -(void) loadAudioForOOGIE
 {
     //Do load in bkgd...
@@ -589,6 +603,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
                            NSArray *directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:p2 error:NULL];
                            for (NSString*fname in directoryContent)
                            {
+                               NSLog(@" perc patch %@",fname);
                                [synth  loadSampleFromPath : subfolder : fname];
                                [synth buildSampleTable:sampleNumber];
                                soundFileLoaded[sampleNumber] = true;
@@ -608,7 +623,6 @@ int HH,LL,SS;  //Used in rgb -> HLS
                                soundFileLoaded[sampleNumber] = TRUE; //Indicate sample is ready to play...
                                sampleNumber++;
                            } //end for fname
-                           NSLog(@"last perc loaded to sample %d",sampleNumber);
                            // Second, load GeneralMidi.........................................
                            GMSampleOffset = sampleNumber;  //Start loading percussion here..
                            [GMBufferDict removeAllObjects]; //clear dict...
@@ -619,6 +633,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
                            directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:p2 error:NULL];
                            for (NSString*fname in directoryContent)
                            {
+                               NSLog(@" sample patch %@",fname);
                                [synth  loadSampleFromPath : subfolder : fname];
                                [synth buildSampleTable:sampleNumber];
                                soundFileLoaded[sampleNumber] = true;
@@ -637,7 +652,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
                        }); //END inner dispatch
                        
                    } ); //END outside dispatch
-   
+    NSLog(@"duh end loadaudio");
 } //end loadAudioForOOGIE
 
 

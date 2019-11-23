@@ -82,6 +82,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var latestTouch   = UITouch()
     var testSample = 8
     var chooserMode = "loadAllPatches"
+    var shouldNOTUpdateMarkers = false
     
     @IBAction func testSelect(_ sender: Any) {
         let u1 = DataManager.getBuiltinPatchFolderPath ( subfolder : "GMPatches" , isFactory : true)
@@ -274,29 +275,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //10/16 add notification to see when samples are loaded...
         NotificationCenter.default.addObserver(self, selector: #selector(self.samplesLoaded(notification:)), name: Notification.Name("samplesLoadedNotification"), object: nil)
 
-        let useOldTImer = 1
-        if useOldTImer > 0
-        {
-            
-            colorTimer = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.playAllMarkers), userInfo:  nil, repeats: true)
-            
+        //11/18  Update markers UI in foreground on a timer
+        colorTimer = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.updateAllMarkers), userInfo:  nil, repeats: true)
+        //...handle music production in background
+        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.03) {
+            self.playAllMarkersBkgdHandler()
         }
-        else //11/18 wtf? need bkgd timer
-        {
-                    //11/18 Try running colortimer in background....
-                    //dispatchMain()
-                    
-                    
-            //           dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            //               //run function methodRunAfterBackground
-            //               NSTimer* t = [NSTimer scheduledTimerWithTimeInterval:10 target:self selector:@selector(methodRunAfterBackground) userInfo:nil repeats:NO];
-            //               [[NSRunLoop currentRunLoop] addTimer:t forMode:NSDefaultRunLoopMode];
-            //               [[NSRunLoop currentRunLoop] run];
-            //           });
-                    
-        }
-        
-        
     } //end viewDidLoad
 
     
@@ -321,7 +305,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // 10/16 we can only create voices AFTER samples load!
     @objc func samplesLoaded(notification: NSNotification)
     {
-        print("samples loaded...")
+        print("==========================samples loaded...")
+        //DHS 11/22 all patches needs to do a final sweep...
+        allP.getAllPatchInfo() //11/22 Get sample rates, key offsets, etc.
+        allP.loadGMOffsets()  //11/22
         //DHS 10/16 create our scene?
         create3DScene(scene: scene)
     }
@@ -1654,10 +1641,57 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end findShape
     
 
+
+    
     //=====<oogie2D mainVC>====================================================
-    // Get color samples, output music!
-    // called by timer repeatedly...
-    @objc func playAllMarkers()
+    //ONLY handles marker read / play, NO UI!
+    @objc func playAllMarkersBkgdHandler()
+    {
+        //iterate thru dictionary of voices...
+        if !shouldNOTUpdateMarkers && allMarkers.count>0 //11/18 added error checks
+        {
+            
+            for counter in 0...allMarkers.count-1
+            {
+                var workVoice  = OogieVoice()
+                let nextMarker = allMarkers[counter]
+                if whatWeBeEditing == "voice" && knobMode != 0 && counter == selectedObjectIndex //selected and editing? load edited voice
+                {
+                    workVoice = selectedVoice
+                }
+                else if let vname = nextMarker.name  //otherwise load OVS from scene
+                {
+                    workVoice = sceneVoices[vname]!
+                }
+                else
+                {
+                    print("PAM error: no voice found")
+                }
+                var playit = true //10/17 add solo support
+                if soloVoiceID != "" && workVoice.uid != soloVoiceID {playit = false}
+                if  playit && !workVoice.muted  //10/17 add mute
+                {
+                    if let sphereNode = shapes[workVoice.OVS.shapeName] //10/21
+                    {
+                        let rgbaTuple = getShapeColor(shape:sphereNode , xCoord:workVoice.OVS.xCoord, yCoord:workVoice.OVS.yCoord, angle: sphereNode.angle) //10/25 new angle
+                        //Update marker output to 3D
+                        nextMarker.updateRGBData(rrr: rgbaTuple.R, ggg: rgbaTuple.G, bbb: rgbaTuple.B)
+                        setupSynthOrSample(oov: workVoice) //load synth ADSR, send note out
+                        // 11/18 move playcolors to voice
+                        nextMarker.gotPlayed = workVoice.playColors(rr: rgbaTuple.R, gg: rgbaTuple.G, bb: rgbaTuple.B)
+                    }
+                }
+            } //end for counter...
+        } //end !shouldNot
+        ///Ahhnd retrigger this in 30 ms, bkgd
+        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.03) {
+            self.playAllMarkersBkgdHandler()
+        }
+    } //end playAllMarkersBkgdHandler
+
+    //=====<oogie2D mainVC>====================================================
+    //Foreground, handles marker appearance...
+    @objc func updateAllMarkers()
     {
         //=================================================================
         //STOOPID place for this. how about a .30 second timer
@@ -1670,45 +1704,21 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             if !isPlaying {startPlayingMusic()}
         }
-        if (allMarkers.count == 0 || vc != nil) {return;}
-
+        shouldNOTUpdateMarkers = (allMarkers.count == 0 || vc != nil)
+        if  shouldNOTUpdateMarkers  {return;}
         //iterate thru dictionary of voices...
         for counter in 0...allMarkers.count-1
         {
-            var workVoice  = OogieVoice()
             let nextMarker = allMarkers[counter]
-            // 10/14 wups, wrong counter compare!
-            // 10/22 only while editing voices here!
-            if whatWeBeEditing == "voice" && knobMode != 0 && counter == selectedObjectIndex //selected and editing? load edited voice
+            nextMarker.updateMarkerPetalsAndColor()
+            if nextMarker.gotPlayed
             {
-                workVoice = selectedVoice
-            }
-            else if let vname = nextMarker.name  //otherwise load OVS from scene
-            {
-                workVoice = sceneVoices[vname]!
-            }
-            else
-            {
-                print("PAM error: no voice found")
-            }
-            var playit = true //10/17 add solo support
-            if soloVoiceID != "" && workVoice.uid != soloVoiceID {playit = false}
-            if  playit && !workVoice.muted  //10/17 add mute
-            {
-                if let sphereNode = shapes[workVoice.OVS.shapeName] //10/21
-                {
-                    let rgbaTuple = getShapeColor(shape:sphereNode , xCoord:workVoice.OVS.xCoord, yCoord:workVoice.OVS.yCoord, angle: sphereNode.angle) //10/25 new angle
-                    //Update marker output to 3D
-                    nextMarker.setColorRGB(rr: rgbaTuple.R, gg: rgbaTuple.G, bb: rgbaTuple.B)
-                    setupSynthOrSample(oov: workVoice) //load synth ADSR, send note out
-                    // 11/18 move playcolors to voice
-                   if workVoice.playColors(rr: rgbaTuple.R, gg: rgbaTuple.G, bb: rgbaTuple.B)
-                    { nextMarker.updateActivity() } //DHS 10/22 animate marker each note played..
-                }
+                nextMarker.updateActivity()
             }
         } //end for name...
-    } //end playAllMarkers
-
+    } //end updateAllMarkers
+    
+    
     //=====<oogie2D mainVC>====================================================
     override var prefersStatusBarHidden: Bool {
         return true

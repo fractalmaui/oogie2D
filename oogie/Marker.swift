@@ -16,6 +16,9 @@
 //  10/27 add unHighlight
 //  10/29 add updateTypeInt to support scene creation
 //  11/17 move lat/lon rotation handles here
+//  11/18 add updateRGBValues, separate data from display methods
+//         data is updated in bkgd while UI is updated in foreground
+//         
 //  Try to animate torus on select / deselect:
 //   https://developer.apple.com/documentation/scenekit/animation/animating_scenekit_content
 import UIKit
@@ -53,6 +56,17 @@ class Marker: SCNNode {
     let percIcon    = UIImage(named: "percIcon")
     let percKitIcon = UIImage(named: "percKitIcon")
     
+    //11/18 make hls class vals
+    var rr = 0
+    var gg = 0
+    var bb = 0
+    var hh = 0
+    var ll = 0
+    var ss = 0
+    var cc = 0
+    var mm = 0
+    var yy = 0
+    var gotPlayed = false
     
     //-------(Marker)-------------------------------------
     override init() {
@@ -90,24 +104,32 @@ class Marker: SCNNode {
         var fAlpha : CGFloat = 0
         if c.getRed(&fRed, green: &fGreen, blue: &fBlue, alpha: &fAlpha)
         {
-            setColorRGB(rr: Int(fRed*255.0), gg: Int(fGreen*255.0), bb: Int(fBlue*255.0))
+            updateRGBData(rrr: Int(fRed*255.0), ggg: Int(fGreen*255.0), bbb: Int(fBlue*255.0))
         }
     } //end setColor
     
     //-------(Marker)-------------------------------------
-    //vals 0.0 to 1.0
-    func setColorRGB ( rr : Int ,gg : Int ,bb : Int )
+    func updateRGBData ( rrr : Int ,ggg : Int ,bbb : Int )
     {
+        //Copy to structure data first
+        rr = rrr
+        gg = ggg
+        bb = bbb
         // fill out HSL data
         let hlsTuple = ColorTools.RGBtoHLS(R: rr, G: gg, B: bb)
-        let hh = hlsTuple.Hue
-        let ll = hlsTuple.Luminance
-        let ss = hlsTuple.Saturation
+        hh = hlsTuple.Hue
+        ll = hlsTuple.Luminance
+        ss = hlsTuple.Saturation
         let cmykTuple = ColorTools.RGBtoCMYK(R: rr, G: gg, B: bb)
-        let cc = cmykTuple.Cyan
-        let mm = cmykTuple.Magenta
-        let yy = cmykTuple.Yellow
-
+        cc = cmykTuple.Cyan
+        mm = cmykTuple.Magenta
+        yy = cmykTuple.Yellow
+    } //end updateRGBValues
+    
+    //-------(Marker)-------------------------------------
+    //vals 0.0 to 1.0
+    func updateMarkerPetalsAndColor ()
+    {
         
         //yupdate our petals
         updatePetals(rval: rr, gval: gg, bval: bb,

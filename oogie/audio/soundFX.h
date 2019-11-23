@@ -61,7 +61,7 @@
 -(void) copyEnvelope : (int) from : (int) to;
 
 - (void) dumpBuffer : (int) which : (int) dsize;
-
+-(int) getSampleRate : (NSString*)name : (int) type;
 -(void) glintmusic : (int) whichizzit : (int) psx;
 -(NSString*) getGMName : (int) buffer;
 -(NSArray *) getEnvelopeForDisplay: (int) which : (int) size;

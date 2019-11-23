@@ -262,7 +262,7 @@ class OogieVoice: NSObject {
         let vt    = OOP.type
         if midiNote > 0 //Play something?
         {
-            NSLog("OVPlayColors:Midinote %d",midiNote)
+            //NSLog("OVPlayColors:Midinote %d",midiNote)
             (sfx() as! soundFX).setSynthMIDI(Int32(OVS.midiDevice), Int32(OVS.midiChannel)) //chan: 0-16
             let nc = (sfx() as! soundFX).getSynthNoteCount()
             inkeyOldNote = oldNote

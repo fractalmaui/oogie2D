@@ -125,8 +125,9 @@ private init()
     print("tp4.....")
     dumpBuiltinPatch(n: "Casio")
 
-    getAllPatchInfo()  //load basic info for every patch...
-    loadGMOffsets() //11/10 compute octave / note offsets...
+    //BUG! 11/22 cannot perform this until all patches are loaded!!!
+    //getAllPatchInfo()  //load basic info for every patch...
+    //    loadGMOffsets() //11/10 compute octave / note offsets...
     print("...allpatches loaded")
 }
     //=====(AllPatches)=============================================
@@ -233,9 +234,11 @@ private init()
     //  and subracta octaves for 3,2,1
     func loadGMOffsets()
     {
-        for patch in builtInGMPatches
+        for (pname,ppp) in allBuiltinPatchDictionary
         {
-            let pname = patch.name.lowercased()
+            var srate = 44100
+            GMNamesDictionary = (sfx() as! soundFX).loadGeneralMidiNames() as! [String : String]
+
             var offset     = 64
             let dindex     = pname.index(pname.endIndex, offsetBy: -2)
             let last2Chars = pname[dindex...]
@@ -267,7 +270,9 @@ private init()
             }
             offset = offset + 12 * octave
             GMOIffsetDictionary[pname] = 64 - offset
+            print("offset [\(pname)] \(GMOIffsetDictionary[pname])")
         }
+        print(" allll fone w offsets")
     } //end loadGMOffsets
     
     //=====(AllPatches)=============================================

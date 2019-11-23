@@ -19,6 +19,7 @@
 // DHS 1/23/14: ARC-based version for RoadieTrip
 // DHS 10/17/19 add envelope support for samples
 // DHS 11/9     add copyBuffer
+// DHS 11/22   add getSRate
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioUnit/AudioUnit.h>
 #import <AudioToolbox/AudioFile.h>
@@ -203,6 +204,7 @@ ToneEvent;
 - (id)initWithSampleRate:(float)sampleRate;
 - (int)getNeedToMailAudioFile; 
 - (void)setNeedToMailAudioFile:(int)n;
+-(int) getSRate : (int) bptr;
 - (int)getSVoiceCount ;
 - (int)getPVoiceCount ;
 - (float)getLVolume ;
