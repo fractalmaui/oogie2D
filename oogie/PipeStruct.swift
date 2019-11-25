@@ -28,5 +28,19 @@ struct PipeStruct : Codable {
         hiRange     = 1.0
         delay       = 0
     }
+    
+    //Most likely called this way from mainVC menu choices
+    init( fromObject:String , fromChannel:String , toObject:String , toParam:String)
+    {
+        self.fromObject  = fromObject
+        self.fromChannel = fromChannel
+        self.toObject    = toObject
+        self.toParam     = toParam
+        loRange          = 0.0
+        hiRange          = 1.0
+        delay            = 0
+
+    }
+    
 }
 

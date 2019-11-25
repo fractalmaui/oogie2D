@@ -51,6 +51,7 @@
 //          move lat/lon handles to marker SCNNode object
 //  Nov 18  moved playColors out to oogieVoice, more efficient
 //          but what about masterPitch and quantTime?
+//  Nov 24  add camera 4x4 matrix saved to scene file
 import UIKit
 import SceneKit
 import Photos
@@ -60,7 +61,7 @@ let twoPi = 6.2831852
 
 //Scene unpacked params live here for now...
 var OVtempo = 135 //Move to params ASAP
-
+var camXform = SCNMatrix4()
 
 class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate,patchEditVCDelegate {
 
@@ -73,6 +74,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     @IBOutlet weak var menuButton: UIButton!
     @IBOutlet weak var editButton: UIButton!
 
+    var frakkinNote = 0
+    
     var fadeTimer = Timer()
     var colorTimer = Timer()
     var pLabel = infoText()
@@ -89,13 +92,24 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var shouldNOTUpdateMarkers = false
     
     @IBAction func testSelect(_ sender: Any) {
-        let u1 = DataManager.getBuiltinPatchFolderPath ( subfolder : "GMPatches" , isFactory : true)
-        let u2 = DataManager.getBuiltinPatchFolderPath ( subfolder : "GMPatches" , isFactory : false)
-        let u3 = DataManager.getBuiltinPatchFolderPath ( subfolder : "SynthPatches" , isFactory : true)
-        let u4 = DataManager.getBuiltinPatchFolderPath ( subfolder : "PercKitPatches" , isFactory : false)
+//        _ = DataManager.getBuiltinPatchFolderPath ( subfolder : "GMPatches" , isFactory : true)
+//        _ = DataManager.getBuiltinPatchFolderPath ( subfolder : "GMPatches" , isFactory : false)
+//        _ = DataManager.getBuiltinPatchFolderPath ( subfolder : "SynthPatches" , isFactory : true)
+//        _ = DataManager.getBuiltinPatchFolderPath ( subfolder : "PercKitPatches" , isFactory : false)
 //print("u1..4 \(u1), \(u2), \(u3), \(u4)")
+        if let pov = skView.pointOfView
+        {
+            print("reload cam...")
+            pov.transform = camXform
+            print("   txfm \(camXform)")
+
+
+            
+        }
+
         
-        self.performSegue(withIdentifier: "chooserLoadSegue", sender: self)
+        
+        //self.performSegue(withIdentifier: "chooserLoadSegue", sender: self)
 
     }
     //Constructed shapes / handles
@@ -104,6 +118,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var sceneVoices   = Dictionary<String, OogieVoice>()
     var shapes        = Dictionary<String, SphereShape>()  //10/21
     var sceneShapes   = Dictionary<String, OogieShape>()
+    var scenePipes    = Dictionary<String, OogiePipe>()
 
     //10/27 for finding new marker lat/lons
     let llToler = M_PI / 10.0
@@ -198,6 +213,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         sceneView.backgroundColor = UIColor.black
         sceneView.allowsCameraControl = true
         
+        
         // 10/27 add longpress...
         let lpgr = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
         lpgr.minimumPressDuration = 0.5
@@ -205,11 +221,17 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         lpgr.delegate = self
         self.view.addGestureRecognizer(lpgr)
         
+        
+        camXform = SCNMatrix4Identity //11/24 add camera matrix from scene file
+        
         //Get our default scene, move to appdelegate?
         if DataManager.sceneExists(fileName : "default")
         {
             self.OVScene = DataManager.loadScene("default", with: OogieScene.self)
             self.OVScene.unpackParams()       //DHS 11/22 unpack scene params
+            //11/24 get any 3D scene cam position...
+            setCamXYZ()
+            //asdf
             print("...load default scene")
         }
         else
@@ -342,7 +364,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         else {
         }
     }
-
+    
+ 
     //=====<oogie2D mainVC>====================================================
     // 9/13 reset parameter to default
     @IBAction func resetSelect(_ sender: Any) {
@@ -784,7 +807,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             if irot > 8 {irot = 8}
             rspeed = 60.0 / Double(OVtempo) //time for one beat
-            rspeed = rspeed * 4.0 * Double(irot) //4/4 timing, apply rot type
+            //11/23 change rotation speed mapping
+            rspeed = rspeed * 1.0 * Double(irot) //4/4 timing, apply rot type
         }
         //OK set up rotation
         setRotationSpeedForSelectedShape(s : rspeed)
@@ -952,7 +976,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 //11/16 get user shtuff first?
                 let yuserPatches = allP.getUserPatchesForVoiceType(type: selectedVoice.OOP.type)
                 //print("got uptch type\(selectedVoice.OOP.type) \(yuserPatches)")
-                for (name,p) in yuserPatches  //for each, add to string / display arrays
+                for (name,_) in yuserPatches  //for each, add to string / display arrays
                 {
                     selectedFieldStringVals.append(name)
                     selectedFieldDisplayVals.append(name)
@@ -1097,6 +1121,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else {return}
         latestTouch = touch
+        getCamXYZ() //11/24 Save new 3D cam position
     } //end touchesMoved
     
     //=======>ARKit MainVC===================================
@@ -1295,8 +1320,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         alert.addAction(UIAlertAction(title: "Clone", style: .default, handler: { action in
             self.addVoiceToScene(nextOVS: self.selectedVoice.OVS, name: "", op: "clone")
         }))
-        alert.addAction(UIAlertAction(title: "Delete", style: .default, handler: { action in
+        alert.addAction(UIAlertAction(title: "Delete...", style: .default, handler: { action in
            self.deleteVoicePrompt(voice: self.selectedVoice)
+        }))
+        alert.addAction(UIAlertAction(title: "Add Pipe...", style: .default, handler: { action in
+           self.addPipeStepOne(voice: self.selectedVoice)
         }))
 
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
@@ -1346,6 +1374,106 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             sceneShapes.removeValue(forKey: name)
         }
     } //end deleteShape
+    
+    //=====<oogie2D mainVC>====================================================
+    // spawns a series of other stoopid submenus, until there is a smart way
+    //    to do it in AR.  like point at something and select?????
+    //  Step 1: get output channel, Step 2: pick target , Step 3: choose parameter
+    func addPipeStepOne(voice:OogieVoice)
+    {
+        let alert = UIAlertController(title: "Choose Output Channel", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        let chanz = ["Red","Green","Blue","Hue","Saturation","Luminosity","Cyan", "Magenta" ,"Yellow"]
+        for chan in chanz
+        {
+            alert.addAction(UIAlertAction(title: chan, style: .default, handler: { action in
+                self.addPipeStepTwo(voice: voice,channel: chan)
+            }))
+        }
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
+        }))
+        self.present(alert, animated: true, completion: nil)
+    } //end addPipeStepOne
+    
+    //=====<oogie2D mainVC>====================================================
+    func addPipeStepTwo(voice:OogieVoice , channel : String)
+    {
+        print("step 2 chan \(channel)")
+        let list1 = OVScene.getListOfShapes()
+        let list2 = OVScene.getListOfVoices()
+        let alert = UIAlertController(title: "Choose Destination", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        for l11 in list1
+        {
+            alert.addAction(UIAlertAction(title: l11, style: .default, handler: { action in
+                self.addPipeStepThree(voice: voice,channel: channel , destination : l11,isShape: true)
+            }))
+        }
+        for l12 in list2
+        {
+            alert.addAction(UIAlertAction(title: l12, style: .default, handler: { action in
+                self.addPipeStepThree(voice: voice,channel: channel , destination : l12,isShape: false)
+            }))
+        }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
+        }))
+        self.present(alert, animated: true, completion: nil)
+
+
+    } //end addPipeStepTwo
+
+    
+    //=====<oogie2D mainVC>====================================================
+    func addPipeStepThree(voice:OogieVoice , channel : String , destination : String , isShape : Bool)
+    {
+        print("step 3 chan \(channel) destination \(destination) shape \(isShape)")
+        let alert = UIAlertController(title: "Choose Parameter", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        var menuNames = shapeParamNames
+        if !isShape {menuNames = voiceParamNames}
+        for pname in menuNames
+            {
+                alert.addAction(UIAlertAction(title: pname, style: .default, handler: { action in
+                    //self.addPipeStepThree(voice: voice,channel: channel , destination : l11,isShape: true)
+//                    init( fromObject:String , fromChannel:String , toObject:String , toParam:String)
+                    //Add our pipe to scene... (BREAK OUT TO METHOD WHEN WORKING!)
+                    print("from \(voice.OVS.name)")
+                    print("fromchannel : \(channel)")
+                    print("toObj : \(destination)")
+                    print("toParam : \(pname)")
+                    var ps = OogiePipe(fromObject: voice.OVS.name, fromChannel: channel, toObject: destination, toParam: pname)
+                    //Now we need to scale things so pipe will work!
+                    //KLUGE
+                    var pmin = 0.0
+                    var pmax = 255.0
+                    //SHAPE PARAMS: WE NEED TO CONVERT FOR ANYTNING HERE!!
+                    switch(pname.lowercased())
+                    {
+                    case "rotation":
+                        pmin = 0.01
+                        pmax = 80.0
+                    case "rotationtype":
+                        pmin = 0.0
+                        pmax = 8.0 //Is this right?
+                    case "xpos","ypos","zpos"  :
+                        pmin = -10.0
+                        pmax =  10.0
+                    case "texxoffset","texyoffset" :pmax = 1.0
+                    case "texxscale" ,"texyscale"  :
+                        pmin = 0.01
+                        pmax = 10.0
+                    default:pmax = 255.0
+                    }
+                    ps.PS.loRange = pmin
+                    ps.PS.hiRange = pmax
+                    self.scenePipes[pname] = ps
+
+                    print("duh")
+                }))
+            }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
+        }))
+        self.present(alert, animated: true, completion: nil)
+    }
+
     
     //=====<oogie2D mainVC>====================================================
     // 10/27
@@ -1464,8 +1592,34 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         } //end if primitive...
     } //end addShapeToScene
     
+    //=====<oogie2D mainVC>====================================================
+    // 11/24 load canned 3D pos back from where we got it!
+    // BROKEN: sets position and rotation OK but orientation is a 4x4 and it isn't set!
+    //  OUCH! do i have to save the entire 4x4?
+    //  https://stackoverflow.com/questions/42029347/position-a-scenekit-object-in-front-of-scncameras-current-orientation
+    func setCamXYZ()
+    {
+        if let pov = skView.pointOfView
+        {
+            pov.transform = camXform
+        }
+
+    } //end setCamXYZ
     
-    //======(OogieScene)=============================================
+    
+    //=====<oogie2D mainVC>====================================================
+    // 11/24 captures 3D scene cam position, etc every time user
+    //   drags around in the scene
+    func getCamXYZ()
+    {
+        if let pov = skView.pointOfView
+        {
+            camXform = pov.transform
+        }
+
+    }
+    
+    //=====<oogie2D mainVC>====================================================
     // 10/26 look at shape Dict, get unused XYZ area for new shape
     //   get centroid first, then go " around the clock"
     func getFreshXYZ() -> SCNVector3
@@ -1606,6 +1760,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     func packupSceneAndSave(sname:String)
     {
+
+        //DHS 11/24 test for later
+        if let pov = skView.pointOfView
+        {
+
+                    camXform = pov.transform
+                   print(" save back txfm \(camXform)")
+        }
         //10/26 first we need to clean target...
         OVScene.voices.removeAll()
         OVScene.shapes.removeAll()
@@ -1647,8 +1809,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end findShape
     
 
-
-    
+     
     //=====<oogie2D mainVC>====================================================
     //ONLY handles marker read / play, NO UI!
     @objc func playAllMarkersBkgdHandler()

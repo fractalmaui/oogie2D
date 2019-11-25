@@ -10,7 +10,7 @@ import Foundation
 
 struct OogiePipe {
     //User Params come from here...
-    var PS     = PipeStruct()
+    var PS     : PipeStruct
     //Working variables...
     let pbSize = 256
     var ibuffer : [Float] //input buffer
@@ -19,10 +19,13 @@ struct OogiePipe {
     var multF  = 1.0
     
     //======(OogiePipe)=============================================
-    init()
+    // Gotta have all 4 args b4 init!
+    init( fromObject:String , fromChannel:String , toObject:String , toParam:String)
     {
         ibuffer      = [] //set up our input/output data buffers
         obuffer      = []
+        PS           = PipeStruct(fromObject: fromObject , fromChannel: fromChannel ,
+                                    toObject: toObject   ,     toParam: toParam) //11/22 setup dat pipe!
     }
     
     //======(OogiePipe)=============================================
