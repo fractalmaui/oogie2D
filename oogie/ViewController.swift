@@ -52,6 +52,8 @@
 //  Nov 18  moved playColors out to oogieVoice, more efficient
 //          but what about masterPitch and quantTime?
 //  Nov 24  add camera 4x4 matrix saved to scene file
+//          storyboard: change all childVC presentation to fullScreen
+//             to get around ios13 new VC crap
 import UIKit
 import SceneKit
 import Photos
@@ -756,6 +758,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             switch (fname)
             {
             case "texture" : selectedShape.texture = lastFieldString //WTF?? TBD
+                print("new tex \(lastFieldString)")
                 needUpdate = false
             case "rotation": selectedShape.rotSpeed = dknobval
                 needUpdate = false
@@ -2154,6 +2157,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             sshape.setBitmapImage(i: tex) //set 3d shape texture
             sshape.name           = name // save texture name
             selectedShape.texture = name
+            //11/24 Store immediately back into scene!
+            sceneShapes[selectedShapeName] = selectedShape
             editSelect(editButton)              // leave edit mode
         }
     }

@@ -121,9 +121,9 @@
         <!--TextureVC-->
         <scene sceneID="uAX-pO-5hf">
             <objects>
-                <viewController id="BJM-oe-vDf" customClass="TextureVC" customModule="oogie2D" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController modalPresentationStyle="fullScreen" id="BJM-oe-vDf" customClass="TextureVC" customModule="oogie2D" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="vz9-Ln-wsT">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Textures" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="F2b-S3-rwT">
@@ -136,7 +136,7 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" ambiguous="YES" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="uGg-Pl-9Lk">
-                                <rect key="frame" x="0.0" y="30" width="375" height="530"/>
+                                <rect key="frame" x="0.0" y="30" width="375" height="550"/>
                                 <color key="backgroundColor" red="0.96078431372549022" green="0.96078431372549022" blue="0.96078431372549022" alpha="1" colorSpace="calibratedRGB"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="Bws-ff-2S5">
                                     <size key="itemSize" width="50" height="50"/>
@@ -178,7 +178,7 @@
                                 </connections>
                             </collectionView>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="I2f-Ah-atH">
-                                <rect key="frame" x="310" y="590" width="50" height="40"/>
+                                <rect key="frame" x="310" y="610" width="50" height="40"/>
                                 <color key="backgroundColor" cocoaTouchSystemColor="groupTableViewBackgroundColor"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="40" id="N9c-Dx-Jcj"/>
@@ -186,14 +186,14 @@
                                 </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="26"/>
                                 <state key="normal" title="X">
-                                    <color key="titleColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    <color key="titleColor" systemColor="labelColor" cocoaTouchSystemColor="darkTextColor"/>
                                 </state>
                                 <connections>
                                     <action selector="dismissSelect:" destination="BJM-oe-vDf" eventType="touchUpInside" id="7Ad-Fx-ut1"/>
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jUt-yh-KlI">
-                                <rect key="frame" x="15" y="590" width="50" height="40"/>
+                                <rect key="frame" x="15" y="610" width="50" height="40"/>
                                 <color key="backgroundColor" cocoaTouchSystemColor="groupTableViewBackgroundColor"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="40" id="oKY-ZE-K8B"/>
@@ -201,14 +201,14 @@
                                 </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="26"/>
                                 <state key="normal" title="+">
-                                    <color key="titleColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    <color key="titleColor" systemColor="labelColor" cocoaTouchSystemColor="darkTextColor"/>
                                 </state>
                                 <connections>
                                     <action selector="plusSelect:" destination="BJM-oe-vDf" eventType="touchUpInside" id="3cB-8a-e9H"/>
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3V9-kv-Cl5">
-                                <rect key="frame" x="75" y="590" width="50" height="40"/>
+                                <rect key="frame" x="75" y="610" width="50" height="40"/>
                                 <color key="backgroundColor" cocoaTouchSystemColor="groupTableViewBackgroundColor"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="40" id="CRo-uN-qXc"/>
@@ -216,7 +216,7 @@
                                 </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="26"/>
                                 <state key="normal" title="-">
-                                    <color key="titleColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    <color key="titleColor" systemColor="labelColor" cocoaTouchSystemColor="darkTextColor"/>
                                 </state>
                                 <connections>
                                     <action selector="minusSelect:" destination="BJM-oe-vDf" eventType="touchUpInside" id="z8Y-I9-sgl"/>
@@ -252,9 +252,9 @@
         <!--ChooserVC-->
         <scene sceneID="Ght-NC-oQK">
             <objects>
-                <viewController id="P1S-LI-aTV" customClass="chooserVC" customModule="oogie2D" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController modalPresentationStyle="fullScreen" id="P1S-LI-aTV" customClass="chooserVC" customModule="oogie2D" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Fh3-uI-vE7">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Ual-mb-ET1" userLabel="TopView">
@@ -284,7 +284,7 @@
                                 </constraints>
                             </view>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="TY2-zd-JH1">
-                                <rect key="frame" x="0.0" y="80" width="375" height="497"/>
+                                <rect key="frame" x="0.0" y="80" width="375" height="517"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                 <prototypes>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="Cell" id="Fe6-S7-1iY">
@@ -298,7 +298,7 @@
                                 </prototypes>
                             </tableView>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Pjk-4y-C1F">
-                                <rect key="frame" x="20" y="597" width="97" height="51"/>
+                                <rect key="frame" x="20" y="617" width="97" height="51"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="97" id="e1R-NO-xYW"/>
                                 </constraints>
@@ -311,7 +311,7 @@
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="YKz-rW-7Cg">
-                                <rect key="frame" x="258" y="597" width="97" height="51"/>
+                                <rect key="frame" x="258" y="617" width="97" height="51"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="97" id="aeR-4p-dEh"/>
                                 </constraints>
@@ -357,9 +357,9 @@
         <!--Patch EditVC-->
         <scene sceneID="kmP-Hu-zGL">
             <objects>
-                <viewController id="qSY-cK-q6o" customClass="PatchEditVC" customModule="oogie2D" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController modalPresentationStyle="fullScreen" id="qSY-cK-q6o" customClass="PatchEditVC" customModule="oogie2D" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="PAc-0I-BXb">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="mYf-SK-qUa">
