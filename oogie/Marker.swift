@@ -43,6 +43,8 @@ class Marker: SCNNode {
     var torusNode2   = SCNNode()
     var lonHandle    = SCNNode()   //11/17 from mainVC
     var latHandle    = SCNNode()
+    var lat = 0.0 //11/25 store lat lon here too
+    var lon = 0.0
 
     var uid = ""
     let showHueIndicator = false
@@ -283,8 +285,10 @@ class Marker: SCNNode {
     }
     
     //-------(Marker)-------------------------------------
-    func updateLatLon (lat : Double,lon : Double)
+    func updateLatLon (llat : Double,llon : Double)
     {
+       lat = llat
+       lon = llon
        lonHandle.eulerAngles = SCNVector3Make(0, Float(lon), 0)
        latHandle.eulerAngles = SCNVector3Make(0, 0, Float(lat))
     } //end updateMarkerPosition

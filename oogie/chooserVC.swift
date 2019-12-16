@@ -24,6 +24,7 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     @IBOutlet weak var nameText: UITextField!
     @IBOutlet weak var saveButton: UIButton!
 
+    @IBOutlet weak var table2: UITableView!
     var delegate: chooserDelegate?
     var mode = "load"
     
@@ -53,6 +54,8 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         super.viewDidLoad()
         table.delegate = self
         table.dataSource = self
+        table2.delegate = self
+        table2.dataSource = self
         //get folder contents...
         //        static func getDirectoryContents(whichDir : String) -> [String]
         typez.removeAll()
@@ -107,6 +110,27 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         //Set up bkgd color array for item types
         carray = [synthColor,synthColor,percColor,percKitColor,sampleColor,userColor]
         iarray = [synthIcon!,synthIcon!,percIcon!,percKitIcon!,sampleIcon!,userIcon!]
+        let ip = IndexPath(item: 0, section: 0)
+        //11/28 scroll table 2 if need be??
+        
+        //11/28 add 2nd table2 for large folders, show 2x more content
+        if (filez.count > 20)
+        {
+            let offset = 40 * filez.count/2
+            //let ip = indexPathForPreferredFocusedView?(in: ())
+        
+            print("scrolll to \(offset)")
+            table2.scrollToRow(at: ip ,  at: UITableViewScrollPosition(rawValue: offset)!, animated: false)
+            table2.isHidden = false
+        }
+        else //small table? no need for 2nd dupe
+        {
+            table2.isHidden = true
+        }
+                
+                
+
+        
         
     } //end viewDidLoad
 
@@ -173,15 +197,19 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         let cell = UITableViewCell(style: UITableViewCell.CellStyle.default, reuseIdentifier: "Cell")
         //print("cell \(indexPath.row) shit \(filez[indexPath.row])")
         cell.textLabel?.text = filez[indexPath.row]
-        cell.textLabel?.textColor = .black
+       // cell.textLabel?.textColor = .black
         if mode == "loadAllPatches"
         {
             let type = max(0,min(5,typez[indexPath.row]))
-            cell.backgroundColor = carray[type] //Canned colors
+            cell.backgroundColor = .black  //11/28 wtf cell shows up gray udderwise!
             cell.imageView?.image = iarray[type] //and icons
         }
+        else
+        {
+            cell.backgroundColor = .black   
+        }
         return cell
-    }
+    } //end cellForRowAt...
     
     //---<UITableViewDelegate>--------------------------------------
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

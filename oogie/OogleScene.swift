@@ -23,7 +23,8 @@ struct OogieScene : Codable {
     var params  : String
     var shapes  : Dictionary<String, OogieShape>
     var voices  : Dictionary<String, OVStruct>
-    
+    var pipes   : Dictionary<String, PipeStruct>
+
     //======(OogieScene)=============================================
     init()
     {
@@ -33,6 +34,7 @@ struct OogieScene : Codable {
         params  = ""
         shapes  = Dictionary<String, OogieShape>()
         voices  = Dictionary<String, OVStruct>()
+        pipes   = Dictionary<String, PipeStruct>()
     }
     
     //======(OogieScene)=============================================

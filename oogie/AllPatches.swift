@@ -95,6 +95,7 @@ private init()
                                                                          fromFactory: false)
     for (pname,_) in GMPatchDictionary //Get GM instrument lookups...
     {
+        print("patchname \(pname)")
         let iname = getInstrumentNameFromGMFilename(fname: pname)
         GMNamesToInstrumentsDictionary[pname] = iname
     }

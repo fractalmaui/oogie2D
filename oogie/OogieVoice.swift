@@ -19,6 +19,7 @@
 //  10/9  add name field
 //  11/14 new arg to patch:saveItem
 //  11/18 move playColors in ... what about masterPitch and quantTime?
+//  11/25 add getChanValueByName, RRR,GGG,BBB channel standard names
 
 import Foundation
 
@@ -71,6 +72,10 @@ let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch",
                              "NChan","VChan","PChan",
                              "NFixed","VFixed","PFixed",
                              "BottomMidi","TopMidi","MidiChannel","Name"]
+let voiceParamNamesOKForPipe : [String]    = ["Latitude", "Longitude","Patch",
+                                            "Scale","Level","NChan","VChan","PChan",
+                                            "NFixed","VFixed","PFixed",
+                                            "BottomMidi","TopMidi","MidiChannel"]
 
 var voiceParamsDictionary = Dictionary<String, [Any]>()
 // 9/23 canned perc kit defaults
@@ -114,13 +119,16 @@ class OogieVoice: NSObject {
     var triggerKey    = -1; //For percussion, GMidi note
 
     // Work vars for color conversion
+    var RRR = 0
+    var GGG = 0
+    var BBB = 0
     var HHH = 0
     var SSS = 0
     var LLL = 0
-    var CC  = 0
-    var MM  = 0
-    var KK  = 0
-    var YY  = 0
+    var CCC  = 0
+    var MMM  = 0
+    var KKK  = 0
+    var YYY  = 0
     
     let masterPitch = 0 //DHS 11/18
     let quantTime = 0   //DHS 11/18
@@ -171,6 +179,24 @@ class OogieVoice: NSObject {
         return voiceParamsDictionary[key]!
     }
     
+    //-----------(oogieVoice)=============================================
+    //11/25 VERY BUSY, called by pipes! assume name is lowercase
+    func getChanValueByName (n : String) -> Int
+    {
+        switch(n)
+        {
+        case "red"          :  return RRR
+        case "green"        :  return GGG
+        case "blue"         :  return BBB
+        case "cyan"         :  return CCC
+        case "magenta"      :  return MMM
+        case "yellow"       :  return YYY
+        case "hue"          :  return HHH
+        case "luminsotiy"   :  return LLL
+        case "saturation"   :  return SSS
+        default             :  return 0
+        }
+    } //end getChanValueByName
     
     //-----------(oogieVoice)=============================================
     // using this voices internal type, get array of appropriate patchnames
@@ -514,7 +540,7 @@ class OogieVoice: NSObject {
     var Rdelta = 0
     var Gdelta = 0
     var Bdelta = 0
-        
+    //populate HKS
     LLL = ( ((cMax+cMin)*HLSMAX) + RGBMAX )/(2*RGBMAX)
     
     if (cMax == cMin) {            /* r=g=b --> achromatic case */
@@ -572,12 +598,12 @@ class OogieVoice: NSObject {
     {
         var minCMY,lcc,lmm,lyy : Double
         // BLACK
-        CC = 0
-        MM = 0
-        YY = 0
+        CCC = 0
+        MMM = 0
+        YYY = 0
         if R==0 && G==0 && B==0
         {
-            KK = 1
+            KKK = 1
             return
         }
         lcc = 1.0 - (Double(R)/255.0)
@@ -587,10 +613,10 @@ class OogieVoice: NSObject {
         if minCMY > lmm {minCMY = lmm}
         if minCMY > lyy {minCMY = lyy}
     
-        CC = Int(255.0 * (lcc-minCMY) / (1.0 - minCMY))
-        MM = Int(255.0 * (lmm-minCMY) / (1.0 - minCMY))
-        YY = Int(255.0 * (lyy-minCMY) / (1.0 - minCMY))
-        KK = Int(255.0 * minCMY)
+        CCC = Int(255.0 * (lcc-minCMY) / (1.0 - minCMY))
+        MMM = Int(255.0 * (lmm-minCMY) / (1.0 - minCMY))
+        YYY = Int(255.0 * (lyy-minCMY) / (1.0 - minCMY))
+        KKK = Int(255.0 * minCMY)
     // NSLog(@" RGB %d %d %d : cmyk %d  %d %d %d",R,G,B,CC,MM,YY,KK);
     
     } //end  RGBtoCMY
@@ -617,10 +643,13 @@ class OogieVoice: NSObject {
         pchan = 128
         vchan = 128
         //get MusiColors(TM) data...
-        var needHLS = true   //The VOICE type params may alter these two...
-        var needCMY = true
-        if needHLS  {RGBtoHLS( R:chr, G:chg, B:chb)}  //Do All conversions...
-        if needCMY  {RGBtoCMY(R: chr, G:chg, B:chb) }
+        //11/25 WHATDAFUK? i thiought this was already here! populate channels
+        RRR = chr
+        GGG = chg
+        BBB = chb
+        RGBtoHLS( R:chr, G:chg, B:chb) //Do All conversions...
+        RGBtoCMY( R:chr, G:chg, B:chb)
+
         //print("nvpmodes \(OVS.noteMode), \(OVS.volMode), \(OVS.panMode)")
         //Get color/etc channel out to note channel as needed
         switch(OVS.noteMode)
@@ -631,9 +660,9 @@ class OogieVoice: NSObject {
         case 3:  tnchan = HHH
         case 4:  tnchan = LLL
         case 5:  tnchan = SSS
-        case 6:  tnchan = CC
-        case 7:  tnchan = MM
-        case 8:  tnchan = YY
+        case 6:  tnchan = CCC
+        case 7:  tnchan = MMM
+        case 8:  tnchan = YYY
         default: tnchan = OVS.noteFixed // 10/4 introduce fixed values
         }
         //Get color/etc channel out to volume channel as needed
@@ -645,9 +674,9 @@ class OogieVoice: NSObject {
         case 3:  tvchan = HHH
         case 4:  tvchan = LLL
         case 5:  tvchan = SSS
-        case 6:  tvchan = CC
-        case 7:  tvchan = MM
-        case 8:  tvchan = YY
+        case 6:  tvchan = CCC
+        case 7:  tvchan = MMM
+        case 8:  tvchan = YYY
         default: tvchan = OVS.volFixed // 10/4 introduce fixed values
         }
         
@@ -663,9 +692,9 @@ class OogieVoice: NSObject {
             case 3:  tpchan = HHH
             case 4:  tpchan = LLL
             case 5:  tpchan = SSS
-            case 6:  tpchan = CC
-            case 7:  tpchan = MM
-            case 8:  tpchan = YY
+            case 6:  tpchan = CCC
+            case 7:  tpchan = MMM
+            case 8:  tpchan = YYY
             default: tpchan = OVS.panFixed // 10/4 introduce fixed values
             }
             
@@ -700,9 +729,9 @@ class OogieVoice: NSObject {
                 case 3:  tpchan = HHH
                 case 4:  tpchan = LLL
                 case 5:  tpchan = SSS
-                case 6:  tpchan = CC
-                case 7:  tpchan = MM
-                case 8:  tpchan = YY
+                case 6:  tpchan = CCC
+                case 7:  tpchan = MMM
+                case 8:  tpchan = YYY
                 case 9:  tpchan = 0 // L pan
                 case 10: tpchan = 255 // R pan
                 case 11: tpchan = 128 // N/A mode: center!

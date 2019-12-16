@@ -34,6 +34,8 @@ let VSParams   : [Any] = ["TexYscale" , "double", 0.1 , 10.0 , 1.0, 1.0, 0.0 ]
 
 let shapeParamNames : [String] = ["Texture", "Rotation","RotationType",
 "XPos","YPos","ZPos","TexXoffset","TexYoffset","TexXscale","TexYscale"]
+let shapeParamNamesOKForPipe : [String] = ["Rotation","RotationType","TexXoffset",
+                                           "TexYoffset","TexXscale","TexYscale"]
 
 var shapeParamsDictionary = Dictionary<String, [Any]>()
 

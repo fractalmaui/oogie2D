@@ -33,9 +33,9 @@ struct PipeStruct : Codable {
     init( fromObject:String , fromChannel:String , toObject:String , toParam:String)
     {
         self.fromObject  = fromObject
-        self.fromChannel = fromChannel
+        self.fromChannel = fromChannel.lowercased()
         self.toObject    = toObject
-        self.toParam     = toParam
+        self.toParam     = toParam.lowercased()
         loRange          = 0.0
         hiRange          = 1.0
         delay            = 0

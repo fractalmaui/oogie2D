@@ -15,6 +15,7 @@
 		5226E9241FD44A5600C72C21 /* star.png in Resources */ = {isa = PBXBuildFile; fileRef = 5226E9221FD44A5600C72C21 /* star.png */; };
 		5262740E1FD44F3400790D87 /* SphereShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5262740D1FD44F3400790D87 /* SphereShape.swift */; };
 		720110AD232B5D5A00E02CCE /* fineGear.png in Resources */ = {isa = PBXBuildFile; fileRef = 720110AC232B5D5A00E02CCE /* fineGear.png */; };
+		720220BA238C6B6B001F7483 /* PipeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720220B9238C6B6B001F7483 /* PipeShape.swift */; };
 		7208A4C922E2C7F3000AA144 /* Marker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7208A4C822E2C7F3000AA144 /* Marker.swift */; };
 		722753CA2333766300A2DC29 /* dog.wav in Resources */ = {isa = PBXBuildFile; fileRef = 722753C92333766300A2DC29 /* dog.wav */; };
 		722BB24522F3B2C900D990B2 /* synthPanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = 722BB24422F3B2C900D990B2 /* synthPanel.xib */; };
@@ -85,6 +86,7 @@
 		5226E9221FD44A5600C72C21 /* star.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = star.png; sourceTree = "<group>"; };
 		5262740D1FD44F3400790D87 /* SphereShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphereShape.swift; sourceTree = "<group>"; };
 		720110AC232B5D5A00E02CCE /* fineGear.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = fineGear.png; sourceTree = "<group>"; };
+		720220B9238C6B6B001F7483 /* PipeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipeShape.swift; sourceTree = "<group>"; };
 		7208A4C822E2C7F3000AA144 /* Marker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Marker.swift; sourceTree = "<group>"; };
 		721FAF3C2338795000DC3091 /* GMidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GMidi.h; sourceTree = "<group>"; };
 		722753C92333766300A2DC29 /* dog.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dog.wav; sourceTree = "<group>"; };
@@ -216,6 +218,7 @@
 				7237FEB12306952B000A571A /* OVStruct.swift */,
 				724C877E231F8587008E4625 /* texCache.swift */,
 				72B7C5CA2322E48500175D4C /* ColorTools.swift */,
+				720220B9238C6B6B001F7483 /* PipeShape.swift */,
 				727F08DC2367B5B80054C517 /* OogiePipe.swift */,
 				727F08DE23680A8E0054C517 /* PipeStruct.swift */,
 				727F08E0236894310054C517 /* UI */,
@@ -407,6 +410,7 @@
 				7283A65D234085400088560D /* infoText.swift in Sources */,
 				5226E9121FD4481B00C72C21 /* ViewController.swift in Sources */,
 				72EE838323125D7B00FFAAE1 /* OogleScene.swift in Sources */,
+				720220BA238C6B6B001F7483 /* PipeShape.swift in Sources */,
 				72D3D69622F69C19001EACA7 /* DataManager.swift in Sources */,
 				725F034A22E304E700A6A5FD /* SynthDave.m in Sources */,
 				7259B7CA22F3D553004774CC /* synthPanel.swift in Sources */,
