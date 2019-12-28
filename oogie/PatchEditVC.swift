@@ -697,7 +697,7 @@ class PatchEditVC: UIViewController,
                 UIView.animate(withDuration: animShiftTime, delay: 0.0, options: [], animations: {
                      vz.view.frame = f
                 }, completion: { (finished: Bool) in
-                    print("shiftduh")
+                    //print("shiftduh")
                     self.animCount-=1
                 })
 //                UIView.animate(withDuration: animShiftTime) {

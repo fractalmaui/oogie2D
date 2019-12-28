@@ -549,7 +549,7 @@ short *audioRecBuffer;
     //DHS 10/5 WTF? Sample rates seem to vary widely!
     int properRate = 44100;
     if (lastSampleRate > 11000 && lastSampleRate < 12000) properRate = 11025;
-    NSLog(@"SAMPLE RATES lsr %d rate %d",lastSampleRate,properRate);
+    //NSLog(@"SAMPLE RATES lsr %d rate %d",lastSampleRate,properRate);
     sRates[which]   = properRate;
     if (err) sBufLens[which] = 8192; //STOOPID SIZE!
 	sBufChans[which] = 2; //always stereo
@@ -1834,7 +1834,7 @@ short *audioRecBuffer;
     theSize = sizeof(bCount);
     if (!err) err = AudioFileGetProperty(fileID, kAudioFilePropertyAudioDataByteCount,
                                          &theSize, &bCount);
-    NSLog(@"ERRR 3 %d",err);
+    //NSLog(@"ERRR 3 %d",err);
     sPacketSize = (int)bCount;
     sNumPackets = (int)packetCount;
     //DHS we have to tell caller about this!!!

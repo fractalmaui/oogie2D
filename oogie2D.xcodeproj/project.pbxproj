@@ -74,6 +74,7 @@
 		72DEB0A52320C049005A9505 /* rainbowRing.png in Resources */ = {isa = PBXBuildFile; fileRef = 72DEB0A32320C049005A9505 /* rainbowRing.png */; };
 		72E463E823702E3D003360D6 /* chooserVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72E463E723702E3D003360D6 /* chooserVC.swift */; };
 		72EE838323125D7B00FFAAE1 /* OogleScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72EE838223125D7B00FFAAE1 /* OogleScene.swift */; };
+		72FAEDE923AC969300FFCEA5 /* GMPercussion in Resources */ = {isa = PBXBuildFile; fileRef = 72FAEDE823AC969200FFCEA5 /* GMPercussion */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -155,6 +156,7 @@
 		72DEB0A32320C049005A9505 /* rainbowRing.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = rainbowRing.png; sourceTree = "<group>"; };
 		72E463E723702E3D003360D6 /* chooserVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = chooserVC.swift; sourceTree = "<group>"; };
 		72EE838223125D7B00FFAAE1 /* OogleScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogleScene.swift; sourceTree = "<group>"; };
+		72FAEDE823AC969200FFCEA5 /* GMPercussion */ = {isa = PBXFileReference; lastKnownFileType = folder; path = GMPercussion; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -246,6 +248,7 @@
 		725F034D22E3054300A6A5FD /* Samples */ = {
 			isa = PBXGroup;
 			children = (
+				72FAEDE823AC969200FFCEA5 /* GMPercussion */,
 				72372EDD2373DC890065F58A /* Misc */,
 				727EDCE22335C0D70028B011 /* moog01.wav */,
 				722753C92333766300A2DC29 /* dog.wav */,
@@ -365,6 +368,7 @@
 				726323F52339FBDB00F393D4 /* PercKitPatches in Resources */,
 				727A5612233996D80095BA90 /* synthIcon.png in Resources */,
 				72B3E89D2342ECA300F30AB7 /* dawgj.jpg in Resources */,
+				72FAEDE923AC969300FFCEA5 /* GMPercussion in Resources */,
 				726CA877237658A600C382AE /* dnArrow.png in Resources */,
 				72AE3D612360A516008EEEB7 /* tp.png in Resources */,
 				72DB6EB02329C56B005406DC /* bottomBevel.png in Resources */,

@@ -340,7 +340,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // 10/16 we can only create voices AFTER samples load!
     @objc func samplesLoaded(notification: NSNotification)
     {
-        print("==========================samples loaded...")
         //DHS 11/22 all patches needs to do a final sweep...
         allP.getAllPatchInfo() //11/22 Get sample rates, key offsets, etc.
         allP.loadGMOffsets()  //11/22
@@ -1458,7 +1457,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         attStr.addAttribute(NSAttributedStringKey.font, value: UIFont.boldSystemFont(ofSize: 25), range: NSMakeRange(0, attStr.length))
         let alert = UIAlertController(title: tstr, message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.setValue(attStr, forKey: "attributedTitle")
-        alert.view.tintColor = UIColor.lightText //lightText, works in darkmode
+        alert.view.tintColor = UIColor.black //lightText, works in darkmode
         alert.addAction(UIAlertAction(title: "Load Scene", style: .default, handler: { action in
             self.chooserMode = "load" //11/22
             self.performSegue(withIdentifier: "chooserLoadSegue", sender: self)

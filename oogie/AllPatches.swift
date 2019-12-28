@@ -95,7 +95,7 @@ private init()
                                                                          fromFactory: false)
     for (pname,_) in GMPatchDictionary //Get GM instrument lookups...
     {
-        print("patchname \(pname)")
+        //print("patchname \(pname)")
         let iname = getInstrumentNameFromGMFilename(fname: pname)
         GMNamesToInstrumentsDictionary[pname] = iname
     }
@@ -105,8 +105,7 @@ private init()
 
     //assemble allpatches everywhere.. (from 3 dictionaries)
     allBuiltinPatchDictionary = synthPatchDictionary.merging(percussionPatchDictionary) { (_, new) in new }
-    print("tp1.....")
-    dumpBuiltinPatch(n: "Casio")
+    //dumpBuiltinPatch(n: "Casio")
     allBuiltinPatchDictionary = allBuiltinPatchDictionary.merging(percKitPatchDictionary) { (_, new) in new }
     allBuiltinPatchDictionary = allBuiltinPatchDictionary.merging(GMPatchDictionary) { (_, new) in new }
 
@@ -123,13 +122,13 @@ private init()
     workD = DataManager.loadBuiltinGMPatchesToDict(OogiePatch.self,
                                                                fromFactory: true)
     allFactoryPatchDictionary = allFactoryPatchDictionary.merging(workD) { (_, new) in new }
-    print("tp4.....")
-    dumpBuiltinPatch(n: "Casio")
+    //print("tp4.....")
+    //dumpBuiltinPatch(n: "Casio")
 
     //BUG! 11/22 cannot perform this until all patches are loaded!!!
     //getAllPatchInfo()  //load basic info for every patch...
     //    loadGMOffsets() //11/10 compute octave / note offsets...
-    print("...allpatches loaded")
+    //print("...allpatches loaded")
 }
     //=====(AllPatches)=============================================
     //  11/17 add new incoming patch, could be any type, only have name here!
@@ -271,7 +270,7 @@ private init()
             }
             offset = offset + 12 * octave
             GMOIffsetDictionary[pname] = 64 - offset
-            print("offset [\(pname)] \(GMOIffsetDictionary[pname])")
+            //print("offset [\(pname)] \(GMOIffsetDictionary[pname])")
         }
     } //end loadGMOffsets
     

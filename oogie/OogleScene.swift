@@ -163,7 +163,7 @@ struct OogieScene : Codable {
                 }
             }
         }
-        dump()
+        //dump()
     } //end unpackParams
     
     //======(OogieScene)=============================================
@@ -186,8 +186,8 @@ struct OogieScene : Codable {
     {
         DataManager.dump(self)
         // 11/22
-        print("Params...")
-        print("  tempo: \(OVtempo)")
+        //print("Params...")
+        //print("  tempo: \(OVtempo)")
     }
 
 }

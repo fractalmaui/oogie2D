@@ -72,23 +72,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
     func loadAllSamples()
     {
         //Get percussion samples loaded, start at index 64?
-        let purl = Bundle.main.resourceURL!.appendingPathComponent("Percussion").path
-            do {
-                let files = try FileManager.default.contentsOfDirectory(atPath: purl)
-                print("contents of percussion folder...")
-                print(files)
-            }catch{
-                fatalError("error: no percussion!")
-            }
+//12/27 not used?
+//        let purl = Bundle.main.resourceURL!.appendingPathComponent("Percussion").path
+//            do {
+//                let files = try FileManager.default.contentsOfDirectory(atPath: purl)
+//                print("contents of percussion folder...")
+//                print(files)
+//            }catch{
+//                fatalError("error: no percussion!")
+//            }
         //now check GM area...
-        let gurl = Bundle.main.resourceURL!.appendingPathComponent("GeneralMidi").path
-        do {
-            let files = try FileManager.default.contentsOfDirectory(atPath: gurl)
-            print("contents of GMIDI folder...")
-            print(files)
-        }catch{
-            fatalError("error: no GMidi!")
-        }
+//12/27 not used?
+//        let gurl = Bundle.main.resourceURL!.appendingPathComponent("GeneralMidi").path
+//        do {
+//            let files = try FileManager.default.contentsOfDirectory(atPath: gurl)
+//            print("contents of GMIDI folder...")
+//            print(files)
+//        }catch{
+//            fatalError("error: no GMidi!")
+//        }
         //Load up sound effects...
         //BUG in sfx: try loading samples 8 and up, they all get clobbered or vanish!
         //  need to load GM stuff starting at 8!!!

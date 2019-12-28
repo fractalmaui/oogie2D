@@ -543,7 +543,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
 {
     NSError *error;
     NSString *path = [[NSBundle mainBundle] pathForResource:@"GeneralMidiNames" ofType:@"txt" inDirectory:@"Misc"];
-    NSLog(@"loadGeneralMidiNames...%@",path);
+    //NSLog(@"loadGeneralMidiNames...%@",path);
     NSFileManager *fileManager = [NSFileManager defaultManager];
     if (![fileManager fileExistsAtPath:path])
     {
@@ -596,6 +596,9 @@ int HH,LL,SS;  //Used in rgb -> HLS
                            PSampleOffset = 8;  //Start loading percussion here..
                            // First, load percussion.........................................
                            [percBufferDict removeAllObjects]; //clear dict...
+                           //GM percussion folder crashes app on this sample:
+                           //  Low Wood Block.wav  ....WTF?
+                           //NSString* subfolder = @"GMPercussion"; //12/18
                            NSString* subfolder = @"Percussion";
                            int sampleNumber = PSampleOffset;
                            NSURL *p2 = [path URLByAppendingPathComponent:subfolder];
@@ -603,7 +606,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
                            NSArray *directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:p2 error:NULL];
                            for (NSString*fname in directoryContent)
                            {
-                               NSLog(@" perc patch %@",fname);
+                               //NSLog(@" perc patch %@",fname);
                                [synth  loadSampleFromPath : subfolder : fname];
                                [synth buildSampleTable:sampleNumber];
                                soundFileLoaded[sampleNumber] = true;
@@ -633,7 +636,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
                            directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:p2 error:NULL];
                            for (NSString*fname in directoryContent)
                            {
-                               NSLog(@" sample patch %@",fname);
+                               //NSLog(@" sample patch %@",fname);
                                [synth  loadSampleFromPath : subfolder : fname];
                                [synth buildSampleTable:sampleNumber];
                                soundFileLoaded[sampleNumber] = true;
@@ -645,14 +648,14 @@ int HH,LL,SS;  //Used in rgb -> HLS
                                soundFileLoaded[sampleNumber] = TRUE; //Indicate sample is ready to play...
                                sampleNumber++;
                            } //end for fname
-                           NSLog(@" loaded all samples...");
+                           //NSLog(@" loaded all samples...");
                            [[NSNotificationCenter defaultCenter] postNotificationName:@"samplesLoadedNotification"
                                                                                object:nil userInfo:nil];
 
                        }); //END inner dispatch
                        
                    } ); //END outside dispatch
-    NSLog(@"duh end loadaudio");
+    //NSLog(@"duh end loadaudio");
 } //end loadAudioForOOGIE
 
 

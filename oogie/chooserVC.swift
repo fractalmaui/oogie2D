@@ -5,6 +5,8 @@
 //  Created by Dave Scruton on 10/30/19.
 //  Copyright © 2019 fractallonomy. All rights reserved.
 //  11/13 add GM instrument name to chooser rows
+//  12/27 unhide LH table, wasnt showing up. changed table bkgds, added cellHeight too
+//          fixed scroll for 2nd table
 
 import UIKit
 import Foundation
@@ -21,12 +23,13 @@ protocol chooserDelegate
 class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITableViewDataSource {
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var table: UITableView!
+    @IBOutlet weak var table2: UITableView!
     @IBOutlet weak var nameText: UITextField!
     @IBOutlet weak var saveButton: UIButton!
 
-    @IBOutlet weak var table2: UITableView!
     var delegate: chooserDelegate?
     var mode = "load"
+    let cellHeight = 40 //should be large enuf for one line of text
     
     var filez : [String] = []
     var typez : [Int] = []
@@ -52,9 +55,9 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     //---(chooserVC)--------------------------------------
     override func viewDidLoad() {
         super.viewDidLoad()
-        table.delegate = self
-        table.dataSource = self
-        table2.delegate = self
+        table.delegate    = self
+        table.dataSource  = self
+        table2.delegate   = self
         table2.dataSource = self
         //get folder contents...
         //        static func getDirectoryContents(whichDir : String) -> [String]
@@ -110,28 +113,21 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         //Set up bkgd color array for item types
         carray = [synthColor,synthColor,percColor,percKitColor,sampleColor,userColor]
         iarray = [synthIcon!,synthIcon!,percIcon!,percKitIcon!,sampleIcon!,userIcon!]
-        let ip = IndexPath(item: 0, section: 0)
-        //11/28 scroll table 2 if need be??
         
-        //11/28 add 2nd table2 for large folders, show 2x more content
-        if (filez.count > 20)
-        {
-            let offset = 40 * filez.count/2
-            //let ip = indexPathForPreferredFocusedView?(in: ())
-        
-            print("scrolll to \(offset)")
-            table2.scrollToRow(at: ip ,  at: UITableViewScrollPosition(rawValue: offset)!, animated: false)
-            table2.isHidden = false
-        }
-        else //small table? no need for 2nd dupe
-        {
-            table2.isHidden = true
-        }
-                
-                
+        //make tables light green / blue
+        table.backgroundColor  = UIColor(red: 0.85, green: 1.0, blue: 0.9, alpha: 1)
+        table2.backgroundColor = UIColor(red: 0.85, green: 0.9, blue: 1.0, alpha: 1)
 
-        
-        
+        let twoColumns  = (filez.count > 20)
+        table.isHidden  = false
+        table2.isHidden = !twoColumns
+        //11/28 add 2nd table2 for large folders, scrolled 1/2 way down
+        if twoColumns
+        {
+            let ip     = IndexPath(item: filez.count/2, section: 0)
+            //12/27 arg1 sets position, arg2 is where in screen row goes
+            table2.scrollToRow(at: ip ,  at: .middle, animated: false)
+        }
     } //end viewDidLoad
 
     //---(chooserVC)--------------------------------------
@@ -191,22 +187,26 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return filez.count
     }
+    
+    //---<UITableViewDelegate>--------------------------------------
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return CGFloat(cellHeight)
+    }
  
     //---<UITableViewDelegate>--------------------------------------
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: UITableViewCell.CellStyle.default, reuseIdentifier: "Cell")
-        //print("cell \(indexPath.row) shit \(filez[indexPath.row])")
+        //print("cell \(indexPath.row) txt \(filez[indexPath.row])")
         cell.textLabel?.text = filez[indexPath.row]
-       // cell.textLabel?.textColor = .black
         if mode == "loadAllPatches"
         {
             let type = max(0,min(5,typez[indexPath.row]))
-            cell.backgroundColor = .black  //11/28 wtf cell shows up gray udderwise!
+            cell.backgroundColor = .clear  //11/28 wtf cell shows up gray udderwise!
             cell.imageView?.image = iarray[type] //and icons
         }
         else
         {
-            cell.backgroundColor = .black   
+            cell.backgroundColor = .clear
         }
         return cell
     } //end cellForRowAt...
