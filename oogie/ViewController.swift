@@ -62,6 +62,7 @@
 //               pipes object and 3d data still indexed by loadtime name!
 //  Dec 9: in updateSelectParamName add handlers for lo/hi range on pipes
 //  12/15   hide / show pLabel and textEdit depending on parameter type
+//  12/30  bug: addPipeStepTwo, use SCENE shapes/voices
 import UIKit
 import SceneKit
 import Photos
@@ -1613,11 +1614,29 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end addPipeStepOne
     
     //=====<oogie2D mainVC>====================================================
+    //12/30 for pipe addition
+    func getListOfSceneShapes() -> [String]
+    {
+        var troutput : [String] = []
+        for (n,_) in sceneShapes {troutput.append(n)}
+        return troutput
+    }
+    //=====<oogie2D mainVC>====================================================
+    //12/30 for pipe addition
+    func getListOfSceneVoices() -> [String]
+    {
+        var troutput : [String] = []
+        for (n,_) in sceneVoices {troutput.append(n)}
+        return troutput
+    }
+
+    //=====<oogie2D mainVC>====================================================
     func addPipeStepTwo(voice:OogieVoice , channel : String)
     {
-        print("step 2 chan \(channel)")
-        let list1 = OVScene.getListOfShapes()
-        let list2 = OVScene.getListOfVoices()
+        //print("step 2 chan \(channel)")
+        //12/30 we should look in sceneShapes/sceneVoices for our list...
+        let list1 = getListOfSceneShapes()
+        let list2 = getListOfSceneVoices()
         let alert = UIAlertController(title: "Choose Destination", message: nil, preferredStyle: UIAlertControllerStyle.alert)
         for l11 in list1
         {
@@ -1936,6 +1955,22 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end addVoiceToScene
     
     //=====<oogie2D mainVC>====================================================
+    // 12/30 for adding pipes...
+    func getMarkerParentPositionByName (name : String) -> SCNVector3
+    {
+        var result  = SCNVector3Zero
+        if let tvoice  = sceneVoices[name] //find our voice...
+        {
+            let psName  = tvoice.OVS.shapeName //get name of shape to retrieve position...
+            if let tShape  = shapes[psName]    //ok look up shape
+            {
+                result = tShape.position       //and get result!
+            }
+        }
+        return result
+    } //end getMarkerParentPositionByName
+    
+    //=====<oogie2D mainVC>====================================================
     func addPipeToScene(ps : PipeStruct , name : String, op : String)
     {
         //print("add pipe \(name)")
@@ -1971,27 +2006,27 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         let from = oop.PS.fromObject
         //print("find center for \(from)")
         let fmarker = findMarkerByName(name:from)
-        let svec01  = fmarker.position
         let flat    = fmarker.lat
         let flon    = fmarker.lon
+        let sPos00  = getMarkerParentPositionByName(name:from) //12/30
 
-        let tooo = oop.PS.toObject
-        //print("find center for \(tooo)")
-        var svec02 = fmarker.position
+        let toObj = oop.PS.toObject
+        //print("find center for \(toObj)")
+        var sPos01 = fmarker.position
         var tlat   = Double.pi/2.0
         var tlon   = 0.0
-        if let sphereNode = shapes[tooo]  //Found a shape as target?
+        if let sphereNode = shapes[toObj]  //Found a shape as target?
         {
             oop.toShape = true
-            svec02 = sphereNode.position
+            sPos01 = sphereNode.position
         }
         else //Assume voice/marker?
         {
             oop.toShape = false
-            let tmarker = findMarkerByName(name:tooo)
+            let tmarker = findMarkerByName(name:toObj)
             tlat    = tmarker.lat
             tlon    = tmarker.lat
-            svec02 = tmarker.position
+            sPos01  = getMarkerParentPositionByName(name:toObj) //12/30
         }
         //hooked up to object or marker?
         let pipe3DObject = PipeShape()
@@ -2000,8 +2035,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         if oop.toShape {tlat = 100.0} //set way bogus lat
         //  11/29 match pipe color in corners
         pipe3DObject.pipeColor = pipe3DObject.getColorForChan(chan: ps.fromChannel)
-        let pipeNode = pipe3DObject.create3DPipe(lat0 : flat , lon0 : flon , s0  : svec01 ,
-                        lat1 : tlat , lon1 : tlon , s1  : svec02)
+        let pipeNode = pipe3DObject.create3DPipe(lat0 : flat , lon0 : flon , s0  : sPos00 ,
+                        lat1 : tlat , lon1 : tlon , s1  : sPos01)
         pipeNode.name = name
         self.scenePipes[name] = oop
         pipe3DObject.addChildNode(pipeNode) //11/30
@@ -2055,13 +2090,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     func packupSceneAndSave(sname:String)
     {
-
         //DHS 11/24 test for later
         if let pov = skView.pointOfView
         {
-
-                    camXform = pov.transform
-                   print(" save back txfm \(camXform)")
+            camXform = pov.transform
+            print(" save back txfm \(camXform)")
         }
         //10/26 first we need to clean target...
         OVScene.voices.removeAll()
@@ -2077,12 +2110,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
         //DHS 12/5 pipes may have been renamed!
         OVScene.pipes.removeAll()
-        for (name,nextPipe) in scenePipes  //11/24 add pipes to output!
+        for (_,nextPipe) in scenePipes  //11/24 add pipes to output!
         {
             OVScene.pipes[nextPipe.name] = nextPipe.PS
         }
-
-
         OVScene.packParams() //11/22 need to pack some stuff up first!
         DataManager.saveScene(self.OVScene, with: sname)
     } //end packupSceneAndSave
@@ -2175,8 +2206,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         case "texxscale" : wshape.uScale = Double(pipeVal)
                         case "texyscale" : wshape.vScale = Double(pipeVal)
                         case "rotation"  : wshape.rotSpeed = Double(pipeVal)
-                            if let shape3D = shapes[pwork.PS.toObject] //12/1 rot speed
-                            {  shape3D.setTimerSpeed(rs: Double(pipeVal)) }
+                        if let shape3D = shapes[pwork.PS.toObject] //12/1 rot speed
+                        {  shape3D.setTimerSpeed(rs: Double(pipeVal)) }
                         default: print("illegal pipe shape param \(p.PS.toParam)")
                         }
                         //print("workshape \(pwork.PS.toObject) usc \(wshape.uScale)")
@@ -2187,17 +2218,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         {
                             let vals = pwork.ibuffer //11/28 want raw unscaled here!
                             // func texturePipe( phase : Float ,chan : String , vals : [Float],vsize : Int)
-                             pipe3D.texturePipe(phase:0.0 , chan: pwork.PS.fromChannel.lowercased(),
-                                                vals: vals, vsize: vals.count , bptr : pwork.bptr)
-                            
-                           
-                       }
-
-                    }
-                }
+                            pipe3D.texturePipe(phase:0.0 , chan: pwork.PS.fromChannel.lowercased(),
+                                               vals: vals, vsize: vals.count , bptr : pwork.bptr)
+                        } //end pipe3D
+                    }   //end shape
+                } //end pwork.toshape
             } //end pwork.gotData
         } //end for n,p
-
+        
         //print("playVoices...")
         //iterate thru dictionary of voices...
         if !shouldNOTUpdateMarkers && allMarkers.count>0 //11/18 added error checks
