@@ -182,12 +182,21 @@ struct OogieScene : Codable {
     
 
     //======(OogieScene)=============================================
+    // 12/27 new
+    func getDumpString() -> String
+    {
+        let s = DataManager.getDumpString(self)
+        return s
+    }
+
+    //======(OogieScene)=============================================
     func dump()
     {
         DataManager.dump(self)
         // 11/22
-        //print("Params...")
-        //print("  tempo: \(OVtempo)")
+        print("Params...")
+        print("  tempo: \(OVtempo)")
     }
 
+    
 }

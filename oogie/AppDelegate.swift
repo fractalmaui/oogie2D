@@ -44,6 +44,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
 
     var window: UIWindow?
     
+    var versionStr = ""
 
     //Audio Sound Effects...
     var sfx = soundFX.sharedInstance
@@ -65,6 +66,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
         #if V2D
         print("2D Version...")
         #endif
+        
+        //Get version string
+        if let nsObject: AnyObject? = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as AnyObject?
+        {
+            versionStr = nsObject as! String
+        }
+
         return true
     }
     

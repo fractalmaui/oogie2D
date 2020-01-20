@@ -45,6 +45,13 @@ class Marker: SCNNode {
     var latHandle    = SCNNode()
     var lat = 0.0 //11/25 store lat lon here too
     var lon = 0.0
+    
+    #if VERSION_2D
+    let overallScale : CGFloat = 1.0
+    #elseif VERSION_AR
+    let overallScale : CGFloat = 0.25
+    #endif
+
 
     var uid = ""
     let showHueIndicator = false
@@ -77,18 +84,14 @@ class Marker: SCNNode {
         self.addChildNode(lonHandle)
         lonHandle.addChildNode(latHandle)
         let allShapes = createMarker()
-        let theta = -pi/2.0 //Point bottom of cone marker at earth
+        let theta = -Double.pi/2.0 //Point bottom of cone marker at earth
         allShapes.rotation = SCNVector4Make(0, 0, 1, Float(theta))
-        //DHS 11/17 back to cluge? Why no offset in createMarker?
-        #if VERSION_2D
+        //1/12/20 marker is at right position, scale whole thing based on platform
         allShapes.position = SCNVector3Make(1.1, 0, 0);
-        #elseif VERSION_AR
-        allShapes.position = SCNVector3Make(0.5, 0, 0);
-        #endif
         latHandle.addChildNode(allShapes)
         uid = "marker_" + ProcessInfo.processInfo.globallyUniqueString
         allShapes.name = uid
-        self.scale = SCNVector3(1,1,1) //Shrink down by half
+        self.scale = SCNVector3(overallScale,overallScale,overallScale) //Shrink down by half
 
     }
     
@@ -136,7 +139,7 @@ class Marker: SCNNode {
         //yupdate our petals
         updatePetals(rval: rr, gval: gg, bval: bb,
                      cval: cc, mval: mm, yval: yy,
-                     hval: hh, sval: ll, lval: ss)
+                     hval: hh, sval: ss, lval: ll) //1/17 wups s/l backwards
         if showHueIndicator
         {
             //Update hue indicator rotation
@@ -397,7 +400,7 @@ class Marker: SCNNode {
         for i in 0...8
         {
             angle = -i * 40 //degrees
-            let pRot = Double(angle) * .pi / 180.0
+            let pRot = Double(angle) * Double.pi / 180.0
             let petal = SCNBox(width: 0.05, height:0.01 , length: 0.06, chamferRadius: 0)
             petal.firstMaterial?.diffuse.contents  = UIColor.black
             let pnode = SCNNode(geometry: petal)

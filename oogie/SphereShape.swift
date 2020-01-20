@@ -51,9 +51,11 @@ class SphereShape: SCNNode {
     #if VERSION_2D
     let sphereRad    : CGFloat = 1.0
     let boxSize      : CGFloat = 0.1
+    let pipeRad      : CGFloat = 0.04
     #elseif VERSION_AR
-    let sphereRad    : CGFloat = 0.5
-    let boxSize      : CGFloat = 0.05
+    let sphereRad    : CGFloat = 0.25
+    let boxSize      : CGFloat = 0.025
+    let pipeRad      : CGFloat = 0.01
     #endif
 
     var boxPanel     = SCNBox()
@@ -88,7 +90,7 @@ class SphereShape: SCNNode {
         rotDate = Date() //reset start date
         
         //10/11 add torii to indicate select status
-        torus1 = SCNTorus(ringRadius: sphereRad+0.1, pipeRadius: 0.04)
+        torus1 = SCNTorus(ringRadius: sphereRad+0.1, pipeRadius: pipeRad)
         torus1.firstMaterial?.emission.contents  = UIColor.white
         torusNode1 = SCNNode(geometry: torus1)
         let torYoff = sphereRad - 0.1
@@ -134,9 +136,6 @@ class SphereShape: SCNNode {
         sTimer.invalidate()
         setTimerSpeed(rs:rs)
         let tstep = 1.0 / Double(fps)
-//        var fps = 30  //10/25 later comes from scene ? global settings?
-//        var bpm = 135 //10/25 later comes from scene ? global settings?
-//        var dangle : Double = 0.0
         sTimer = Timer.scheduledTimer(timeInterval: tstep, target: self, selector: #selector(self.advanceRotation), userInfo:  nil, repeats: true)
     }
     

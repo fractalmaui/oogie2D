@@ -32,7 +32,7 @@ struct OogiePipe {
     var obuffer : [Float] //output buffer
     var bptr    = 0
     var multF   = 1.0
-    var toShape = false
+    var destination = ""
     var gotData = false //11/25
     var uid  = "nouid"
     var vvvvb   = false
@@ -168,10 +168,11 @@ struct OogiePipe {
     mutating func setupRange(lo:Double , hi:Double)
     {
         //illegal input? Just bail for now
-        if (lo > hi) || (hi-lo < 2) { return }
+        if (lo > hi) || (hi-lo < 0.05) { return } //1/14 Wups need tighter check
         PS.loRange = lo
         PS.hiRange = hi
         multF = (hi-lo) / 256.0 // fit color channel into range
+        //print("PIPE: setuprange lo/hi \(lo) /(hi) -> multf \(multF)")
     } //end setupRange
     
     //======(OogiePipe)=============================================

@@ -17,6 +17,10 @@ func - (v1 : SCNVector3 , v2 : SCNVector3) -> SCNVector3
 {
     return SCNVector3Make(v1.x - v2.x , v1.y - v2.y , v1.z - v2.z)
 }
+func + (v1 : SCNVector3 , v2 : SCNVector3) -> SCNVector3
+{
+    return SCNVector3Make(v1.x + v2.x , v1.y + v2.y , v1.z + v2.z)
+}
 func / (vector: SCNVector3, scalar: Float) -> SCNVector3 {
     return SCNVector3Make(vector.x / scalar, vector.y / scalar, vector.z / scalar)
 }
@@ -24,6 +28,12 @@ func / (vector: SCNVector3, scalar: Float) -> SCNVector3 {
 func * (left: SCNMatrix4, right: SCNMatrix4) -> SCNMatrix4 {
     return SCNMatrix4Mult(left, right)
 }
+
+//Normalize vector: needed?
+//func normal (v : SCNVector3) -> SCNVector3
+//{
+//    //asdf
+//}
 
 extension SCNVector3 {
     /**
@@ -74,9 +84,15 @@ extension SCNMatrix4 {
 
 
 class PipeShape: SCNNode {
-    
-    let shapeRad = 1.0
+
+    //12/30 is there a smarter way to do this?
+    #if VERSION_2D
+    let shapeRad    : Double = 1.0
     let markerHit = 0.2
+    #elseif VERSION_AR
+    let shapeRad    : Double = 0.25
+    let markerHit = 0.05  //1/13
+    #endif
     let pipeRad : CGFloat = 0.025 //11/27 made smaller
     var pipeColor = UIColor(hue: 0.1, saturation: 1.0, brightness: 1.0, alpha: 1.0)
     var ballGeomz : [SCNSphere] = []
@@ -84,13 +100,12 @@ class PipeShape: SCNNode {
     var cylGeometries : [SCNGeometry] = []
     var cylHeights : [Float] = []
     var wavelength = 1.0 //DHS 11/28 # texture cycles per pipe
-    var uid = "nouid"
+    //12/30 need a uid for selecting stuff!
+    var uid = "pipe_" + ProcessInfo.processInfo.globallyUniqueString
     var highlighted  = false
     var zoomed = false
     var infobox = SCNBox()
     var infoNode = SCNNode()
-
-
 
     /**
      * Divides the x, y and z fields of a SCNVector3 by the same scalar value and
@@ -213,7 +228,11 @@ class PipeShape: SCNNode {
         let tuple1 = makePipeCyl(from: p0, to: p1)
         
         //Bump up ceiling to just above shapes...
+        #if VERSION_2D
         var ceilingy = Float(1.0)
+        #elseif VERSION_AR
+        var ceilingy = Float(0.2)
+        #endif
         let ty0 = s0.y + 2.0 //the 2.0 should be bigger than shape radius!
         ceilingy = max(ceilingy,ty0)
         let ty1 = s1.y + 2.0 //the 2.0 should be bigger than shape radius!
@@ -297,7 +316,7 @@ class PipeShape: SCNNode {
             addBall(parent: parent,p:cp3)
             let tuple3 = makePipeCyl(from: s1, to: cp3) //11/29 wps wrong directdion
             parent.addChildNode(tuple3.n)
-            //join at celinig s this out of order?
+            //join at cieling  s this out of order?
             let tuple4 = makePipeCyl(from: cp3, to: cp0)
             //11/29 add info node to top ceiling pipe?
             tuple4.n.addChildNode(infoNode)
@@ -318,13 +337,20 @@ class PipeShape: SCNNode {
         UIGraphicsBeginImageContextWithOptions(frame.size, false, 1)
         let context = UIGraphicsGetCurrentContext()!
         context.setFillColor(UIColor.black.cgColor);
-    
     var vmin :Float = 999.0
     var vmax :Float = -999.0
-    for i in 0...vals.count-1
+    if vals.count == 0 //1/13/20 handle empty vals
     {
-        vmin = min(vmin,vals[i])
-        vmax = max(vmin,vals[i])
+        vmin = 0
+        vmax = 0
+    }
+   else
+    {
+        for i in 0...vals.count-1
+        {
+            vmin = min(vmin,vals[i])
+            vmax = max(vmin,vals[i])
+        }
     }
     let vconv : Float = 1.0 / 255.0
     //print("vminmax \(vmin),\(vmax)")
@@ -476,7 +502,7 @@ class PipeShape: SCNNode {
         var cp = 0
         let chanColor = getColorForChan(chan: chan)
         let vsizze = vals.count
-        //DHS 11/28 we need to know how big the pipe buffer is here! asdf
+        //DHS 11/28 we need to know how big the pipe buffer is here!
         let f = CGRect(x: 0, y: 0, width: 32, height: vsizze) //11/28 where do i get buffer size?
         //11/28Compute #gridlines along pipe
         let yg = 4*Int(CGFloat(chtotal));

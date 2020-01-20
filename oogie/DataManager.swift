@@ -21,6 +21,7 @@
 //         still have fatals on methods with dynamic types!
 // 11/4  add patchExists
 // 11/13 replaced loadSynthpatches... with loadSynthPatchesToDict..
+// 12/27 add getDumpString
 import Foundation
 
 
@@ -204,10 +205,33 @@ public class DataManager {
             self.gotDMError(msg: error.localizedDescription)
         }
     }
+
+    //======(DataManager)=============================================
+    // 12/27 new
+    static func getDumpString <T:Encodable> (_ object:T) -> String
+    {
+        let encoder = JSONEncoder()
+        do {
+            //How do I get JSONSerialization.WritingOptions.prettyPrinted working?
+            let jsonData = try encoder.encode(object)
+            let dstring  = String(data: jsonData, encoding: String.Encoding.utf8)
+            return dstring!
+        }catch{
+            self.gotDMError(msg: error.localizedDescription)
+        }
+        return ""
+    } //end getDumpString
     
     //======(DataManager)=============================================
-    // 9/15 new func, diagnostic dump to output log
+    // 12/27 redid; split string get from output
     static func dump <T:Encodable> (_ object:T) {
+        let dumpStr = getDumpString(object)
+        print(dumpStr)
+    } //end dump
+
+    //======(DataManager)=============================================
+    // 9/15 new func, diagnostic dump to output log
+    static func OLDdump <T:Encodable> (_ object:T) {
         let encoder = JSONEncoder()
         do {
             //How do I get JSONSerialization.WritingOptions.prettyPrinted working?

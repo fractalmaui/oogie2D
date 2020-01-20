@@ -8,6 +8,7 @@
 //  12/27 unhide LH table, wasnt showing up. changed table bkgds, added cellHeight too
 //          fixed scroll for 2nd table
 //  12/28 add check for filez present in viewDidLoad
+
 import UIKit
 import Foundation
 
@@ -86,10 +87,14 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
             filez = filez + aab
             for _ in 0...allP.GMPatchDictionary.count-1 {typez.append(4)}
         }
-        else if filez.count > 0 // 12/28 add check Sample chooser modes? just get single folder
+        else // 12/28 add check Sample chooser modes? just get single folder
         {
             filez = DataManager.getDirectoryContents(whichDir: chooserFolder)
-            for _ in 0...filez.count-1 {typez.append(4)} //11/13 add sample type
+            if filez.count > 0
+            {
+                for _ in 0...filez.count-1 {typez.append(4)} //11/13 add sample type
+                
+            }
         }
         //print("chooser folder \(chooserFolder)")
         saveButton.isHidden = true //NO NEED? (mode == "load")        

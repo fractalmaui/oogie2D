@@ -321,8 +321,8 @@
             timestampString = "593024133.700722"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "186"
-            endingLineNumber = "186"
+            startingLineNumber = "183"
+            endingLineNumber = "183"
             landmarkName = "createNamePlateImage(label:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -338,8 +338,8 @@
             timestampString = "593024133.700806"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "191"
-            endingLineNumber = "191"
+            startingLineNumber = "188"
+            endingLineNumber = "188"
             landmarkName = "createNamePlateImage(label:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -355,8 +355,8 @@
             timestampString = "593024133.700875"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "195"
-            endingLineNumber = "195"
+            startingLineNumber = "192"
+            endingLineNumber = "192"
             landmarkName = "SphereShape"
             landmarkType = "3">
          </BreakpointContent>
@@ -814,8 +814,8 @@
             timestampString = "593064923.221966"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "637"
-            endingLineNumber = "637"
+            startingLineNumber = "648"
+            endingLineNumber = "648"
             landmarkName = "getLastParamValue(fname:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -898,8 +898,8 @@
             timestampString = "593064923.226055"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "491"
-            endingLineNumber = "491"
+            startingLineNumber = "494"
+            endingLineNumber = "494"
             landmarkName = "prepare(for:sender:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -1061,8 +1061,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "367"
-            endingLineNumber = "367"
+            startingLineNumber = "368"
+            endingLineNumber = "368"
             landmarkName = "handleLongPress(gestureReconizer:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -1077,9 +1077,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "925"
-            endingLineNumber = "925"
-            landmarkName = "setRotationSpeedForSelectedShape(s:)"
+            startingLineNumber = "943"
+            endingLineNumber = "943"
+            landmarkName = "setRotationTypeForSelectedShape()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -1093,9 +1093,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "949"
-            endingLineNumber = "949"
-            landmarkName = "changeVoiceType(typeString:needToRefreshOriginalValue:)"
+            startingLineNumber = "967"
+            endingLineNumber = "967"
+            landmarkName = "changeVoicePatch(name:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -1109,9 +1109,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "948"
-            endingLineNumber = "948"
-            landmarkName = "changeVoiceType(typeString:needToRefreshOriginalValue:)"
+            startingLineNumber = "966"
+            endingLineNumber = "966"
+            landmarkName = "changeVoicePatch(name:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -1125,8 +1125,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "500"
-            endingLineNumber = "500"
+            startingLineNumber = "503"
+            endingLineNumber = "503"
             landmarkName = "prepare(for:sender:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -1157,8 +1157,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "632"
-            endingLineNumber = "632"
+            startingLineNumber = "643"
+            endingLineNumber = "643"
             landmarkName = "getLastParamValue(fname:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -1173,8 +1173,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "775"
-            endingLineNumber = "775"
+            startingLineNumber = "788"
+            endingLineNumber = "788"
             landmarkName = "setNewParamValue(fname:newval:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -1189,8 +1189,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "351"
-            endingLineNumber = "351"
+            startingLineNumber = "352"
+            endingLineNumber = "352"
             landmarkName = "ViewController"
             landmarkType = "3">
          </BreakpointContent>
@@ -1221,8 +1221,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "155"
-            endingLineNumber = "155"
+            startingLineNumber = "156"
+            endingLineNumber = "156"
             landmarkName = "ViewController"
             landmarkType = "3">
             <Locations>
@@ -1423,8 +1423,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "251"
-            endingLineNumber = "251"
+            startingLineNumber = "252"
+            endingLineNumber = "252"
             landmarkName = "viewDidLoad()"
             landmarkType = "7">
          </BreakpointContent>
@@ -1455,8 +1455,8 @@
             filePath = "oogie/SphereShape.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "258"
-            endingLineNumber = "258"
+            startingLineNumber = "255"
+            endingLineNumber = "255"
             landmarkName = "unHighlight()"
             landmarkType = "7">
          </BreakpointContent>
@@ -1503,8 +1503,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "752"
-            endingLineNumber = "752"
+            startingLineNumber = "765"
+            endingLineNumber = "765"
             landmarkName = "setNewParamValue(fname:newval:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -1519,8 +1519,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "288"
-            endingLineNumber = "288"
+            startingLineNumber = "289"
+            endingLineNumber = "289"
             landmarkName = "viewDidLoad()"
             landmarkType = "7">
          </BreakpointContent>
@@ -1535,10 +1535,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "917"
-            endingLineNumber = "917"
-            landmarkName = "setRotationTypeForSelectedShape()"
-            landmarkType = "7">
+            startingLineNumber = "935"
+            endingLineNumber = "935"
+            landmarkName = "ViewController"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -1919,8 +1919,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "471"
-            endingLineNumber = "471"
+            startingLineNumber = "474"
+            endingLineNumber = "474"
             landmarkName = "editSelect(_:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -2463,8 +2463,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1060"
-            endingLineNumber = "1060"
+            startingLineNumber = "1078"
+            endingLineNumber = "1078"
             landmarkName = "reloadAllPatchesInScene(namez:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -2479,8 +2479,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1024"
-            endingLineNumber = "1024"
+            startingLineNumber = "1042"
+            endingLineNumber = "1042"
             landmarkName = "restoreLastParamValue(oldD:oldS:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -2495,8 +2495,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1032"
-            endingLineNumber = "1032"
+            startingLineNumber = "1050"
+            endingLineNumber = "1050"
             landmarkName = "restoreLastParamValue(oldD:oldS:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -2511,8 +2511,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1098"
-            endingLineNumber = "1098"
+            startingLineNumber = "1116"
+            endingLineNumber = "1116"
             landmarkName = "loadCurrentVoiceParams()"
             landmarkType = "7">
          </BreakpointContent>
@@ -2527,8 +2527,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1100"
-            endingLineNumber = "1100"
+            startingLineNumber = "1118"
+            endingLineNumber = "1118"
             landmarkName = "loadCurrentVoiceParams()"
             landmarkType = "7">
          </BreakpointContent>
@@ -2543,8 +2543,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1092"
-            endingLineNumber = "1092"
+            startingLineNumber = "1110"
+            endingLineNumber = "1110"
             landmarkName = "loadCurrentVoiceParams()"
             landmarkType = "7">
          </BreakpointContent>
@@ -2607,9 +2607,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2358"
-            endingLineNumber = "2358"
-            landmarkName = "buttonSelect(_:)"
+            startingLineNumber = "2468"
+            endingLineNumber = "2468"
+            landmarkName = "playAllPipesMarkersBkgdHandler()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -2767,10 +2767,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "342"
-            endingLineNumber = "342"
-            landmarkName = "samplesLoaded(notification:)"
-            landmarkType = "7">
+            startingLineNumber = "343"
+            endingLineNumber = "343"
+            landmarkName = "ViewController"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -3087,9 +3087,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1576"
-            endingLineNumber = "1576"
-            landmarkName = "deleteShapePrompt(shape:)"
+            startingLineNumber = "1618"
+            endingLineNumber = "1618"
+            landmarkName = "pipeMenu()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3103,26 +3103,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1597"
-            endingLineNumber = "1597"
+            startingLineNumber = "1639"
+            endingLineNumber = "1639"
             landmarkName = "ViewController"
             landmarkType = "3">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "3F77759F-B9E0-4ECD-9A54-5F9F866357BE"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "oogie/ViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2074"
-            endingLineNumber = "2074"
-            landmarkName = "getFreshLatLon(sname:lat:lon:)"
-            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -3135,8 +3119,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "815"
-            endingLineNumber = "815"
+            startingLineNumber = "827"
+            endingLineNumber = "827"
             landmarkName = "setNewParamValue(fname:newval:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -3151,9 +3135,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2528"
-            endingLineNumber = "2528"
-            landmarkName = "setupSynthOrSample(oov:)"
+            startingLineNumber = "2638"
+            endingLineNumber = "2638"
+            landmarkName = "writeSynthPatches()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3167,10 +3151,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1928"
-            endingLineNumber = "1928"
-            landmarkName = "addVoiceToScene(nextOVS:name:op:)"
-            landmarkType = "7">
+            startingLineNumber = "2036"
+            endingLineNumber = "2036"
+            landmarkName = "ViewController"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -3183,9 +3167,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1981"
-            endingLineNumber = "1981"
-            landmarkName = "addPipeToScene(ps:name:op:)"
+            startingLineNumber = "2089"
+            endingLineNumber = "2089"
+            landmarkName = "getFreshXYZ()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3199,10 +3183,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2156"
-            endingLineNumber = "2156"
-            landmarkName = "ViewController"
-            landmarkType = "3">
+            startingLineNumber = "2273"
+            endingLineNumber = "2273"
+            landmarkName = "getFreshLatLon(sname:lat:lon:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -3215,10 +3199,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1986"
-            endingLineNumber = "1986"
-            landmarkName = "addPipeToScene(ps:name:op:)"
-            landmarkType = "7">
+            startingLineNumber = "2094"
+            endingLineNumber = "2094"
+            landmarkName = "ViewController"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -3247,8 +3231,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "818"
-            endingLineNumber = "818"
+            startingLineNumber = "830"
+            endingLineNumber = "830"
             landmarkName = "setNewParamValue(fname:newval:)"
             landmarkType = "7">
             <Locations>
@@ -3415,10 +3399,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "710"
-            endingLineNumber = "710"
-            landmarkName = "update3DShapeByName(n:)"
-            landmarkType = "7">
+            startingLineNumber = "721"
+            endingLineNumber = "721"
+            landmarkName = "ViewController"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -3431,9 +3415,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2160"
-            endingLineNumber = "2160"
-            landmarkName = "findPipe(uid:)"
+            startingLineNumber = "2277"
+            endingLineNumber = "2277"
+            landmarkName = "getFreshLatLon(sname:lat:lon:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3447,9 +3431,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2168"
-            endingLineNumber = "2168"
-            landmarkName = "findPipe(uid:)"
+            startingLineNumber = "2285"
+            endingLineNumber = "2285"
+            landmarkName = "getFreshLatLon(sname:lat:lon:)"
             landmarkType = "7">
             <Locations>
                <Location
@@ -3556,10 +3540,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1932"
-            endingLineNumber = "1932"
-            landmarkName = "addVoiceToScene(nextOVS:name:op:)"
-            landmarkType = "7">
+            startingLineNumber = "2040"
+            endingLineNumber = "2040"
+            landmarkName = "ViewController"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -3572,9 +3556,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1760"
-            endingLineNumber = "1760"
-            landmarkName = "clearScene()"
+            startingLineNumber = "1834"
+            endingLineNumber = "1834"
+            landmarkName = "removeVoice()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3588,9 +3572,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2130"
-            endingLineNumber = "2130"
-            landmarkName = "findMarker(uid:)"
+            startingLineNumber = "2247"
+            endingLineNumber = "2247"
+            landmarkName = "addPipeToScene(ps:name:op:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3686,7 +3670,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "386"
             endingLineNumber = "386"
-            landmarkName = "createGridImage(frame:c:xg:yg:bptr:)"
+            landmarkName = "createPipeLabel(label:frame:vals:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3702,7 +3686,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "439"
             endingLineNumber = "439"
-            landmarkName = "getBarColor(c:fampl:)"
+            landmarkName = "createGridImage(frame:c:xg:yg:bptr:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3718,8 +3702,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "447"
             endingLineNumber = "447"
-            landmarkName = "PipeShape"
-            landmarkType = "3">
+            landmarkName = "createGridImage(frame:c:xg:yg:bptr:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -3734,8 +3718,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "393"
             endingLineNumber = "393"
-            landmarkName = "createGridImage(frame:c:xg:yg:bptr:)"
-            landmarkType = "7">
+            landmarkName = "PipeShape"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -3750,7 +3734,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "374"
             endingLineNumber = "374"
-            landmarkName = "createGridImage(frame:c:xg:yg:bptr:)"
+            landmarkName = "createPipeLabel(label:frame:vals:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3764,9 +3748,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2132"
-            endingLineNumber = "2132"
-            landmarkName = "findMarker(uid:)"
+            startingLineNumber = "2249"
+            endingLineNumber = "2249"
+            landmarkName = "addPipeToScene(ps:name:op:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3798,7 +3782,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "571"
             endingLineNumber = "571"
-            landmarkName = "animateSelectIn()"
+            landmarkName = "scaleBallzAndInfo(h:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3814,7 +3798,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "330"
             endingLineNumber = "330"
-            landmarkName = "createPipeLabel(label:frame:vals:)"
+            landmarkName = "create3DPipe(lat0:lon0:s0:lat1:lon1:s1:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3860,8 +3844,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1349"
-            endingLineNumber = "1349"
+            startingLineNumber = "1367"
+            endingLineNumber = "1367"
             landmarkName = "handleTouch(touch:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -3876,8 +3860,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1658"
-            endingLineNumber = "1658"
+            startingLineNumber = "1700"
+            endingLineNumber = "1700"
             landmarkName = "addPipeStepTwo(voice:channel:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -3892,8 +3876,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1264"
-            endingLineNumber = "1264"
+            startingLineNumber = "1282"
+            endingLineNumber = "1282"
             landmarkName = "updateSelectParamName()"
             landmarkType = "7">
          </BreakpointContent>
@@ -3908,8 +3892,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1257"
-            endingLineNumber = "1257"
+            startingLineNumber = "1275"
+            endingLineNumber = "1275"
             landmarkName = "updateSelectParamName()"
             landmarkType = "7">
          </BreakpointContent>
@@ -3956,9 +3940,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1151"
-            endingLineNumber = "1151"
-            landmarkName = "loadCurrentShapeParams()"
+            startingLineNumber = "1169"
+            endingLineNumber = "1169"
+            landmarkName = "loadCurrentVoiceParams()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -3972,10 +3956,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1167"
-            endingLineNumber = "1167"
-            landmarkName = "loadCurrentPipeParams()"
-            landmarkType = "7">
+            startingLineNumber = "1185"
+            endingLineNumber = "1185"
+            landmarkName = "ViewController"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -3988,8 +3972,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1190"
-            endingLineNumber = "1190"
+            startingLineNumber = "1208"
+            endingLineNumber = "1208"
             landmarkName = "breakOutSelectedFields(vArray:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -4004,10 +3988,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1157"
-            endingLineNumber = "1157"
-            landmarkName = "loadCurrentPipeParams()"
-            landmarkType = "7">
+            startingLineNumber = "1175"
+            endingLineNumber = "1175"
+            landmarkName = "ViewController"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -4020,10 +4004,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1152"
-            endingLineNumber = "1152"
-            landmarkName = "loadCurrentShapeParams()"
-            landmarkType = "7">
+            startingLineNumber = "1170"
+            endingLineNumber = "1170"
+            landmarkName = "ViewController"
+            landmarkType = "3">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -4036,9 +4020,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1180"
-            endingLineNumber = "1180"
-            landmarkName = "breakOutSelectedFields(vArray:)"
+            startingLineNumber = "1198"
+            endingLineNumber = "1198"
+            landmarkName = "loadCurrentPipeParams()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -4052,10 +4036,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1200"
-            endingLineNumber = "1200"
-            landmarkName = "ViewController"
-            landmarkType = "3">
+            startingLineNumber = "1218"
+            endingLineNumber = "1218"
+            landmarkName = "breakOutSelectedFields(vArray:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -4068,9 +4052,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1161"
-            endingLineNumber = "1161"
-            landmarkName = "loadCurrentPipeParams()"
+            startingLineNumber = "1179"
+            endingLineNumber = "1179"
+            landmarkName = "loadCurrentShapeParams()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -4084,10 +4068,10 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1201"
-            endingLineNumber = "1201"
-            landmarkName = "ViewController"
-            landmarkType = "3">
+            startingLineNumber = "1219"
+            endingLineNumber = "1219"
+            landmarkName = "breakOutSelectedFields(vArray:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -4100,8 +4084,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1191"
-            endingLineNumber = "1191"
+            startingLineNumber = "1209"
+            endingLineNumber = "1209"
             landmarkName = "breakOutSelectedFields(vArray:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -4116,8 +4100,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "837"
-            endingLineNumber = "837"
+            startingLineNumber = "849"
+            endingLineNumber = "849"
             landmarkName = "setNewParamValue(fname:newval:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -4132,8 +4116,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "842"
-            endingLineNumber = "842"
+            startingLineNumber = "854"
+            endingLineNumber = "854"
             landmarkName = "setNewParamValue(fname:newval:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -4148,8 +4132,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1243"
-            endingLineNumber = "1243"
+            startingLineNumber = "1261"
+            endingLineNumber = "1261"
             landmarkName = "updateSelectParamName()"
             landmarkType = "7">
          </BreakpointContent>
@@ -4164,8 +4148,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "427"
-            endingLineNumber = "427"
+            startingLineNumber = "428"
+            endingLineNumber = "428"
             landmarkName = "editSelect(_:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -4180,25 +4164,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1240"
-            endingLineNumber = "1240"
+            startingLineNumber = "1258"
+            endingLineNumber = "1258"
             landmarkName = "updateSelectParamName()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "9F71E16C-99D3-4825-A9AC-78BF2E08F903"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "oogie/ViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "873"
-            endingLineNumber = "873"
-            landmarkName = "setNewParamValue(fname:newval:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -4212,8 +4180,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "870"
-            endingLineNumber = "870"
+            startingLineNumber = "901"
+            endingLineNumber = "901"
             landmarkName = "setNewParamValue(fname:newval:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -4228,8 +4196,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1250"
-            endingLineNumber = "1250"
+            startingLineNumber = "1268"
+            endingLineNumber = "1268"
             landmarkName = "updateSelectParamName()"
             landmarkType = "7">
          </BreakpointContent>
@@ -4244,8 +4212,8 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1248"
-            endingLineNumber = "1248"
+            startingLineNumber = "1266"
+            endingLineNumber = "1266"
             landmarkName = "updateSelectParamName()"
             landmarkType = "7">
             <Locations>
@@ -4322,9 +4290,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2563"
-            endingLineNumber = "2563"
-            landmarkName = "textFieldShouldReturn(_:)"
+            startingLineNumber = "2673"
+            endingLineNumber = "2673"
+            landmarkName = "writeGMPatches()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -4338,25 +4306,9 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "400"
-            endingLineNumber = "400"
+            startingLineNumber = "401"
+            endingLineNumber = "401"
             landmarkName = "editSelect(_:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "269B2C3D-3B27-4FEA-B447-86D27B7A6D38"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "oogie/ViewController.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1812"
-            endingLineNumber = "1812"
-            landmarkName = "addShapeToScene(shape:name:op:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -4370,9 +4322,313 @@
             filePath = "oogie/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1829"
-            endingLineNumber = "1829"
-            landmarkName = "addShapeToScene(shape:name:op:)"
+            startingLineNumber = "1937"
+            endingLineNumber = "1937"
+            landmarkName = "createAxes()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "081B25A4-6BB0-4916-8277-63F9A7AB70A4"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "497"
+            endingLineNumber = "497"
+            landmarkName = "prepare(for:sender:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "492CA50F-362B-428C-9D8A-08C5C979A7A1"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/chooserVC.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "67"
+            endingLineNumber = "67"
+            landmarkName = "viewDidLoad()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "8988EF1C-7FCC-40BC-9EDF-E358EF07A27B"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/chooserVC.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "92"
+            endingLineNumber = "92"
+            landmarkName = "viewDidLoad()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "A10787AD-D84A-4423-A722-1D776CBABBEE"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/chooserVC.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "205"
+            endingLineNumber = "205"
+            landmarkName = "tableView(_:cellForRowAt:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "EEAB5C6C-BB38-40A2-B0CE-BB7C9C70F72A"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "677"
+            endingLineNumber = "677"
+            landmarkName = "getLastParamValue(fname:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "39191F0A-AE39-408B-9325-6C125CC2C9C0"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1604"
+            endingLineNumber = "1604"
+            landmarkName = "shapeMenu()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "D55E6F6E-7E1E-4FAF-A070-69C88A31B555"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1575"
+            endingLineNumber = "1575"
+            landmarkName = "voiceMenu()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "0A04D690-8B28-47C6-B808-28422179F3AE"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "444"
+            endingLineNumber = "444"
+            landmarkName = "editSelect(_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "DE228711-CD8A-49A8-B3AA-88862AEDD47E"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "443"
+            endingLineNumber = "443"
+            landmarkName = "editSelect(_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "EA9806D7-0C99-4CC5-8069-07E2967F1644"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "395"
+            endingLineNumber = "395"
+            landmarkName = "editSelect(_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "6B0DD592-5E3B-4BA4-AB71-592C944ED521"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1365"
+            endingLineNumber = "1365"
+            landmarkName = "handleTouch(touch:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "B575654F-E091-4482-A5CF-4F6D2064C94F"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1559"
+            endingLineNumber = "1559"
+            landmarkName = "voiceMenu()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "8FF25BB8-1A0E-4B88-B69E-3FFAF1765741"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "882"
+            endingLineNumber = "882"
+            landmarkName = "setNewParamValue(fname:newval:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "C5325825-9549-4150-B3DD-EEDE450E35D0"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "2201"
+            endingLineNumber = "2201"
+            landmarkName = "addPipeToScene(ps:name:op:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "B8E7AA77-B98C-4F90-8FE6-2CF8A8C0B692"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1817"
+            endingLineNumber = "1817"
+            landmarkName = "resetShapeByName(name:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "CEF380D1-6524-48A3-96AD-2DA82ADEDA19"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "875"
+            endingLineNumber = "875"
+            landmarkName = "setNewParamValue(fname:newval:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "3667D930-606D-49D0-A3A4-BE5897CDF757"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1822"
+            endingLineNumber = "1822"
+            landmarkName = "resetShapeByName(name:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "A32026FA-EE3D-4817-95A9-11E2226C3E12"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "2391"
+            endingLineNumber = "2391"
+            landmarkName = "playAllPipesMarkersBkgdHandler()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "7ED2EDA5-CE37-4CCF-8E56-4281E1A5C63C"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "2467"
+            endingLineNumber = "2467"
+            landmarkName = "playAllPipesMarkersBkgdHandler()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
