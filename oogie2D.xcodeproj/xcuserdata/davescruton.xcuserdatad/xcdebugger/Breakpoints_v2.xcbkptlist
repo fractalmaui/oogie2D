@@ -3524,8 +3524,8 @@
             filePath = "oogie/PipeShape.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "295"
-            endingLineNumber = "295"
+            startingLineNumber = "283"
+            endingLineNumber = "283"
             landmarkName = "create3DPipe(lat0:lon0:s0:lat1:lon1:s1:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -3668,8 +3668,8 @@
             filePath = "oogie/PipeShape.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "386"
-            endingLineNumber = "386"
+            startingLineNumber = "374"
+            endingLineNumber = "374"
             landmarkName = "createPipeLabel(label:frame:vals:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -3684,8 +3684,8 @@
             filePath = "oogie/PipeShape.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "439"
-            endingLineNumber = "439"
+            startingLineNumber = "427"
+            endingLineNumber = "427"
             landmarkName = "createGridImage(frame:c:xg:yg:bptr:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -3700,8 +3700,8 @@
             filePath = "oogie/PipeShape.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "447"
-            endingLineNumber = "447"
+            startingLineNumber = "435"
+            endingLineNumber = "435"
             landmarkName = "createGridImage(frame:c:xg:yg:bptr:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -3716,8 +3716,8 @@
             filePath = "oogie/PipeShape.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "393"
-            endingLineNumber = "393"
+            startingLineNumber = "381"
+            endingLineNumber = "381"
             landmarkName = "PipeShape"
             landmarkType = "3">
          </BreakpointContent>
@@ -3732,8 +3732,8 @@
             filePath = "oogie/PipeShape.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "374"
-            endingLineNumber = "374"
+            startingLineNumber = "362"
+            endingLineNumber = "362"
             landmarkName = "createPipeLabel(label:frame:vals:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -3764,8 +3764,8 @@
             filePath = "oogie/PipeShape.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "493"
-            endingLineNumber = "493"
+            startingLineNumber = "481"
+            endingLineNumber = "481"
             landmarkName = "texturePipe(phase:chan:vals:vsize:bptr:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -3780,8 +3780,8 @@
             filePath = "oogie/PipeShape.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "571"
-            endingLineNumber = "571"
+            startingLineNumber = "559"
+            endingLineNumber = "559"
             landmarkName = "scaleBallzAndInfo(h:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -3796,8 +3796,8 @@
             filePath = "oogie/PipeShape.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "330"
-            endingLineNumber = "330"
+            startingLineNumber = "318"
+            endingLineNumber = "318"
             landmarkName = "create3DPipe(lat0:lon0:s0:lat1:lon1:s1:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -3812,8 +3812,8 @@
             filePath = "oogie/PipeShape.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "424"
-            endingLineNumber = "424"
+            startingLineNumber = "412"
+            endingLineNumber = "412"
             landmarkName = "createGridImage(frame:c:xg:yg:bptr:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -3828,8 +3828,8 @@
             filePath = "oogie/PipeShape.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "361"
-            endingLineNumber = "361"
+            startingLineNumber = "349"
+            endingLineNumber = "349"
             landmarkName = "createPipeLabel(label:frame:vals:)"
             landmarkType = "7">
          </BreakpointContent>

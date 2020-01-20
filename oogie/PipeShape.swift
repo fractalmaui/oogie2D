@@ -6,7 +6,7 @@
 //  Copyright © 2019 fractallonomy. All rights reserved.
 //
 // 11/29 add highlighted
-
+// 1/14  fix bug in normals in create3DPipe
 import Foundation
 import UIKit
 import SceneKit
@@ -188,14 +188,9 @@ class PipeShape: SCNNode {
         
         //First half of pipe: get normal , equatorial normal for start object pos
         //Get normal...
-        var nx = cos(lon0)
-        var nz = -sin(lon0)
-        var ny = sin(lat0)
-        var nlen = sqrt(nx*nx + ny*ny + nz*nz)
-        nx = nx / nlen
-        ny = ny / nlen
-        nz = nz / nlen
-
+        var nx =  cos(lon0) * cos(lat0) //1/14 wups need to incorporate cosine!
+        var nz = -sin(lon0) * cos(lat0)
+        var ny =  sin(lat0)
         //get equatorial normal
         var enx = cos(lon0)
         var enz = -sin(lon0)
@@ -204,16 +199,14 @@ class PipeShape: SCNNode {
         enx = enx / enlen
         eny = eny / enlen
         enz = enz / enlen
-        _ = SCNVector3(nx, ny, nz)
         var pfx = s0.x + Float(shapeRad + markerHit) * Float(nx)
         var pfy = s0.y + Float(shapeRad + markerHit) * Float(ny)
         var pfz = s0.z + Float(shapeRad + markerHit) * Float(nz)
-        //Compute pos at top of marker...
+        //Compute pos at top of marker...1/14: pfy looks wrong!
         let p0 = SCNVector3(pfx,pfy,pfz)
 
         //Compute equatorial position (zero lat)
         var epfx = s0.x + Float(shapeRad + 2*markerHit) * Float(enx)
-        _ = s0.y + Float(shapeRad + 2*markerHit) * Float(eny)
         var epfz = s0.z + Float(shapeRad + 2*markerHit) * Float(enz)
         let p1 = SCNVector3(epfx,pfy,epfz) //first junction point
 
@@ -225,7 +218,7 @@ class PipeShape: SCNNode {
         addBall(parent: parent,p:p0)
         addBall(parent: parent,p:p1)
         
-        let tuple1 = makePipeCyl(from: p0, to: p1)
+        let tuple1 = makePipeCyl(from: p1, to: p0)
         
         //Bump up ceiling to just above shapes...
         #if VERSION_2D
@@ -256,15 +249,10 @@ class PipeShape: SCNNode {
         {
             
             //Second half of pipe, same but for s1 pos, lat lon
-            nx = cos(lon1)
-            nz = -sin(lon1)
-            ny = sin(lat1)
-            
-            nlen = sqrt(nx*nx + ny*ny + nz*nz)
-            nx = nx / nlen
-            ny = ny / nlen
-            nz = nz / nlen
-            
+            nx =  cos(lon1) * cos(lat1) //1/14 wups need to incorporate cosine!
+            nz = -sin(lon1) * sin(lat1)
+            ny =  sin(lat1)
+
             enx = cos(lon1)
             enz = -sin(lon1)
             eny = 0.0
