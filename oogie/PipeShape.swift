@@ -89,11 +89,12 @@ class PipeShape: SCNNode {
     #if VERSION_2D
     let shapeRad    : Double = 1.0
     let markerHit = 0.2
+    let pipeRad : CGFloat = 0.025
     #elseif VERSION_AR
     let shapeRad    : Double = 0.25
     let markerHit = 0.05  //1/13
+    let pipeRad : CGFloat = 0.008 //1/20
     #endif
-    let pipeRad : CGFloat = 0.025 //11/27 made smaller
     var pipeColor = UIColor(hue: 0.1, saturation: 1.0, brightness: 1.0, alpha: 1.0)
     var ballGeomz : [SCNSphere] = []
     var ballz : [SCNNode] = []

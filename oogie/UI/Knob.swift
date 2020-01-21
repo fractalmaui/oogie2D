@@ -10,6 +10,7 @@
 //           (this is for string choices, like param select)
 // 10/10 add .5 to top of wraparound limit for string choices, makes a cleaner transition
 //        still seems too quick wrapping 1,0,15,14...  why?
+// 1/20 change wraparound check, was causing crash!
 import UIKit
 import Foundation
 import CoreGraphics
@@ -108,14 +109,16 @@ class Knob: UIControl {
             }
             else{ //handle wrap
                 if totalAngle < minimumValue {totalAngle = maximumValue}
-                if totalAngle > maximumValue+1.5 {totalAngle = minimumValue} //DHS 10/10 add .5 to max
+                // 1/20 this is causing crashes in pipe knob params! find a better way!
+//                if totalAngle > maximumValue+1.5 {totalAngle = minimumValue} //DHS 10/10 add .5 to max
+                if totalAngle > maximumValue+0.5 {totalAngle = minimumValue} //DHS 10/10 add .5 to max
             }
             setValue(totalAngle)
-            if verbose{ print("  paramKnob \(totalAngle) minmax \(minimumValue) \(maximumValue)") }
+            if verbose{print("  paramKnob \(totalAngle) minmax \(minimumValue) \(maximumValue)")}
             lastAngle  = Float(gesture.touchAngle)
         }
         if isContinuous {
-      sendActions(for: .valueChanged)
+            sendActions(for: .valueChanged)
     } else {
       if gesture.state == .ended || gesture.state == .cancelled {
         sendActions(for: .valueChanged)

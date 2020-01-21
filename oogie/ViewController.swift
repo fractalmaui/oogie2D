@@ -63,6 +63,8 @@
 //  Dec 9: in updateSelectParamName add handlers for lo/hi range on pipes
 //  12/15   hide / show pLabel and textEdit depending on parameter type
 //  12/30  bug: addPipeStepTwo, use SCENE shapes/voices
+//  1/14   pipe debugging, lots of changes
+//  1/20   add oogieOrigin for all scene objects
 import UIKit
 import SceneKit
 import Photos
@@ -116,6 +118,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 //        }
     } //end testSelect
     
+    var oogieOrigin = SCNNode()
     
     //Constructed shapes / handles
     var allMarkers    : [Marker]     = []
@@ -225,7 +228,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         sceneView.backgroundColor = UIColor.black
         sceneView.allowsCameraControl = true
         
-        
+        //1/20 new origin for scene objects
+        scene.rootNode.addChildNode(oogieOrigin)
+
         // 10/27 add longpress...
         let lpgr = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
         lpgr.minimumPressDuration = 0.5
@@ -399,7 +404,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             pLabel.updateLabelOnly(lStr:"Edit:" + selectedFieldName)
 
             if selectedFieldMax == selectedFieldMin {print("ERROR: no param range")}
-            print(" tex fiel type \(selectedFieldType)")
             //12/15 textfield and plabel occupy same screen space!
             //  maybe a ui update area is where this belongs!??
             textField.isHidden = selectedFieldType != "text"
@@ -674,7 +678,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
         else if whatWeBeEditing == "pipe" // get last param for pipe...
          {
-             print("getLastParamValue valz \(selectedFieldDisplayVals)")
              var getNumberedDisplayValue = false
             var pstr = ""
              switch (fname) //12/1 ouch!!! we need to set lastFieldDouble for multipoe chyoices!
@@ -705,13 +708,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                          lastFieldDouble = Double(index)
                      }
              }
-
-            
-            
-             print(" getLastParamValuelfd \(lastFieldDouble)")
          }
-        
-        
     } //end getLastParamValue
     
     
@@ -1861,7 +1858,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     func clearAllNodes(scene:SCNScene)
     {
-        scene.rootNode.enumerateChildNodes { (node, _) in
+//        scene.rootNode.enumerateChildNodes { (node, _) in
+        oogieOrigin.enumerateChildNodes { (node, _) in //1/20
             node.removeFromParentNode()
         }
         allMarkers.removeAll() //DHS 11/4 blow away all 3D references
@@ -1885,6 +1883,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             { addPipeToScene(ps: nextPipe, name: name, op: "load") }
 
         //let axes = createAxes() //1/11/20 test azesa
+        //oogieOrigin.addChildNode(axes)
         //scene.rootNode.addChildNode(axes)
         
     } //end create3DScene
@@ -2014,7 +2013,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             sphereNode.setTextureScaleAndTranslation(xs: Float(shape.uScale), ys: Float(shape.vScale), xt: Float(shape.uCoord), yt: Float(shape.vCoord))
             sphereNode.setupTimer(rs: shape.rotSpeed)    
             sphereNode.name      = newName
-            scene.rootNode.addChildNode(sphereNode)
+            oogieOrigin.addChildNode(sphereNode)  //1/20
+            //scene.rootNode.addChildNode(sphereNode)
             sceneShapes[newName] = newOogieShape  //save latest shap to working dictionary
             shapes[newName]      = sphereNode //10/21
         } //end if primitive...
@@ -2243,7 +2243,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         pipeNode.name = name
         self.scenePipes[name] = oop
         pipe3DObject.addChildNode(pipeNode) //11/30
-        scene.rootNode.addChildNode(pipe3DObject)
+        oogieOrigin.addChildNode(pipe3DObject)  //1/20
+        //scene.rootNode.addChildNode(pipe3DObject)
         allPipes.append(pipe3DObject)
         pipes[name] = pipe3DObject  //index object by name
     } //end addPipeToScene
@@ -2363,9 +2364,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         for (name,pipe) in pipes
         { if uid == pipe.uid
         {
-            print("match pipe \(name)")
             return name }
-            
         }
         return ""
     } //end findPipe

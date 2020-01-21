@@ -213,6 +213,7 @@
 				5262740D1FD44F3400790D87 /* SphereShape.swift */,
 				7208A4C822E2C7F3000AA144 /* Marker.swift */,
 				720220B9238C6B6B001F7483 /* PipeShape.swift */,
+				727F08DC2367B5B80054C517 /* OogiePipe.swift */,
 				7237D6B0230FC49F00A38D63 /* AllPatches.swift */,
 				72EE838223125D7B00FFAAE1 /* OogleScene.swift */,
 				72AFB97D23070B640009A577 /* OogieShape.swift */,
@@ -221,7 +222,6 @@
 				7237FEB12306952B000A571A /* OVStruct.swift */,
 				724C877E231F8587008E4625 /* texCache.swift */,
 				72B7C5CA2322E48500175D4C /* ColorTools.swift */,
-				727F08DC2367B5B80054C517 /* OogiePipe.swift */,
 				727F08DE23680A8E0054C517 /* PipeStruct.swift */,
 				727F08E0236894310054C517 /* UI */,
 			);
