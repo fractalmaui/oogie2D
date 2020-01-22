@@ -34,7 +34,7 @@ struct OogiePipe {
     var multF   = 1.0
     var destination = ""
     var gotData = false //11/25
-    var uid  = "nouid"
+    var uid     = "nouid"
     var vvvvb   = false
 
     //======(OogiePipe)=============================================
@@ -45,11 +45,12 @@ struct OogiePipe {
         ibuffer      = [] //set up our input/output data buffers
         obuffer      = []
         PS           = PipeStruct()
+        uid          = "pipe_" + ProcessInfo.processInfo.globallyUniqueString //1/21 wups no uid!
         setupParams()
     }
     
     
-    //-----------(oogieVoice)=============================================
+    //-----------(OogiePipe)=============================================
     func setupParams()
     {
         // Load up params dictionary with string / array combos
@@ -60,7 +61,7 @@ struct OogiePipe {
         pipeParamsDictionary["04"] = PipeHiRangeParams
     } //end setupParams
     
-    //-----------(oogieVoice)=============================================
+    //-----------(OogiePipe)=============================================
     func getNthParams(n : Int) -> [Any]
     {
         if n < 0 || n >= pipeParamsDictionary.count {return []}
@@ -68,7 +69,7 @@ struct OogiePipe {
         return pipeParamsDictionary[key]!
     }
     
-    //======(OogieShape)=============================================
+    //-----------(OogiePipe)=============================================
     func getParamCount() -> Int
     {
         return pipeParamNames.count

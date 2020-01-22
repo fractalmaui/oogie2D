@@ -28,6 +28,7 @@
 		724C877F231F8587008E4625 /* texCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 724C877E231F8587008E4625 /* texCache.swift */; };
 		7255495E232365A70054A522 /* TextureVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7255495D232365A70054A522 /* TextureVC.swift */; };
 		72554961232369E90054A522 /* TextureCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72554960232369E90054A522 /* TextureCell.swift */; };
+		7257DFB623D7864600CC2CE0 /* OogieShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7257DFB523D7864600CC2CE0 /* OogieShape.swift */; };
 		7259B7CA22F3D553004774CC /* synthPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7259B7C922F3D553004774CC /* synthPanel.swift */; };
 		725F033822E2DF5C00A6A5FD /* oogieBmp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 725F033722E2DF5C00A6A5FD /* oogieBmp.swift */; };
 		725F033A22E2FF2500A6A5FD /* spectrumGradient.png in Resources */ = {isa = PBXBuildFile; fileRef = 725F033922E2FF2500A6A5FD /* spectrumGradient.png */; };
@@ -56,7 +57,7 @@
 		728D0B1A2377B67D003CC45A /* icon256.png in Resources */ = {isa = PBXBuildFile; fileRef = 728D0B192377B67D003CC45A /* icon256.png */; };
 		728D0B1C2377B804003CC45A /* oogieLogo.png in Resources */ = {isa = PBXBuildFile; fileRef = 728D0B1B2377B804003CC45A /* oogieLogo.png */; };
 		72AE3D612360A516008EEEB7 /* tp.png in Resources */ = {isa = PBXBuildFile; fileRef = 72AE3D602360A515008EEEB7 /* tp.png */; };
-		72AFB97E23070B640009A577 /* OogieShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72AFB97D23070B640009A577 /* OogieShape.swift */; };
+		72AFB97E23070B640009A577 /* OSStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72AFB97D23070B640009A577 /* OSStruct.swift */; };
 		72B3E89D2342ECA300F30AB7 /* dawgj.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 72B3E89C2342ECA300F30AB7 /* dawgj.jpg */; };
 		72B7C5CB2322E48500175D4C /* ColorTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B7C5CA2322E48500175D4C /* ColorTools.swift */; };
 		72C3D672234F074800560EC4 /* wheel01.png in Resources */ = {isa = PBXBuildFile; fileRef = 72C3D671234F074800560EC4 /* wheel01.png */; };
@@ -103,6 +104,7 @@
 		724C877E231F8587008E4625 /* texCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = texCache.swift; sourceTree = "<group>"; };
 		7255495D232365A70054A522 /* TextureVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextureVC.swift; sourceTree = "<group>"; };
 		72554960232369E90054A522 /* TextureCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextureCell.swift; sourceTree = "<group>"; };
+		7257DFB523D7864600CC2CE0 /* OogieShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogieShape.swift; sourceTree = "<group>"; };
 		7259B7C922F3D553004774CC /* synthPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = synthPanel.swift; sourceTree = "<group>"; };
 		725F033722E2DF5C00A6A5FD /* oogieBmp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = oogieBmp.swift; sourceTree = "<group>"; };
 		725F033922E2FF2500A6A5FD /* spectrumGradient.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = spectrumGradient.png; sourceTree = "<group>"; };
@@ -138,7 +140,7 @@
 		728D0B192377B67D003CC45A /* icon256.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon256.png; sourceTree = "<group>"; };
 		728D0B1B2377B804003CC45A /* oogieLogo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = oogieLogo.png; sourceTree = "<group>"; };
 		72AE3D602360A515008EEEB7 /* tp.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = tp.png; sourceTree = "<group>"; };
-		72AFB97D23070B640009A577 /* OogieShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogieShape.swift; sourceTree = "<group>"; };
+		72AFB97D23070B640009A577 /* OSStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSStruct.swift; sourceTree = "<group>"; };
 		72B3E89C2342ECA300F30AB7 /* dawgj.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = dawgj.jpg; sourceTree = "<group>"; };
 		72B7C5CA2322E48500175D4C /* ColorTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTools.swift; sourceTree = "<group>"; };
 		72C3D671234F074800560EC4 /* wheel01.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = wheel01.png; sourceTree = "<group>"; };
@@ -216,8 +218,9 @@
 				727F08DC2367B5B80054C517 /* OogiePipe.swift */,
 				7237D6B0230FC49F00A38D63 /* AllPatches.swift */,
 				72EE838223125D7B00FFAAE1 /* OogleScene.swift */,
-				72AFB97D23070B640009A577 /* OogieShape.swift */,
+				72AFB97D23070B640009A577 /* OSStruct.swift */,
 				72D04B0022E6C232001922E2 /* OogieVoice.swift */,
+				7257DFB523D7864600CC2CE0 /* OogieShape.swift */,
 				72D3D69722F69C61001EACA7 /* OogiePatch.swift */,
 				7237FEB12306952B000A571A /* OVStruct.swift */,
 				724C877E231F8587008E4625 /* texCache.swift */,
@@ -418,6 +421,7 @@
 				72D3D69622F69C19001EACA7 /* DataManager.swift in Sources */,
 				725F034A22E304E700A6A5FD /* SynthDave.m in Sources */,
 				7259B7CA22F3D553004774CC /* synthPanel.swift in Sources */,
+				7257DFB623D7864600CC2CE0 /* OogieShape.swift in Sources */,
 				727F08DF23680A8E0054C517 /* PipeStruct.swift in Sources */,
 				72DB6EAA2329C4CA005406DC /* Knob.swift in Sources */,
 				72D04B0122E6C232001922E2 /* OogieVoice.swift in Sources */,
@@ -427,7 +431,7 @@
 				726CA86F2376566300C382AE /* PatchEditVC.swift in Sources */,
 				7255495E232365A70054A522 /* TextureVC.swift in Sources */,
 				727F08DD2367B5B80054C517 /* OogiePipe.swift in Sources */,
-				72AFB97E23070B640009A577 /* OogieShape.swift in Sources */,
+				72AFB97E23070B640009A577 /* OSStruct.swift in Sources */,
 				72D3D69822F69C61001EACA7 /* OogiePatch.swift in Sources */,
 				5262740E1FD44F3400790D87 /* SphereShape.swift in Sources */,
 				72E463E823702E3D003360D6 /* chooserVC.swift in Sources */,

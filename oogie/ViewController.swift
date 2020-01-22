@@ -64,7 +64,9 @@
 //  12/15   hide / show pLabel and textEdit depending on parameter type
 //  12/30  bug: addPipeStepTwo, use SCENE shapes/voices
 //  1/14   pipe debugging, lots of changes
-//  1/20   add oogieOrigin for all scene objects
+//  1/20   add oogieOrigin for all scene objects,pull allPipes
+//  1/21   architecture: change OogieShape to OSStruct, make new oogieShape with pipe interfaces
+//  1/22   add platform-dependent getFreshXYZ, redo math
 import UIKit
 import SceneKit
 import Photos
@@ -123,10 +125,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //Constructed shapes / handles
     var allMarkers    : [Marker]     = []
     var selectedUids  : [String]     = []
-    var allPipes      : [PipeShape]  = []
     var sceneVoices   = Dictionary<String, OogieVoice>()
     var shapes        = Dictionary<String, SphereShape>()  //10/21
-    var sceneShapes   = Dictionary<String, OogieShape>()
+    var sceneShapes   = Dictionary<String, OogieShape>()   //1/21
     var scenePipes    = Dictionary<String, OogiePipe>()
     var pipes         = Dictionary<String, PipeShape>()  //10/21
 
@@ -190,12 +191,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var selectedVoice   = OogieVoice()
     var selectedMarker  = Marker()
     var selectedSphere  = SphereShape()  //10/18
-    var selectedShape   = OogieShape()  //10/18
+    var selectedShape   = OogieShape()  //1/21
     var selectedPipe    = OogiePipe()   //11/30
     var selectedPipeShape = PipeShape()   //11/30
 
     //For creating new shapes
-    var shapeClockPos  : Int = 0   //0 = noon 1 = 3pm etc
+    var shapeClockPos  : Int = 1   //0 = noon 1 = 3pm etc
     var isPlaying = false
 
 
@@ -663,16 +664,16 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             switch (fname)
             {
-            case "texture" : lastFieldString = selectedShape.texture
-            case "rotation": lastFieldDouble = selectedShape.rotSpeed
-            case "rotationtype": lastFieldDouble = selectedShape.rotation
-            case "xpos": lastFieldDouble = selectedShape.xPos
-            case "ypos": lastFieldDouble = selectedShape.yPos
-            case "zpos": lastFieldDouble = selectedShape.zPos
-            case "texxoffset": lastFieldDouble = selectedShape.uCoord
-            case "texyoffset": lastFieldDouble = selectedShape.vCoord
-            case "texxscale": lastFieldDouble = selectedShape.uScale
-            case "texyscale": lastFieldDouble = selectedShape.vScale
+            case "texture" : lastFieldString = selectedShape.OOS.texture
+            case "rotation": lastFieldDouble = selectedShape.OOS.rotSpeed
+            case "rotationtype": lastFieldDouble = selectedShape.OOS.rotation
+            case "xpos": lastFieldDouble = selectedShape.OOS.xPos
+            case "ypos": lastFieldDouble = selectedShape.OOS.yPos
+            case "zpos": lastFieldDouble = selectedShape.OOS.zPos
+            case "texxoffset": lastFieldDouble = selectedShape.OOS.uCoord
+            case "texyoffset": lastFieldDouble = selectedShape.OOS.vCoord
+            case "texxscale": lastFieldDouble = selectedShape.OOS.uScale
+            case "texyscale": lastFieldDouble = selectedShape.OOS.vScale
             default:print("Error:Bad shape param")
             }
         }
@@ -721,21 +722,22 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         if let sshape3d = shapes[n] //get named SphereShape
         {
-            var shape = selectedShape  //Get current shape object
+            var shapeStruct = selectedShape  //Get current shape object
             if n != selectedShapeName
             {
-                shape = sceneShapes[n]!
+                shapeStruct = sceneShapes[n]!
             }
-            sshape3d.position = SCNVector3(shape.xPos ,shape.yPos ,shape.zPos )
-            sshape3d.setTextureScaleAndTranslation(xs: Float(shape.uScale),
-                                                   ys: Float(shape.vScale),
-                                                   xt: Float(shape.uCoord),
-                                                   yt: Float(shape.vCoord)
+            //1/21 new struct...
+            sshape3d.position = SCNVector3(shapeStruct.OOS.xPos ,shapeStruct.OOS.yPos ,shapeStruct.OOS.zPos )
+            sshape3d.setTextureScaleAndTranslation(xs: Float(shapeStruct.OOS.uScale),
+                                                   ys: Float(shapeStruct.OOS.vScale),
+                                                   xt: Float(shapeStruct.OOS.uCoord),
+                                                   yt: Float(shapeStruct.OOS.vCoord)
             )
             //10/23 pass texture scaling/offsets to bitmap object too
             sshape3d.bmp.setScaleAndOffsets(
-                sx: shape.uScale, sy: shape.vScale,
-                ox: shape.uCoord, oy: shape.vCoord)
+                sx: shapeStruct.OOS.uScale, sy: shapeStruct.OOS.vScale,
+                ox: shapeStruct.OOS.uCoord, oy: shapeStruct.OOS.vCoord)
         }
     } //end update3DShapeBYName
 
@@ -829,26 +831,26 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             var newSpeed   = false
             switch (fname)
             {
-            case "texture" : selectedShape.texture = lastFieldString //WTF?? TBD
+            case "texture" : selectedShape.OOS.texture = lastFieldString //WTF?? TBD
                 print("new tex \(lastFieldString)")
                 needUpdate = false
-            case "rotation": selectedShape.rotSpeed = dknobval
+            case "rotation": selectedShape.OOS.rotSpeed = dknobval
                 needUpdate = false
                 newSpeed   = true
-            case "rotationtype": selectedShape.rotation = dknobval
+            case "rotationtype": selectedShape.OOS.rotation = dknobval
                 setRotationTypeForSelectedShape()
                 newSpeed   = true
-            case "xpos": selectedShape.xPos         = dknobval
-            case "ypos": selectedShape.yPos         = dknobval
-            case "zpos": selectedShape.zPos         = dknobval
-            case "texxoffset": selectedShape.uCoord = dknobval
-            case "texyoffset": selectedShape.vCoord = dknobval
-            case "texxscale": selectedShape.uScale  = dknobval
-            case "texyscale": selectedShape.vScale  = dknobval
+            case "xpos": selectedShape.OOS.xPos         = dknobval
+            case "ypos": selectedShape.OOS.yPos         = dknobval
+            case "zpos": selectedShape.OOS.zPos         = dknobval
+            case "texxoffset": selectedShape.OOS.uCoord = dknobval
+            case "texyoffset": selectedShape.OOS.vCoord = dknobval
+            case "texxscale": selectedShape.OOS.uScale  = dknobval
+            case "texyscale": selectedShape.OOS.vScale  = dknobval
             default: needRefresh = false
             }
             if needUpdate { update3DShapeByName (n:selectedShapeName) }
-            if newSpeed   { setRotationSpeedForSelectedShape(s : selectedShape.rotSpeed)}
+            if newSpeed   { setRotationSpeedForSelectedShape(s : selectedShape.OOS.rotSpeed)}
         }
         else if whatWeBeEditing == "pipe" //1/14 set new value for pipe...
         {
@@ -873,7 +875,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 let opChanged = (opp != selectedPipe.PS.toParam) //1/14 changed?
                // print("opp \(opp)  vs \(selectedPipe.PS.toParam)")
                 selectedPipe.PS.toParam = opp
-                //asdf DHS 1/14 Change? reload any targeted pipe shape w old scene settings!
+                // DHS 1/14 Change? reload any targeted pipe shape w old scene settings!
                 if opChanged //1/14 need resettin'
                 {
                     let shapeOrVoiceName = selectedPipe.PS.toObject
@@ -935,7 +937,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func setRotationTypeForSelectedShape()
     {
         var rspeed = 8.0
-        var irot = Int(selectedShape.rotation)
+        var irot = Int(selectedShape.OOS.rotation)
         if irot > 0
         {
             if irot > 8 {irot = 8}
@@ -952,8 +954,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         if let sshape = shapes[selectedShapeName]
         {
-            selectedShape.rotSpeed = s
-            sshape.setTimerSpeed(rs: selectedShape.rotSpeed)
+            selectedShape.OOS.rotSpeed = s
+            sshape.setTimerSpeed(rs: selectedShape.OOS.rotSpeed)
         }
     } //end setRotationSpeedForSelectedShape
     
@@ -1043,25 +1045,25 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             var newSpeed   = false
             switch (selectedFieldName.lowercased())
             {
-            case "texture" : selectedShape.texture  = oldS
+            case "texture" : selectedShape.OOS.texture  = oldS
                 needUpdate = false
-            case "rotation": selectedShape.rotSpeed =  oldD
-                needUpdate = false
-                newSpeed   = true
-            case "rotationtype": selectedShape.rotation = oldD
+            case "rotation": selectedShape.OOS.rotSpeed =  oldD
                 needUpdate = false
                 newSpeed   = true
-            case "xpos":       selectedShape.xPos = oldD
-            case "ypos":       selectedShape.yPos = oldD
-            case "zpos":       selectedShape.zPos = oldD
-            case "texxoffset": selectedShape.uCoord = oldD
-            case "texyoffset": selectedShape.vCoord = oldD
-            case "texxscale":  selectedShape.uScale = oldD
-            case "texyscale":  selectedShape.vScale = oldD
+            case "rotationtype": selectedShape.OOS.rotation = oldD
+                needUpdate = false
+                newSpeed   = true
+            case "xpos":       selectedShape.OOS.xPos = oldD
+            case "ypos":       selectedShape.OOS.yPos = oldD
+            case "zpos":       selectedShape.OOS.zPos = oldD
+            case "texxoffset": selectedShape.OOS.uCoord = oldD
+            case "texyoffset": selectedShape.OOS.vCoord = oldD
+            case "texxscale":  selectedShape.OOS.uScale = oldD
+            case "texyscale":  selectedShape.OOS.vScale = oldD
             default: print("restoreLastParam: bad shape ptype")
             }
             if needUpdate { update3DShapeByName (n:selectedShapeName) }
-            if newSpeed   { setRotationSpeedForSelectedShape(s : selectedShape.rotSpeed)}
+            if newSpeed   { setRotationSpeedForSelectedShape(s : selectedShape.OOS.rotSpeed)}
         } //end shape
 
     } //end restoreLastParamValue
@@ -1174,7 +1176,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         if (selectedField < 0) {return}
         var vArray = [Any]()
-        vArray = selectedShape.getNthParams(n: selectedField)
+        vArray = selectedShape.OOS.getNthParams(n: selectedField) //1/21
         breakOutSelectedFields(vArray: vArray)
     } //end loadCurrentShapeParams
 
@@ -1282,7 +1284,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
         else if selectedFieldType == "texture" //10/9 new field type
         {
-            pstr = selectedShape.texture //10/22 is this the only texture?
+            pstr = selectedShape.OOS.texture //10/22 is this the only texture?
         }
         infoStr = selectedFieldName + ":" + pstr
 
@@ -1565,13 +1567,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 }
                 index+=1;
             } //end for marker
-//            let mIndex = self.findMarker(uid: self.selectedVoice.OVS.name) //what a hassle
-//            if (mIndex != -1)
-//            {
-//                let newMarker = self.allMarkers[mIndex]
-//                newMarker.updateLatLon(llat: self.selectedVoice.OVS.yCoord, llon: self.selectedVoice.OVS.xCoord)
-//                self.allMarkers[mIndex] = newMarker
-//            }
         }))
         alert.addAction(UIAlertAction(title: "Add Pipe...", style: .default, handler: { action in
            self.addPipeStepOne(voice: self.selectedVoice)
@@ -1586,20 +1581,20 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // operations available to selected shape...
     func shapeMenu()
     {
-        let alert = UIAlertController(title: self.selectedShape.name, message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        let alert = UIAlertController(title: self.selectedShape.OOS.name, message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "Clone", style: .default, handler: { action in
-            self.addShapeToScene(shape: self.selectedShape, name: "", op: "clone")
+            self.addShapeToScene(shape: self.selectedShape.OOS, name: "", op: "clone")
         }))
         alert.addAction(UIAlertAction(title: "Delete", style: .default, handler: { action in
-            self.deleteShapePrompt(shape: self.selectedShape)
+            self.deleteShapePrompt(shape: self.selectedShape.OOS)
         }))
         alert.addAction(UIAlertAction(title: "Add Voice", style: .default, handler: { action in
             let newName = "voice" + String(format: "%03d", 1 + self.sceneVoices.count)
             self.addVoiceToScene(nextOVS: self.selectedVoice.OVS, name: newName, op: "new")
         }))
         alert.addAction(UIAlertAction(title: "Reset", style: .default, handler: { action in
-            self.resetShapeByName(name: self.selectedShape.name)  //Reset shape object from scene
-            self.update3DShapeByName(n:self.selectedShape.name)  //Ripple change thru to 3D
+            self.resetShapeByName(name: self.selectedShape.OOS.name)  //Reset shape object from scene
+            self.update3DShapeByName(n:self.selectedShape.OOS.name)  //Ripple change thru to 3D
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
@@ -1621,7 +1616,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     
     //=====<oogie2D mainVC>====================================================
-    func deleteShapePrompt(shape:OogieShape)
+    func deleteShapePrompt(shape:OSStruct)
     {
         print("Delete Shape... \(shape.name)")
         let alert = UIAlertController(title: "Delete Selected Shape?", message: "Shape will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
@@ -1635,16 +1630,44 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     //=====<oogie2D mainVC>====================================================
     // 10/26 removes shape from scene / SCNNode
-    func deleteShape(shape:OogieShape)
+    func deleteShape(shape:OSStruct)
     {
         let name = shape.name
         if let shape3D = shapes[name]
         {
             shape3D.removeFromParentNode()    //Blow away 3d Shape
             shapes.removeValue(forKey: name) // delete of dict entries
+            if let shapeNode = sceneShapes[name] //Get rid of any pipes!
+            {
+                if shapeNode.inPipes.count > 0
+                {
+                    for puid in shapeNode.inPipes
+                    {
+                        print("pipeuid \(puid)")
+                        deletePipeByUID(puid: puid)
+                    }
+                }
+            }
             sceneShapes.removeValue(forKey: name)
         }
     } //end deleteShape
+    
+    //=====<oogie2D mainVC>====================================================
+    // 1/21 when a pipe source or destination is deleted, the pipe must go too...
+    //   uid is best because pipe name may have changed
+    func deletePipeByUID( puid : String)
+    {
+       for (name, p) in scenePipes
+        {
+            if p.uid == puid //Match? Clobber pipe
+            {
+                scenePipes.removeValue(forKey: name)       // Get rid of pipeObject
+                if let pipe3D = pipes[name]
+                    { pipe3D.removeFromParentNode()}       // Clean up SCNNode
+                pipes.removeValue(forKey: name)            // Delete 3d Object
+            }
+        }
+    } //end deletePipeByUID
     
     //=====<oogie2D mainVC>====================================================
     // spawns a series of other stoopid submenus, until there is a smart way
@@ -1740,7 +1763,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         let alert = UIAlertController(title: "Delete Selected Pipe?", message: "Pipe will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
-            self.deletePipe(pipe: pipe)
+            self.deletePipe(name: self.selectedPipe.name)
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
@@ -1749,9 +1772,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     //=====<oogie2D mainVC>====================================================
     // 11/30 removes pipe from scene / SCNNode
-    func deletePipe(pipe:OogiePipe)
+    // 1/21 WUPS? this assumes selected pipe but takes a pipe arg. WTF?
+    func deletePipe(name:String)
     {
-        let name = selectedPipe.name
         if let pipe3D = pipes[name]
         {
             pipe3D.removeFromParentNode()               //Blow away 3d Shape
@@ -1815,14 +1838,18 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         for (n, s) in OVScene.shapes
         {
             if n == name
-            {sceneShapes[name] = s
-             if n == selectedShapeName
-                { selectedShape = s }  //Reset seleted shape?
-             if let sshape = shapes[name] //also set 3d node spin rate!@
-                {  sshape.setTimerSpeed(rs: s.rotSpeed) //1/14 invalidate/reset timer
-                    print("set rotspeed \(s.rotSpeed)")
+            {
+                if let shape = sceneShapes[name] //1/21 redo all this
+                {
+                    shape.OOS = s
+                    if n == selectedShapeName
+                    { selectedShape = shape }  //1/21 Reset seleted shape?
+                    if let sshape = shapes[name] //also set 3d node spin rate!@
+                       {  sshape.setTimerSpeed(rs: s.rotSpeed) //1/14 invalidate/reset timer
+                           print("set rotspeed \(s.rotSpeed)")
+                       }
+                    break
                 }
-             break
             }
         }
     }  //end resetShapeByName
@@ -1846,7 +1873,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
             self.clearAllNodes(scene:self.scene)  // Clear any SCNNodes
             self.OVScene.clearScene()       //   and scene structs
-            self.clearAllNodes(scene: self.scene)
             self.pLabel.updateLabelOnly(lStr:"Clear Scene...")
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
@@ -1858,12 +1884,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     func clearAllNodes(scene:SCNScene)
     {
-//        scene.rootNode.enumerateChildNodes { (node, _) in
-        oogieOrigin.enumerateChildNodes { (node, _) in //1/20
+        oogieOrigin.enumerateChildNodes { (node, _) in //1/20 new origin
             node.removeFromParentNode()
         }
         allMarkers.removeAll() //DHS 11/4 blow away all 3D references
         shapes.removeAll()
+        pipes.removeAll() //1/21 wups?
 
     } //end clearAllNodes
     
@@ -1888,19 +1914,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         
     } //end create3DScene
 
-    //-----------(oogiePipe)=============================================
-    func createGridFloor() -> SCNNode
-    {
-        let parent = SCNNode()
-        
-//        let floorbox = SCNBox(width: 4.0, height: 0.01, length: 4.0, chamferRadius: 0)
-//        xbox.firstMaterial?.diffuse.contents  = UIColor.red
-//        parent.addChildNode(SCNNode(geometry: xbox))
-
-        return parent
-
-    }
-    
       //Hopefully dumps enuf for debugging anything?
       //-----------(oogiePipe)=============================================
       func dumpDebugShit()
@@ -1981,27 +1994,27 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     //=====<oogie2D mainVC>====================================================
     // 10/26 break out for cloning / creating / etc
-    func addShapeToScene (shape:OogieShape , name : String, op : String)
+    func addShapeToScene (shape:OSStruct , name : String, op : String)
     {
         if shape.primitive == "sphere"
         {
             var newName       = name
             let sphereNode    = SphereShape() //make new 3d shape, texture it
-            var newOogieShape = OogieShape() // make new data model for shape too
+            var newOSStruct   = OSStruct() // make new data model for shape too
             sphereNode.setBitmap(s: shape.texture)
             sphereNode.bmp.setScaleAndOffsets(
                 sx: shape.uScale, sy: shape.vScale,
                 ox: shape.uCoord, oy: shape.vCoord)
             //finally, place 3D object as needed..
-            newOogieShape     = shape //Copy in our shape to be cloned...
+            newOSStruct     = shape //Copy in our shape to be cloned...
             if op != "load" // 10/26 clone / new object? need to get new XYZ
             {
                 sphereNode.position = getFreshXYZ()
-                newOogieShape.xPos = Double(sphereNode.position.x)
-                newOogieShape.yPos = Double(sphereNode.position.y)
-                newOogieShape.zPos = Double(sphereNode.position.z)
+                newOSStruct.xPos = Double(sphereNode.position.x)
+                newOSStruct.yPos = Double(sphereNode.position.y)
+                newOSStruct.zPos = Double(sphereNode.position.z)
                 newName = "shape" + String(format: "%03d", 1 + sceneShapes.count)
-                newOogieShape.name = newName
+                newOSStruct.name = newName
             }
             else //Load, assume we already have XYZ data in place
             {
@@ -2013,10 +2026,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             sphereNode.setTextureScaleAndTranslation(xs: Float(shape.uScale), ys: Float(shape.vScale), xt: Float(shape.uCoord), yt: Float(shape.vCoord))
             sphereNode.setupTimer(rs: shape.rotSpeed)    
             sphereNode.name      = newName
-            oogieOrigin.addChildNode(sphereNode)  //1/20
-            //scene.rootNode.addChildNode(sphereNode)
+            oogieOrigin.addChildNode(sphereNode)  //1/20 new origin
+            let newOogieShape    = OogieShape()   // 1/21 new shape struct
+            newOogieShape.OOS    = newOSStruct
             sceneShapes[newName] = newOogieShape  //save latest shap to working dictionary
-            shapes[newName]      = sphereNode //10/21
+            shapes[newName]      = sphereNode     //10/21
         } //end if primitive...
     } //end addShapeToScene
     
@@ -2048,49 +2062,72 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }
     
     //=====<oogie2D mainVC>====================================================
-    // 10/26 look at shape Dict, get unused XYZ area for new shape
     //   get centroid first, then go " around the clock"
-    func getFreshXYZ() -> SCNVector3
-    {
-        var X : Double = 0.0
-        var Y : Double = 0.0
-        var Z : Double = 0.0
-        var Xmin : Double =  9999.0
-        var Xmax : Double = -9999.0
-        var Ymin : Double =  9999.0
-        var Ymax : Double = -9999.0
-        var Zmin : Double =  9999.0
-        var Zmax : Double = -9999.0
-        var c : Double = 0.0
-        for (_,nextShape) in sceneShapes
+    //   1/22 redo math, was wrong in computing new item offset from centroid
+       func getFreshXYZ() -> SCNVector3
         {
-            X = X + nextShape.xPos
-            Y = Y + nextShape.yPos
-            Z = Z + nextShape.zPos
-            Xmin = min(Xmin,nextShape.xPos)
-            Xmax = max(Xmax,nextShape.xPos)
-            Ymin = min(Ymin,nextShape.yPos)
-            Ymax = max(Ymax,nextShape.yPos)
-            Zmin = min(Zmin,nextShape.zPos)
-            Zmax = max(Zmax,nextShape.zPos)
-            c = c + 1.0
-        }
-        if c == 0 {return SCNVector3Zero}
-        var newPos3D = SCNVector3Make(Float(X/c), Float(Y/c), Float(Z/c))
-        var outerRad = Float(sqrt((Xmax-Xmin) + (Zmax-Zmin))/2.0)
-        outerRad += 3.0
-//        print("centroid \(newPos3D) , outerRad \(outerRad)")
-        switch(shapeClockPos)
-        {
-        case 0:  newPos3D.z -= outerRad  //Midnight, away from user
-        case 1:  newPos3D.x += outerRad  //3oclock, to right
-        case 2:  newPos3D.z += outerRad  //6oclock, towards user
-        case 3:  newPos3D.x -= outerRad  //9oclock, to left
-        default: newPos3D.x += outerRad  //error?  to right
-        }
-        shapeClockPos = (shapeClockPos + 1) % 4  //advance positional clock
-        return newPos3D
-    } //end getFreshXYZ
+            var X    : Double = 0.0
+            var Y    : Double = 0.0
+            var Z    : Double = 0.0
+            var Xmin : Double =  9999.0
+            var Xmax : Double = -9999.0
+            var Ymin : Double =  9999.0
+            var Ymax : Double = -9999.0
+            var Zmin : Double =  9999.0
+            var Zmax : Double = -9999.0
+            var X0   : Double = 0.0
+            var Z0   : Double = 0.0
+            var c    : Double = 0.0
+            //Get centroid of all shapes...
+            for (_,nextShape) in sceneShapes
+            {
+                let xx = nextShape.OOS.xPos
+                let yy = nextShape.OOS.yPos
+                let zz = nextShape.OOS.zPos
+                X = X + xx
+                Y = Y + yy
+                Z = Z + zz
+                Xmin = min(Xmin,xx)
+                Xmax = max(Xmax,xx)
+                Ymin = min(Ymin,yy)
+                Ymax = max(Ymax,yy)
+                Zmin = min(Zmin,zz)
+                Zmax = max(Zmax,zz)
+                if c == 0 //remember first XZ coords
+                {
+                    X0 = xx
+                    Z0 = zz
+                }
+                c = c + 1.0
+            }
+            if c == 0 {return SCNVector3Zero} //Nothing? centroid is origin
+            let cx = Double(X/c) //Get centroid of all our shapes
+            let cy = Double(Y/c) //  y isnt used now btw
+            let cz = Double(Z/c)
+            var newPos3D = SCNVector3Make(Float(cx), Float(cy), Float(cz)) // centroid!
+            X0  = X0 - cx   //get xz distances from centroid to first shape
+            Z0  = Z0 - cz
+            var outerRad = Float(sqrt(X0*X0 + Z0*Z0-cz))  //This is radius from centroid to all shapes
+            if c != 0 //1/22 got shape(s)?
+            {
+                #if VERSION_2D
+                outerRad += 3.0   //1/22
+                #elseif VERSION_AR
+                outerRad += 0.5   //1/22  tighten spatial arrangement in AR
+                #endif
+                //Add our offset radius to the centroid to get fresh pos
+                switch(shapeClockPos)
+                {
+                case 0:  newPos3D.z -= outerRad  //Midnight, away from user
+                case 1:  newPos3D.x += outerRad  //3oclock, to right
+                case 2:  newPos3D.z += outerRad  //6oclock, towards user
+                case 3:  newPos3D.x -= outerRad  //9oclock, to left
+                default: newPos3D.x += outerRad  //error?  to right
+                }
+            }
+            shapeClockPos = (shapeClockPos + 1) % 4  //advance positional clock
+            return newPos3D
+        } //end getFreshXYZ
 
     //=====<oogie2D mainVC>====================================================
     // 10/26 break out for cloning / creating / etc
@@ -2127,7 +2164,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             nextVoice.OVS.name = newName //10/27 Make sure name is saved in OVS struct
             sceneVoices[newName]  = nextVoice //save latest voice to working dictionary
             //Hmm is default always a sphere< should defauls scene use sphere as primitive name?
-            if voiceShape.primitive == "sphere" || voiceShape.primitive == "default" //Sphere has 2 handles...
+            if voiceShape.OOS.primitive == "sphere" || voiceShape.OOS.primitive == "default" //1/21 Sphere has 2 handles...
             {
                 if let shape3D = shapes[nextVoice.OVS.shapeName] //10/21 find shape 3d object
                 {
@@ -2193,47 +2230,49 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         return (pmin,pmax)
     } //end getPipeRangeForParamName
 
-    //asdf tuple
     //=====<oogie2D mainVC>====================================================
+    //1/20 looks like we need to store stuff into our pipe object that the
+    //  3d scene node needs, like flat, tlat??
+    // ...or just delete pipe & call this over and over as a marker is moved?
     func addPipeToScene(ps : PipeStruct , name : String, op : String)
     {
-        //print("add pipe \(name)")
-        var oop = OogiePipe()
-        oop.PS = ps
+        var oop  = OogiePipe()
+        oop.PS   = ps
         oop.name = name
         //Now we need to scale things so pipe will work!
         let loHiRange = getPipeRangeForParamName(pname:ps.toParam.lowercased())
         oop.setupRange(lo: loHiRange.lo, hi: loHiRange.hi) //1/14 REDO
         //OK now for 3d representation. Find centers of two objects:
-
-        let from = oop.PS.fromObject
-        //print("find center for \(from)")
+        let from    = oop.PS.fromObject
         let fmarker = findMarkerByName(name:from)
         let flat    = fmarker.lat
         let flon    = fmarker.lon
         let sPos00  = getMarkerParentPositionByName(name:from) //12/30
-
-        let toObj = oop.PS.toObject
-        //print("find center for \(toObj)")
-        var sPos01 = fmarker.position
-        var tlat   = Double.pi/2.0
-        var tlon   = 0.0
+        let toObj   = oop.PS.toObject
+        var sPos01  = fmarker.position
+        var tlat    = 0.0  //1/20
+        var tlon    = 0.0
         if let sphereNode = shapes[toObj]  //Found a shape as target?
         {
             oop.destination = "shape"
-            sPos01 = sphereNode.position
-            //11/27 going to a shape?
-            tlat = 100.0 //set way bogus lat
+            sPos01          = sphereNode.position
+            tlat            = 100.0 //11/27 going to a shape? set way bogus lat
+            if let shapeNode = sceneShapes[toObj] //get matching shape object
+            {
+                shapeNode.inPipes.insert(oop.uid) //Add our UID to shape object
+            }
         }
-        else //Assume voice/marker?
+        else // Found voice/marker?
         {
             oop.destination = "voice"
-            let tmarker = findMarkerByName(name:toObj)
-            tlat    = tmarker.lat
-            tlon    = tmarker.lat
-            sPos01  = getMarkerParentPositionByName(name:toObj) //12/30
+            let tmarker     = findMarkerByName(name:toObj)
+            tlat            = tmarker.lat
+            tlon            = tmarker.lat
+            sPos01          = getMarkerParentPositionByName(name:toObj) //12/30
         }
-        //hooked up to object or marker?
+        self.scenePipes[name] = oop //store pipe objedt
+
+        //Create 3d Representation of pipe
         let pipe3DObject = PipeShape()
         pipe3DObject.name = name
         //  11/29 match pipe color in corners
@@ -2241,11 +2280,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         let pipeNode = pipe3DObject.create3DPipe(lat0 : flat , lon0 : flon , s0  : sPos00 ,
                         lat1 : tlat , lon1 : tlon , s1  : sPos01)
         pipeNode.name = name
-        self.scenePipes[name] = oop
-        pipe3DObject.addChildNode(pipeNode) //11/30
-        oogieOrigin.addChildNode(pipe3DObject)  //1/20
-        //scene.rootNode.addChildNode(pipe3DObject)
-        allPipes.append(pipe3DObject)
+        pipe3DObject.addChildNode(pipeNode)     //11/30
+        oogieOrigin.addChildNode(pipe3DObject)  //1/20 new origin
         pipes[name] = pipe3DObject  //index object by name
     } //end addPipeToScene
 
@@ -2304,13 +2340,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         OVScene.voices.removeAll()
         OVScene.shapes.removeAll()
         //update scene with any changed voice paras...
-        for (name, _) in sceneVoices //10/26 wups
+        for (name, nextVoice) in sceneVoices //10/26 wups
         {
-            OVScene.voices[name] = sceneVoices[name]?.OVS
+            OVScene.voices[name] = nextVoice.OVS  //1/21 cleanup
         }
         for (name,nextShape) in sceneShapes
         {
-            OVScene.shapes[name] = nextShape
+            OVScene.shapes[name] = nextShape.OOS  //1/21 pack the codable part
         }
         //DHS 12/5 pipes may have been renamed!
         OVScene.pipes.removeAll()
@@ -2391,16 +2427,16 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     let pipeVal = pwork.getFromOBuffer(clearFlags:true)
                     if let shape = sceneShapes[pwork.PS.toObject]
                     {
-                        var wshape = shape
+                        let wshape = shape
                         switch(pwork.PS.toParam.lowercased())  //WTF WHY NEED LOWERCASE!
                         {
-                        case "texxoffset": wshape.uCoord = Double(pipeVal)
-                        case "texyoffset": wshape.vCoord = Double(pipeVal)
-                        case "texxscale" : wshape.uScale = Double(pipeVal)
-                        case "texyscale" : wshape.vScale = Double(pipeVal)
+                        case "texxoffset": wshape.OOS.uCoord = Double(pipeVal)
+                        case "texyoffset": wshape.OOS.vCoord = Double(pipeVal)
+                        case "texxscale" : wshape.OOS.uScale = Double(pipeVal)
+                        case "texyscale" : wshape.OOS.vScale = Double(pipeVal)
                         //YUP, name of param doesnt jibe with param it changes!
-                        case "rotation"      : wshape.rotSpeed = Double(pipeVal)
-                        case "rotationtype"  : wshape.rotation = Double(pipeVal)
+                        case "rotation"      : wshape.OOS.rotSpeed = Double(pipeVal)
+                        case "rotationtype"  : wshape.OOS.rotation = Double(pipeVal)
                         if let shape3D = shapes[pwork.PS.toObject] //12/1 rot speed
                         {  shape3D.setTimerSpeed(rs: Double(pipeVal)) }
                         default: print("illegal pipe shape param \(p.PS.toParam)")
@@ -2777,7 +2813,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             sshape.setBitmapImage(i: tex) //set 3d shape texture
             sshape.name           = name // save texture name
-            selectedShape.texture = name
+            selectedShape.OOS.texture = name
             //11/24 Store immediately back into scene!
             sceneShapes[selectedShapeName] = selectedShape
             editSelect(editButton)              // leave edit mode
@@ -2803,7 +2839,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             pLabel.updateLabelOnly(lStr:"Loaded " + OVSceneName)
         }
 
-    } //e nd choseFile
+    } //end choseFile
     
     
     //---<chooserDelegate>--------------------------------------

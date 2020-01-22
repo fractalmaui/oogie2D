@@ -125,7 +125,7 @@ struct OVStruct : Codable {
         //DataManager.delete( itemIdentifier.uuidString)
     }
 
-    //======(OogieShape)=============================================
+    //======(OVStruct)=============================================
     func dump()
     {
         DataManager.dump(self)

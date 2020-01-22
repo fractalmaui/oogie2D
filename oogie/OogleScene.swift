@@ -21,7 +21,7 @@ struct OogieScene : Codable {
     var name    : String
     var version : String
     var params  : String
-    var shapes  : Dictionary<String, OogieShape>
+    var shapes  : Dictionary<String, OSStruct>
     var voices  : Dictionary<String, OVStruct>
     var pipes   : Dictionary<String, PipeStruct>
 
@@ -32,7 +32,7 @@ struct OogieScene : Codable {
         //11/22 add version / params
         version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
         params  = ""
-        shapes  = Dictionary<String, OogieShape>()
+        shapes  = Dictionary<String, OSStruct>()
         voices  = Dictionary<String, OVStruct>()
         pipes   = Dictionary<String, PipeStruct>()
     }
@@ -50,7 +50,7 @@ struct OogieScene : Codable {
     mutating func createDefaultScene(sname:String)
     {
         name                = sname
-        var shape           = OogieShape()
+        var shape           = OSStruct()
         shape.name          = "shape001" //10/27 redo
         var voice           = OVStruct()
         voice.name          = "voice001"
