@@ -8,6 +8,7 @@
 //  12/1 add verbose, why doesnt it work?
 
 import Foundation
+import SceneKit
 
 //12/1 add params
 let InputChanParams      : [Any]   = ["InputChannel", "string", "Red", "Green", "Blue", "Hue",
@@ -36,7 +37,14 @@ struct OogiePipe {
     var gotData = false //11/25
     var uid     = "nouid"
     var vvvvb   = false
-
+    // 1/22 new stuff...
+    var flat    = 0.0
+    var flon    = 0.0
+    var tlat    = 0.0
+    var tlon    = 0.0
+    var sPos00  = SCNVector3()
+    var sPos01  = SCNVector3()
+    
     //======(OogiePipe)=============================================
     // Gotta have all 4 args b4 init!
     init() // fromObject:String , fromChannel:String , toObject:String , toParam:String)

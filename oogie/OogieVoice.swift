@@ -132,6 +132,10 @@ class OogieVoice: NSObject {
     
     let masterPitch = 0 //DHS 11/18
     let quantTime = 0   //DHS 11/18
+    
+    var inPipes  = Set<String>()    //1/22 use insert and remove to manage...
+    var outPipes = Set<String>()   //1/22 use insert and remove to manage...
+
     //-----------(oogieVoice)=============================================
     override init() {
         super.init()

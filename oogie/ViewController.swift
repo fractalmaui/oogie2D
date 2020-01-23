@@ -7,55 +7,7 @@
 //  ViewController.swift
 //  oogie2D
 //
-//  Aug 23  Added lat/lon handle to position pointer over shape, looks clean
-//            but the bitmap X coord seems to be a bit off (lat coord)
-//  Sep  2  OK scene gets created from file now
-//  Sep  7  add support for multiple shapes/voices
-//  Sep 11  add wheel for editing params / values
-//  Sep 13  reset button
-//  Sep 16  pull allvoices use scene instead
-//  Sep 17  cross integrate -> oogieAR,
-//            remember param # between edits
-//  Sep 22  add percussion voice
-//  Sep 27  add type to getPatchByName , causes new bugs ouch
-//  Sep 28  add pLabel , infoText new custom UIView
-//  Sep 30  add wheelTap
-//  Oct 04  move performance params from patchObject to OVStruct, remake synth patches
-//             pull key offset param for now, add following OVStruct params:
-//                level,
-//  Oct 09  add voice name param
-//  Oct 10  redo restoreLastParamValue
-//  Oct 11  add nameplates for markers/shapes
-//  Oct 15  debug voice type change, change getPatchByName
-//  Oct 16  add notificaton for sample load completion before scene creation
-//  Oct 17  add sample envelopes, add mute/solo
-//  Oct 18  add shape params, pull bunchofInts et al
-//           added DisplayVals to show GM patch names properly
-//  Oct 21  add save shapes, latHandles,shapes became dictionary
-//           parent lon handles to shapes, texture param
-//  Oct 22/23 added shape texture xyoffset scale, works OK now
-//  Oct 25  redo shape rotation speed
-//  Oct 26  break out addVoice , addShape, implement clone shape
-//  Oct 27  add clone voice, longpress for shape/voice popups
-//  Oct 29  set marker icon type in create, add version# in menu, finish rotation type
-//           add handleTouch,
-//  Nov 3   fix xcoord bug in getShapeColor
-//          fix shape params reset -> update , add cancelEdit
-//  Nov 4   add file chooser, load/save/save as scene,
-//            move fadein/out to paramLabel, fixed clearScene
-//  Nov 8   Add patch Editor
-//  Nov 9   add isPlaying flag, on in viewDidLoad, off in prepare(ForSegue
-//  Nov 14  new arg to patch.saveItem
-//  Nov 16  add new icon set
-//  Nov 17  mods to chooser , allPatches, oogiePatch CI BACK from oogieIR
-//          move lat/lon handles to marker SCNNode object
-//  Nov 18  moved playColors out to oogieVoice, more efficient
-//          but what about masterPitch and quantTime?
-//  Nov 24  add camera 4x4 matrix saved to scene file
-//          storyboard: change all childVC presentation to fullScreen
-//             to get around ios13 new VC crap
-//  Nov 25  add playAllPipesMarkersBkgdHandler
-//  Nov 30  add deletePipe,
+// ... see older impounds for earlier change comments
 //  Dec 1   add edit for pipes, make editParams generic
 //  Dec 2   add haptic feedback for param select / knob changes
 //  Dec 5:  BUG:? pipes are stored by name, but name gets changed. So name is new but
@@ -67,6 +19,8 @@
 //  1/20   add oogieOrigin for all scene objects,pull allPipes
 //  1/21   architecture: change OogieShape to OSStruct, make new oogieShape with pipe interfaces
 //  1/22   add platform-dependent getFreshXYZ, redo math
+//         add pipeUIDToName, new properties to OogiePipe, add updatePipeByVoice
+//         add cleanupPipeInsAndOuts
 import UIKit
 import SceneKit
 import Photos
@@ -130,7 +84,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var sceneShapes   = Dictionary<String, OogieShape>()   //1/21
     var scenePipes    = Dictionary<String, OogiePipe>()
     var pipes         = Dictionary<String, PipeShape>()  //10/21
-
+    var pipeUIDToName = Dictionary<String, String>()      //1/22
     //10/27 for finding new marker lat/lons
     let llToler = Double.pi / 10.0
     let llStep  = Double.pi / 8.0 //must be larger than toler
@@ -779,15 +733,17 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         var workString  = ""
         if whatWeBeEditing == "voice" //1/14  set new value for voice/marker...
         {
+            var needPipeUpdate = false // 1/22 pipe must track markers!
             switch (fname)  //10/9 cleanup
             {
             case "latitude":
                 selectedVoice.OVS.yCoord = dknobval
                 selectedMarker.updateLatLon(llat: selectedVoice.OVS.yCoord, llon: selectedVoice.OVS.xCoord)
-                //DHS 11/17 OLD updateSelected3DMarker ()
+                needPipeUpdate = true  //1/22
             case "longitude":
                 selectedVoice.OVS.xCoord = dknobval
                 selectedMarker.updateLatLon(llat: selectedVoice.OVS.yCoord, llon: selectedVoice.OVS.xCoord)
+                needPipeUpdate = true  //1/22
             case "patch":
                 if intChoiceChanged{ changeVoicePatch(name:getSelectedFieldStringForKnobValue (kv : knobValue))}
             case "type":
@@ -824,6 +780,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 selectedMarker.updatePanels(nameStr: selectedVoice.OVS.name)  //10/11
             default: needRefresh = false
             } //end switch
+            if needPipeUpdate { updatePipeByVoice(v:selectedVoice) }
         } //end voice edit
         else if whatWeBeEditing == "shape"  //1/14  set new value for shape...
         {
@@ -1225,6 +1182,27 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
         getLastParamValue(fname : selectedFieldName.lowercased()) //10/12 Load up current param
     } //end breakOutSelectedFields
+    
+    //=======>ARKit MainVC===================================
+    //1/22 new, deletes / adds pipe 3d object to track marker moves
+    func updatePipeByVoice(v:OogieVoice)
+    {
+        for puid in v.outPipes //look at output pipes
+        {
+            deletePipeByUID(puid: puid, nodeOnly: true) //get rid of 3d Node ONLY
+            if let n = pipeUIDToName[puid]                // get pipes name
+            {
+                if let pipeObj = scenePipes[n]           //   find pipe struct
+                    {
+                        var p = pipeObj
+                        p.flat = v.OVS.yCoord     //need to store these back into pipe!
+                        p.flon = v.OVS.xCoord
+                        addPipeNode(oop: p)
+                        scenePipes[n] = p      //save the pipe back!!
+                    }        //   and add new node!
+            }
+        }
+    } //end updatePipeByVoice
     
     //=======>ARKit MainVC===================================
     // updates param display w/ current param and value
@@ -1644,7 +1622,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     for puid in shapeNode.inPipes
                     {
                         print("pipeuid \(puid)")
-                        deletePipeByUID(puid: puid)
+                        deletePipeByUID(puid: puid, nodeOnly : false)
                     }
                 }
             }
@@ -1655,17 +1633,19 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     // 1/21 when a pipe source or destination is deleted, the pipe must go too...
     //   uid is best because pipe name may have changed
-    func deletePipeByUID( puid : String)
+    func deletePipeByUID( puid : String , nodeOnly : Bool)
     {
-       for (name, p) in scenePipes
+        if let name = pipeUIDToName[puid]
         {
-            if p.uid == puid //Match? Clobber pipe
-            {
-                scenePipes.removeValue(forKey: name)       // Get rid of pipeObject
-                if let pipe3D = pipes[name]
-                    { pipe3D.removeFromParentNode()}       // Clean up SCNNode
-                pipes.removeValue(forKey: name)            // Delete 3d Object
-            }
+            // 1/22 delete pipes data?
+            if !nodeOnly {
+                cleanupPipeInsAndOuts(name:name)         // 1/22 cleanup ins and outs...
+                scenePipes.removeValue(forKey: name)
+            }       // Get rid of pipeObject
+            // Always get rid of pipe 3D node
+            if let pipe3D = pipes[name]
+            { pipe3D.removeFromParentNode()}       // Clean up SCNNode
+            pipes.removeValue(forKey: name)        // Delete 3d Object
         }
     } //end deletePipeByUID
     
@@ -1777,14 +1757,50 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         if let pipe3D = pipes[name]
         {
-            pipe3D.removeFromParentNode()               //Blow away 3d Shape
-            scenePipes.removeValue(forKey: name)       // and clear entry from
-            pipes.removeValue(forKey: name)           //  data / shape dicts
+            pipe3D.removeFromParentNode()                //Blow away 3d Shape
+            cleanupPipeInsAndOuts(name:name)            // 1/22 cleanup ins and outs...
+            scenePipes.removeValue(forKey: name)       //  and clear entry from
+            pipes.removeValue(forKey: name)           //   and data / shape dicts
             selectedPipeName = ""
         }
     } //end deletePipe
-
     
+    //=====<oogie2D mainVC>====================================================
+    func cleanupPipeInsAndOuts(name:String)
+    {
+        if let pipe = scenePipes[name]
+        {
+            removeVoiceOutputPipe(pipe:pipe)
+            if pipe.destination == "shape" //headed to a shape?
+               { removeShapeInputPipe(pipe:pipe) }
+            //... need to handle voice input later!
+        }
+    }  //end cleanupPipeInsAndOuts
+
+    //=====<oogie2D mainVC>====================================================
+    // 1/22 data bookkeeping, remove pipe UID from source voice outPipes set
+    func removeVoiceOutputPipe(pipe:OogiePipe)
+    {
+        let vname = pipe.PS.fromObject //get our voice name
+        if let voice = sceneVoices[vname] //and the voice...
+        {
+            voice.outPipes.remove(pipe.uid) //delete UID entry
+            sceneVoices[vname] = voice     // save voice back
+        }
+    } //end removeVoiceOutputPipe
+    
+    //=====<oogie2D mainVC>====================================================
+    // 1/22 data bookkeeping, remove pipe UID from dest shapes inPipes set
+    func removeShapeInputPipe(pipe:OogiePipe)
+    {
+        let sname = pipe.PS.toObject //get our voice name
+        if let shape = sceneShapes[sname]  //and the shape...
+        {
+            shape.inPipes.remove(pipe.uid) //delete UID entry
+            sceneShapes[sname] = shape    // save shape back
+        }
+    } //end removeShapeInputPipe
+
     
     //=====<oogie2D mainVC>====================================================
     // 10/27
@@ -1889,8 +1905,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
         allMarkers.removeAll() //DHS 11/4 blow away all 3D references
         shapes.removeAll()
-        pipes.removeAll() //1/21 wups?
-
+        pipes.removeAll()          //1/21 wups?
+        pipeUIDToName.removeAll()  //1/22
     } //end clearAllNodes
     
     
@@ -2234,6 +2250,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //1/20 looks like we need to store stuff into our pipe object that the
     //  3d scene node needs, like flat, tlat??
     // ...or just delete pipe & call this over and over as a marker is moved?
+    // 1/22 new properties in OogiePipe...
     func addPipeToScene(ps : PipeStruct , name : String, op : String)
     {
         var oop  = OogiePipe()
@@ -2245,18 +2262,18 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //OK now for 3d representation. Find centers of two objects:
         let from    = oop.PS.fromObject
         let fmarker = findMarkerByName(name:from)
-        let flat    = fmarker.lat
-        let flon    = fmarker.lon
-        let sPos00  = getMarkerParentPositionByName(name:from) //12/30
+        oop.flat    = fmarker.lat
+        oop.flon    = fmarker.lon
+        oop.sPos00  = getMarkerParentPositionByName(name:from) //12/30
         let toObj   = oop.PS.toObject
-        var sPos01  = fmarker.position
-        var tlat    = 0.0  //1/20
-        var tlon    = 0.0
+        oop.sPos01  = fmarker.position
+        oop.tlat    = 0.0  //1/20
+        oop.tlon    = 0.0
         if let sphereNode = shapes[toObj]  //Found a shape as target?
         {
-            oop.destination = "shape"
-            sPos01          = sphereNode.position
-            tlat            = 100.0 //11/27 going to a shape? set way bogus lat
+            oop.destination  = "shape"
+            oop.sPos01       = sphereNode.position
+            oop.tlat         = 100.0 //11/27 going to a shape? set way bogus lat
             if let shapeNode = sceneShapes[toObj] //get matching shape object
             {
                 shapeNode.inPipes.insert(oop.uid) //Add our UID to shape object
@@ -2266,25 +2283,39 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             oop.destination = "voice"
             let tmarker     = findMarkerByName(name:toObj)
-            tlat            = tmarker.lat
-            tlon            = tmarker.lat
-            sPos01          = getMarkerParentPositionByName(name:toObj) //12/30
+            oop.tlat        = tmarker.lat
+            oop.tlon        = tmarker.lat
+            oop.sPos01      = getMarkerParentPositionByName(name:toObj) //12/30
         }
         self.scenePipes[name] = oop //store pipe objedt
-
-        //Create 3d Representation of pipe
-        let pipe3DObject = PipeShape()
-        pipe3DObject.name = name
-        //  11/29 match pipe color in corners
-        pipe3DObject.pipeColor = pipe3DObject.getColorForChan(chan: ps.fromChannel)
-        let pipeNode = pipe3DObject.create3DPipe(lat0 : flat , lon0 : flon , s0  : sPos00 ,
-                        lat1 : tlat , lon1 : tlon , s1  : sPos01)
-        pipeNode.name = name
-        pipe3DObject.addChildNode(pipeNode)     //11/30
-        oogieOrigin.addChildNode(pipe3DObject)  //1/20 new origin
-        pipes[name] = pipe3DObject  //index object by name
+        // 1/22 for pipe management and updates:
+        pipeUIDToName[oop.uid] = name
+        // 1/22 need to get matching voice for fromMarker!
+        if let fromVoice = sceneVoices[from]
+        {
+            fromVoice.outPipes.insert(oop.uid) //Add our UID to voice object
+        }
+        // 1/22 split off 3d portion
+        addPipeNode(oop : oop)
     } //end addPipeToScene
 
+    //=====<oogie2D mainVC>====================================================
+    // 1/22 new
+    func addPipeNode (oop:OogiePipe)
+    {
+        let pipe3DObject  = PipeShape()
+        let n             = oop.name
+        pipe3DObject.uid  = oop.uid  //1/22 force UID to be same as data object
+        pipe3DObject.name = n
+        //  11/29 match pipe color in corners
+        pipe3DObject.pipeColor = pipe3DObject.getColorForChan(chan: oop.PS.fromChannel)
+        let pipeNode  = pipe3DObject.create3DPipe(oop: oop) //1/22
+        pipeNode.name = n
+        pipe3DObject.addChildNode(pipeNode)     // add pipe to 3d object
+        oogieOrigin.addChildNode(pipe3DObject)  //1/20 new origin
+        pipes[n] = pipe3DObject  // dictionary of 3d objects
+
+    }
 
     //=====<oogie2D mainVC>====================================================
     func foundAMarker(sname : String , lat:Double , lon:Double)  -> Bool

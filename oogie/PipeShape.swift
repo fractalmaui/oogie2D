@@ -7,6 +7,7 @@
 //
 // 11/29 add highlighted
 // 1/14  fix bug in normals in create3DPipe
+// 1/22  redo create3DPipe, simplify args
 import Foundation
 import UIKit
 import SceneKit
@@ -168,9 +169,8 @@ class PipeShape: SCNNode {
     } //end addBall
 
     //-----------(oogiePipe)=============================================
-    func create3DPipe(lat0 : Double , lon0 : Double , s0  : SCNVector3 ,
-                    lat1 : Double , lon1 : Double , s1  : SCNVector3
-                ) -> SCNNode
+    // 1/22 combine all args into OogiePipe struct
+    func create3DPipe(oop : OogiePipe) -> SCNNode
     {
         //11/27 good a place as any for uid
         uid = "pipe_" + ProcessInfo.processInfo.globallyUniqueString
@@ -189,26 +189,26 @@ class PipeShape: SCNNode {
         
         //First half of pipe: get normal , equatorial normal for start object pos
         //Get normal...
-        var nx =  cos(lon0) * cos(lat0) //1/14 wups need to incorporate cosine!
-        var nz = -sin(lon0) * cos(lat0)
-        var ny =  sin(lat0)
+        var nx =  cos(oop.flon) * cos(oop.flat) //1/14 wups need to incorporate cosine!
+        var nz = -sin(oop.flon) * cos(oop.flat)
+        var ny =  sin(oop.flat)
         //get equatorial normal
-        var enx = cos(lon0)
-        var enz = -sin(lon0)
+        var enx = cos(oop.flon)
+        var enz = -sin(oop.flon)
         var eny = 0.0
         var enlen = sqrt(enx*enx + eny*eny + enz*enz)
         enx = enx / enlen
         eny = eny / enlen
         enz = enz / enlen
-        var pfx = s0.x + Float(shapeRad + markerHit) * Float(nx)
-        var pfy = s0.y + Float(shapeRad + markerHit) * Float(ny)
-        var pfz = s0.z + Float(shapeRad + markerHit) * Float(nz)
+        var pfx = oop.sPos00.x + Float(shapeRad + markerHit) * Float(nx)
+        var pfy = oop.sPos00.y + Float(shapeRad + markerHit) * Float(ny)
+        var pfz = oop.sPos00.z + Float(shapeRad + markerHit) * Float(nz)
         //Compute pos at top of marker...1/14: pfy looks wrong!
         let p0 = SCNVector3(pfx,pfy,pfz)
 
         //Compute equatorial position (zero lat)
-        var epfx = s0.x + Float(shapeRad + 2*markerHit) * Float(enx)
-        var epfz = s0.z + Float(shapeRad + 2*markerHit) * Float(enz)
+        var epfx = oop.sPos00.x + Float(shapeRad + 2*markerHit) * Float(enx)
+        var epfz = oop.sPos00.z + Float(shapeRad + 2*markerHit) * Float(enz)
         let p1 = SCNVector3(epfx,pfy,epfz) //first junction point
 
         //Keep track of our pipe geometries, for texturing
@@ -227,9 +227,9 @@ class PipeShape: SCNNode {
         #elseif VERSION_AR
         var ceilingy = Float(0.2)
         #endif
-        let ty0 = s0.y + 2.0 //the 2.0 should be bigger than shape radius!
+        let ty0 = oop.sPos00.y + 2.0 //the 2.0 should be bigger than shape radius!
         ceilingy = max(ceilingy,ty0)
-        let ty1 = s1.y + 2.0 //the 2.0 should be bigger than shape radius!
+        let ty1 = oop.sPos01.y + 2.0 //the 2.0 should be bigger than shape radius!
         ceilingy = max(ceilingy,ty1)
 
         //get 1st ceiling point...
@@ -246,31 +246,31 @@ class PipeShape: SCNNode {
 
         tuple2.n.name = uid //11/29 add uid to vertical pipe (for select)
 
-        if (lat1 < 10.0) //DHS 11/27 big lat means go to shape, trivial 2nd half of pipe
+        if (oop.tlat < 10.0) //DHS 11/27 big lat means go to shape, trivial 2nd half of pipe
         {
             
-            //Second half of pipe, same but for s1 pos, lat lon
-            nx =  cos(lon1) * cos(lat1) //1/14 wups need to incorporate cosine!
-            nz = -sin(lon1) * sin(lat1)
-            ny =  sin(lat1)
+            //Second half of pipe, same but for oop.sPos01 pos, lat lon
+            nx =  cos(oop.tlon) * cos(oop.tlat) //1/14 wups need to incorporate cosine!
+            nz = -sin(oop.tlon) * sin(oop.tlat)
+            ny =  sin(oop.tlat)
 
-            enx = cos(lon1)
-            enz = -sin(lon1)
+            enx = cos(oop.tlon)
+            enz = -sin(oop.tlon)
             eny = 0.0
             enlen = sqrt(enx*enx + eny*eny + enz*enz)
             enx = enx / enlen
             eny = eny / enlen
             enz = enz / enlen
             
-            pfx = s1.x + Float(shapeRad + markerHit) * Float(nx)
-            pfy = s1.y + Float(shapeRad + markerHit) * Float(ny)
-            pfz = s1.z + Float(shapeRad + markerHit) * Float(nz)
+            pfx = oop.sPos01.x + Float(shapeRad + markerHit) * Float(nx)
+            pfy = oop.sPos01.y + Float(shapeRad + markerHit) * Float(ny)
+            pfz = oop.sPos01.z + Float(shapeRad + markerHit) * Float(nz)
             //Compute pos at top of marker...
             let p2 = SCNVector3(pfx,pfy,pfz)
             
             //Compute equatorial position (zero lat)
-            epfx = s1.x + Float(shapeRad + 2*markerHit) * Float(enx)
-            epfz = s1.z + Float(shapeRad + 2*markerHit) * Float(enz)
+            epfx = oop.sPos01.x + Float(shapeRad + 2*markerHit) * Float(enx)
+            epfz = oop.sPos01.z + Float(shapeRad + 2*markerHit) * Float(enz)
             let p3 = SCNVector3(epfx,pfy,epfz) //first junction point
             //Draw sphere at first cylinder end junction, 2nd shape
             addBall(parent: parent,p:p2)
@@ -301,9 +301,9 @@ class PipeShape: SCNNode {
         else //trivial pipe to shape?
         {
             //print("pipe2shape")
-            let cp3 = SCNVector3(s1.x,ceilingy,s1.z) //ceiling above shape
+            let cp3 = SCNVector3(oop.sPos01.x,ceilingy,oop.sPos01.z) //ceiling above shape
             addBall(parent: parent,p:cp3)
-            let tuple3 = makePipeCyl(from: s1, to: cp3) //11/29 wps wrong directdion
+            let tuple3 = makePipeCyl(from: oop.sPos01, to: cp3) //11/29 wps wrong directdion
             parent.addChildNode(tuple3.n)
             //join at cieling  s this out of order?
             let tuple4 = makePipeCyl(from: cp3, to: cp0)
