@@ -359,15 +359,12 @@ private init()
     func getPatchByName(name:String) -> OogiePatch
     {
         let dicts = [synthPatchDictionary,percKitPatchDictionary,percussionPatchDictionary,GMPatchDictionary,yuserPatchDictionary] //11/13 add yuser!
-        for dict in dicts{
-            if let op = dict[name] //11/15 NOTE CASE_SENSITIVE!!!
-            {
-                return op
-            }
+        for dict in dicts{//11/15 NOTE CASE_SENSITIVE!!!
+            if let op = dict[name] { return op }
         }
         //bail? return generic synth patch
         return OogiePatch()
-    } //end getPatchB"GMyName
+    } //end getPatchByName
 
     //=====(AllPatches)=============================================
     func getPercKitPatchByName(name:String) -> OogiePatch

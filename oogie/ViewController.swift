@@ -21,6 +21,10 @@
 //  1/22   add platform-dependent getFreshXYZ, redo math
 //         add pipeUIDToName, new properties to OogiePipe, add updatePipeByVoice
 //         add cleanupPipeInsAndOuts
+//  1/25   Add updatingPipe flag to handle arbitration between pipe updates and pipe data i/o
+//         ...needs improvement!!
+//  1/26   wups lats/lons in pipeObject was a MISTAKE, redoing addPipeNode,
+//           add texturePipe call in updatePipe
 import UIKit
 import SceneKit
 import Photos
@@ -60,18 +64,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var chooserMode = "loadAllPatches"
     var shouldNOTUpdateMarkers = false
 
+    var updatingPipe = false   //1/25
     //12/2 haptics for wheel controls
     var fbgenerator = UISelectionFeedbackGenerator()
 
     
     @IBAction func testSelect(_ sender: Any) {
         dumpDebugShit()
-//        if let pov = skView.pointOfView
-//        {
-//            print("reload cam...")
-//            pov.transform = camXform
-//            print("   txfm \(camXform)")
-//        }
+ 
     } //end testSelect
     
     var oogieOrigin = SCNNode()
@@ -586,7 +586,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             switch (fname)  //10/9 cleanup
             {
             case "latitude":  lastFieldDouble = selectedVoice.OVS.yCoord
-                print("getLastParamValue \(lastFieldDouble)")
             case "longitude": lastFieldDouble = selectedVoice.OVS.xCoord
             case "type":      lastFieldDouble = Double(selectedVoice.OOP.type)    //DHS 10/13
             lastFieldPatch  = selectedVoice.OOP //DHS 10/15
@@ -1025,32 +1024,25 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     } //end restoreLastParamValue
     
-       //=======>ARKit MainVC===================================
-       //SHIT. no clue. do I read in gm patches, percussion patches, what?
-       //11/16 look at all voices. if patch name matches, reload the OOP part
-       //   of that voice and save it back into the sceneVoices dict...
-       func reloadAllPatchesInScene(namez : [String])
-       {
-           //HYUB HH?? WTF? why cant i find new patch loaded htere!
-           for (name,voice) in sceneVoices
-           {
-               let nnnn = voice.OVS.patchName
-               if namez.contains(nnnn)  // is this a patch of interest?
-               {
-                   let ppp = allP.getPatchByName(name: nnnn)
-                   if ppp != nil
-                   {
-                       print("  ...reloading patch\(nnnn)")
-                       voice.OOP         = ppp   //reset voice patch, and save back to scene dictionary
-                       sceneVoices[name] = voice
-                   }
-
-               } //end if namez
-           }    //end for
-
-       }
-
-    
+    //=======>ARKit MainVC===================================
+    //SHIT. no clue. do I read in gm patches, percussion patches, what?
+    //11/16 look at all voices. if patch name matches, reload the OOP part
+    //   of that voice and save it back into the sceneVoices dict...
+    func reloadAllPatchesInScene(namez : [String])
+    {
+        //HYUB HH?? WTF? why cant i find new patch loaded htere!
+        for (name,voice) in sceneVoices
+        {
+            let nnnn = voice.OVS.patchName
+            if namez.contains(nnnn)  // is this a patch of interest?
+            {
+                let ppp = allP.getPatchByName(name: nnnn)
+                print("  ...reloading patch\(nnnn)")
+                voice.OOP         = ppp   //reset voice patch, and save back to scene dictionary
+                sceneVoices[name] = voice
+            } //end if namez
+        }    //end for
+    } //end reloadAllPatchesInScene
     
     //=======>ARKit MainVC===================================
     // called every time user switches param with the wheel...
@@ -1187,21 +1179,26 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //1/22 new, deletes / adds pipe 3d object to track marker moves
     func updatePipeByVoice(v:OogieVoice)
     {
+        updatingPipe = true
         for puid in v.outPipes //look at output pipes
         {
+            //print("delete pipe \(puid)")
             deletePipeByUID(puid: puid, nodeOnly: true) //get rid of 3d Node ONLY
             if let n = pipeUIDToName[puid]                // get pipes name
             {
                 if let pipeObj = scenePipes[n]           //   find pipe struct
                     {
-                        var p = pipeObj
-                        p.flat = v.OVS.yCoord     //need to store these back into pipe!
-                        p.flon = v.OVS.xCoord
-                        addPipeNode(oop: p)
-                        scenePipes[n] = p      //save the pipe back!!
-                    }        //   and add new node!
+                        addPipeNode(oop: pipeObj)
+                        let vals = pipeObj.ibuffer //11/28 want raw unscaled here! asdf
+                        if let pipe = pipes[n]    // get Pipe 3dobject itself to restore texture
+                        {
+                            pipe.texturePipe(phase:0.0 , chan: pipeObj.PS.fromChannel.lowercased(),
+                                               vals: vals, vsize: vals.count , bptr : pipeObj.bptr)
+                        }
+                    }
             }
         }
+        updatingPipe = false
     } //end updatePipeByVoice
     
     //=======>ARKit MainVC===================================
@@ -1355,7 +1352,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                             {
                                 self.pLabel.updateLabelOnly(lStr:"Selected " + smname)
                                 selectedVoice = testVoice //Get associated voice for this marker
-                                print("touchmarker get voice xycoord \(selectedVoice.OVS.xCoord),\(selectedVoice.OVS.yCoord)")
                                 selectedMarkerName = smname //points to OVS struct in scene
                                 selectedMarker.updatePanels(nameStr: selectedMarkerName) //10/11 add name panels
                                 //1/14 was redundantly pulling OVS struct from OVScene.voices!
@@ -1637,14 +1633,20 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         if let name = pipeUIDToName[puid]
         {
+            //print ("scnpc \(scenePipes.count)")
             // 1/22 delete pipes data?
             if !nodeOnly {
                 cleanupPipeInsAndOuts(name:name)         // 1/22 cleanup ins and outs...
+                //print("delete scenepipe \(name)")
                 scenePipes.removeValue(forKey: name)
             }       // Get rid of pipeObject
             // Always get rid of pipe 3D node
             if let pipe3D = pipes[name]
-            { pipe3D.removeFromParentNode()}       // Clean up SCNNode
+            {
+                //print(".....delete3d pipe");
+                pipe3D.removeFromParentNode()
+                
+            }       // Clean up SCNNode
             pipes.removeValue(forKey: name)        // Delete 3d Object
         }
     } //end deletePipeByUID
@@ -2261,19 +2263,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         oop.setupRange(lo: loHiRange.lo, hi: loHiRange.hi) //1/14 REDO
         //OK now for 3d representation. Find centers of two objects:
         let from    = oop.PS.fromObject
-        let fmarker = findMarkerByName(name:from)
-        oop.flat    = fmarker.lat
-        oop.flon    = fmarker.lon
-        oop.sPos00  = getMarkerParentPositionByName(name:from) //12/30
         let toObj   = oop.PS.toObject
-        oop.sPos01  = fmarker.position
-        oop.tlat    = 0.0  //1/20
-        oop.tlon    = 0.0
-        if let sphereNode = shapes[toObj]  //Found a shape as target?
+        if shapes[toObj] != nil  //Found a shape as target?
         {
             oop.destination  = "shape"
-            oop.sPos01       = sphereNode.position
-            oop.tlat         = 100.0 //11/27 going to a shape? set way bogus lat
             if let shapeNode = sceneShapes[toObj] //get matching shape object
             {
                 shapeNode.inPipes.insert(oop.uid) //Add our UID to shape object
@@ -2282,18 +2275,15 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         else // Found voice/marker?
         {
             oop.destination = "voice"
-            let tmarker     = findMarkerByName(name:toObj)
-            oop.tlat        = tmarker.lat
-            oop.tlon        = tmarker.lat
-            oop.sPos01      = getMarkerParentPositionByName(name:toObj) //12/30
         }
-        self.scenePipes[name] = oop //store pipe objedt
+        self.scenePipes[name] = oop //store pipe object
         // 1/22 for pipe management and updates:
         pipeUIDToName[oop.uid] = name
         // 1/22 need to get matching voice for fromMarker!
         if let fromVoice = sceneVoices[from]
         {
             fromVoice.outPipes.insert(oop.uid) //Add our UID to voice object
+            sceneVoices[from] = fromVoice //DUH 1/25
         }
         // 1/22 split off 3d portion
         addPipeNode(oop : oop)
@@ -2307,14 +2297,38 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         let n             = oop.name
         pipe3DObject.uid  = oop.uid  //1/22 force UID to be same as data object
         pipe3DObject.name = n
+
+        //1/26 Need to get lats / lons the hard way for now...
+        let from = oop.PS.fromObject
+        let fmarker = findMarkerByName(name:from)
+        let flat    = fmarker.lat
+        let flon    = fmarker.lon
+        let sPos00  = getMarkerParentPositionByName(name:from)
+        let toObj = oop.PS.toObject
+        //print("find center for \(toObj)")
+        var sPos01 = fmarker.position
+        var tlat   = Double.pi/2.0
+        var tlon   = 0.0
+        if let sphereNode = shapes[toObj]  //Found a shape as target?
+        {
+            sPos01 = sphereNode.position
+            tlat = 100.0
+        }
+        else //Assume voice/marker?
+        {
+            let tmarker = findMarkerByName(name:toObj)
+            tlat    = tmarker.lat
+            tlon    = tmarker.lat
+            sPos01  = getMarkerParentPositionByName(name:toObj) //12/30
+        }
         //  11/29 match pipe color in corners
         pipe3DObject.pipeColor = pipe3DObject.getColorForChan(chan: oop.PS.fromChannel)
-        let pipeNode  = pipe3DObject.create3DPipe(oop: oop) //1/22
+        let pipeNode = pipe3DObject.create3DPipe(lat0 : flat , lon0 : flon , s0  : sPos00 ,
+                lat1 : tlat , lon1 : tlon , s1  : sPos01)
         pipeNode.name = n
         pipe3DObject.addChildNode(pipeNode)     // add pipe to 3d object
         oogieOrigin.addChildNode(pipe3DObject)  //1/20 new origin
         pipes[n] = pipe3DObject  // dictionary of 3d objects
-
     }
 
     //=====<oogie2D mainVC>====================================================
@@ -2477,6 +2491,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         //changed texture?
                         if let pipe3D = pipes[n]
                         {
+                            //print("texture bptr \(pwork.bptr)")
                             let vals = pwork.ibuffer //11/28 want raw unscaled here!
                             pipe3D.texturePipe(phase:0.0 , chan: pwork.PS.fromChannel.lowercased(),
                                                vals: vals, vsize: vals.count , bptr : pwork.bptr)
@@ -2485,12 +2500,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 } //end pwork.destination
             } //end pwork.gotData
         } //end for n,p
-        
-        //print("playVoices...")
-        //iterate thru dictionary of voices...
+
+        //iterate thru dictionary of voices, play each one as needed...
         if !shouldNOTUpdateMarkers && allMarkers.count>0 //11/18 added error checks
         {
-            
             for counter in 0...allMarkers.count-1
             {
                 var workVoice  = OogieVoice()
@@ -2523,21 +2536,25 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 }
             } //end for counter...
         } //end !shouldNot
-        
-        //11/25 Cleanup time! Feed any pipes that need data...
-        for (n,p) in scenePipes
+
+        //1/25 this is a cluge for now: updating any pipe? skip this part to avoid krash
+        if !updatingPipe
         {
-            var pwork = p //get editable copy
-            if n == selectedPipeName  { pwork = selectedPipe } //1/14 editing?
-            if let vvv = sceneVoices[p.PS.fromObject] //find pipe source voice
+            //11/25 Cleanup time! Feed any pipes that need data...
+            for (n,p) in scenePipes
             {
-                //get latest desired channel from the marker / voice
-                let floatVal = Float(vvv.getChanValueByName(n:p.PS.fromChannel.lowercased()))
-                pwork.addToBuffer(f: floatVal) //...and send to pipe
-                scenePipes[n] = pwork //Save pipe back into scene
-                if n == selectedPipeName  { selectedPipe = pwork } //1/14 editing?
-            }
-        } //end for n,p
+                var pwork = p //get editable copy
+                if n == selectedPipeName  { pwork = selectedPipe } //1/14 editing?
+                if let vvv = sceneVoices[p.PS.fromObject] //find pipe source voice
+                {
+                    //get latest desired channel from the marker / voice
+                    let floatVal = Float(vvv.getChanValueByName(n:p.PS.fromChannel.lowercased()))
+                    pwork.addToBuffer(f: floatVal) //...and send to pipe
+                    scenePipes[n] = pwork //Save pipe back into scene
+                    if n == selectedPipeName  { selectedPipe = pwork } //1/14 editing?
+                }
+            } //end for n,p
+        } //end !updatingpipe
 
         ///Ahhnd retrigger this in 30 ms, bkgd
         DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.03) {
@@ -2687,9 +2704,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         return selectedFieldStringVals[ik]
     }
 
-
-    
-    
     //=====<oogie2D mainVC>====================================================
     //DIAGNOSTIC: Write out empty synth patches by name, still need to fill
     //  in voice details!
