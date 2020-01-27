@@ -86,7 +86,25 @@ var sfx = soundFX.sharedInstance
 
 let MAX_LOOX = 8
 
-class OogieVoice: NSObject {
+
+    class Person: NSObject, NSCopying {
+    var firstName: String
+    var lastName: String
+    var age: Int
+
+    init(firstName: String, lastName: String, age: Int) {
+        self.firstName = firstName
+        self.lastName = lastName
+        self.age = age
+    }
+
+    func copy(with zone: NSZone? = nil) -> Any {
+        let copy = Person(firstName: firstName, lastName: lastName, age: age)
+        return copy
+    }
+}
+
+class OogieVoice: NSObject, NSCopying {
 
     var pitchFloat = 0.0
 
@@ -151,6 +169,20 @@ class OogieVoice: NSObject {
         //9/8 unique ID for tab
         uid = ProcessInfo.processInfo.globallyUniqueString
         setupParams()
+    }
+    
+    //-----------(oogieVoice)=============================================
+    func copy(with zone: NSZone? = nil) -> Any {
+        let copy      = OogieVoice()
+        //Only copy editable/savable/ID items, dont worry about most working vars
+        copy.OVS      = OVS
+        copy.OOP      = OOP
+        copy.inPipes  = inPipes
+        copy.outPipes = outPipes
+        copy.uid      = uid
+        //Performance vars that NEED copying
+        copy.muted    = muted
+        return copy
     }
     
     //-----------(oogieVoice)=============================================
@@ -525,14 +557,6 @@ class OogieVoice: NSObject {
         lschan    = 0
 
     } //end setup
-    
-    
-    //-----------(oogieVoice)=============================================
-    func copy(with zone: NSZone? = nil) -> Any {
-        let copy = OogieVoice()
-        return copy
-    }
-    
     
     
     //-----------(oogieVoice)=============================================
