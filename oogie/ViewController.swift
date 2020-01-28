@@ -25,6 +25,7 @@
 //         ...needs improvement!!
 //  1/26   wups lats/lons in pipeObject was a MISTAKE, redoing addPipeNode,
 //           add texturePipe call in updatePipe,change knobMode to enum
+//  1/27   fix deleteVoice bug
 import UIKit
 import SceneKit
 import Photos
@@ -1852,9 +1853,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func deleteVoice(voice:OogieVoice)
     {
         let name = voice.OVS.name
-        //DHS 11/17 latlon handles gone
-        allMarkers.remove(at: selectedObjectIndex)
-        sceneVoices.removeValue(forKey: name)
+        let marker = allMarkers[selectedObjectIndex]   //1/27 forgot to remove marker 3d object!
+        marker.removeFromParentNode()
+        allMarkers.remove(at: selectedObjectIndex)   // Delete from marker array
+        sceneVoices.removeValue(forKey: name)       //  and remove data structure
     } //end deleteVoice
 
     //=====<oogie2D mainVC>====================================================
@@ -2180,56 +2182,62 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // 10/26 break out for cloning / creating / etc
     func addVoiceToScene(nextOVS : OVStruct , name : String, op : String)
     {
-        if let voiceShape = sceneShapes[nextOVS.shapeName] //10/27 redu Get corresponding
+        var voiceShape = selectedShape // Try selected shape first (for new voice)
+        if op != "new"
         {
-            var newOVS    = nextOVS
-            var newName   = newOVS.name
-            let nextVoice = OogieVoice()
-            if op == "load" //Loading? Remember name!
-            {
-                nextVoice.OVS = newOVS
-            }
-            else if op == "new" //1/12/20
-            {
-                newOVS = OVStruct() //get new ovs
-            }
-            //Finish filling out voice structures
-            nextVoice.OOP = allP.getPatchByName(name:newOVS.patchName)
-            //10/27 support cloning.. just finds unused lat/lon space on same shape
-            if op == "clone" || op == "new"
-            {
-                let llTuple = getFreshLatLon(sname: nextOVS.shapeName ,
-                                             lat: newOVS.yCoord, lon: newOVS.xCoord)
-                newOVS.yCoord = llTuple.lat
-                newOVS.xCoord = llTuple.lon
-                newName = "voice" + String(format: "%03d", 1 + sceneVoices.count)
-            }
-            
+            if sceneShapes[nextOVS.shapeName] == nil {return} //1/27 bail on no shape
+            voiceShape = sceneShapes[nextOVS.shapeName]!     // we know it exists, force unwrap
+        }
+        
+        var newOVS    = nextOVS
+        var newName   = newOVS.name
+        let nextVoice = OogieVoice()
+        if op == "load" //Loading? Remember name!
+        {
             nextVoice.OVS = newOVS
-            if nextVoice.OOP.type == PERCKIT_VOICE { nextVoice.getPercLooxBufferPointerSet()  }
-            self.setupSynthOrSample(oov: nextVoice); //More synth-specific stuff
-            nextVoice.OVS.name = newName //10/27 Make sure name is saved in OVS struct
-            sceneVoices[newName]  = nextVoice //save latest voice to working dictionary
-            //Hmm is default always a sphere< should defauls scene use sphere as primitive name?
-            if voiceShape.OOS.primitive == "sphere" || voiceShape.OOS.primitive == "default" //1/21 Sphere has 2 handles...
+        }
+        else if op == "new" //1/12/20
+        {
+            newOVS           = OVStruct() //get new ovs
+            newOVS.patchName = "SineWave" //1/27 need to default to something!
+            newOVS.shapeName = selectedShape.OOS.name
+        }
+        //Finish filling out voice structures
+        nextVoice.OOP = allP.getPatchByName(name:newOVS.patchName)
+        //10/27 support cloning.. just finds unused lat/lon space on same shape
+        if op == "clone" || op == "new"
+        {
+            let llTuple = getFreshLatLon(sname: nextOVS.shapeName ,
+                                         lat: newOVS.yCoord, lon: newOVS.xCoord)
+            newOVS.yCoord = llTuple.lat
+            newOVS.xCoord = llTuple.lon
+            newName = "voice" + String(format: "%03d", 1 + sceneVoices.count)
+        }
+        
+        nextVoice.OVS = newOVS
+        if nextVoice.OOP.type == PERCKIT_VOICE { nextVoice.getPercLooxBufferPointerSet()  }
+        self.setupSynthOrSample(oov: nextVoice); //More synth-specific stuff
+        nextVoice.OVS.name = newName //10/27 Make sure name is saved in OVS struct
+        sceneVoices[newName]  = nextVoice //save latest voice to working dictionary
+        //Hmm is default always a sphere< should defauls scene use sphere as primitive name?
+        if voiceShape.OOS.primitive == "sphere" || voiceShape.OOS.primitive == "default" //1/21 Sphere has 2 handles...
+        {
+            if let shape3D = shapes[nextVoice.OVS.shapeName] //10/21 find shape 3d object
             {
-                if let shape3D = shapes[nextVoice.OVS.shapeName] //10/21 find shape 3d object
-                {
-                    //Lat / Lon Marker to select color
-                    let nextMarker = Marker()
-                    nextMarker.name = newName //9/16 point to voice
-                    //10/29 here we have int type, not string...
-                    nextMarker.updateTypeInt(newTypeInt: Int32(nextVoice.OOP.type))
-                    allMarkers.append(nextMarker)
-                    shape3D.addChildNode(nextMarker)
-                    nextMarker.updateLatLon(llat: nextVoice.OVS.yCoord, llon: nextVoice.OVS.xCoord)
-                }
-                else
-                {
-                    print("error find shape for voice \(nextVoice.OVS.name)")
-                }
+                //Lat / Lon Marker to select color
+                let nextMarker = Marker()
+                nextMarker.name = newName //9/16 point to voice
+                //10/29 here we have int type, not string...
+                nextMarker.updateTypeInt(newTypeInt: Int32(nextVoice.OOP.type))
+                allMarkers.append(nextMarker)
+                shape3D.addChildNode(nextMarker)
+                nextMarker.updateLatLon(llat: nextVoice.OVS.yCoord, llon: nextVoice.OVS.xCoord)
             }
-        } //end if let
+            else
+            {
+                print("error find shape for voice \(nextVoice.OVS.name)")
+            }
+        }
     } //end addVoiceToScene
     
     //=====<oogie2D mainVC>====================================================
