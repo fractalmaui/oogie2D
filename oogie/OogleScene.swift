@@ -14,6 +14,7 @@
 // 10/27   redu createDefaultScene
 // 11/22   add version , params strings
 // 11/23   getListOfVoices, Shapes
+//  2/1    add pipes clear in clearScene
 import Foundation
 import SceneKit
 
@@ -43,6 +44,7 @@ struct OogieScene : Codable {
         name  = "empty"
         shapes.removeAll()
         voices.removeAll()
+        pipes.removeAll()   //wups 2/1
     }
     
     //======(OogieScene)=============================================

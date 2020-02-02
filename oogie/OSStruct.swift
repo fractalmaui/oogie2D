@@ -40,7 +40,6 @@ let shapeParamNamesOKForPipe : [String] = ["Rotation","RotationType","TexXoffset
 
 var shapeParamsDictionary = Dictionary<String, [Any]>()
 
-
 import Foundation
 struct OSStruct : Codable {
     var name         : String

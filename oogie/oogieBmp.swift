@@ -59,7 +59,7 @@ class oogieBmp: NSObject {
         let pixelInfo: Int  = ((pixelsWide * (Int(ycoord)%hit)) + (Int(xcoord)%wid)) * 4
         if (pixelInfo < 0)  //9/15 saw krash here
         {
-            print("Error in getPixelColor: negative index!")
+           // print("Error in getPixelColor: negative index!")
             return UIColor.black
         }
         let color = UIColor(red: CGFloat(data[pixelInfo]) / 255.0,

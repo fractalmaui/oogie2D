@@ -99,6 +99,8 @@ class PipeShape: SCNNode {
     var pipeColor = UIColor(hue: 0.1, saturation: 1.0, brightness: 1.0, alpha: 1.0)
     var ballGeomz : [SCNSphere] = []
     var ballz : [SCNNode] = []
+    var cylz  : [SCNNode] = []
+    var mainParent = SCNNode()
     var cylGeometries : [SCNGeometry] = []
     var cylHeights : [Float] = []
     var wavelength = 1.0 //DHS 11/28 # texture cycles per pipe
@@ -133,203 +135,313 @@ class PipeShape: SCNNode {
     }  //end createCornerSphere
 
     //-----------(oogiePipe)=============================================
-    func makePipeCyl(from: SCNVector3 , to: SCNVector3) -> (g: SCNGeometry , n:SCNNode, h:Float){
-        return makeCylinder(from:from , to:to , radius: pipeRad , color : pipeColor)
+    func makePipeCyl(from: SCNVector3 , to: SCNVector3, newNode : Bool) ->
+        (g: SCNGeometry , n:SCNNode, h:Float, t : SCNMatrix4 )
+    {
+        return makeCylinder(from:from , to:to , radius: pipeRad , color : pipeColor, newNode : newNode)
     }
 
     //-----------(oogiePipe)=============================================
-    func makeCylinder(from: SCNVector3, to: SCNVector3, radius: CGFloat , color : UIColor) -> (g: SCNGeometry , n:SCNNode,h : Float)
+    func makeCylinder(from: SCNVector3, to: SCNVector3, radius: CGFloat , color : UIColor, newNode:Bool) ->
+        (g: SCNGeometry , n:SCNNode,h : Float, t : SCNMatrix4)
     {
-        
         let lookAt = to - from
-        
         //print("makecyl to \(to) from \(from) lookat \(lookAt)")
         let height = lookAt.length()
-
-        let y = lookAt.normalized()
+        let y  = lookAt.normalized()
         let up = lookAt.cross(vector: to).normalized()
-        let x = y.cross(vector: up).normalized()
-        let z = x.cross(vector: y).normalized()
+        let x  = y.cross(vector: up).normalized()
+        let z  = x.cross(vector: y).normalized()
         let transform = SCNMatrix4(x: x, y: y, z: z, w: from)
-
-        let geometry = SCNCylinder(radius: radius,
+        let geometry  = SCNCylinder(radius: radius,
                                    height: CGFloat(height))
         geometry.firstMaterial?.diffuse.contents = color
         let childNode = SCNNode(geometry: geometry)
-        childNode.transform = SCNMatrix4MakeTranslation(0.0, height / 2.0, 0.0) *
-          transform
+        let tf = SCNMatrix4MakeTranslation(0.0, height / 2.0, 0.0) * transform
+        childNode.transform = SCNMatrix4MakeTranslation(0.0, height / 2.0, 0.0) * transform
+        childNode.name =  String(format: "cyl %d",cylz.count)
 
-        return (geometry,childNode,height)
+        return (geometry,childNode,height,tf)
     }
 
     //-----------(oogiePipe)=============================================
     // add corner 'elbow' to scene, useful in highlighting
-    func addBall(parent: SCNNode , p:SCNVector3)
+    func addBall(parent: SCNNode , p:SCNVector3 )
     {
         //Draw sphere at first cylinder end junction
         let tuple = createCornerSphere(pos: p)
-        let nextGeom = tuple.g
-        let nextNode = tuple.n
-        
-        ballGeomz.append(nextGeom)// 11/30 add geometry storage too
+        ballGeomz.append(tuple.g)// 11/30 add geometry storage too
+        let nextNode  = tuple.n
+        nextNode.name =  String(format: "ball %d",ballGeomz.count)
         parent.addChildNode(nextNode)
         ballz.append(nextNode) //keep track for highlight
     } //end addBall
 
     //-----------(oogiePipe)=============================================
     // 1/22 combine all args into OogiePipe struct
+    // 1/28 add isShape arg
     //-----------(oogiePipe)=============================================
-     func create3DPipe(lat0 : Double , lon0 : Double , s0  : SCNVector3 ,
-                     lat1 : Double , lon1 : Double , s1  : SCNVector3
-                 ) -> SCNNode
+     //-----------(oogiePipe)=============================================
+     func create3DPipe(flat : Double , flon : Double , sPos00  : SCNVector3 ,
+                       tlat : Double , tlon : Double , sPos01  : SCNVector3 ,
+                       isShape: Bool, newNode : Bool
+     ) -> SCNNode
      {
-         //11/27 good a place as any for uid
-         uid = "pipe_" + ProcessInfo.processInfo.globallyUniqueString
-         //print("create 3d pipe uid \(uid)")
-         //Our master node...
-         let parent = SCNNode()
-         
-         //11/29 info box. gets parented later down...
-         // created small, zooms up on select
-         infobox = SCNBox(width: 0.085, height: 0.015 , length: 0.015, chamferRadius: 0)
-         infobox.firstMaterial?.diffuse.contents  = UIColor.blue
-         //11/30 rotate box, was scaled wrongly for short/wide texture
-         infoNode = SCNNode(geometry: infobox)
-         infoNode.eulerAngles = SCNVector3Make(0, 0, Float(Double.pi/2.0))
-         infoNode.name = uid //12/1 for select / deselect
+         var cIndex = 0 //local pointer to cylinder nodes during update
+         var bIndex = 0 //local pointer to ball nodes during update
+         if !newNode && ballz.count == 0 {return SCNNode()} //wups! no pipe to update yet!
+
+         //print("c3dp ll0 \(flat),\(flon) ll1 \(tlat),\(tlon) nn \(newNode)")
+         if newNode
+         {
+             //11/27 good a place as any for uid
+             uid = "pipe_" + ProcessInfo.processInfo.globallyUniqueString
+             //print("create 3d pipe uid \(uid)")
+             //Our master node...
+             mainParent = SCNNode()
+             
+             //11/29 info box. gets parented later down...
+             // created small, zooms up on select
+             infobox = SCNBox(width: 0.085, height: 0.015 , length: 0.015, chamferRadius: 0)
+             infobox.firstMaterial?.diffuse.contents  = UIColor.blue
+             //11/30 rotate box, was scaled wrongly for short/wide texture
+             infoNode = SCNNode(geometry: infobox)
+             infoNode.eulerAngles = SCNVector3Make(0, 0, Float(Double.pi/2.0))
+             infoNode.name = uid //12/1 for select / deselect
+         }
+         //.. may have to move/ update infobox!
          
          //First half of pipe: get normal , equatorial normal for start object pos
          //Get normal...
-         var nx =  cos(lon0) * cos(lat0) //1/14 wups need to incorporate cosine!
-         var nz = -sin(lon0) * cos(lat0)
-         var ny =  sin(lat0)
+         var nx =  cos( flon) * cos( flat) //1/14 wups need to incorporate cosine!
+         var nz = -sin( flon) * cos( flat)
+         var ny =  sin( flat)
          //get equatorial normal
-         var enx = cos(lon0)
-         var enz = -sin(lon0)
+         var enx = cos( flon)
+         var enz = -sin( flon)
          var eny = 0.0
          var enlen = sqrt(enx*enx + eny*eny + enz*enz)
          enx = enx / enlen
          eny = eny / enlen
          enz = enz / enlen
-         var pfx = s0.x + Float(shapeRad + markerHit) * Float(nx)
-         var pfy = s0.y + Float(shapeRad + markerHit) * Float(ny)
-         var pfz = s0.z + Float(shapeRad + markerHit) * Float(nz)
+         var pfx =  sPos00.x + Float(shapeRad + markerHit) * Float(nx)
+         var pfy =  sPos00.y + Float(shapeRad + markerHit) * Float(ny)
+         var pfz =  sPos00.z + Float(shapeRad + markerHit) * Float(nz)
          //Compute pos at top of marker...1/14: pfy looks wrong!
          let p0 = SCNVector3(pfx,pfy,pfz)
 
          //Compute equatorial position (zero lat)
-         var epfx = s0.x + Float(shapeRad + 2*markerHit) * Float(enx)
-         var epfz = s0.z + Float(shapeRad + 2*markerHit) * Float(enz)
+         var epfx =  sPos00.x + Float(shapeRad + 2*markerHit) * Float(enx)
+         var epfz =  sPos00.z + Float(shapeRad + 2*markerHit) * Float(enz)
          let p1 = SCNVector3(epfx,pfy,epfz) //first junction point
 
-         //Keep track of our pipe geometries, for texturing
-         cylGeometries.removeAll()
-         cylHeights.removeAll()
-         addBall(parent: parent, p:p0)
-         //Draw sphere at first cylinder end junction
-         addBall(parent: parent,p:p0)
-         addBall(parent: parent,p:p1)
-         
-         let tuple1 = makePipeCyl(from: p1, to: p0)
-         
+         let usecylz = true
+        
+         if newNode
+         {
+             //Keep track of our pipe geometries, for texturing
+             cylGeometries.removeAll()
+             cylHeights.removeAll()
+             cylz.removeAll()
+             ballz.removeAll()
+         }
          //Bump up ceiling to just above shapes...
          #if VERSION_2D
          var ceilingy = Float(1.0)
          #elseif VERSION_AR
          var ceilingy = Float(0.2)
          #endif
-         let ty0 = s0.y + 2.0 //the 2.0 should be bigger than shape radius!
+         let ty0 =  sPos00.y + 2.0 //the 2.0 should be bigger than shape radius!
          ceilingy = max(ceilingy,ty0)
-         let ty1 = s1.y + 2.0 //the 2.0 should be bigger than shape radius!
+         let ty1 =  sPos01.y + 2.0 //the 2.0 should be bigger than shape radius!
          ceilingy = max(ceilingy,ty1)
+
+         //Draw sphere at first cylinder end junction
+         if (newNode)   //2/1
+         {
+            addBall(parent: mainParent,p:p0)
+            addBall(parent: mainParent,p:p1)
+         }
+         else if bIndex < ballz.count //update? just change position
+         {
+           ballz[bIndex].position = p0
+           bIndex += 1
+           ballz[bIndex].position = p1
+           bIndex += 1
+         }
+         let tuple1 = makePipeCyl(from: p1, to: p0, newNode : newNode)
 
          //get 1st ceiling point...
          let cp0 = SCNVector3(epfx,ceilingy,epfz)
-         addBall(parent: parent,p:cp0)
-         let tuple2 = makePipeCyl(from: cp0, to: p1)
-         //Add our pipe cylinders...
-         parent.addChildNode(tuple1.n)
-         cylGeometries.append(tuple1.g)
-         cylHeights.append(tuple1.h)
-         parent.addChildNode(tuple2.n)
-         cylGeometries.append(tuple2.g)
-         cylHeights.append(tuple2.h)
-
-         tuple2.n.name = uid //11/29 add uid to vertical pipe (for select)
-
-         if (lat1 < 10.0) //DHS 11/27 big lat means go to shape, trivial 2nd half of pipe
+         if (newNode)   //2/1
          {
-             
-             //Second half of pipe, same but for s1 pos, lat lon
-             nx =  cos(lon1) * cos(lat1) //1/14 wups need to incorporate cosine!
-             nz = -sin(lon1) * sin(lat1)
-             ny =  sin(lat1)
+            addBall(parent: mainParent,p:cp0)
+         }
+         else if bIndex < ballz.count //update? just change position
+         {
+           ballz[bIndex].position = cp0
+           bIndex += 1
+         }
+         let tuple2 = makePipeCyl(from: cp0, to: p1, newNode : newNode)
+         tuple2.n.name = uid //11/29 add uid to vertical pipe (for select)
+         if newNode && usecylz
+         {
+             //Add our pipe cylinders...
+             mainParent.addChildNode(tuple1.n)
+             cylz.append(tuple1.n)
+             cylGeometries.append(tuple1.g)
+             cylHeights.append(tuple1.h)
+             mainParent.addChildNode(tuple2.n)
+             cylz.append(tuple2.n)
+             cylGeometries.append(tuple2.g)
+             cylHeights.append(tuple2.h)
+         }
+         else if !newNode && usecylz  //update? just send resulting transforms to cylz array
+         {
+             cylz[cIndex].transform = tuple1.t
+             cylz[cIndex].geometry  = tuple1.g
+             cylGeometries[cIndex]  = tuple1.g //also update texture geometry area
+             cIndex+=1
+             cylz[cIndex].transform = tuple2.t
+             cylz[cIndex].geometry  = tuple2.g
+             cylGeometries[cIndex]  = tuple2.g
+            cIndex+=1
+         }
 
-             enx = cos(lon1)
-             enz = -sin(lon1)
+         if (!isShape) //DHS 11/27 big lat means go to shape, trivial 2nd half of pipe
+         {
+             //Second half of pipe, same but for  sPos01 pos, lat lon
+             nx =  cos( tlon) * cos( tlat) //1/14 wups need to incorporate cosine!
+             nz = -sin( tlon) * sin( tlat)
+             ny =  sin( tlat)
+
+             enx = cos( tlon)
+             enz = -sin( tlon)
              eny = 0.0
              enlen = sqrt(enx*enx + eny*eny + enz*enz)
              enx = enx / enlen
              eny = eny / enlen
              enz = enz / enlen
              
-             pfx = s1.x + Float(shapeRad + markerHit) * Float(nx)
-             pfy = s1.y + Float(shapeRad + markerHit) * Float(ny)
-             pfz = s1.z + Float(shapeRad + markerHit) * Float(nz)
+             pfx =  sPos01.x + Float(shapeRad + markerHit) * Float(nx)
+             pfy =  sPos01.y + Float(shapeRad + markerHit) * Float(ny)
+             pfz =  sPos01.z + Float(shapeRad + markerHit) * Float(nz)
              //Compute pos at top of marker...
              let p2 = SCNVector3(pfx,pfy,pfz)
              
              //Compute equatorial position (zero lat)
-             epfx = s1.x + Float(shapeRad + 2*markerHit) * Float(enx)
-             epfz = s1.z + Float(shapeRad + 2*markerHit) * Float(enz)
+             epfx =  sPos01.x + Float(shapeRad + 2*markerHit) * Float(enx)
+             epfz =  sPos01.z + Float(shapeRad + 2*markerHit) * Float(enz)
              let p3 = SCNVector3(epfx,pfy,epfz) //first junction point
              //Draw sphere at first cylinder end junction, 2nd shape
-             addBall(parent: parent,p:p2)
-             addBall(parent: parent,p:p3)
-             //get 2nd ceiling point...
+             if (newNode)   //2/1
+             {
+                addBall(parent: mainParent,p:p2 )
+                addBall(parent: mainParent,p:p3 )
+             }
+             else if bIndex < ballz.count //update? just change position
+             {
+                ballz[bIndex].position = p2
+                bIndex += 1
+                ballz[bIndex].position = p3
+                bIndex += 1
+            }
+            //get 2nd ceiling point...
              let cp1 = SCNVector3(epfx,ceilingy,epfz)
-             let tuple5 = makePipeCyl(from: p3, to: p2)
-             addBall(parent: parent,p:cp1)
-             let tuple4 = makePipeCyl(from: p3, to: cp1)
-             
-             //Finally, join two ceiling points...
-             let tuple3 = makePipeCyl(from: cp1, to: cp0)
-             
-             parent.addChildNode(tuple3.n)
-             parent.addChildNode(tuple4.n)
-             parent.addChildNode(tuple5.n)
-             cylGeometries.append(tuple3.g)
-             cylHeights.append(tuple3.h)
-             cylGeometries.append(tuple4.g)
-             cylHeights.append(tuple4.h)
-             cylGeometries.append(tuple5.g)
-             cylHeights.append(tuple5.h)
-             
+             let tuple5 = makePipeCyl(from: p3, to: p2, newNode : newNode)
+             if (newNode)  //2/1
+             {
+                addBall(parent: mainParent,p:cp1)
+             }
+             else if bIndex < ballz.count //update? just change position
+             {
+               ballz[bIndex].position = cp1
+               bIndex += 1
+             }
+             let tuple4 = makePipeCyl(from: p3, to: cp1, newNode : newNode)
              tuple4.n.name = uid //11/29 (for select)
+
+             //Finally, join two ceiling points...
+             let tuple3 = makePipeCyl(from: cp1, to: cp0, newNode : newNode)
              tuple3.n.name = uid
 
+             if newNode && usecylz
+             {
+                 mainParent.addChildNode(tuple3.n)
+                 cylz.append(tuple3.n)
+                 mainParent.addChildNode(tuple4.n)
+                 cylz.append(tuple4.n)
+                 mainParent.addChildNode(tuple5.n)
+                 cylz.append(tuple5.n)
+                 cylGeometries.append(tuple3.g)
+                 cylHeights.append(tuple3.h)
+                 cylGeometries.append(tuple4.g)
+                 cylHeights.append(tuple4.h)
+                 cylGeometries.append(tuple5.g)
+                 cylHeights.append(tuple5.h)
+             }
+             else if !newNode && usecylz //update? just send resulting transforms to cylz array
+             {
+                 cylz[cIndex].transform = tuple3.t
+                 cylz[cIndex].geometry  = tuple3.g
+                 cylGeometries[cIndex]  = tuple3.g
+                 cIndex+=1
+                 cylz[cIndex].transform = tuple4.t
+                 cylz[cIndex].geometry  = tuple4.g
+                 cylGeometries[cIndex]  = tuple4.g
+                 cIndex+=1
+                 cylz[cIndex].transform = tuple5.t
+                 cylz[cIndex].geometry  = tuple5.g
+                 cylGeometries[cIndex]  = tuple5.g
+                 cIndex+=1
+             }
          }
          else //trivial pipe to shape?
          {
              //print("pipe2shape")
-             let cp3 = SCNVector3(s1.x,ceilingy,s1.z) //ceiling above shape
-             addBall(parent: parent,p:cp3)
-             let tuple3 = makePipeCyl(from: s1, to: cp3) //11/29 wps wrong directdion
-             parent.addChildNode(tuple3.n)
+             let cp3 = SCNVector3( sPos01.x,ceilingy, sPos01.z) //ceiling above shape
+             if (newNode)  //2/1
+             {
+                addBall(parent: mainParent,p:cp3)
+             }
+             else if bIndex < ballz.count //update? just change position
+             {
+               ballz[bIndex].position = cp3
+               bIndex += 1
+             }
+             let tuple3 = makePipeCyl(from:  sPos01, to: cp3, newNode : newNode) //11/29 wps wrong direction
+             tuple3.n.name = uid
              //join at cieling  s this out of order?
-             let tuple4 = makePipeCyl(from: cp3, to: cp0)
+             let tuple4 = makePipeCyl(from: cp3, to: cp0, newNode : newNode)
+             tuple4.n.name = uid   //11/29 (for select)
              //11/29 add info node to top ceiling pipe?
              tuple4.n.addChildNode(infoNode)
-             parent.addChildNode(tuple4.n)
-             tuple4.n.name = uid   //11/29 (for select)
-             tuple3.n.name = uid
-             cylGeometries.append(tuple4.g) //are these in correct order?
-             cylHeights.append(tuple4.h)
-             cylGeometries.append(tuple3.g)
-             cylHeights.append(tuple3.h)
+             if newNode && usecylz
+             {
+                 mainParent.addChildNode(tuple4.n)
+                 cylz.append(tuple4.n)
+                 mainParent.addChildNode(tuple3.n)
+                 cylz.append(tuple3.n)
+                 cylGeometries.append(tuple4.g) //are these in correct order?
+                 cylHeights.append(tuple4.h)
+                 cylGeometries.append(tuple3.g)
+                 cylHeights.append(tuple3.h)
+             }
+             else if !newNode  && usecylz //update? just send resulting transforms to cylz array
+             {
+                 cylz[cIndex].transform = tuple4.t
+                 cylz[cIndex].geometry  = tuple4.g
+                 cylGeometries[cIndex]  = tuple4.g
+                 cIndex+=1
+                 cylz[cIndex].transform = tuple3.t
+                 cylz[cIndex].geometry  = tuple3.g
+                 cylGeometries[cIndex]  = tuple3.g
+                 cIndex+=1
+             }
          } //end else
-         return parent
+         return mainParent
      } //end create3DPipe
+
 
  //-----------(oogiePipe)=============================================
  public func createPipeLabel(label: String , frame:CGRect ,vals : [Float]) -> UIImage {
@@ -394,7 +506,7 @@ class PipeShape: SCNNode {
     // bptr goes from 0 to 255, just as an indicator
     public func createGridImage(frame:CGRect , c:UIColor , xg : Int , yg : Int, bptr:Int) -> UIImage {
         UIGraphicsBeginImageContextWithOptions(frame.size, false, 1)
-        let context = UIGraphicsGetCurrentContext()!
+        guard let context = UIGraphicsGetCurrentContext() else {return UIImage()} //DHS 1/31
         context.setFillColor(UIColor.black.cgColor);
         context.fill(frame);
         
@@ -505,7 +617,8 @@ class PipeShape: SCNNode {
         let f = CGRect(x: 0, y: 0, width: 32, height: vsizze) //11/28 where do i get buffer size?
         //11/28Compute #gridlines along pipe
         let yg = 4*Int(CGFloat(chtotal));
-        
+        //1/30 avoid krash on zero yg
+        if yg == 0 {return}
         //load up a gradient for the image colors, use buffer and bptr offset..
         _ = vsizze
         let t = createGridImage(frame:f , c:chanColor , xg : 4 , yg : yg,bptr:bptr)

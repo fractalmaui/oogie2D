@@ -20,7 +20,8 @@
 //  11/14 new arg to patch:saveItem
 //  11/18 move playColors in ... what about masterPitch and quantTime?
 //  11/25 add getChanValueByName, RRR,GGG,BBB channel standard names
-
+//  1/27  add getParam
+//  1/29  add getParmLimsForPipe, remove Patch as pipe input
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -72,7 +73,7 @@ let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch",
                              "NChan","VChan","PChan",
                              "NFixed","VFixed","PFixed",
                              "BottomMidi","TopMidi","MidiChannel","Name"]
-let voiceParamNamesOKForPipe : [String]    = ["Latitude", "Longitude","Patch",
+let voiceParamNamesOKForPipe : [String]    = ["Latitude", "Longitude",
                                             "Scale","Level","NChan","VChan","PChan",
                                             "NFixed","VFixed","PFixed",
                                             "BottomMidi","TopMidi","MidiChannel"]
@@ -215,6 +216,7 @@ class OogieVoice: NSObject, NSCopying {
         return voiceParamsDictionary[key]!
     }
     
+    
     //-----------(oogieVoice)=============================================
     //11/25 VERY BUSY, called by pipes! assume name is lowercase
     func getChanValueByName (n : String) -> Int
@@ -233,6 +235,45 @@ class OogieVoice: NSObject, NSCopying {
         default             :  return 0
         }
     } //end getChanValueByName
+    
+    //-----------(oogieVoice)=============================================
+    // 1/29 new
+    func getParmLimsForPipe(name:String) -> (lolim:Double , hilim:Double)
+    {
+        //print("getplfp \(name)")
+        var lol = 0.0
+        var hil = 1.0
+        //must do search because of case difference!
+        var found  = false
+        var iindex = 0
+        // 1/29 find our name...maybe make case-independent array search method?
+        for pn in voiceParamNames
+        {
+            if pn.lowercased() == name
+            { found = true ; break }
+            iindex+=1
+        }
+        if found // find param name
+        {
+            let sindex = String(format: "%2.2d", iindex)         // convert to string for lookup
+            if let paramz = voiceParamsDictionary[sindex]       // finally, get params array
+            {
+                let pc = paramz.count
+                if let ptype = paramz[1] as? String //Check param type
+                {
+                    if (ptype == "string") //string params dont have set limits
+                        { hil = Double(pc-2) }
+                    else // double params have fixed limits
+                    {
+                        //2/1 WRONG! look for the corrct indices!!!
+                        lol = paramz[2] as! Double
+                        hil = paramz[3] as! Double
+                    }
+                }
+            } //end let paramz
+        } //end let iindex
+        return(lol,hil)
+    } //end getParmLimsForPipe
     
     //-----------(oogieVoice)=============================================
     // using this voices internal type, get array of appropriate patchnames

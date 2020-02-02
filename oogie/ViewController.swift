@@ -26,6 +26,7 @@
 //  1/26   wups lats/lons in pipeObject was a MISTAKE, redoing addPipeNode,
 //           add texturePipe call in updatePipe,change knobMode to enum
 //  1/27   fix deleteVoice bug
+//  1/29   change getPipeRangeForParamName
 import UIKit
 import SceneKit
 import Photos
@@ -141,6 +142,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var recentlyEditedPatches : [String] = []
     var tc = texCache.sharedInstance //9/3 texture cache
 
+    var cameraNode      = SCNNode()
     let scene           = SCNScene()
     var OVScene         = OogieScene()
     var OVSceneName     = "default"
@@ -167,7 +169,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         self.view.backgroundColor = .black
 
         //Our basic camera, out on the Z axis
-        let cameraNode = SCNNode()
+        cameraNode = SCNNode()
         cameraNode.camera = SCNCamera()
         cameraNode.position = SCNVector3(x:0, y: 0, z: 6)
         scene.rootNode.addChildNode(cameraNode)
@@ -566,94 +568,96 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         oldKnobValue = paramKnob.value //12/2 move to bottom
 
     } //end paramChanged
-    
+
     
     //=======>ARKit MainVC===================================
     // Move object-related chunks to proper objects!
-    func getLastParamValue(fname : String)
-    {
-        if whatWeBeEditing == "voice" // get last param for voice/marker...
-        {
-            switch (fname)  //10/9 cleanup
-            {
-            case "latitude":  lastFieldDouble = selectedVoice.OVS.yCoord
-            case "longitude": lastFieldDouble = selectedVoice.OVS.xCoord
-            case "type":      lastFieldDouble = Double(selectedVoice.OOP.type)    //DHS 10/13
-            lastFieldPatch  = selectedVoice.OOP //DHS 10/15
-            case "patch":     lastFieldPatch  = selectedVoice.OOP
-            //10/14 get patch index in array of names too!
-            let pname = selectedVoice.OVS.patchName.lowercased()
-            lastFieldDouble = 0.0
-            if let pindex = selectedFieldStringVals.index(of:pname)
-            {
-                lastFieldDouble = Double(pindex)
-                }
-            case "scale":     lastFieldDouble = Double(selectedVoice.OVS.keySig)
-            case "level":     lastFieldDouble = selectedVoice.OVS.level
-            case "nchan":     lastFieldDouble = Double(selectedVoice.OVS.noteMode)
-            case "vchan":     lastFieldDouble = Double(selectedVoice.OVS.volMode)
-            case "pchan":     lastFieldDouble = Double(selectedVoice.OVS.panMode)
-            case "nfixed":    lastFieldDouble = Double(selectedVoice.OVS.noteFixed)
-            case "pfixed":    lastFieldDouble = Double(selectedVoice.OVS.panFixed)
-            case "vfixed":    lastFieldDouble = Double(selectedVoice.OVS.volFixed)
-            case "topmidi":   lastFieldDouble = Double(selectedVoice.OVS.topMidi)
-            case "bottommidi":  lastFieldDouble = Double(selectedVoice.OVS.bottomMidi)
-            case "midichannel": lastFieldDouble = Double(selectedVoice.OVS.midiChannel)
-            case "name":      lastFieldString = selectedVoice.OVS.name
-            selectedMarker.updatePanels(nameStr: selectedVoice.OVS.name)  //10/11
-            default:print("Error:Bad voice param")
-            }
-        } //end whatWeBeEditing
-        else if whatWeBeEditing == "shape" // get last param for shape...
-        {
-            switch (fname)
-            {
-            case "texture" : lastFieldString = selectedShape.OOS.texture
-            case "rotation": lastFieldDouble = selectedShape.OOS.rotSpeed
-            case "rotationtype": lastFieldDouble = selectedShape.OOS.rotation
-            case "xpos": lastFieldDouble = selectedShape.OOS.xPos
-            case "ypos": lastFieldDouble = selectedShape.OOS.yPos
-            case "zpos": lastFieldDouble = selectedShape.OOS.zPos
-            case "texxoffset": lastFieldDouble = selectedShape.OOS.uCoord
-            case "texyoffset": lastFieldDouble = selectedShape.OOS.vCoord
-            case "texxscale": lastFieldDouble = selectedShape.OOS.uScale
-            case "texyscale": lastFieldDouble = selectedShape.OOS.vScale
-            default:print("Error:Bad shape param")
-            }
-        }
-        else if whatWeBeEditing == "pipe" // get last param for pipe...
-        {
-            var getNumberedDisplayValue = false
-            var pstr = ""
-            switch (fname) //12/1 ouch!!! we need to set lastFieldDouble for multipoe chyoices!
-            {
-            case "inputchannel":
-                pstr = selectedPipe.PS.fromChannel
-                lastFieldString = pstr  //1/26
-                getNumberedDisplayValue = true
-            case "outputparam":
-                pstr = selectedPipe.PS.toParam
-                lastFieldString = pstr  //1/26
-                getNumberedDisplayValue = true
-            case "name"    :
-                lastFieldString = selectedPipe.name
-            case "lorange" : // 12/9 add lo/hi range as strings
-                let lorg = selectedPipe.PS.loRange
-                lastFieldString = String(lorg)
-            case "hirange" :
-                let horg = selectedPipe.PS.hiRange
-                lastFieldString = String(horg)
-            default:print("Error:Bad pipe param")
-            }
-            //12/4  need to find which display value we are indicating?
-            if getNumberedDisplayValue
-            {
-                //12/1 NOTE: this needs to be case-sensitive. why arent displayvals lowercased?
-                if let index = selectedFieldStringVals.index(of: pstr) //1/26
-                { lastFieldDouble = Double(index) }
-            }
-        } //end else
-    } //end getLastParamValue
+      //=======>ARKit MainVC===================================
+       // Move object-related chunks to proper objects!
+       func getLastParamValue(fname : String)
+       {
+           if whatWeBeEditing == "voice" // get last param for voice/marker...
+           {
+               switch (fname)  //10/9 cleanup
+               {
+               case "latitude":  lastFieldDouble = selectedVoice.OVS.yCoord
+               case "longitude": lastFieldDouble = selectedVoice.OVS.xCoord
+               case "type":      lastFieldDouble = Double(selectedVoice.OOP.type)    //DHS 10/13
+               lastFieldPatch  = selectedVoice.OOP //DHS 10/15
+               case "patch":     lastFieldPatch  = selectedVoice.OOP
+               //10/14 get patch index in array of names too!
+               let pname = selectedVoice.OVS.patchName.lowercased()
+               lastFieldDouble = 0.0
+               if let pindex = selectedFieldStringVals.index(of:pname)
+               {
+                   lastFieldDouble = Double(pindex)
+                   }
+               case "scale":     lastFieldDouble = Double(selectedVoice.OVS.keySig)
+               case "level":     lastFieldDouble = selectedVoice.OVS.level
+               case "nchan":     lastFieldDouble = Double(selectedVoice.OVS.noteMode)
+               case "vchan":     lastFieldDouble = Double(selectedVoice.OVS.volMode)
+               case "pchan":     lastFieldDouble = Double(selectedVoice.OVS.panMode)
+               case "nfixed":    lastFieldDouble = Double(selectedVoice.OVS.noteFixed)
+               case "pfixed":    lastFieldDouble = Double(selectedVoice.OVS.panFixed)
+               case "vfixed":    lastFieldDouble = Double(selectedVoice.OVS.volFixed)
+               case "topmidi":   lastFieldDouble = Double(selectedVoice.OVS.topMidi)
+               case "bottommidi":  lastFieldDouble = Double(selectedVoice.OVS.bottomMidi)
+               case "midichannel": lastFieldDouble = Double(selectedVoice.OVS.midiChannel)
+               case "name":      lastFieldString = selectedVoice.OVS.name
+               selectedMarker.updatePanels(nameStr: selectedVoice.OVS.name)  //10/11
+               default:print("Error:Bad voice param")
+               }
+           } //end whatWeBeEditing
+           else if whatWeBeEditing == "shape" // get last param for shape...
+           {
+               switch (fname)
+               {
+               case "texture" : lastFieldString = selectedShape.OOS.texture
+               case "rotation": lastFieldDouble = selectedShape.OOS.rotSpeed
+               case "rotationtype": lastFieldDouble = selectedShape.OOS.rotation
+               case "xpos": lastFieldDouble = selectedShape.OOS.xPos
+               case "ypos": lastFieldDouble = selectedShape.OOS.yPos
+               case "zpos": lastFieldDouble = selectedShape.OOS.zPos
+               case "texxoffset": lastFieldDouble = selectedShape.OOS.uCoord
+               case "texyoffset": lastFieldDouble = selectedShape.OOS.vCoord
+               case "texxscale": lastFieldDouble = selectedShape.OOS.uScale
+               case "texyscale": lastFieldDouble = selectedShape.OOS.vScale
+               default:print("Error:Bad shape param")
+               }
+           }
+           else if whatWeBeEditing == "pipe" // get last param for pipe...
+           {
+               var getNumberedDisplayValue = false
+               var pstr = ""
+               switch (fname) //12/1 ouch!!! we need to set lastFieldDouble for multipoe chyoices!
+               {
+               case "inputchannel":
+                   pstr = selectedPipe.PS.fromChannel
+                   lastFieldString = pstr  //1/26
+                   getNumberedDisplayValue = true
+               case "outputparam":
+                   pstr = selectedPipe.PS.toParam
+                   lastFieldString = pstr  //1/26
+                   getNumberedDisplayValue = true
+               case "name"    :
+                   lastFieldString = selectedPipe.name
+               case "lorange" : // 12/9 add lo/hi range as strings
+                   let lorg = selectedPipe.PS.loRange
+                   lastFieldString = String(lorg)
+               case "hirange" :
+                   let horg = selectedPipe.PS.hiRange
+                   lastFieldString = String(horg)
+               default:print("Error:Bad pipe param")
+               }
+               //12/4  need to find which display value we are indicating?
+               if getNumberedDisplayValue
+               {
+                   //12/1 NOTE: this needs to be case-sensitive. why arent displayvals lowercased?
+                   if let index = selectedFieldStringVals.index(of: pstr) //1/26
+                   { lastFieldDouble = Double(index) }
+               }
+           } //end else
+       } //end getLastParamValue
     
     //=======>ARKit MainVC===================================
     // Called when a 3d shape params are changed.
@@ -699,180 +703,181 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // Handles shape, voice, and pipe param changes.
     //  lots can go wrong here, maybe break this up?
     func setNewParamValue(fname : String,newval : Float )
-    {
-        //We only want updates if there is a new fname!
-        //This logic lets the original saved param value (patch for example) be retreived
-        //  if user is just rolling through the options back and forth...
-        let dknobval            = Double(knobValue)
-        let intChoiceChanged    = (Int(newval) != lastFieldInt)
-        let backToOriginalValue = (Int(newval) == lastFieldSelectionNumber)
-        var needToRefreshOriginalValue = false
-        let intKnobCValue = Int((dknobval * selectedFieldDMult) + selectedFieldDOffset)
-        if (backToOriginalValue != lastBackToValue)
-        {
-            if backToOriginalValue {needToRefreshOriginalValue = true}
-        }
-        //Save our old values...
-        lastBackToValue = backToOriginalValue
-        lastFieldInt    = Int(newval)
-        
-        var needRefresh = true
-        var workString  = ""
-        if whatWeBeEditing == "voice" //1/14  set new value for voice/marker...
-        {
-            var needPipeUpdate = false // 1/22 pipe must track markers!
-            switch (fname)  //10/9 cleanup
-            {
-            case "latitude":
-                selectedVoice.OVS.yCoord = dknobval
-                selectedMarker.updateLatLon(llat: selectedVoice.OVS.yCoord, llon: selectedVoice.OVS.xCoord)
-                needPipeUpdate = true  //1/22
-            case "longitude":
-                selectedVoice.OVS.xCoord = dknobval
-                selectedMarker.updateLatLon(llat: selectedVoice.OVS.yCoord, llon: selectedVoice.OVS.xCoord)
-                needPipeUpdate = true  //1/22
-            case "patch":
-                if intChoiceChanged{ changeVoicePatch(name:getSelectedFieldStringForKnobValue (kv : knobValue))}
-            case "type":
-                if intChoiceChanged
-                {
-                    workString = getSelectedFieldStringForKnobValue (kv : knobValue)
-                    changeVoiceType(typeString:workString , needToRefreshOriginalValue: needToRefreshOriginalValue)
-                    selectedMarker.updateTypeString(newType : workString)
-                }
-            case "key":
-                if intChoiceChanged{
-                    selectedVoice.OVS.pitchShift = Int(knobValue) % 12
-                }
-            case "scale":
-                if intChoiceChanged{
-                    selectedVoice.OVS.keySig = Int(knobValue)
-                }
-            case "level":  selectedVoice.OVS.level      = dknobval
-            case "nchan":  selectedVoice.OVS.noteMode   = Int(knobValue)
-            case "vchan":  selectedVoice.OVS.volMode    = Int(knobValue)
-            case "pchan":  selectedVoice.OVS.panMode    = Int(knobValue)
-            case "nfixed": selectedVoice.OVS.noteFixed  = intKnobCValue
-            case "vfixed": selectedVoice.OVS.volFixed   = intKnobCValue
-            case "ofixed": selectedVoice.OVS.panFixed   = intKnobCValue
-            case "bottommidi":
-                let workInt = Int(unitToParam(inval: dknobval))
-                selectedVoice.OVS.bottomMidi = min(selectedVoice.OVS.topMidi-1,workInt)
-            case "topmidi":
-                let workInt = Int(unitToParam(inval: dknobval))
-                selectedVoice.OVS.topMidi = max(selectedVoice.OVS.bottomMidi+1,workInt)
-            case "midichannel":
-                selectedVoice.OVS.midiChannel = Int(unitToParam(inval: dknobval))
-            case "name": selectedVoice.OVS.name = lastFieldString
-                selectedMarker.updatePanels(nameStr: selectedVoice.OVS.name)  //10/11
-            default: needRefresh = false
-            } //end switch
-            if needPipeUpdate { updatePipeByVoice(v:selectedVoice) }
-        } //end voice edit
-        else if whatWeBeEditing == "shape"  //1/14  set new value for shape...
-        {
-            var needUpdate = true
-            var newSpeed   = false
-            switch (fname)
-            {
-            case "texture" : selectedShape.OOS.texture = lastFieldString //WTF?? TBD
-                print("new tex \(lastFieldString)")
-                needUpdate = false
-            case "rotation": selectedShape.OOS.rotSpeed = dknobval
-                needUpdate = false
-                newSpeed   = true
-            case "rotationtype": selectedShape.OOS.rotation = dknobval
-                setRotationTypeForSelectedShape()
-                newSpeed   = true
-            case "xpos": selectedShape.OOS.xPos         = dknobval
-            case "ypos": selectedShape.OOS.yPos         = dknobval
-            case "zpos": selectedShape.OOS.zPos         = dknobval
-            case "texxoffset": selectedShape.OOS.uCoord = dknobval
-            case "texyoffset": selectedShape.OOS.vCoord = dknobval
-            case "texxscale": selectedShape.OOS.uScale  = dknobval
-            case "texyscale": selectedShape.OOS.vScale  = dknobval
-            default: needRefresh = false
-            }
-            if needUpdate { update3DShapeByName (n:selectedShapeName) }
-            if newSpeed   { setRotationSpeedForSelectedShape(s : selectedShape.OOS.rotSpeed)}
-        }
-        else if whatWeBeEditing == "pipe" //1/14 set new value for pipe...
-        {
-            var needUpdate = true
-            var iknob = Int(dknobval)
-            var pdv :Double = 0.0
-            if let dogDouble = Double(lastFieldString)
-            {
-                pdv = dogDouble
-            }
-            switch (fname)
-            {
-            case "inputchannel" : iknob = min(iknob,InputChanParams.count-2)
-                                  let icp = InputChanParams[iknob+2] as! String
-                                  selectedPipe.PS.fromChannel = icp
-            case "outputparam" :   //ugggh! this is complex! lots of param resets needed here
-                var menuNames = voiceParamNamesOKForPipe
-                if selectedPipe.destination == "shape" {menuNames = shapeParamNamesOKForPipe}
-                iknob         = min(iknob,menuNames.count-1) //Double check range to avoid crash
-                let opp       = menuNames[iknob]
-                let opChanged = (opp != selectedPipe.PS.toParam) //1/14 changed?
-                selectedPipe.PS.toParam = opp
-                // DHS 1/14 Change? reload any targeted pipe shape w old scene settings!
-                if opChanged //1/14 need resettin'
-                {
-                    let shapeOrVoiceName = selectedPipe.PS.toObject
-                    if selectedPipe.destination == "voice"   //1/14
-                    {
-                        resetVoiceByName(name: shapeOrVoiceName)
-                    }
-                    else if selectedPipe.destination == "shape"   //1/14
-                    {
-                        resetShapeByName(name: shapeOrVoiceName)  //Reset shape object from scene
-                    }
-                    print(" bing! reset voice/shape  \(selectedPipe.PS.toObject)")
-                }
-                //Need to get fresh pipe range! (what about edits, they get lost!)
-                let loHiRange = getPipeRangeForParamName(pname:selectedPipe.PS.toParam.lowercased())
-                selectedPipe.setupRange(lo: loHiRange.lo, hi: loHiRange.hi) //1/14 REDO
+     {
+         //We only want updates if there is a new fname!
+         //This logic lets the original saved param value (patch for example) be retreived
+         //  if user is just rolling through the options back and forth...
+         let dknobval            = Double(knobValue)
+         let intChoiceChanged    = (Int(newval) != lastFieldInt)
+         let backToOriginalValue = (Int(newval) == lastFieldSelectionNumber)
+         var needToRefreshOriginalValue = false
+         let intKnobCValue = Int((dknobval * selectedFieldDMult) + selectedFieldDOffset)
+         if (backToOriginalValue != lastBackToValue)
+         {
+             if backToOriginalValue {needToRefreshOriginalValue = true}
+         }
+         //Save our old values...
+         lastBackToValue = backToOriginalValue
+         lastFieldInt    = Int(newval)
+         
+         var needRefresh = true
+         var workString  = ""
+         if whatWeBeEditing == "voice" //1/14  set new value for voice/marker...
+         {
+             var needPipeUpdate = false // 1/22 pipe must track markers!
+             switch (fname)  //10/9 cleanup
+             {
+             case "latitude":
+                 selectedVoice.OVS.yCoord = dknobval
+                 selectedMarker.updateLatLon(llat: selectedVoice.OVS.yCoord, llon: selectedVoice.OVS.xCoord)
+                 needPipeUpdate = true  //1/22
+             case "longitude":
+                 selectedVoice.OVS.xCoord = dknobval
+                 selectedMarker.updateLatLon(llat: selectedVoice.OVS.yCoord, llon: selectedVoice.OVS.xCoord)
+                 needPipeUpdate = true  //1/22
+             case "patch":
+                 if intChoiceChanged{ changeVoicePatch(name:getSelectedFieldStringForKnobValue (kv : knobValue))}
+             case "type":
+                 if intChoiceChanged
+                 {
+                     workString = getSelectedFieldStringForKnobValue (kv : knobValue)
+                     changeVoiceType(typeString:workString , needToRefreshOriginalValue: needToRefreshOriginalValue)
+                     selectedMarker.updateTypeString(newType : workString)
+                 }
+             case "key":
+                 if intChoiceChanged{
+                     selectedVoice.OVS.pitchShift = Int(knobValue) % 12
+                 }
+             case "scale":
+                 if intChoiceChanged{
+                     selectedVoice.OVS.keySig = Int(knobValue)
+                 }
+             case "level":  selectedVoice.OVS.level      = dknobval
+             case "nchan":  selectedVoice.OVS.noteMode   = Int(knobValue)
+             case "vchan":  selectedVoice.OVS.volMode    = Int(knobValue)
+             case "pchan":  selectedVoice.OVS.panMode    = Int(knobValue)
+             case "nfixed": selectedVoice.OVS.noteFixed  = intKnobCValue
+             case "vfixed": selectedVoice.OVS.volFixed   = intKnobCValue
+             case "ofixed": selectedVoice.OVS.panFixed   = intKnobCValue
+             case "bottommidi":
+                 let workInt = Int(unitToParam(inval: dknobval))
+                 selectedVoice.OVS.bottomMidi = min(selectedVoice.OVS.topMidi-1,workInt)
+             case "topmidi":
+                 let workInt = Int(unitToParam(inval: dknobval))
+                 selectedVoice.OVS.topMidi = max(selectedVoice.OVS.bottomMidi+1,workInt)
+             case "midichannel":
+                 selectedVoice.OVS.midiChannel = Int(unitToParam(inval: dknobval))
+             case "name": selectedVoice.OVS.name = lastFieldString
+                 selectedMarker.updatePanels(nameStr: selectedVoice.OVS.name)  //10/11
+             default: needRefresh = false
+             } //end switch
+            if needPipeUpdate && !updatingPipe { updatePipeByVoice(v:selectedVoice) } //1/31 prevent crash?
+         } //end voice edit
+         else if whatWeBeEditing == "shape"  //1/14  set new value for shape...
+         {
+             var needUpdate = true
+             var newSpeed   = false
+             switch (fname)
+             {
+             case "texture" : selectedShape.OOS.texture = lastFieldString //WTF?? TBD
+                 print("new tex \(lastFieldString)")
+                 needUpdate = false
+             case "rotation": selectedShape.OOS.rotSpeed = dknobval
+                 needUpdate = false
+                 newSpeed   = true
+             case "rotationtype": selectedShape.OOS.rotation = dknobval
+                 setRotationTypeForSelectedShape()
+                 newSpeed   = true
+             case "xpos": selectedShape.OOS.xPos         = dknobval
+             case "ypos": selectedShape.OOS.yPos         = dknobval
+             case "zpos": selectedShape.OOS.zPos         = dknobval
+             case "texxoffset": selectedShape.OOS.uCoord = dknobval
+             case "texyoffset": selectedShape.OOS.vCoord = dknobval
+             case "texxscale": selectedShape.OOS.uScale  = dknobval
+             case "texyscale": selectedShape.OOS.vScale  = dknobval
+             default: needRefresh = false
+             }
+             if needUpdate { update3DShapeByName (n:selectedShapeName) }
+             if newSpeed   { setRotationSpeedForSelectedShape(s : selectedShape.OOS.rotSpeed)}
+         }
+         else if whatWeBeEditing == "pipe" //1/14 set new value for pipe...
+         {
+             var needUpdate = true
+             var iknob = Int(dknobval)
+             var pdv :Double = 0.0
+             if let dogDouble = Double(lastFieldString)
+             {
+                 pdv = dogDouble
+             }
+             switch (fname)
+             {
+             case "inputchannel" : iknob = min(iknob,InputChanParams.count-2)
+                                   let icp = InputChanParams[iknob+2] as! String
+                                   selectedPipe.PS.fromChannel = icp
+             case "outputparam" :   //ugggh! this is complex! lots of param resets needed here
+                 var menuNames = voiceParamNamesOKForPipe
+                 if selectedPipe.destination == "shape" {menuNames = shapeParamNamesOKForPipe}
+                 iknob         = min(iknob,menuNames.count-1) //Double check range to avoid crash
+                 let opp       = menuNames[iknob]
+                 let opChanged = (opp != selectedPipe.PS.toParam) //1/14 changed?
+                 selectedPipe.PS.toParam = opp
+                 // DHS 1/14 Change? reload any targeted pipe shape w old scene settings!
+                 if opChanged //1/14 need resettin'
+                 {
+                     let shapeOrVoiceName = selectedPipe.PS.toObject
+                     if selectedPipe.destination == "voice"   //1/14
+                     {
+                         resetVoiceByName(name: shapeOrVoiceName)
+                     }
+                     else if selectedPipe.destination == "shape"   //1/14
+                     {
+                         resetShapeByName(name: shapeOrVoiceName)  //Reset shape object from scene
+                     }
+                     print(" bing! reset voice/shape  \(selectedPipe.PS.toObject)")
+                 }
+                 //Need to get fresh pipe range! (what about edits, they get lost!)
+                 let loHiRange = getPipeRangeForParamName(pname:selectedPipe.PS.toParam.lowercased(),
+                                                           dest:selectedPipe.destination)
+                 selectedPipe.setupRange(lo: loHiRange.lo, hi: loHiRange.hi) //1/14 REDO
 
-            case "name"         : selectedPipe.name           = lastFieldString
-            case "lorange"      : selectedPipe.PS.loRange           = pdv
-            case "hirange"      : selectedPipe.PS.hiRange           = pdv
-            default: needUpdate = false
-            }
-            if needUpdate
-            {
-                //12/5 NOTE pipe name may be different! but objects are still indexed by name!
-                if let popj = pipes[selectedPipeName] //12/5 USE SCENE-LOADED NAME!
-                {
-                    //12/5 update pipe label and graphfff
-                        popj.updateInfo(nameStr: selectedPipe.name, vals: selectedPipe.ibuffer)
-                                    popj.pipeColor = popj.getColorForChan(chan: selectedPipe.PS.fromChannel)
-                                    pipes[selectedPipeName] = popj
-                }
-            }
-        }
-        
-        if needRefresh
-        {
-            //Update top label: is this the right place for this?
-            var pstring = fname + " = "
-            if selectedFieldType == "double"
-            {
-                let displayValue = selectedFieldDMult * dknobval +
-                    selectedFieldDOffset //9/17 display value differs from knob value
-                //print("knobv \(knobValue) dv \(displayValue)  dmult \(selectedFieldDMult)   dmult \(selectedFieldDMult)  doff \(selectedFieldDOffset)")
-                pstring = pstring + String(format: "%4.2f", displayValue)
-                pLabel.updateit(value: displayValue) //DHS 9/28 new display
-            }
-            else
-            {
-                pstring = pstring + workString
-                pLabel.updateit(value: dknobval) //DHS 9/28 new display
-            }
-        } //end needRefresh
-    } //end setNewParamValue
-    
+             case "name"         : selectedPipe.name           = lastFieldString
+             case "lorange"      : selectedPipe.PS.loRange           = pdv
+             case "hirange"      : selectedPipe.PS.hiRange           = pdv
+             default: needUpdate = false
+             }
+             if needUpdate
+             {
+                 //12/5 NOTE pipe name may be different! but objects are still indexed by name!
+                 if let popj = pipes[selectedPipeName] //12/5 USE SCENE-LOADED NAME!
+                 {
+                     //12/5 update pipe label and graphfff
+                         popj.updateInfo(nameStr: selectedPipe.name, vals: selectedPipe.ibuffer)
+                                     popj.pipeColor = popj.getColorForChan(chan: selectedPipe.PS.fromChannel)
+                                     pipes[selectedPipeName] = popj
+                 }
+             }
+         }
+         
+         if needRefresh
+         {
+             //Update top label: is this the right place for this?
+             var pstring = fname + " = "
+             if selectedFieldType == "double"
+             {
+                 let displayValue = selectedFieldDMult * dknobval +
+                     selectedFieldDOffset //9/17 display value differs from knob value
+                 //print("knobv \(knobValue) dv \(displayValue)  dmult \(selectedFieldDMult)   dmult \(selectedFieldDMult)  doff \(selectedFieldDOffset)")
+                 pstring = pstring + String(format: "%4.2f", displayValue)
+                 pLabel.updateit(value: displayValue) //DHS 9/28 new display
+             }
+             else
+             {
+                 pstring = pstring + workString
+                 pLabel.updateit(value: dknobval) //DHS 9/28 new display
+             }
+         } //end needRefresh
+     } //end setNewParamValue
+
     //=======>ARKit MainVC===================================
     // 10/29 types: manual, BPMX1..8
     func setRotationTypeForSelectedShape()
@@ -1029,7 +1034,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 resetShapeByName(name: shapeOrVoiceName)  //Reset shape object from scene
             }
             //Need to get fresh pipe range! (what about edits, they get lost!)
-            let loHiRange = getPipeRangeForParamName(pname:selectedPipe.PS.toParam.lowercased())
+            let loHiRange = getPipeRangeForParamName(pname:selectedPipe.PS.toParam.lowercased(),
+                                                      dest:selectedPipe.destination)
             selectedPipe.setupRange(lo: loHiRange.lo, hi: loHiRange.hi) //1/14 REDO
             //End duplicate area
 
@@ -1191,19 +1197,18 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end breakOutSelectedFields
     
     //=======>ARKit MainVC===================================
-    //1/22 new, deletes / adds pipe 3d object to track marker moves
+    //1/22 updates pipes going FROM a voice,
+    //  bool updatingPipe prevents redundant calls
     func updatePipeByVoice(v:OogieVoice)
     {
         updatingPipe = true
         for puid in v.outPipes //look at output pipes
         {
-            //print("delete pipe \(puid)")
-            deletePipeByUID(puid: puid, nodeOnly: true) //get rid of 3d Node ONLY
-            if let n = pipeUIDToName[puid]                // get pipes name
+	       if let n = pipeUIDToName[puid]                // get pipes name
             {
                 if let pipeObj = scenePipes[n]           //   find pipe struct
                     {
-                        addPipeNode(oop: pipeObj)
+                        addPipeNode(oop: pipeObj, newNode : false) //1/30
                         let vals = pipeObj.ibuffer //11/28 want raw unscaled here!
                         if let pipe = pipes[n]    // get Pipe 3dobject itself to restore texture
                         {
@@ -1505,7 +1510,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.performSegue(withIdentifier: "EditPatchSegue", sender: self)
         }))
         alert.addAction(UIAlertAction(title: "Clear Scene", style: .default, handler: { action in
-            self.clearScene()
+            self.clearScenePrompt()
         }))
         alert.addAction(UIAlertAction(title: "Textures...", style: .default, handler: { action in
             self.performSegue(withIdentifier: "textureSegue", sender: self)
@@ -1671,6 +1676,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 scenePipes.removeValue(forKey: name)
             }       // Get rid of pipeObject
             // Always get rid of pipe 3D node
+            print("deletePipeByUID \(name)")
             if let pipe3D = pipes[name]
             {
                 //print(".....delete3d pipe");
@@ -1916,25 +1922,46 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }
     
     //=====<oogie2D mainVC>====================================================
-    func clearScene()
+    func clearScenePrompt()
     {
         let alert = UIAlertController(title: "Clear Current Scene?", message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
-            self.clearAllNodes(scene:self.scene)  // Clear any SCNNodes
-            self.OVScene.clearScene()       //   and scene structs
             self.pLabel.updateLabelOnly(lStr:"Clear Scene...")
+            self.clearScene()
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
         self.present(alert, animated: true, completion: nil)
-    }
+    } //end clearScenePrompt
     
+    //=====<oogie2D mainVC>====================================================
+    // 2/1 clears internal dictionaries of oogieVoices, Shapes and Pipes  asdf
+    func clearOogieStructs()
+    {
+        sceneVoices.removeAll()
+        sceneShapes.removeAll()
+        scenePipes.removeAll()
+    } //end clearOogieStructs
+    
+    //=====<oogie2D mainVC>====================================================
+    func clearScene()
+    {
+        
+        self.OVScene.clearScene()       //   and scene structs
+        self.clearOogieStructs()       //2/1
+        self.clearAllNodes(scene:scene)  // Clear any SCNNodes
+        self.OVScene.createDefaultScene(sname: "default")  //2/1/20 add an object
+        self.create3DScene(scene:scene) //  then create new scene from file
+        cameraNode.transform = SCNMatrix4Identity
+        cameraNode.position  = SCNVector3(x:0, y: 0, z: 6) //put camera back away from origin
+    } //end clearScene
     
     //=====<oogie2D mainVC>====================================================
     func clearAllNodes(scene:SCNScene)
     {
         oogieOrigin.enumerateChildNodes { (node, _) in //1/20 new origin
-            node.removeFromParentNode()
+        //print("remove node \(node.name)")
+            if (node.name != nil) {node.removeFromParentNode()}
         }
         allMarkers.removeAll() //DHS 11/4 blow away all 3D references
         shapes.removeAll()
@@ -2260,27 +2287,37 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     // 1/14 need this when switching pipe output during edit!
     //  Where should this live? it may need stuff from voices and shapes???
-    func getPipeRangeForParamName(pname:String) -> (lo:Double , hi:Double)
+    // 1/29 should this just use the ranges from the object param data???
+    func getPipeRangeForParamName(pname:String, dest:String) -> (lo:Double , hi:Double )
     {
         var pmin = 0.0
         var pmax = 255.0
-        //Get scaling factors for various types of param input
-        switch(pname)
+        if dest == "shape" //1/29 shape has variable params, must be done case-by-case{
         {
-        case "rotation":
-            pmin = 0.1
-            pmax = 80.0
-        case "rotationtype":
-            pmin = 0.0
-            pmax = 8.0 //Is this right?
-        case "xpos","ypos","zpos"  :
-            pmin = -10.0
-            pmax =  10.0
-        case "texxoffset","texyoffset" :pmax = 1.0
-        case "texxscale" ,"texyscale"  :
-            pmin = 0.01
-            pmax = 10.0
-        default:pmax = 255.0
+            switch(pname)
+            {
+            case "rotation":
+                pmin = 0.1
+                pmax = 80.0
+            case "rotationtype":
+                pmin = 0.0
+                pmax = 8.0 //Is this right?
+            case "xpos","ypos","zpos"  :
+                pmin = -10.0
+                pmax =  10.0
+            case "texxoffset","texyoffset" :pmax = 1.0
+            case "texxscale" ,"texyscale"  :
+                pmin = 0.01
+                pmax = 10.0
+            default:pmax = 255.0
+            }
+        }
+        else if dest == "voice" //1/29
+        {
+            let ov   = OogieVoice() //get fresh oogievoice for work...
+            let limz = ov.getParmLimsForPipe(name:pname)
+            pmin     = limz.lolim
+            pmax     = limz.hilim
         }
         return (pmin,pmax)
     } //end getPipeRangeForParamName
@@ -2295,9 +2332,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         var oop  = OogiePipe()
         oop.PS   = ps
         oop.name = name
-        //Now we need to scale things so pipe will work!
-        let loHiRange = getPipeRangeForParamName(pname:ps.toParam.lowercased())
-        oop.setupRange(lo: loHiRange.lo, hi: loHiRange.hi) //1/14 REDO
         //OK now for 3d representation. Find centers of two objects:
         let from    = oop.PS.fromObject
         let toObj   = oop.PS.toObject
@@ -2313,6 +2347,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             oop.destination = "voice"
         }
+        
+        //1/29 (moved) Now we need to scale things so pipe will work
+        let loHiRange = getPipeRangeForParamName(pname:ps.toParam.lowercased(),dest:oop.destination)
+        oop.setupRange(lo: loHiRange.lo, hi: loHiRange.hi) //1/14 REDO
+        
         self.scenePipes[name] = oop //store pipe object
         // 1/22 for pipe management and updates:
         pipeUIDToName[oop.uid] = name
@@ -2323,50 +2362,64 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             sceneVoices[from] = fromVoice //DUH 1/25
         }
         // 1/22 split off 3d portion
-        addPipeNode(oop : oop)
+        addPipeNode(oop : oop , newNode : true) //1/30
     } //end addPipeToScene
 
     //=====<oogie2D mainVC>====================================================
-    // 1/22 new
-    func addPipeNode (oop:OogiePipe)
+    // 1/22 new,  1/30 add newNode arg
+    func addPipeNode (oop:OogiePipe , newNode : Bool)
     {
-        let pipe3DObject  = PipeShape()
         let n             = oop.name
-        pipe3DObject.uid  = oop.uid  //1/22 force UID to be same as data object
-        pipe3DObject.name = n
+        var pipe3DObject  = PipeShape()
+        if (!newNode) //update? pull pipe shape
+        {
+            if pipes[n] == nil {return} //bail on nil
+            pipe3DObject = pipes[n]!   //else get pipe shape
+        }
+        else //2/1 new pipe? set up uid/name
+        {
+            pipe3DObject.uid  = oop.uid  //1/22 force UID to be same as data object
+            pipe3DObject.name = n
+        }
 
         //1/26 Need to get lats / lons the hard way for now...
-        let from = oop.PS.fromObject
+        let from    = oop.PS.fromObject
         let fmarker = findMarkerByName(name:from)
         let flat    = fmarker.lat
         let flon    = fmarker.lon
         let sPos00  = getMarkerParentPositionByName(name:from)
-        let toObj = oop.PS.toObject
-        //print("find center for \(toObj)")
-        var sPos01 = fmarker.position
-        var tlat   = Double.pi/2.0
-        var tlon   = 0.0
+        let toObj   = oop.PS.toObject
+        var sPos01  = fmarker.position
+        var tlat    = Double.pi/2.0
+        var tlon    = 0.0
+        var isShape = false   //1/28
+        
         if let sphereNode = shapes[toObj]  //Found a shape as target?
         {
             sPos01 = sphereNode.position
-            tlat = 100.0
+            isShape = true
         }
         else //Assume voice/marker?
         {
             let tmarker = findMarkerByName(name:toObj)
             tlat    = tmarker.lat
-            tlon    = tmarker.lat
+            tlon    = tmarker.lon
             sPos01  = getMarkerParentPositionByName(name:toObj) //12/30
         }
+        //print("apn flatlon \(flat),\(flon)  tlatlon \(tlat),\(tlon) nn \(newNode)")
         //  11/29 match pipe color in corners
         pipe3DObject.pipeColor = pipe3DObject.getColorForChan(chan: oop.PS.fromChannel)
-        let pipeNode = pipe3DObject.create3DPipe(lat0 : flat , lon0 : flon , s0  : sPos00 ,
-                lat1 : tlat , lon1 : tlon , s1  : sPos01)
-        pipeNode.name = n
-        pipe3DObject.addChildNode(pipeNode)     // add pipe to 3d object
-        oogieOrigin.addChildNode(pipe3DObject)  //1/20 new origin
-        pipes[n] = pipe3DObject  // dictionary of 3d objects
-    }
+        let pipeNode = pipe3DObject.create3DPipe(flat : flat , flon : flon , sPos00  : sPos00 ,
+                                                 tlat : tlat , tlon : tlon , sPos01  : sPos01 ,
+                                                 isShape: isShape, newNode : newNode)
+        if (newNode) //1/30
+        {
+            pipeNode.name = n
+            pipe3DObject.addChildNode(pipeNode)     // add pipe to 3d object
+            oogieOrigin.addChildNode(pipe3DObject)  //1/20 new origin
+            pipes[n] = pipe3DObject  // dictionary of 3d objects
+        }
+    } //end addPipeNode
 
     //=====<oogie2D mainVC>====================================================
     func foundAMarker(sname : String , lat:Double , lon:Double)  -> Bool
@@ -2503,27 +2556,26 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             if n == selectedPipeName  { pwork = selectedPipe }
             if pwork.gotData // Got data? Send to shape/voice parameter
             {                
+                //1/14 NO conversion needed, already happens in pipe!
+                let pipeVal = pwork.getFromOBuffer(clearFlags:true)
                 if pwork.destination == "shape" //send out shape param
                 {
-                    //1/14 NO conversion needed, already happens in pipe!
-                    let pipeVal = pwork.getFromOBuffer(clearFlags:true)
                     if let shape = sceneShapes[pwork.PS.toObject]
                     {
-                        let wshape = shape
                         switch(pwork.PS.toParam.lowercased())  //WTF WHY NEED LOWERCASE!
                         {
-                        case "texxoffset": wshape.OOS.uCoord = Double(pipeVal)
-                        case "texyoffset": wshape.OOS.vCoord = Double(pipeVal)
-                        case "texxscale" : wshape.OOS.uScale = Double(pipeVal)
-                        case "texyscale" : wshape.OOS.vScale = Double(pipeVal)
+                        case "texxoffset": shape.OOS.uCoord = Double(pipeVal)
+                        case "texyoffset": shape.OOS.vCoord = Double(pipeVal)
+                        case "texxscale" : shape.OOS.uScale = Double(pipeVal)
+                        case "texyscale" : shape.OOS.vScale = Double(pipeVal)
                         //YUP, name of param doesnt jibe with param it changes!
-                        case "rotation"      : wshape.OOS.rotSpeed = Double(pipeVal)
-                        case "rotationtype"  : wshape.OOS.rotation = Double(pipeVal)
+                        case "rotation"      : shape.OOS.rotSpeed = Double(pipeVal)
+                        case "rotationtype"  : shape.OOS.rotation = Double(pipeVal)
                         if let shape3D = shapes[pwork.PS.toObject] //12/1 rot speed
                         {  shape3D.setTimerSpeed(rs: Double(pipeVal)) }
                         default: print("illegal pipe shape param \(p.PS.toParam)")
                         }
-                        sceneShapes[pwork.PS.toObject] = wshape //save it back!
+                        sceneShapes[pwork.PS.toObject] = shape //save it back!
                         update3DShapeByName (n:pwork.PS.toObject)
                         //changed texture?
                         if let pipe3D = pipes[n]
@@ -2535,6 +2587,58 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         } //end pipe3D
                     }   //end shape
                 } //end pwork.destination
+                else if pwork.destination == "voice" //1/27 send out voice param
+                {
+                    let tname = pwork.PS.toObject
+                    if let voice = sceneVoices[tname]
+                    {
+                        var needPipeUpdate = false
+                        var needNewPatch   = false
+                        switch(pwork.PS.toParam.lowercased())  //WTF WHY NEED LOWERCASE!
+                        {
+                        case "latitude"   : voice.OVS.yCoord      = Double(pipeVal)
+                            needPipeUpdate = true
+                        case "longitude"  : voice.OVS.xCoord      = Double(pipeVal)
+                            needPipeUpdate = true
+                        case "scale"      : voice.OVS.keySig      = Int(pipeVal)
+                        case "level"      : voice.OVS.level       = Double(pipeVal)
+                        case "nchan"      : voice.OVS.noteMode    = Int(pipeVal)
+                        case "vchan"      : voice.OVS.volMode     = Int(pipeVal)
+                        case "pchan"      : voice.OVS.panMode     = Int(pipeVal)
+                        case "nfixed"     : voice.OVS.noteFixed   = Int(pipeVal)
+                        case "vfixed"     : voice.OVS.volFixed    = Int(pipeVal)
+                        case "pfixed"     : voice.OVS.panFixed    = Int(pipeVal)
+                        case "topmidi"    : voice.OVS.topMidi     = Int(pipeVal)
+                        case "bottommidi" : voice.OVS.bottomMidi  = Int(pipeVal)
+                        case "midichannel": voice.OVS.midiChannel = Int(pipeVal)
+                        default: print("illegal pipe voice param \(p.PS.toParam)")
+                        }
+                        sceneVoices[tname] = voice //save it back!
+                        var index = 0
+                        if needPipeUpdate
+                        {
+                            for marker in self.allMarkers   //look for our marker by name
+                            {
+                                if marker.name == tname
+                                {   //move marker as needed, save data
+                                    marker.updateLatLon(llat: voice.OVS.yCoord, llon: voice.OVS.xCoord)
+                                    self.allMarkers[index] = marker
+                                    break //get outta here!
+                                }
+                                index+=1;
+                            } //end for marker
+                            let fname = pwork.PS.fromObject
+                            if let invoice = sceneVoices[fname]
+                            {
+                                if !updatingPipe
+                                {
+                                    updatePipeByVoice(v:invoice)
+                                }
+                            }
+
+                        }
+                    }
+                }
             } //end pwork.gotData
         } //end for n,p
 
@@ -2595,7 +2699,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         } //end !updatingpipe
 
         ///Ahhnd retrigger this in 30 ms, bkgd
-        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.03) {
+        //2/1 try slower rate for cleaner results...
+        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.1) {  //was 0.03
             self.playAllPipesMarkersBkgdHandler()
         }
     } //end playAllPipesMarkersBkgdHandler
