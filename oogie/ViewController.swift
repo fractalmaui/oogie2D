@@ -29,6 +29,8 @@
 //  1/29   change getPipeRangeForParamName
 //  2/4    redo name , comment fields for voice and ahape
 //  2/5    move name into pipeStruct, add comment there too
+//  2/6    redo deleteShape to delete all voices, and voice/shape pipes
+//          make all menus w/ black text, get newname in addPipeToScene
 import UIKit
 import SceneKit
 import Photos
@@ -1376,6 +1378,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         //Wow is this redundant?
                         if selectedSphere.highlighted  //hilited? Set up edit
                         {
+                            whatWeBeEditing = "shape"   //2/6 WTF?
                             self.pLabel.updateLabelOnly(lStr:"Selected " + self.selectedSphere.name!)
                             if let smname = selectedSphere.name
                             {
@@ -1414,6 +1417,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                             //DHS 1/16:this looks to get OLD values not edited values!
                             if let testVoice = sceneVoices[smname] //got legit voice?
                             {
+                                whatWeBeEditing = "voice"  //2/6 WTF?
                                 self.pLabel.updateLabelOnly(lStr:"Selected " + smname)
                                 selectedVoice = testVoice //Get associated voice for this marker
                                 selectedMarkerName = smname //points to OVS struct in scene
@@ -1441,6 +1445,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                      selectedPipeShape.toggleHighlight()
                      if let spo = scenePipes[pipeName] //now get pipe record...
                      {
+                         whatWeBeEditing = "pipe"  //2/6 WTF?
                          selectedPipe = spo // get 3d scene object...
                          //Beam pipe name and output buffer to a texture in the pipe...
                          // ideally this should be updaged on a timer!
@@ -1573,6 +1578,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             alert.addAction(UIAlertAction(title: "Edit this Patch...", style: .default, handler: { action in
                 self.performSegue(withIdentifier: "EditPatchSegue", sender: self)
         }))
+        alert.view.tintColor = UIColor.black //2/6 black text
 
         var tstr = "Solo"
         if soloVoiceID != "" {tstr = "UnSolo"}
@@ -1631,6 +1637,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func shapeMenu()
     {
         let alert = UIAlertController(title: self.selectedShape.OOS.name, message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        alert.view.tintColor = UIColor.black //2/6 black text
         alert.addAction(UIAlertAction(title: "Clone", style: .default, handler: { action in
             self.addShapeToScene(shape: self.selectedShape.OOS, name: "", op: "clone")
         }))
@@ -1655,6 +1662,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func pipeMenu()
     {
         let alert = UIAlertController(title: self.selectedPipe.PS.name, message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        alert.view.tintColor = UIColor.black //2/6 black text
         alert.addAction(UIAlertAction(title: "Delete Pipe...", style: .default, handler: { action in
             self.deletePipePrompt(pipe: self.selectedPipe)
         }))
@@ -1678,27 +1686,36 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }  //end deleteShapePrompt
     
     //=====<oogie2D mainVC>====================================================
-    // 10/26 removes shape from scene / SCNNode
+    // 2/6 redo: removes shape from scene / SCNNode
     func deleteShape(shape:OSStruct)
     {
         let name = shape.name
-        if let shape3D = shapes[name]
+        if let shape3D = shapes[name] // got something to delete?
         {
-            shape3D.removeFromParentNode()    //Blow away 3d Shape
-            shapes.removeValue(forKey: name) // delete of dict entries
-            if let shapeNode = sceneShapes[name] //Get rid of any pipes!
+            if let shapeNode = sceneShapes[name] //2/6 first,Get rid of any pipes!
             {
                 if shapeNode.inPipes.count > 0
                 {
                     for puid in shapeNode.inPipes
                     {
-                        print("pipeuid \(puid)")
                         deletePipeByUID(puid: puid, nodeOnly : false)
                     }
                 }
-            }
-            sceneShapes.removeValue(forKey: name)
-        }
+                for (n,v) in sceneVoices   //2/6 delete any voices too!
+                {
+                    for puid in v.inPipes //get rid of any incoming pipes
+                    {
+                        deletePipeByUID(puid: puid, nodeOnly : false)
+                    }
+                    
+                    //Voice parented to this shape? delete it!
+                    if v.OVS.shapeName == n { deleteVoice(voice:v)}
+                }
+                shape3D.removeFromParentNode()          //Blow away 3d Shape
+                shapes.removeValue(forKey: name)       //  delete dict 3d entry
+                sceneShapes.removeValue(forKey: name) //  delete dict data entry
+            } //end let shapeNode
+        } // end let shape3D
     } //end deleteShape
     
     //=====<oogie2D mainVC>====================================================
@@ -1734,6 +1751,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func addPipeStepOne(voice:OogieVoice)
     {
         let alert = UIAlertController(title: "Choose Output Channel", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        alert.view.tintColor = UIColor.black //2/6 black text
         //DHS 12/1 REPLACE!!!
         let chanz = ["Red","Green","Blue","Hue","Saturation","Luminosity","Cyan", "Magenta" ,"Yellow"]
         for chan in chanz
@@ -1773,6 +1791,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         let list1 = getListOfSceneShapes()
         let list2 = getListOfSceneVoices()
         let alert = UIAlertController(title: "Choose Destination", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        alert.view.tintColor = UIColor.black //2/6 black text
         for l11 in list1
         {
             alert.addAction(UIAlertAction(title: l11, style: .default, handler: { action in
@@ -1798,6 +1817,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         //print("step 3 chan \(channel) destination \(destination) shape \(isShape)")
         let alert = UIAlertController(title: "Choose Parameter", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        alert.view.tintColor = UIColor.black //2/6 black text
         var menuNames = shapeParamNamesOKForPipe
         if !isShape {menuNames = voiceParamNamesOKForPipe}
         for pname in menuNames
@@ -1806,8 +1826,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     //Add our pipe to scene... (BREAK OUT TO METHOD WHEN WORKING!)
                     let ps = PipeStruct(fromObject: voice.OVS.name, fromChannel: channel.lowercased(), toObject: destination, toParam: pname.lowercased())
                     let pcount = 1 + self.scenePipes.count //use count to get name
-                    self.addPipeToScene(ps: ps, name: String(format: "pipe%4.4d", pcount), op: "load")
-
+                    self.addPipeToScene(ps: ps, name: String(format: "pipe%3.3d", pcount), op: "new")
                 }))
             }
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
@@ -1903,6 +1922,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         marker.removeFromParentNode()
         allMarkers.remove(at: selectedObjectIndex)   // Delete from marker array
         sceneVoices.removeValue(forKey: name)       //  and remove data structure
+        // 2/6 what about input pipes?
     } //end deleteVoice
 
     //=====<oogie2D mainVC>====================================================
@@ -2369,22 +2389,29 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // 1/22 new properties in OogiePipe...
     func addPipeToScene(ps : PipeStruct , name : String, op : String)
     {
-        var oop  = OogiePipe()
-        oop.PS   = ps
+        var oop     = OogiePipe()
+        oop.PS      = ps
+        oop.PS.name = name //2/6 correct name always passed in...
         //OK now for 3d representation. Find centers of two objects:
         let from    = oop.PS.fromObject
         let toObj   = oop.PS.toObject
         if shapes[toObj] != nil  //Found a shape as target?
         {
             oop.destination  = "shape"
-            if let shapeNode = sceneShapes[toObj] //get matching shape object
+            if let shapeNode = sceneShapes[toObj] //get matching shape inpipes
             {
                 shapeNode.inPipes.insert(oop.uid) //Add our UID to shape object
+                sceneShapes[toObj] = shapeNode // 2/6 is this needed or does sceneShapes update by itself?
             }
         }
         else // Found voice/marker?
         {
             oop.destination = "voice"
+            if let v = sceneVoices[toObj] //get target voice
+            {
+                v.inPipes.insert(oop.uid) //Add our UID to voice inpipes
+                sceneVoices[toObj] = v   // 2/6 is this needed or does sceneShapes update by itself?
+            }
         }
         
         //1/29 (moved) Now we need to scale things so pipe will work
