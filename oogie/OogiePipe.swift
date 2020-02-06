@@ -13,19 +13,19 @@ import SceneKit
 //12/1 add params
 let InputChanParams      : [Any]   = ["InputChannel", "string", "Red", "Green", "Blue", "Hue",
                                   "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow"]
-let OutputParamParams    : [Any] = ["OutputParam", "string","mt"]
+let OutputParamParams    : [Any] = ["OutputParam",  "string","mt"]
 //Not confusing at all, huh? This is the param where the pipename is entered
-let PipeNameParams       : [Any] = ["Name",      "text", "mt"]
 let PipeLoRangeParams    : [Any] = ["LoRange",      "text", "mt"]
 let PipeHiRangeParams    : [Any] = ["HiRange",      "text", "mt"]   //..12.9 wups
+let PipeNameParams       : [Any] = ["Name",         "text", "mt"]
+let PipeCommParams       : [Any] = ["Comment",      "text", "mt"]
 // This is an array of all parameter names...
-let pipeParamNames : [String] = ["InputChannel", "OutputParam","Name","LoRange","HiRange"]
+let pipeParamNames : [String] = ["InputChannel", "OutputParam","LoRange","HiRange","Name","Comment"]
 
 var pipeParamsDictionary = Dictionary<String, [Any]>()
 
 struct OogiePipe {
     //User Params come from here...
-    var name    : String
     var PS      : PipeStruct
     //Working variables...
     let pbSize  = 256
@@ -42,7 +42,6 @@ struct OogiePipe {
     // Gotta have all 4 args b4 init!
     init() // fromObject:String , fromChannel:String , toObject:String , toParam:String)
     {
-        name         = "pipe0000"
         ibuffer      = [] //set up our input/output data buffers
         obuffer      = []
         PS           = PipeStruct()
@@ -57,9 +56,10 @@ struct OogiePipe {
         // Load up params dictionary with string / array combos
         pipeParamsDictionary["00"] = InputChanParams
         pipeParamsDictionary["01"] = OutputParamParams
-        pipeParamsDictionary["02"] = PipeNameParams
-        pipeParamsDictionary["03"] = PipeLoRangeParams
-        pipeParamsDictionary["04"] = PipeHiRangeParams
+        pipeParamsDictionary["02"] = PipeLoRangeParams
+        pipeParamsDictionary["03"] = PipeHiRangeParams
+        pipeParamsDictionary["04"] = PipeNameParams
+        pipeParamsDictionary["05"] = PipeCommParams
     } //end setupParams
     
     //-----------(OogiePipe)=============================================
@@ -98,7 +98,7 @@ struct OogiePipe {
         gotData = true //11/25
         if vvvvb
         {
-            print("pipe \(name): \(PS.fromChannel) = \(f)")
+            print("pipe \(PS.name): \(PS.fromChannel) = \(f)")
         }
     } //end addToBuffer
     

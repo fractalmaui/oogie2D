@@ -22,6 +22,7 @@
 // 11/4  add patchExists
 // 11/13 replaced loadSynthpatches... with loadSynthPatchesToDict..
 // 12/27 add getDumpString
+//  2/4  add getSceneVersion,getVersionFromSceneString
 import Foundation
 
 
@@ -87,6 +88,72 @@ public class DataManager {
         return getDocumentDirectory().appendingPathComponent("scenes")
     }
     
+    
+    public func substring(s:String,index: Int, length: Int) -> String {
+        if s.characters.count <= index {
+            return ""
+        }
+        let leftIndex = s.index(s.startIndex, offsetBy: index)
+        if s.characters.count <= index + length {
+            return s.substring(from: leftIndex)
+        }
+        let rightIndex = s.index(s.endIndex, offsetBy: -(s.characters.count - index - length))
+        return s.substring(with: leftIndex..<rightIndex)
+    }
+
+    //======(DataManager)=============================================
+    // 2/4 new, gets actual scene file, parses out version.
+    //       used to make sure we dont crash JSON read on mismatched file!
+    static func getSceneVersion(fname : String)  -> (v1:Int ,v2:Int ,v3:Int )
+    {
+        let url = DataManager.getSceneDirectory().appendingPathComponent(fname, isDirectory: false)
+        do {   //read dat file!
+            let scenetxt = try String(contentsOf: url, encoding: .utf8)
+            return( getVersionFromSceneString(aString: scenetxt))
+        }
+        catch {print("read error getSceneVersion ")}
+        return(0,0,0)
+    } //end getSceneVersion
+    
+    //======(DataManager)=============================================
+    static func getVersionFromSceneString (aString : String) -> (v1:Int ,v2:Int ,v3:Int )
+    {
+        //No version? Bail!
+        if !aString.contains("ooversion") {
+            return(0,0,0)
+        }
+        if   //get substr from the param name thru the next comma
+            let hashtag = aString.range(of: "ooversion"),
+            let word    = aString.range(of: ",", range: hashtag.lowerBound..<aString.endIndex)
+        {
+            let hashtagWord = aString[hashtag.lowerBound..<word.upperBound]
+            let ss = hashtagWord.split(separator: ":")
+            if ss.count > 1 //look for RH arg after colon
+            {
+                // get rid of anything not a number!
+                let sst = ss[1].trimmingCharacters(in: CharacterSet(charactersIn: "0123456789.").inverted)
+                // chop up to get version substrings
+                let sss = sst.split(separator: ".")
+                //HONESTLY: Why is this so cumbersome? Am I still a swifty n00b?
+                if sss.count > 2 //look for 3 substrs
+                {
+                    if let majorVersion = Int(sss[0])  //this is stupid. why all the if lets!!!
+                    {
+                        if let minorVersion = Int(sss[1])
+                        {
+                            if let subVersion   = Int(sss[2])
+                            {
+                                return(majorVersion,minorVersion,subVersion) //wow we finally have all the digits!
+                            } // end sub
+                        }    // end minor
+                    }       // end major
+                }          //end sss.count
+            }
+        }
+        return(0,0,0) //Failure!
+    } //end getVersionFromSceneString
+
+
     //======(DataManager)=============================================
     // get Patch Directory
     static func getShapeDirectory () -> URL {

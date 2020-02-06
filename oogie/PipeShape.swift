@@ -8,6 +8,7 @@
 // 11/29 add highlighted
 // 1/14  fix bug in normals in create3DPipe
 // 1/22  redo create3DPipe, simplify args
+// 2/3   add shapeYoff to ceiling calc
 import Foundation
 import UIKit
 import SceneKit
@@ -247,13 +248,15 @@ class PipeShape: SCNNode {
          }
          //Bump up ceiling to just above shapes...
          #if VERSION_2D
-         var ceilingy = Float(1.0)
+         var ceilingy  = Float(1.0)
+         let shapeYoff = Float(2.0) // 2/3/20
          #elseif VERSION_AR
-         var ceilingy = Float(0.2)
+         var ceilingy  = Float(0.2)
+         let shapeYoff = Float(0.5) // 2/3/20
          #endif
-         let ty0 =  sPos00.y + 2.0 //the 2.0 should be bigger than shape radius!
+         let ty0 =  sPos00.y + shapeYoff //2/3/20 redid
          ceilingy = max(ceilingy,ty0)
-         let ty1 =  sPos01.y + 2.0 //the 2.0 should be bigger than shape radius!
+         let ty1 =  sPos01.y + shapeYoff //2/3/20 redid
          ceilingy = max(ceilingy,ty1)
 
          //Draw sphere at first cylinder end junction

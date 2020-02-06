@@ -114,7 +114,9 @@ class Knob: UIControl {
                 if totalAngle > maximumValue+0.5 {totalAngle = minimumValue} //DHS 10/10 add .5 to max
             }
             setValue(totalAngle)
-            if verbose{print("  paramKnob \(totalAngle) minmax \(minimumValue) \(maximumValue)")}
+            if verbose{
+                print("  paramKnob \(totalAngle) minmax \(minimumValue) \(maximumValue)")    
+            }
             lastAngle  = Float(gesture.touchAngle)
         }
         if isContinuous {

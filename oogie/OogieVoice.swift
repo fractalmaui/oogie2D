@@ -22,6 +22,7 @@
 //  11/25 add getChanValueByName, RRR,GGG,BBB channel standard names
 //  1/27  add getParam
 //  1/29  add getParmLimsForPipe, remove Patch as pipe input
+//  2/5   fix bug in getParamCount!!
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -66,13 +67,14 @@ let PFixedParams : [Any]     = ["PFixed",    "double" ,  0.0 , 1.0 , 0.5 , 255.0
 let BottomMidiParams : [Any] = ["BottomMidi","double" ,  0.0 , 1.0 , 0.2 , 120.0,  8.0 ]
 let TopMidiParams : [Any]    = ["TopMidi",   "double" ,  0.0 , 1.0 , 0.8 , 120.0,  8.0 ]
 let MidiChannelParams : [Any] = ["MidiChannel", "double" ,  0.0 , 1.0 , 0.0 , 16.0,  1.0 ]
-let NameParams    : [Any]    = ["Name",      "text", "mt"]
+let VNameParams    : [Any]    = ["Name",      "text", "mt"]
+let VCommParams    : [Any]    = ["Comment",   "text", "mt"]
 // All param names, must match first item above for each param!
 let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch",
                              "Scale","Level",
                              "NChan","VChan","PChan",
                              "NFixed","VFixed","PFixed",
-                             "BottomMidi","TopMidi","MidiChannel","Name"]
+                             "BottomMidi","TopMidi","MidiChannel","Name","Comment"]
 let voiceParamNamesOKForPipe : [String]    = ["Latitude", "Longitude",
                                             "Scale","Level","NChan","VChan","PChan",
                                             "NFixed","VFixed","PFixed",
@@ -205,7 +207,8 @@ class OogieVoice: NSObject, NSCopying {
         voiceParamsDictionary["12"] = BottomMidiParams
         voiceParamsDictionary["13"] = TopMidiParams
         voiceParamsDictionary["14"] = MidiChannelParams
-        voiceParamsDictionary["15"] = NameParams
+        voiceParamsDictionary["15"] = VNameParams
+        voiceParamsDictionary["16"] = VCommParams   //2/4
     } //end setupParams
     
     //-----------(oogieVoice)=============================================
@@ -526,7 +529,7 @@ class OogieVoice: NSObject, NSCopying {
     //-----------(oogieVoice)=============================================
     func getParamCount() -> Int
     {
-        return shapeParamNames.count
+        return voiceParamNames.count   // 2/5 WTF? BUG!!!
     }
 
     //-----------(oogieVoice)=============================================

@@ -3,7 +3,7 @@
 //  oogie2D
 //
 //  Created by Dave Scruton on 8/24/19.
-//  Copyright © 2019 fractallonomy. All rights reserved.
+//  Copyright © 2020 fractallonomy. All rights reserved.
 //
 //  a shape looks like this:
 //    shapeName : edits
@@ -15,27 +15,30 @@
 // 11/22   add version , params strings
 // 11/23   getListOfVoices, Shapes
 //  2/1    add pipes clear in clearScene
+//  2/3    add comment field, rename ooversion
 import Foundation
 import SceneKit
 
 struct OogieScene : Codable {
-    var name    : String
-    var version : String
-    var params  : String
-    var shapes  : Dictionary<String, OSStruct>
-    var voices  : Dictionary<String, OVStruct>
-    var pipes   : Dictionary<String, PipeStruct>
+    var comment   : String
+    var name      : String
+    var ooversion : String   //2/3 easier to find in json data!
+    var params    : String
+    var shapes    : Dictionary<String, OSStruct>
+    var voices    : Dictionary<String, OVStruct>
+    var pipes     : Dictionary<String, PipeStruct>
 
     //======(OogieScene)=============================================
     init()
     {
-        name    = "scene000"
+        name      = "scene000"
+        comment   = COMMENT_DEFAULT //2/3 from appDelegate
         //11/22 add version / params
-        version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
-        params  = ""
-        shapes  = Dictionary<String, OSStruct>()
-        voices  = Dictionary<String, OVStruct>()
-        pipes   = Dictionary<String, PipeStruct>()
+        ooversion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
+        params    = ""
+        shapes    = Dictionary<String, OSStruct>()
+        voices    = Dictionary<String, OVStruct>()
+        pipes     = Dictionary<String, PipeStruct>()
     }
     
     //======(OogieScene)=============================================

@@ -13,6 +13,7 @@
 //
 //  10/5 add showWarnings flag
 //  10/21 fix typo in types
+//  2/3   add multiple lines / variable font size for comments
 
 import UIKit
 import Foundation
@@ -51,6 +52,8 @@ class infoText: UIView {
     var fieldType = TSTRING_TTYPE
     var fadeTimer = Timer() //11/4
 
+    let bigfonthit = 40
+
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -88,15 +91,18 @@ class infoText: UIView {
         //Custom dark blue bkgd for our control
         infoView.backgroundColor = UIColor(red: 0.2, green: 0.0, blue: 0.4, alpha: 0.6)
         self.addSubview(infoView)
-
         
-        let bigfonthit = 40
+        // UILabel: Multiple-function info label at top of screen...
+        //   shows label, X-axis param range indicator, prev/next choices ...
+        // 2/5 make label a bit taller...
+        let fontmargin = 12
         titleLabel = UILabel()
-        titleLabel.frame = CGRect(x: 0, y: wwhit - bigfonthit, width: Int(frame.size.width), height: bigfonthit)
+        titleLabel.frame = CGRect(x: 0, y: wwhit - bigfonthit-fontmargin,
+                                  width: Int(frame.size.width), height: bigfonthit+2*fontmargin)
         titleLabel.text = "Item"
         titleLabel.textColor = .white
         titleLabel.textAlignment = .center
-        titleLabel.font = titleLabel.font.withSize(CGFloat(bigfonthit-4))
+        titleLabel.font = titleLabel.font.withSize(CGFloat(bigfonthit))
         titleLabel.backgroundColor = .clear
         infoView.addSubview(titleLabel)
         
@@ -219,6 +225,7 @@ class infoText: UIView {
     } //end updateHImage
     
     //------<infoText>-----------------------------------------
+    // 2/3/20 update for long labels
     func updateLabelOnly(lStr:String)
     {
         fadeIn() //11/4 checked for redundancy, OK here now
@@ -227,6 +234,19 @@ class infoText: UIView {
         TLlabel.isHidden     = true
         TRlabel.isHidden     = true
         HIImageView.isHidden = true
+        
+        var bfhg = bigfonthit  //2/3 redo string hite...
+        let stc  = lStr.count
+        //2/3 this may get a long string. scale font to make things fit!
+        if stc > 24  //what should cutoff be? 16 is too little
+        {
+            bfhg = max(8,1600 / stc)            //2/3 Fudged:good font size?
+            titleLabel.numberOfLines = 0        //2/3 variable # lines
+            titleLabel.adjustsFontSizeToFitWidth = true
+            titleLabel.textAlignment = .left
+            titleLabel.lineBreakMode = .byCharWrapping //for long comment fields
+        }
+        titleLabel.font = titleLabel.font.withSize(CGFloat(bfhg))
         titleLabel.text = lStr
     } //end updateLabelOnly
     
@@ -290,6 +310,7 @@ class infoText: UIView {
         }
         HIImageView.image = updateHImage(value :  workVal)
     } //end updateit
+    
     
     //------<infoText>-----------------------------------------
     // Set up fields and limits...  what about # ticmarks?

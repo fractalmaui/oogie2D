@@ -39,6 +39,10 @@
 
 import UIKit
 
+
+
+let COMMENT_DEFAULT = "nada"   //2/3   stoopid global visible everywhere
+
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
 

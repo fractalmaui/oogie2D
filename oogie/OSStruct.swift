@@ -16,25 +16,28 @@
 //  10/21 add getPosition
 //  10/25 change rotParams
 //  1/21  change to OSStruct for symmetry w/ OVStruct
+//  2/3   add comment field
 
 import SceneKit
 
 //Parameter area...
 let maxMeters = 10.0
 
-let TexParams : [Any] = ["Texture", "texture", "mt"]
-let RotParams : [Any] = ["Rotation" , "double", 0.0  , 100.0   , 10.0, 1.0, 0.0 ]
+let TexParams   : [Any] = ["Texture", "texture", "mt"]
+let RotParams   : [Any] = ["Rotation" , "double", 0.0  , 100.0   , 10.0, 1.0, 0.0 ]
 let RotTypeParams  : [Any] = ["RotationType", "string" , "Manual", "BPMX1", "BPMX2", "BPMX3", "BPMX4", "BPMX5", "BPMX6", "BPMX7", "BPMX8" ]
-let XParams   : [Any] = ["XPos" , "double", -maxMeters , maxMeters , 0.0, 1.0, 0.0 ]
-let YParams   : [Any] = ["YPos" , "double", -maxMeters , maxMeters , 0.0, 1.0, 0.0 ]
-let ZParams   : [Any] = ["ZPos" , "double", -maxMeters , maxMeters , 0.0, 1.0, 0.0 ]
-let UParams   : [Any] = ["TexXoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
-let VParams   : [Any] = ["TexYoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
-let USParams   : [Any] = ["TexXscale" , "double", 0.1 , 10.0 , 1.0, 1.0, 0.0 ]
-let VSParams   : [Any] = ["TexYscale" , "double", 0.1 , 10.0 , 1.0, 1.0, 0.0 ]
+let XParams     : [Any] = ["XPos" , "double", -maxMeters , maxMeters , 0.0, 1.0, 0.0 ]
+let YParams     : [Any] = ["YPos" , "double", -maxMeters , maxMeters , 0.0, 1.0, 0.0 ]
+let ZParams     : [Any] = ["ZPos" , "double", -maxMeters , maxMeters , 0.0, 1.0, 0.0 ]
+let UParams     : [Any] = ["TexXoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
+let VParams     : [Any] = ["TexYoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
+let USParams    : [Any] = ["TexXscale" , "double", 0.1 , 10.0 , 1.0, 1.0, 0.0 ]
+let VSParams    : [Any] = ["TexYscale" , "double", 0.1 , 10.0 , 1.0, 1.0, 0.0 ]
+let SNameParams : [Any] = ["Name",      "text", "mt"]
+let SCommParams : [Any] = ["Comment",   "text", "mt"]
 
 let shapeParamNames : [String] = ["Texture", "Rotation","RotationType",
-"XPos","YPos","ZPos","TexXoffset","TexYoffset","TexXscale","TexYscale"]
+"XPos","YPos","ZPos","TexXoffset","TexYoffset","TexXscale","TexYscale","Name","Comment"]
 let shapeParamNamesOKForPipe : [String] = ["Rotation","RotationType","TexXoffset",
                                            "TexYoffset","TexXscale","TexYscale"]
 
@@ -43,6 +46,7 @@ var shapeParamsDictionary = Dictionary<String, [Any]>()
 import Foundation
 struct OSStruct : Codable {
     var name         : String
+    var comment      : String    //2/3 new field
     var primitive    : String
     var texture      : String
     var uid          : String
@@ -66,6 +70,7 @@ struct OSStruct : Codable {
     {
         shapeCount = 0
         name      = "sphere"
+        comment   = COMMENT_DEFAULT //2/3 from appDelegate
         primitive = "sphere"
         texture   = "default"
         xPos      = 0.0
@@ -101,6 +106,8 @@ struct OSStruct : Codable {
         shapeParamsDictionary["07"] = VParams
         shapeParamsDictionary["08"] = USParams
         shapeParamsDictionary["09"] = VSParams
+        shapeParamsDictionary["10"] = SNameParams //2/4
+        shapeParamsDictionary["11"] = SCommParams //2/4
     } //end setupParams
         
     //-----------(oogieVoice)=============================================

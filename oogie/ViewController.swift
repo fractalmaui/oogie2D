@@ -27,6 +27,8 @@
 //           add texturePipe call in updatePipe,change knobMode to enum
 //  1/27   fix deleteVoice bug
 //  1/29   change getPipeRangeForParamName
+//  2/4    redo name , comment fields for voice and ahape
+//  2/5    move name into pipeStruct, add comment there too
 import UIKit
 import SceneKit
 import Photos
@@ -164,6 +166,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     let MAX_CBOX_FRAMES = 20 //where does this go?
     //=====<oogie2D mainVC>====================================================
     override func viewDidLoad() {
+        
+        
         super.viewDidLoad()
         //Cleanup any margin problems w/ 3D view not perfectly fitting
         self.view.backgroundColor = .black
@@ -205,13 +209,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.OVScene = DataManager.loadScene("default", with: OogieScene.self)
             self.OVScene.unpackParams()       //DHS 11/22 unpack scene params
             setCamXYZ() //11/24 get any 3D scene cam position...
-            print("...load default scene")
+            //print("...load default scene")
         }
         else
         {
             self.OVScene.createDefaultScene(sname: "default")
             self.OVScene.setDefaultParams()
-            print("...no default scene found, create!")
+            //print("...no default scene found, create!")
         }
         spnl = UINib(nibName: "synthPanel", bundle: .main).instantiate(withOwner: nil, options: nil).first as? synthPanel
         // let view = Bundle.main.loadNibNamed("CustomView", owner: nil, options: nil)!.first as! UIView // does the same as above
@@ -282,6 +286,15 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.03) {
             self.playAllPipesMarkersBkgdHandler()
         }
+        
+        
+        //2/3 DHS test
+        _ = DataManager.getSceneVersion(fname:"default")
+
+        
+
+        
+
     } //end viewDidLoad
 
     
@@ -346,7 +359,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         restoreLastParamValue(oldD: Double(selectedFieldDefault),oldS: selectedFieldDefaultString) //DHS 1/26
         knobValue = Float(selectedFieldDefault)  //9/17 make sure knob is set to param value
         selectedMarker.updateLatLon(llat: selectedVoice.OVS.yCoord, llon: selectedVoice.OVS.xCoord)
-        resetKnobToNewValues(kv:knobValue , mn : selectedFieldMin , mx : selectedFieldMax)
+        resetKnobToNewValues(kval:knobValue , kmin : selectedFieldMin , kmax : selectedFieldMax)
     }
 
     //=====<oogie2D mainVC>====================================================
@@ -485,13 +498,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }
     
     //=====<oogie2D mainVC>====================================================
-    func resetKnobToNewValues(kv:Float , mn : Float , mx : Float)
+    func resetKnobToNewValues(kval:Float , kmin : Float , kmax : Float)
     {
-        paramKnob.minimumValue = mn
-        paramKnob.maximumValue = mx
-        paramKnob.setValue(kv) //and set knob control
-
-    }
+        paramKnob.minimumValue = kmin
+        paramKnob.maximumValue = kmax
+        paramKnob.setValue(kval) //and set knob control
+    } //end resetKnobToNewValues
 
     
     //=====<oogie2D mainVC>====================================================
@@ -518,7 +530,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 selectedFieldMin = 0.0
                 selectedFieldMax = maxxx
             }
-            resetKnobToNewValues(kv: knobValue ,mn: selectedFieldMin ,mx: selectedFieldMax)
+            resetKnobToNewValues(kval: knobValue ,kmin: selectedFieldMin ,kmax: selectedFieldMax)
         } //end edit select
         else{   //back to param select?
             knobName = "wheel01"
@@ -528,8 +540,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             menuButton.setTitle("Menu", for: .normal)
             paramWheelMin = 0
             paramWheelMax = Float(Float(selectedVoice.getParamCount() - 1))
-            resetKnobToNewValues(kv: knobValue ,mn:paramWheelMin ,mx: paramWheelMax)
-
+            resetKnobToNewValues(kval: knobValue ,kmin:paramWheelMin ,kmax: paramWheelMax)
         } //end param select
         paramKnob.setKnobBitmap(bname: knobName)
     } //end updateWheelAndParamButtons
@@ -603,7 +614,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                case "topmidi":   lastFieldDouble = Double(selectedVoice.OVS.topMidi)
                case "bottommidi":  lastFieldDouble = Double(selectedVoice.OVS.bottomMidi)
                case "midichannel": lastFieldDouble = Double(selectedVoice.OVS.midiChannel)
-               case "name":      lastFieldString = selectedVoice.OVS.name
+               case "name":      lastFieldString = selectedVoice.OVS.name    //2/4
+               case "comment":   lastFieldString = selectedVoice.OVS.comment //2/4
                selectedMarker.updatePanels(nameStr: selectedVoice.OVS.name)  //10/11
                default:print("Error:Bad voice param")
                }
@@ -622,6 +634,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                case "texyoffset": lastFieldDouble = selectedShape.OOS.vCoord
                case "texxscale": lastFieldDouble = selectedShape.OOS.uScale
                case "texyscale": lastFieldDouble = selectedShape.OOS.vScale
+               case "name":      lastFieldString = selectedShape.OOS.name    //2/4
+               case "comment":   lastFieldString = selectedShape.OOS.comment //2/4
                default:print("Error:Bad shape param")
                }
            }
@@ -639,14 +653,16 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                    pstr = selectedPipe.PS.toParam
                    lastFieldString = pstr  //1/26
                    getNumberedDisplayValue = true
-               case "name"    :
-                   lastFieldString = selectedPipe.name
                case "lorange" : // 12/9 add lo/hi range as strings
                    let lorg = selectedPipe.PS.loRange
                    lastFieldString = String(lorg)
                case "hirange" :
                    let horg = selectedPipe.PS.hiRange
                    lastFieldString = String(horg)
+               case "name"    :
+                   lastFieldString = selectedPipe.PS.name
+               case "comment"    :
+                   lastFieldString = selectedPipe.PS.comment
                default:print("Error:Bad pipe param")
                }
                //12/4  need to find which display value we are indicating?
@@ -769,6 +785,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                  selectedVoice.OVS.midiChannel = Int(unitToParam(inval: dknobval))
              case "name": selectedVoice.OVS.name = lastFieldString
                  selectedMarker.updatePanels(nameStr: selectedVoice.OVS.name)  //10/11
+             case "comment": selectedVoice.OVS.comment = lastFieldString  //2/4
              default: needRefresh = false
              } //end switch
             if needPipeUpdate && !updatingPipe { updatePipeByVoice(v:selectedVoice) } //1/31 prevent crash?
@@ -779,22 +796,24 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
              var newSpeed   = false
              switch (fname)
              {
-             case "texture" : selectedShape.OOS.texture = lastFieldString //WTF?? TBD
+             case "texture"     : selectedShape.OOS.texture = lastFieldString //WTF?? TBD
                  print("new tex \(lastFieldString)")
                  needUpdate = false
-             case "rotation": selectedShape.OOS.rotSpeed = dknobval
+             case "rotation"    : selectedShape.OOS.rotSpeed = dknobval
                  needUpdate = false
                  newSpeed   = true
              case "rotationtype": selectedShape.OOS.rotation = dknobval
                  setRotationTypeForSelectedShape()
                  newSpeed   = true
-             case "xpos": selectedShape.OOS.xPos         = dknobval
-             case "ypos": selectedShape.OOS.yPos         = dknobval
-             case "zpos": selectedShape.OOS.zPos         = dknobval
-             case "texxoffset": selectedShape.OOS.uCoord = dknobval
-             case "texyoffset": selectedShape.OOS.vCoord = dknobval
-             case "texxscale": selectedShape.OOS.uScale  = dknobval
-             case "texyscale": selectedShape.OOS.vScale  = dknobval
+             case "xpos"        : selectedShape.OOS.xPos   = dknobval
+             case "ypos"        : selectedShape.OOS.yPos   = dknobval
+             case "zpos"        : selectedShape.OOS.zPos   = dknobval
+             case "texxoffset"  : selectedShape.OOS.uCoord = dknobval
+             case "texyoffset"  : selectedShape.OOS.vCoord = dknobval
+             case "texxscale"   : selectedShape.OOS.uScale = dknobval
+             case "texyscale"   : selectedShape.OOS.vScale = dknobval
+             case "name"        : selectedShape.OOS.name   = lastFieldString  //2/4
+             case "comment"     : selectedShape.OOS.comment = lastFieldString  //2/4
              default: needRefresh = false
              }
              if needUpdate { update3DShapeByName (n:selectedShapeName) }
@@ -840,9 +859,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                                            dest:selectedPipe.destination)
                  selectedPipe.setupRange(lo: loHiRange.lo, hi: loHiRange.hi) //1/14 REDO
 
-             case "name"         : selectedPipe.name           = lastFieldString
-             case "lorange"      : selectedPipe.PS.loRange           = pdv
-             case "hirange"      : selectedPipe.PS.hiRange           = pdv
+             case "lorange"      : selectedPipe.PS.loRange        = pdv
+             case "hirange"      : selectedPipe.PS.hiRange        = pdv
+             case "name"         : selectedPipe.PS.name           = lastFieldString
+             case "comment"      : selectedPipe.PS.comment        = lastFieldString
              default: needUpdate = false
              }
              if needUpdate
@@ -851,7 +871,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                  if let popj = pipes[selectedPipeName] //12/5 USE SCENE-LOADED NAME!
                  {
                      //12/5 update pipe label and graphfff
-                         popj.updateInfo(nameStr: selectedPipe.name, vals: selectedPipe.ibuffer)
+                         popj.updateInfo(nameStr: selectedPipe.PS.name, vals: selectedPipe.ibuffer)
                                      popj.pipeColor = popj.getColorForChan(chan: selectedPipe.PS.fromChannel)
                                      pipes[selectedPipeName] = popj
                  }
@@ -982,7 +1002,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             case "topmidi":     selectedVoice.OVS.topMidi     = Int(oldD)
             case "bottommidi":  selectedVoice.OVS.bottomMidi  = Int(oldD)
             case "midichannel": selectedVoice.OVS.midiChannel = Int(oldD)
-            case "name":        selectedVoice.OVS.name        = oldS
+            case "name":        selectedVoice.OVS.name        = oldS  //2/4
+            case "comment":     selectedVoice.OVS.comment     = oldS  //2/4
             default: print("restoreLastParam: bad voice ptype")
             }
         } //end voice
@@ -1007,6 +1028,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             case "texyoffset": selectedShape.OOS.vCoord = oldD
             case "texxscale":  selectedShape.OOS.uScale = oldD
             case "texyscale":  selectedShape.OOS.vScale = oldD
+            case "name":       selectedShape.OOS.name   = oldS  //2/4
+            case "comment":    selectedShape.OOS.comment = oldS //2/4
             default: print("restoreLastParam: bad shape ptype")
             }
             if needUpdate { update3DShapeByName (n:selectedShapeName) }
@@ -1016,11 +1039,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             switch (fname)
             {
-            case "inputchannel": selectedPipe.PS.fromChannel = oldS
-            case "outputparam":  selectedPipe.PS.toParam     = oldS
-            case "name"    :     selectedPipe.name           = oldS
-            case "lorange" :     selectedPipe.PS.loRange     = oldD
-            case "hirange" :     selectedPipe.PS.hiRange     = oldD
+            case "inputchannel": selectedPipe.PS.fromChannel  = oldS
+            case "outputparam" :  selectedPipe.PS.toParam     = oldS
+            case "lorange"     :     selectedPipe.PS.loRange  = oldD
+            case "hirange"     :     selectedPipe.PS.hiRange  = oldD
+            case "name"        :     selectedPipe.PS.name     = oldS
+            case "comment"     :     selectedPipe.PS.name     = oldS
             default: print("restoreLastParam: bad pipe ptype")
             }
             //Note this is a duplicate of code in restoreLastParamValue
@@ -1079,6 +1103,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
            vArray = selectedVoice.getPatchNameArray() //Get patches for synth, drums, etc based on type
         }
+        print("varray \(vArray) count \(vArray.count)")
         if (vArray.count < 3) {return} //avoid krash
         selectedFieldName = vArray[0] as! String
         selectedFieldType = vArray[1] as! String
@@ -1152,7 +1177,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // 12/1 add pipe edit
     func loadCurrentPipeParams()
     {
-        print("lcpp \(selectedField)")
         if (selectedField < 0) {return}
         var vArray = selectedPipe.getNthParams(n: selectedField)
         if selectedField == 1 //String field: output param name
@@ -1226,7 +1250,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func updateSelectParamName()
     {
         let dogStrings = ["nfixed","vfixed","pfixed","topmidi","bottommidi","midichannel"]
-        
         //12/2 add haptics feedback on knob change
         if  selectedFieldName != oselectedFieldName  //new param?
         {
@@ -1261,19 +1284,34 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         else if selectedFieldType == "text" //10/9 new field type
         {
             //12/5 DUH what kinda edit we be doin?
-            if whatWeBeEditing == "voice"
+            if whatWeBeEditing == "voice"    //2/3 handle name/comment
             {
-                pstr = selectedVoice.OVS.name
+                switch(selectedFieldName.lowercased())
+                {
+                    case "name"    : pstr = selectedVoice.OVS.name //2/3 new
+                    case "comment" : pstr = selectedVoice.OVS.comment
+                    default        : pstr = "empty"
+                }
+            }
+            else if whatWeBeEditing == "shape"    //2/3 handle name/comment
+            {
+                switch(selectedFieldName.lowercased())
+                {
+                    case "name"    : pstr = selectedShape.OOS.name //2/3 new
+                    case "comment" : pstr = selectedShape.OOS.comment
+                    default        : pstr = "empty"
+                }
             }
             else if whatWeBeEditing == "pipe"
             {
                 //12/9 which to handle? name, lo/hi ranges...
                 switch(selectedFieldName.lowercased())
                 {
-                    case "name"   : pstr = selectedPipe.name
-                    case "lorange": pstr = lastFieldString
-                    case "hirange": pstr = lastFieldString
-                    default       : pstr = "empty"
+                    case "lorange" : pstr = lastFieldString
+                    case "hirange" : pstr = lastFieldString
+                    case "name"    : pstr = selectedPipe.PS.name //2/3 new
+                    case "comment" : pstr = selectedPipe.PS.comment
+                    default        : pstr = "empty"
                 }
             }
         }
@@ -1336,7 +1374,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         selectedSphere    = testShape
                         selectedSphere.toggleHighlight()
                         //Wow is this redundant?
-                        selectedSphere.updatePanels(nameStr: selectedSphere.name!)
                         if selectedSphere.highlighted  //hilited? Set up edit
                         {
                             self.pLabel.updateLabelOnly(lStr:"Selected " + self.selectedSphere.name!)
@@ -1346,6 +1383,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                 {
                                     selectedShape     = testShape
                                     selectedShapeName = smname //10/21
+                                    //2/3 add name/comment to 3d shape info box
+                                    selectedSphere.updatePanels(nameStr: selectedShape.OOS.name,
+                                                                   comm: selectedShape.OOS.comment)
                                     editParams(v: "shape") //this also update screen
                                 }
                             }
@@ -1614,7 +1654,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // 11/30 pipe menu options
     func pipeMenu()
     {
-        let alert = UIAlertController(title: self.selectedPipe.name, message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        let alert = UIAlertController(title: self.selectedPipe.PS.name, message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "Delete Pipe...", style: .default, handler: { action in
             self.deletePipePrompt(pipe: self.selectedPipe)
         }))
@@ -1781,7 +1821,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         let alert = UIAlertController(title: "Delete Selected Pipe?", message: "Pipe will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
-            self.deletePipe(name: self.selectedPipe.name)
+            self.deletePipe(name: self.selectedPipe.PS.name)
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
@@ -2331,7 +2371,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         var oop  = OogiePipe()
         oop.PS   = ps
-        oop.name = name
         //OK now for 3d representation. Find centers of two objects:
         let from    = oop.PS.fromObject
         let toObj   = oop.PS.toObject
@@ -2369,7 +2408,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // 1/22 new,  1/30 add newNode arg
     func addPipeNode (oop:OogiePipe , newNode : Bool)
     {
-        let n             = oop.name
+        let n             = oop.PS.name
         var pipe3DObject  = PipeShape()
         if (!newNode) //update? pull pipe shape
         {
@@ -2487,10 +2526,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         OVScene.pipes.removeAll()
         for (_,nextPipe) in scenePipes  //11/24 add pipes to output!
         {
-            OVScene.pipes[nextPipe.name] = nextPipe.PS
+            OVScene.pipes[nextPipe.PS.name] = nextPipe.PS
         }
         OVScene.packParams() //11/22 need to pack some stuff up first!
         DataManager.saveScene(self.OVScene, with: sname)
+        
+        
     } //end packupSceneAndSave
 
     

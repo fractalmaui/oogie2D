@@ -14,7 +14,8 @@
 //  Need to add timer reset every animation period!
 //  10/21 support image input
 //  10/24 add #if to set object size,adjust rot speed
-//  10/27 add unHighlight 
+//  10/27 add unHighlight
+//  2/3   add 2nd row of test in createNamePlateImage
 import SceneKit
 
 class SphereShape: SCNNode {
@@ -60,7 +61,7 @@ class SphereShape: SCNNode {
 
     var boxPanel     = SCNBox()
     var panelNodes   : [SCNNode] = []
-    var jsize = CGSize(width: 512, height: 32) //overall petal image size
+    var jsize = CGSize(width: 512, height: 32) //overall description image size
     var bmp = oogieBmp() //10/21 bmp used for color gathering
 
     
@@ -104,7 +105,7 @@ class SphereShape: SCNNode {
         
         //10/11 add box name panels, 4 around marker
         boxPanel = SCNBox(width: 2*boxSize, height:0.2*boxSize , length: 0.001, chamferRadius: 0)
-        let ii = createNamePlateImage(label: "...")
+        let ii = createNamePlateImage(label: "..." , comm: "" )
         boxPanel.firstMaterial?.diffuse.contents  = ii
         boxPanel.firstMaterial?.emission.contents = ii
         for i in 0...3
@@ -150,45 +151,59 @@ class SphereShape: SCNNode {
     }
     
     //-----------(SphereShape)=============================================
-    // black bkgd, long line of name text
-    public func createNamePlateImage(label : String) -> UIImage {
-        UIGraphicsBeginImageContextWithOptions(jsize, false, 1)
-        let context = UIGraphicsGetCurrentContext()!
-        
-        let rect = CGRect(origin: CGPoint.zero, size: jsize)
-        //Fill bkgd
-        context.setFillColor(UIColor.black.cgColor);
-        context.fill(rect);
-        
-        let thite = 30
-        let h2    = jsize.height / 2
-        let wid   = jsize.width
-        let textFont = UIFont(name: "Helvetica Bold", size: CGFloat(thite-3))!
-        let text_style=NSMutableParagraphStyle()
-        text_style.alignment=NSTextAlignment.center
-        
-        var xoff : CGFloat = 0
-        var yoff : CGFloat = 0
-        var textColor = UIColor.black
-        let xmargin : CGFloat = 300 //WTF why doesnt this stretch label?
-        for _ in 0...1
-        {
-            let textFontAttributes = [
-                NSAttributedString.Key.font: textFont,
+     // black bkgd, long line of name text
+    public func createNamePlateImage(label : String , comm: String) -> UIImage {
+         UIGraphicsBeginImageContextWithOptions(jsize, false, 1)
+         let context = UIGraphicsGetCurrentContext()!
+         
+         let rect = CGRect(origin: CGPoint.zero, size: jsize)
+         //Fill bkgd
+         context.setFillColor(UIColor.black.cgColor);
+         context.fill(rect);
+         
+         let thite = 30
+         let h2    = jsize.height / 2
+         let wid   = jsize.width
+         let textFont = UIFont(name: "Helvetica Bold", size: CGFloat(thite-3))!
+         let textFont2 = UIFont(name: "Helvetica Bold", size: CGFloat(thite/2))!
+         let text_style=NSMutableParagraphStyle()
+         text_style.alignment=NSTextAlignment.center
+         let text_style2=NSMutableParagraphStyle()
+         text_style2.alignment=NSTextAlignment.left
+
+         var xoff : CGFloat = 0
+         var yoff : CGFloat = 0
+         var textColor = UIColor.black
+         let xmargin  : CGFloat = 300 //WTF why doesnt this stretch label?
+         let xmargin2 : CGFloat = 40  //2nd row inset
+         for _ in 0...1
+         {
+             var textFontAttributes = [
+                 NSAttributedString.Key.font: textFont,
+                 NSAttributedString.Key.foregroundColor: textColor,
+                 NSAttributedString.Key.paragraphStyle: text_style
+                 ] as [NSAttributedString.Key : Any]
+             let trect =  CGRect(x: xoff - xmargin, y: yoff + h2-CGFloat(thite)/2.0,
+                                 width: wid + 2*xmargin, height: CGFloat(thite))
+             label.draw(in: trect, withAttributes: textFontAttributes) //Draw our shape name
+
+             textFontAttributes = [  //2/3 add 2nd row for comment
+                NSAttributedString.Key.font: textFont2,
                 NSAttributedString.Key.foregroundColor: textColor,
-                NSAttributedString.Key.paragraphStyle: text_style
+                NSAttributedString.Key.paragraphStyle: text_style2
                 ] as [NSAttributedString.Key : Any]
-            let trect =  CGRect(x: xoff - xmargin, y: yoff + h2-CGFloat(thite)/2.0, width: wid + 2*xmargin, height: CGFloat(thite))
-            label.draw(in: trect, withAttributes: textFontAttributes)
-            xoff = xoff - 8 //for top-level label, shifted up for shadow
-            yoff = yoff - 8
-            textColor = UIColor.white
-        }
-        
-        let resultImage = UIGraphicsGetImageFromCurrentImageContext()!
-        UIGraphicsEndImageContext()
-        return resultImage
-    } //end createNamePlateImage
+             let trect2 =  CGRect(x: xoff + xmargin2, y: yoff + h2-CGFloat(thite)/2.0 + CGFloat(thite)*0.75,
+                                width: wid + 2*xmargin, height: CGFloat(thite))
+             comm.draw(in: trect2, withAttributes: textFontAttributes) //add 2nd row, comment
+             xoff = xoff - 8 //for top-level label, shifted up for shadow
+             yoff = yoff - 8
+             textColor = UIColor.white
+         }
+         
+         let resultImage = UIGraphicsGetImageFromCurrentImageContext()!
+         UIGraphicsEndImageContext()
+         return resultImage
+     } //end createNamePlateImage
 
     
     //-----------(SphereShape)=============================================
@@ -307,9 +322,9 @@ class SphereShape: SCNNode {
     }
 
     //-----------(SphereShape)=============================================
-    func updatePanels(nameStr : String)
+    func updatePanels(nameStr : String , comm : String)
     {
-        let ii = createNamePlateImage(label: nameStr)
+        let ii = createNamePlateImage(label: nameStr  , comm: comm)
         boxPanel.firstMaterial?.diffuse.contents = ii
         boxPanel.firstMaterial?.emission.contents = ii
     } //end updatePanels

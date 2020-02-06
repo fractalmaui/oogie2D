@@ -3,7 +3,7 @@
 //  PatchEditor
 //
 //  Created by Dave Scruton on 11/8/19.
-//  Copyright © 2019 fractallonomy. All rights reserved.
+//  Copyright © 2020 fractallonomy. All rights reserved.
 //
 
 import UIKit

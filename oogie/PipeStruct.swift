@@ -5,10 +5,13 @@
 //  Created by Dave Scruton on 10/28/19.
 //  Copyright © 2019 fractallonomy. All rights reserved.
 //
+// 2/3 add name,comment field
 
 import Foundation
 struct PipeStruct : Codable {
     //These are all user-settable params for a pipe...
+    var name         : String    //2/3 add comment
+    var comment      : String    //2/3 add comment
     var fromObject   : String    //Format objtype : objname : "shape:shape001"
     var toObject     : String    //  same format
     var fromChannel  : String
@@ -20,6 +23,8 @@ struct PipeStruct : Codable {
     //======(OogiePipe)=============================================
     init()
     {
+        name        = ""              //2/3 new fields
+        comment     = COMMENT_DEFAULT //2/3
         fromObject  = "nada"
         toObject    = "nada"
         fromChannel = "nada"
@@ -29,9 +34,12 @@ struct PipeStruct : Codable {
         delay       = 0
     }
     
+    //======(OogiePipe)=============================================
     //Most likely called this way from mainVC menu choices
     init( fromObject:String , fromChannel:String , toObject:String , toParam:String)
     {
+        name             = ""              //2/3 new fields
+        comment          = COMMENT_DEFAULT //2/3
         self.fromObject  = fromObject
         self.fromChannel = fromChannel.lowercased()
         self.toObject    = toObject

@@ -3,7 +3,7 @@
 //  chooser
 //
 //  Created by Dave Scruton on 10/30/19.
-//  Copyright © 2019 fractallonomy. All rights reserved.
+//  Copyright © 2020 fractallonomy. All rights reserved.
 //  11/13 add GM instrument name to chooser rows
 //  12/27 unhide LH table, wasnt showing up. changed table bkgds, added cellHeight too
 //          fixed scroll for 2nd table

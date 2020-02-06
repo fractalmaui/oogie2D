@@ -8,12 +8,14 @@
 //  oogie2D
 //
 //  Created by Dave Scruton on 8/15/19.
-//  10/4 add fixed params for note,vol,pan
+//  10/4  add fixed params for note,vol,pan
+//  2/3   add comment field
 
 import Foundation
 struct OVStruct : Codable {
 
     var name         : String
+    var comment      : String
     var patchName    : String
     var shapeName    : String //THIS MAY BE REDUNDANT?? Patch has type too!
     var level        : Double
@@ -48,6 +50,7 @@ struct OVStruct : Codable {
     init()
     {
         name         = "empty"
+        comment      = ""
         patchName    = "empty"
         shapeName    = "default"
         level        = 1.0 //Overall level  9/16 make 1
@@ -83,6 +86,7 @@ struct OVStruct : Codable {
     mutating func clear()
     {
         name         = "empty"
+        comment      = COMMENT_DEFAULT //2/3 from appDelegate
         patchName    = "empty"
         shapeName    = "default"
         level        = 1.0 //Overall level  9/16 make 1
@@ -125,7 +129,7 @@ struct OVStruct : Codable {
         //DataManager.delete( itemIdentifier.uuidString)
     }
 
-    //======(OVStruct)=============================================
+    //======(OogieShape)=============================================
     func dump()
     {
         DataManager.dump(self)
