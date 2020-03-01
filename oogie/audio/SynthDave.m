@@ -157,13 +157,13 @@ short *audioRecBuffer;
 	{
 		sampleRate          = (float)sampleRate_;
         //NSLog(@" init all, samplrate %f",sampleRate);
-		_gain                = 0.59f; //OVERall gain factor
+		_gain               = 0.59f; //OVERall gain factor
 		finalMixGain        = 1.0;
 		gotSample           = 0;
 		swave               = NULL; //temp sample file storage....
         swaveSize           = 0;
 		glpan = grpan       = 0.5;  //set to center pan for now
-        gportlast           = 64;  //last note; default to center of keyboard        
+        gportlast           = MIDI_MIDDLE_C;  //last note; default to center of keyboard
         uniqueVoiceCounter  = 0; 
         monoLastUnique      = 0;
         masterLevel         = 1.0;
@@ -298,7 +298,10 @@ short *audioRecBuffer;
 {
     //NSLog(@"Synth: set equalTemperament, tune %f",masterTune);
 	for (int n = 0; n < 256; ++n)
-		pitches[n] = 440.0f * powf(2, ((float)n + masterTune - 69.0)/12.0f);  // A4 = MIDI key 69
+    {
+        pitches[n] = 440.0f * powf(2, ((float)n + masterTune - 69.0)/12.0f);  // A4 = MIDI key 69
+        //NSLog(@" note[%d] pitch [%f]",n,pitches[n]);
+    }
 
     //pitches[n] = 440.0f * powf(2, (n - 69)/12.0f);  // A4 = MIDI key 69
 
@@ -653,7 +656,7 @@ short *audioRecBuffer;
 	// All envelopes are same length, with data from 0.0 to 1.0. 
 	//  Each synth voice will have a corresponding envelope? 
 	// Because lower tones last longer than higher tones, we will use a delta
-	// value to step through this table. MIDI note number 64 has delta = 1.0f.
+	// value to step through this table. MIDI note number 60? has delta = 1.0f.
 	float envsave;
 	int i,savei,esize;
     attackLength  = (int)(ATTACK_TIME  * sampleRate);  // attack
@@ -766,7 +769,7 @@ short *audioRecBuffer;
 // attempts to fit an algorithmically generated note into a
 //   musical key recognizable to human ears....
 - (int)makeSureNoteisInKey: (int) wkey : (int) note
-{   // 64 is middle C..... so base C is 4, plus five octaves...
+{   // 60 is middle C..... so base C is 4, plus five octaves...
     #define NOTEBASE 4
     int result;
 	int tloc = 12*wkey + (note-NOTEBASE) % 12;  // C...B range (0-11)
@@ -1324,7 +1327,7 @@ short *audioRecBuffer;
 			}
 			else   //percussion samples: NO PITCH
 			{   
- 				if (tones[n].detune) //tones[n].midiNote != 64)  //Octave shift in percussion??? SHIFTIT!
+ 				if (tones[n].detune)   //Octave shift in percussion??? SHIFTIT!
 					tones[n].phase += 0.0029*(tones[n].pitch);
 				else 
                     tones[n].phase++; //no octave: step thru by onesies...

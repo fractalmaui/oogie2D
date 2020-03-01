@@ -23,6 +23,7 @@
 //  1/27  add getParam
 //  1/29  add getParmLimsForPipe, remove Patch as pipe input
 //  2/5   fix bug in getParamCount!!
+//  2/28  redo top/bottom midi
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -64,6 +65,7 @@ let PChanParams : [Any]      = ["PChan",     "string" , "Red", "Green", "Blue", 
 let NFixedParams : [Any]     = ["NFixed",    "double" ,  0.0 , 1.0 , 0.2 , 100.0, 20.0 ]
 let VFixedParams : [Any]     = ["VFixed",    "double" ,  0.0 , 1.0 , 0.5 , 255.0,  0.0 ]
 let PFixedParams : [Any]     = ["PFixed",    "double" ,  0.0 , 1.0 , 0.5 , 255.0,  0.0 ]
+// 2/28 are these ranges wrong now???
 let BottomMidiParams : [Any] = ["BottomMidi","double" ,  0.0 , 1.0 , 0.2 , 120.0,  8.0 ]
 let TopMidiParams : [Any]    = ["TopMidi",   "double" ,  0.0 , 1.0 , 0.8 , 120.0,  8.0 ]
 let MidiChannelParams : [Any] = ["MidiChannel", "double" ,  0.0 , 1.0 , 0.0 , 16.0,  1.0 ]
@@ -451,10 +453,10 @@ class OogieVoice: NSObject, NSCopying {
                 {
                     var topMidi = OVS.topMidi
                     var botMidi = OVS.bottomMidi
-                    if (topMidi - botMidi < 10) //Handle illegal crap, thuis should be ELSEWHERE!!!
+                    if (topMidi - botMidi < 10) //Handle illegal crap, this should be ELSEWHERE!!!
                     {
-                        botMidi = 16
-                        topMidi = 100
+                        botMidi = 12   //2/28 redo
+                        topMidi = 108
                     }
                     var octave = (nchan - botMidi) / 20 // 12 //get octave
                     octave = max(min(octave,7),0)
@@ -555,8 +557,8 @@ class OogieVoice: NSObject, NSCopying {
         OVS.panMode     = 11  // Use "NA"
         OVS.thresh    = 4        //    perc threshold for soundoff
         OVS.quant     = 30        //    Quantization: 0 = none 100 = 1/4 notes?
-        OVS.bottomMidi  = 64 - 0*12    //C 4
-        OVS.topMidi     = 64 + 3*12  //  C 7
+        OVS.bottomMidi  = 12    //  2/28 redo C 0
+        OVS.topMidi     = 108  //  2/28 redo  C 8
         OVS.keySig      = 0 //Major
 
 
@@ -878,19 +880,8 @@ class OogieVoice: NSObject, NSCopying {
          //No need?    OOP.level       = Double.random(in:0.3...0.7);
             OOP.wave        = Int.random(in:0...5);
             //MIDI keyboard range for outgoing notes
-            //DO NOT RANDOMIZE!
-            OVS.topMidi     = 90; //Int.random(in:20...100);
-            OVS.bottomMidi  = 30; //Int.random(in:20...100);
-            if OVS.bottomMidi > OVS.topMidi //keep in order
-            {
-                let tmp        = OVS.topMidi
-                OVS.topMidi    = OVS.bottomMidi
-                OVS.bottomMidi = tmp
-            }
-            else if OVS.bottomMidi == OVS.topMidi //No spread? guarantee one octave
-            {
-                OVS.topMidi    = OVS.bottomMidi + 12
-            }
+            OVS.bottomMidi  = 12;  // 2/28 redo top/bottom MIDI
+            OVS.topMidi     = 108; // 2/28 redo
             OVS.keySig      = Int.random(in:0...12); //Randomize key signature too!
             OVS.panMode     = Int.random(in:0...12); //Pan MODE
             //panlr       = Double.random(0.0...1.0);  //Actual pan

@@ -9,7 +9,7 @@
 //
 //  Created by Dave Scruton on 9/6/19.
 //  Copyright © 2019 fractallonomy. All rights reserved.
-//
+//  2/6 use edited image from chooser, get auth early in plusSelect
 
 import Foundation
 import UIKit
@@ -82,14 +82,18 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
     
     //======(TextureVC)=================================================
     @IBAction func plusSelect(_ sender: Any) {
+        
+        //2/6 try getting auth early...
+        PHPhotoLibrary.requestAuthorization { status in
+            //just do nothing...
+        }
         imagePicker = UIImagePickerController()
         imagePicker.delegate = self
         imagePicker.allowsEditing = true
         imagePicker.mediaTypes = ["public.image", "public.movie"]
         imagePicker.sourceType = .photoLibrary
         self.present(imagePicker,animated:false,completion:nil)
-
-    }
+    }  //end plusSelect
 
     //======(TextureVC)=================================================
     @IBAction func minusSelect(_ sender: Any) {
@@ -115,7 +119,7 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
     
     //====<UICollectionViewDelegate>==================================
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        print("select \(indexPath)")
+        //print("select \(indexPath)")
         selectedRow = indexPath.row
         minusButton.isHidden = (selectedRow < defaultCount)
         //unhilight...
@@ -157,8 +161,12 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
     }
     
     //==========<UIImagePickerControllerDelegate>========================
+    // Problem? I want to add edited image:
+    //          self->_photo = (UIImage *)[info objectForKey:UIImagePickerControllerEditedImage];
+    // However this is making a local copy of the image (NOT edited!), WTF?
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        if let image = info[UIImagePickerControllerOriginalImage] as? UIImage
+//        if let image = info[UIImagePickerControllerOriginalImage] as? UIImage
+        if let image = info[UIImagePickerControllerEditedImage] as? UIImage //2/6 test?
         {
             if let imageURL = info[UIImagePickerControllerReferenceURL] as? URL {
                 let result = PHAsset.fetchAssets(withALAssetURLs: [imageURL], options: nil)

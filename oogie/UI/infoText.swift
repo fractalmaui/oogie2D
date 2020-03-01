@@ -240,8 +240,8 @@ class infoText: UIView {
         //2/3 this may get a long string. scale font to make things fit!
         if stc > 24  //what should cutoff be? 16 is too little
         {
-            bfhg = max(8,1600 / stc)            //2/3 Fudged:good font size?
-            titleLabel.numberOfLines = 0        //2/3 variable # lines
+            bfhg = max(8,1200 / (stc + 12))            //2/3 Fudged:good font size?
+            titleLabel.numberOfLines = 0              //2/3 variable # lines
             titleLabel.adjustsFontSizeToFitWidth = true
             titleLabel.textAlignment = .left
             titleLabel.lineBreakMode = .byCharWrapping //for long comment fields

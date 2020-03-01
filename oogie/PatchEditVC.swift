@@ -23,6 +23,7 @@
 //  11/13 add envelopeChanged flag in setupSynthOrSample, now env shows up on load
 //  11/15 add subfolders to builtin saves, add save info prompt
 //  11/16 get patchname again when save is hit, in case KB is up
+//  2/27  pull stuff for PERCKIT_VOICE in setupSynthOrSample
 import UIKit
 
 protocol patchEditVCDelegate
@@ -1042,13 +1043,7 @@ class PatchEditVC: UIViewController,
         }
         else if (opatch.type == PERCKIT_VOICE)
         {
-            var topMidi = 100 // oov.OVS.topMidi
-            var botMidi = 16  //oov.OVS.bottomMidi
-            if (topMidi - botMidi < 10) //Handle illegal crap, thuis should be ELSEWHERE!!!
-            {
-                botMidi = 16
-                topMidi = 100
-            }
+            //DHS 2/28 pull crap here
         }
         else if (opatch.type == PERCUSSION_VOICE)
         {

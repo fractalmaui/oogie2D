@@ -18,7 +18,7 @@
 //  11/17 move lat/lon rotation handles here
 //  11/18 add updateRGBValues, separate data from display methods
 //         data is updated in bkgd while UI is updated in foreground
-//         
+//  2/6   add blinking torus on each note played
 //  Try to animate torus on select / deselect:
 //   https://developer.apple.com/documentation/scenekit/animation/animating_scenekit_content
 import UIKit
@@ -65,6 +65,8 @@ class Marker: SCNNode {
     let percIcon    = UIImage(named: "percIcon")
     let percKitIcon = UIImage(named: "percKitIcon")
     
+    var blinkTimer = Timer() //2/6
+
     //11/18 make hls class vals
     var rr = 0
     var gg = 0
@@ -447,8 +449,22 @@ class Marker: SCNNode {
     {
         cubeNodeRot  =  cubeNodeRot + 0.03
         cubeNode.rotation = SCNVector4Make(0, 1, 0, Float(cubeNodeRot))
+        //2/6 black out torus briefly to indicate note played, timer restores color
+        torus1.firstMaterial?.emission.contents  = UIColor.black
+        torus2.firstMaterial?.emission.contents  = UIColor.black
+        blinkTimer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(self.blinkTick), userInfo:  nil, repeats: false)
     }
     
+    
+    //-------(Marker)-------------------------------------
+    // 2/6 makes torus blink back on
+    @objc func blinkTick()
+    {
+        blinkTimer.invalidate()
+        torus1.firstMaterial?.emission.contents  = UIColor.white
+        torus2.firstMaterial?.emission.contents  = UIColor.white
+    }
+
     //-------(Marker)-------------------------------------
     func updatePanels(nameStr : String)
     {

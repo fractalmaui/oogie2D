@@ -19,15 +19,13 @@
 // DHS 1/23/14: ARC-based version for RoadieTrip
 // DHS 10/17/19 add envelope support for samples
 // DHS 11/9     add copyBuffer
-// DHS 11/22   add getSRate
+// DHS 11/22    add getSRate
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioUnit/AudioUnit.h>
 #import <AudioToolbox/AudioFile.h>
 #import <Foundation/Foundation.h>
 
-
 #define MAX_TONE_EVENTS 64
-
 
 //Possible states for a ToneEvent.
 typedef enum
@@ -92,6 +90,8 @@ ToneKeysigs;
 #define ARP_PARAM_LPAN 5
 #define ARP_PARAM_RPAN 6
 #define ARP_PARAM_TIME 7
+
+#define MIDI_MIDDLE_C 60 //2/26/20 This is proper middle C, NOT 64!
 
 // Describes a tone.
 typedef struct

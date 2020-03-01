@@ -10,6 +10,7 @@
 //  Created by Dave Scruton on 8/15/19.
 //  10/4  add fixed params for note,vol,pan
 //  2/3   add comment field
+//  2/28  redo bottom / top midi
 
 import Foundation
 struct OVStruct : Codable {
@@ -37,13 +38,13 @@ struct OVStruct : Codable {
     
     //10/3 move from oogiePatch..
     //  no save with voice as it was!
-    var poly  : Int //These 2 are opposites
-    var mono  : Int
-    var thresh  : Int
-    var quant  : Int
-    var topMidi  : Int
+    var poly        : Int //These 2 are opposites
+    var mono        : Int
+    var thresh      : Int
+    var quant       : Int
+    var topMidi     : Int
     var bottomMidi  : Int
-    var keySig  : Int
+    var keySig      : Int
 
     
     //======(OVStruct)=============================================
@@ -76,8 +77,8 @@ struct OVStruct : Codable {
         mono        = 0
         thresh      = 5
         quant       = 0
-        topMidi     = 20
-        bottomMidi  = 128
+        bottomMidi  = 12   // 2/28 redo, was out of order too!
+        topMidi     = bottomMidi + 12*8
         keySig      = 0
     }
     
@@ -111,8 +112,8 @@ struct OVStruct : Codable {
         mono        = 0
         thresh      = 5
         quant       = 0
-        topMidi     = 20
-        bottomMidi  = 128
+        bottomMidi  = 12   // 2/28 redo, was out of order too!
+        topMidi     = bottomMidi + 12*8
         keySig      = 0
 
     }

@@ -31,6 +31,7 @@
 //  2/5    move name into pipeStruct, add comment there too
 //  2/6    redo deleteShape to delete all voices, and voice/shape pipes
 //          make all menus w/ black text, get newname in addPipeToScene
+//  2/28   add 3d Keyboard, 2/29 hook up with touch so it plays current voice!
 import UIKit
 import SceneKit
 import Photos
@@ -81,8 +82,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end testSelect
     
     var oogieOrigin = SCNNode()
+    var pkeys = PianoKeys()
     
-    //Constructed shapes / handles
+    //Constructed shapes / handlpekyses
     var allMarkers    : [Marker]     = []
     var selectedUids  : [String]     = []
     var sceneVoices   = Dictionary<String, OogieVoice>()
@@ -177,6 +179,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //Our basic camera, out on the Z axis
         cameraNode = SCNNode()
         cameraNode.camera = SCNCamera()
+
+        //2/6 get bounding sphere, place camera according.y
+        //let sss = oogieOrigin.boundingSphere
+        //let radius = sss.radius //radius of scene bounding sphere,
+        //cameraNode.position = SCNVector3(x:0, y: 0, z: 10*radius)
+
         cameraNode.position = SCNVector3(x:0, y: 0, z: 6)
         scene.rootNode.addChildNode(cameraNode)
         
@@ -1350,6 +1358,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         handleTouch(touch: touch)
     } //end touchesBegan
     
+//    func getDogDirection(for point: CGPoint, in view: SCNView) -> SCNVector3 {
+//        let farPoint  = view.unprojectPoint(SCNVector3Make(Float(point.x), Float(point.y), 1))
+//        let nearPoint = view.unprojectPoint(SCNVector3Make(Float(point.x), Float(point.y), 0))
+//
+//        return SCNVector3Make(farPoint.x - nearPoint.x, farPoint.y - nearPoint.y, farPoint.z - nearPoint.z)
+//    }
+
+    
     //=====<oogie2D mainVC>====================================================
     //10/29 called by touchesDown
     func handleTouch(touch:UITouch)
@@ -1364,7 +1380,26 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         var deselected = false
         if let name = hitNode.name
         {
-            if name.contains("shape") //Found a shape? get which one
+            if name.contains("pianoKeys") ///2/28 keyboard hit test => output note
+            {
+                let localCoordinates = nodeHitTest.localCoordinates
+                let tMidiNote = pkeys.getTouchedMidiNote( hitCoords  : localCoordinates )
+                if whatWeBeEditing != "voice"
+                {
+                    self.pLabel.updateLabelOnly(lStr:"Select Voice First")
+                }
+                else //2/29  voice selected? play it!
+                {
+                    //print("hit key \(tMidiNote) play note now!")
+                    setupSynthOrSample(oov : selectedVoice)
+                    (sfx() as! soundFX).playNote(Int32(tMidiNote),
+                                                 Int32(selectedVoice.bufferPointer) ,
+                                                 Int32(selectedVoice.OOP.type))
+                    //Indicate note to user
+                    self.pLabel.updateLabelOnly(lStr:String(format: "Note:%@",pkeys.lastNoteName))
+                }
+            }
+            else if name.contains("shape") //Found a shape? get which one
             {
                 let testName = findShape(uid: name)
                 if (testName != "")
@@ -1424,6 +1459,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                 selectedMarker.updatePanels(nameStr: selectedMarkerName) //10/11 add name panels
                                 //1/14 was redundantly pulling OVS struct from OVScene.voices!
                                 editParams(v: "voice") //1/14 switch to edit mode
+                                //2/29 right place? setup piano keyboard
+                                pkeys.resetForVoice( nMode : selectedVoice.OVS.noteMode ,
+                                                     bMidi : selectedVoice.OVS.bottomMidi ,
+                                                     tMidi : selectedVoice.OVS.topMidi)
+
                             }
                         } //end if let
                     }
@@ -1560,6 +1600,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         alert.addAction(UIAlertAction(title: "Textures...", style: .default, handler: { action in
             self.performSegue(withIdentifier: "textureSegue", sender: self)
         }))
+        alert.addAction(UIAlertAction(title: "Toggle Piano KB", style: .default, handler: { action in
+            self.pkeys.isHidden = !self.pkeys.isHidden
+        }))
+
         alert.addAction(UIAlertAction(title: "Dump Scene", style: .default, handler: { action in
             self.OVScene.dump()
         }))
@@ -1995,7 +2039,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end clearScenePrompt
     
     //=====<oogie2D mainVC>====================================================
-    // 2/1 clears internal dictionaries of oogieVoices, Shapes and Pipes  asdf
+    // 2/1 clears internal dictionaries of oogieVoices, Shapes and Pipes
     func clearOogieStructs()
     {
         sceneVoices.removeAll()
@@ -2044,6 +2088,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         for (name, nextPipe) in OVScene.pipes
             { addPipeToScene(ps: nextPipe, name: name, op: "load") }
 
+        pkeys          = PianoKeys() //make new 3d shape, texture it
+        pkeys.isHidden = true //Hide for now
+        oogieOrigin.addChildNode(pkeys)
+        
         //let axes = createAxes() //1/11/20 test azesa
         //oogieOrigin.addChildNode(axes)
         //scene.rootNode.addChildNode(axes)
@@ -2181,7 +2229,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             pov.transform = camXform
         }
-
     } //end setCamXYZ
     
     
@@ -3080,6 +3127,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
     }
 
+    //---<chooserDelegate>--------------------------------------
     //Delegate callback from Chooser...
     func choseFile(name: String)
     {
