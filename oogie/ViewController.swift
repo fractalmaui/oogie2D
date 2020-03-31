@@ -32,6 +32,7 @@
 //  2/6    redo deleteShape to delete all voices, and voice/shape pipes
 //          make all menus w/ black text, get newname in addPipeToScene
 //  2/28   add 3d Keyboard, 2/29 hook up with touch so it plays current voice!
+//  3/30   add kb update after voice edit
 import UIKit
 import SceneKit
 import Photos
@@ -422,13 +423,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             knobMode  = KnobStates.SELECT_PARAM //NOT editing now...
             if whatWeBeEditing == "voice" //10/18 voice vs shape edit
             {
-                print("done edit xycoord \(selectedVoice.OVS.xCoord), \(selectedVoice.OVS.yCoord)")
-
+                //print("done edit xycoord \(selectedVoice.OVS.xCoord), \(selectedVoice.OVS.yCoord)")
+                //print("...vnotemode \(selectedVoice.OVS.noteMode)")
                 sceneVoices[selectedMarkerName] = selectedVoice    //save latest voice to sceneVoices
                 allMarkers[selectedObjectIndex] = selectedMarker //save any marker changes...
                 pLabel.setupForParam( pname : "Param" , ptype : TSTRING_TTYPE , //9/28 new
                     pmin : 0.0 , pmax : selectedFieldDMult * Double( selectedFieldMax) ,
                     choiceStrings : voiceParamNames)
+                updatePkeys()
             }
             else if whatWeBeEditing == "shape"
             {
@@ -515,6 +517,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         paramKnob.setValue(kval) //and set knob control
     } //end resetKnobToNewValues
 
+    //=====<oogie2D mainVC>====================================================
+    // 3/30 updates 3d keyboard for selected voice....
+    func updatePkeys()
+    {
+        self.pkeys.resetForVoice( nMode : self.selectedVoice.OVS.noteMode ,
+                                  bMidi : self.selectedVoice.OVS.bottomMidi ,
+                                  tMidi : self.selectedVoice.OVS.topMidi)
+    } //end updatePkeys
     
     //=====<oogie2D mainVC>====================================================
     //  9/13 uses knobMode, updates buttons / wheels at bottom of screen
@@ -589,101 +599,101 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         oldKnobValue = paramKnob.value //12/2 move to bottom
 
     } //end paramChanged
-
+    
     
     //=======>ARKit MainVC===================================
     // Move object-related chunks to proper objects!
-      //=======>ARKit MainVC===================================
-       // Move object-related chunks to proper objects!
-       func getLastParamValue(fname : String)
-       {
-           if whatWeBeEditing == "voice" // get last param for voice/marker...
-           {
-               switch (fname)  //10/9 cleanup
-               {
-               case "latitude":  lastFieldDouble = selectedVoice.OVS.yCoord
-               case "longitude": lastFieldDouble = selectedVoice.OVS.xCoord
-               case "type":      lastFieldDouble = Double(selectedVoice.OOP.type)    //DHS 10/13
-               lastFieldPatch  = selectedVoice.OOP //DHS 10/15
-               case "patch":     lastFieldPatch  = selectedVoice.OOP
-               //10/14 get patch index in array of names too!
-               let pname = selectedVoice.OVS.patchName.lowercased()
-               lastFieldDouble = 0.0
-               if let pindex = selectedFieldStringVals.index(of:pname)
-               {
-                   lastFieldDouble = Double(pindex)
-                   }
-               case "scale":     lastFieldDouble = Double(selectedVoice.OVS.keySig)
-               case "level":     lastFieldDouble = selectedVoice.OVS.level
-               case "nchan":     lastFieldDouble = Double(selectedVoice.OVS.noteMode)
-               case "vchan":     lastFieldDouble = Double(selectedVoice.OVS.volMode)
-               case "pchan":     lastFieldDouble = Double(selectedVoice.OVS.panMode)
-               case "nfixed":    lastFieldDouble = Double(selectedVoice.OVS.noteFixed)
-               case "pfixed":    lastFieldDouble = Double(selectedVoice.OVS.panFixed)
-               case "vfixed":    lastFieldDouble = Double(selectedVoice.OVS.volFixed)
-               case "topmidi":   lastFieldDouble = Double(selectedVoice.OVS.topMidi)
-               case "bottommidi":  lastFieldDouble = Double(selectedVoice.OVS.bottomMidi)
-               case "midichannel": lastFieldDouble = Double(selectedVoice.OVS.midiChannel)
-               case "name":      lastFieldString = selectedVoice.OVS.name    //2/4
-               case "comment":   lastFieldString = selectedVoice.OVS.comment //2/4
-               selectedMarker.updatePanels(nameStr: selectedVoice.OVS.name)  //10/11
-               default:print("Error:Bad voice param")
-               }
-           } //end whatWeBeEditing
-           else if whatWeBeEditing == "shape" // get last param for shape...
-           {
-               switch (fname)
-               {
-               case "texture" : lastFieldString = selectedShape.OOS.texture
-               case "rotation": lastFieldDouble = selectedShape.OOS.rotSpeed
-               case "rotationtype": lastFieldDouble = selectedShape.OOS.rotation
-               case "xpos": lastFieldDouble = selectedShape.OOS.xPos
-               case "ypos": lastFieldDouble = selectedShape.OOS.yPos
-               case "zpos": lastFieldDouble = selectedShape.OOS.zPos
-               case "texxoffset": lastFieldDouble = selectedShape.OOS.uCoord
-               case "texyoffset": lastFieldDouble = selectedShape.OOS.vCoord
-               case "texxscale": lastFieldDouble = selectedShape.OOS.uScale
-               case "texyscale": lastFieldDouble = selectedShape.OOS.vScale
-               case "name":      lastFieldString = selectedShape.OOS.name    //2/4
-               case "comment":   lastFieldString = selectedShape.OOS.comment //2/4
-               default:print("Error:Bad shape param")
-               }
-           }
-           else if whatWeBeEditing == "pipe" // get last param for pipe...
-           {
-               var getNumberedDisplayValue = false
-               var pstr = ""
-               switch (fname) //12/1 ouch!!! we need to set lastFieldDouble for multipoe chyoices!
-               {
-               case "inputchannel":
-                   pstr = selectedPipe.PS.fromChannel
-                   lastFieldString = pstr  //1/26
-                   getNumberedDisplayValue = true
-               case "outputparam":
-                   pstr = selectedPipe.PS.toParam
-                   lastFieldString = pstr  //1/26
-                   getNumberedDisplayValue = true
-               case "lorange" : // 12/9 add lo/hi range as strings
-                   let lorg = selectedPipe.PS.loRange
-                   lastFieldString = String(lorg)
-               case "hirange" :
-                   let horg = selectedPipe.PS.hiRange
-                   lastFieldString = String(horg)
-               case "name"    :
-                   lastFieldString = selectedPipe.PS.name
-               case "comment"    :
-                   lastFieldString = selectedPipe.PS.comment
-               default:print("Error:Bad pipe param")
-               }
-               //12/4  need to find which display value we are indicating?
-               if getNumberedDisplayValue
-               {
-                   //12/1 NOTE: this needs to be case-sensitive. why arent displayvals lowercased?
-                   if let index = selectedFieldStringVals.index(of: pstr) //1/26
-                   { lastFieldDouble = Double(index) }
-               }
-           } //end else
-       } //end getLastParamValue
+    //=======>ARKit MainVC===================================
+    // Move object-related chunks to proper objects!
+    func getLastParamValue(fname : String)
+    {
+        if whatWeBeEditing == "voice" // get last param for voice/marker...
+        {
+            switch (fname)  //10/9 cleanup
+            {
+            case "latitude":  lastFieldDouble = selectedVoice.OVS.yCoord
+            case "longitude": lastFieldDouble = selectedVoice.OVS.xCoord
+            case "type":      lastFieldDouble = Double(selectedVoice.OOP.type)    //DHS 10/13
+            lastFieldPatch  = selectedVoice.OOP //DHS 10/15
+            case "patch":     lastFieldPatch  = selectedVoice.OOP
+            //10/14 get patch index in array of names too!
+            let pname = selectedVoice.OVS.patchName.lowercased()
+            lastFieldDouble = 0.0
+            if let pindex = selectedFieldStringVals.index(of:pname)
+            {
+                lastFieldDouble = Double(pindex)
+                }
+            case "scale":     lastFieldDouble = Double(selectedVoice.OVS.keySig)
+            case "level":     lastFieldDouble = selectedVoice.OVS.level
+            case "nchan":     lastFieldDouble = Double(selectedVoice.OVS.noteMode)
+            case "vchan":     lastFieldDouble = Double(selectedVoice.OVS.volMode)
+            case "pchan":     lastFieldDouble = Double(selectedVoice.OVS.panMode)
+            case "nfixed":    lastFieldDouble = Double(selectedVoice.OVS.noteFixed)
+            case "pfixed":    lastFieldDouble = Double(selectedVoice.OVS.panFixed)
+            case "vfixed":    lastFieldDouble = Double(selectedVoice.OVS.volFixed)
+            case "topmidi":   lastFieldDouble = Double(selectedVoice.OVS.topMidi)
+            case "bottommidi":  lastFieldDouble = Double(selectedVoice.OVS.bottomMidi)
+            case "midichannel": lastFieldDouble = Double(selectedVoice.OVS.midiChannel)
+            case "name":      lastFieldString = selectedVoice.OVS.name    //2/4
+            case "comment":   lastFieldString = selectedVoice.OVS.comment //2/4
+            selectedMarker.updatePanels(nameStr: selectedVoice.OVS.name)  //10/11
+            default:print("Error:Bad voice param")
+            }
+        } //end whatWeBeEditing
+        else if whatWeBeEditing == "shape" // get last param for shape...
+        {
+            switch (fname)
+            {
+            case "texture" : lastFieldString = selectedShape.OOS.texture
+            case "rotation": lastFieldDouble = selectedShape.OOS.rotSpeed
+            case "rotationtype": lastFieldDouble = selectedShape.OOS.rotation
+            case "xpos": lastFieldDouble = selectedShape.OOS.xPos
+            case "ypos": lastFieldDouble = selectedShape.OOS.yPos
+            case "zpos": lastFieldDouble = selectedShape.OOS.zPos
+            case "texxoffset": lastFieldDouble = selectedShape.OOS.uCoord
+            case "texyoffset": lastFieldDouble = selectedShape.OOS.vCoord
+            case "texxscale": lastFieldDouble = selectedShape.OOS.uScale
+            case "texyscale": lastFieldDouble = selectedShape.OOS.vScale
+            case "name":      lastFieldString = selectedShape.OOS.name    //2/4
+            case "comment":   lastFieldString = selectedShape.OOS.comment //2/4
+            default:print("Error:Bad shape param")
+            }
+        }
+        else if whatWeBeEditing == "pipe" // get last param for pipe...
+        {
+            var getNumberedDisplayValue = false
+            var pstr = ""
+            switch (fname) //12/1 ouch!!! we need to set lastFieldDouble for multipoe chyoices!
+            {
+            case "inputchannel":
+                pstr = selectedPipe.PS.fromChannel
+                lastFieldString = pstr  //1/26
+                getNumberedDisplayValue = true
+            case "outputparam":
+                pstr = selectedPipe.PS.toParam
+                lastFieldString = pstr  //1/26
+                getNumberedDisplayValue = true
+            case "lorange" : // 12/9 add lo/hi range as strings
+                let lorg = selectedPipe.PS.loRange
+                lastFieldString = String(lorg)
+            case "hirange" :
+                let horg = selectedPipe.PS.hiRange
+                lastFieldString = String(horg)
+            case "name"    :
+                lastFieldString = selectedPipe.PS.name
+            case "comment"    :
+                lastFieldString = selectedPipe.PS.comment
+            default:print("Error:Bad pipe param")
+            }
+            //12/4  need to find which display value we are indicating?
+            if getNumberedDisplayValue
+            {
+                //12/1 NOTE: this needs to be case-sensitive. why arent displayvals lowercased?
+                if let index = selectedFieldStringVals.index(of: pstr) //1/26
+                { lastFieldDouble = Double(index) }
+            }
+        } //end else
+    } //end getLastParamValue
     
     //=======>ARKit MainVC===================================
     // Called when a 3d shape params are changed.
@@ -711,7 +721,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 ox: shapeStruct.OOS.uCoord, oy: shapeStruct.OOS.vCoord)
         }
     } //end update3DShapeBYName
-
+    
     //=======>ARKit MainVC===================================
     func paramToUnit (inval : Double) -> Double
     {
@@ -1113,7 +1123,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
            vArray = selectedVoice.getPatchNameArray() //Get patches for synth, drums, etc based on type
         }
-        print("varray \(vArray) count \(vArray.count)")
+        //print("varray \(vArray) count \(vArray.count)")
         if (vArray.count < 3) {return} //avoid krash
         selectedFieldName = vArray[0] as! String
         selectedFieldType = vArray[1] as! String
@@ -1397,6 +1407,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                                  Int32(selectedVoice.OOP.type))
                     //Indicate note to user
                     self.pLabel.updateLabelOnly(lStr:String(format: "Note:%@",pkeys.lastNoteName))
+
+                    pkeys.placeAndColorHighlightCylinder(midiNote: tMidiNote)  //3/16/20 
                 }
             }
             else if name.contains("shape") //Found a shape? get which one
@@ -1459,11 +1471,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                 selectedMarker.updatePanels(nameStr: selectedMarkerName) //10/11 add name panels
                                 //1/14 was redundantly pulling OVS struct from OVScene.voices!
                                 editParams(v: "voice") //1/14 switch to edit mode
-                                //2/29 right place? setup piano keyboard
-                                pkeys.resetForVoice( nMode : selectedVoice.OVS.noteMode ,
-                                                     bMidi : selectedVoice.OVS.bottomMidi ,
-                                                     tMidi : selectedVoice.OVS.topMidi)
-
+                                updatePkeys() //3/30 update kb if needed
                             }
                         } //end if let
                     }
@@ -1601,6 +1609,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.performSegue(withIdentifier: "textureSegue", sender: self)
         }))
         alert.addAction(UIAlertAction(title: "Toggle Piano KB", style: .default, handler: { action in
+            self.updatePkeys() //3/30 update kb if needed
             self.pkeys.isHidden = !self.pkeys.isHidden
         }))
 
@@ -1973,7 +1982,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // 1/14 reload voice from last saved scene
     func resetVoiceByName(name:String)
     {
-        print("resetVoiceByName \(name)")
+       // print("resetVoiceByName \(name)")
         for (n, s) in OVScene.voices
         {
             if n == name
@@ -2708,7 +2717,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     if let voice = sceneVoices[tname]
                     {
                         var needPipeUpdate = false
-                        var needNewPatch   = false
+                        _   = false
                         switch(pwork.PS.toParam.lowercased())  //WTF WHY NEED LOWERCASE!
                         {
                         case "latitude"   : voice.OVS.yCoord      = Double(pipeVal)

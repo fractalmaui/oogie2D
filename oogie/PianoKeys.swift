@@ -25,6 +25,8 @@ class PianoKeys: SCNNode {
     var topMidi          = 108    //C8
     var lastNoteName     = ""
     private var centerMidi = 0
+    var hiCylGeom        = SCNGeometry()
+    var hiCylNode        = SCNNode()
     let keysYoff         : CGFloat = -3.0
     var colorBarImage    = UIImage()
     //Array of colors, lined up with keyboard over bottom-top range
@@ -41,10 +43,11 @@ class PianoKeys: SCNNode {
     }
 
     //-----------(PianoKeys)=============================================
+    // creates a few child objects, keyboard, color bar, note indicator
     func createKB(nMode:Int)
     {
         loadUpColorz(nMode: nMode) //3 = hue (default)
-        colorBarImage = createColorBarImage(ll: 0.5, ss: 1.0)
+        colorBarImage   = createColorBarImage(ll: 0.5, ss: 1.0)
         centerMidi      = (bottomMidi + topMidi) / 2
         let octave0     = (bottomMidi - 12) / 12
         let octave1     = (topMidi - 12) / 12
@@ -52,18 +55,16 @@ class PianoKeys: SCNNode {
         if bottomMidi%12 != 0 || topMidi%12 != 0 {
             numOctaves = numOctaves + 1
         }
-        let kb = createFlatKB(octaves: numOctaves)
-        self.addChildNode(kb)
-
-        let cb = createColorBoxWithLabels(bm:bottomMidi , tm:topMidi)
-        self.addChildNode(cb)
+        self.addChildNode(createFlatKB(octaves: numOctaves))
+        self.addChildNode(createColorBoxWithLabels(bm:bottomMidi , tm:topMidi))
+        hiCylNode = makeHighlightCylinder() //3/16
+        self.addChildNode(hiCylNode)
         
         //Rotate about X axis so KB is parallel with "floor"
         self.eulerAngles = SCNVector3Make(-Float.pi / 2.0 , 0, 0)
         // shift down too...
         self.position    = SCNVector3(0,keysYoff,0)
         self.name        = "pianoKeys" //for touch recognition
-
    }
     
     //-----------(PianoKeys)=============================================
@@ -122,12 +123,11 @@ class PianoKeys: SCNNode {
     func resetForVoice( nMode : Int , bMidi : Int , tMidi : Int)
     {
         //print(" kb reset mode \(nMode) midi \(bMidi) to \(tMidi)")
-        //Remove keys / colorbar
+        //Remove keys / colorbar 3/30 debugged
         self.enumerateChildNodes { (node, _) in
-            if (node.name != nil) {node.removeFromParentNode()}
+                node.removeFromParentNode()
         }
         loadUpColorz(nMode: nMode)
-        colorBarImage = createColorBarImage(ll: 0.5, ss: 1.0)
         bottomMidi    = bMidi
         topMidi       = tMidi
         createKB(nMode:nMode)
@@ -170,6 +170,7 @@ class PianoKeys: SCNNode {
     //-----------(PianoKeys)=============================================
     private func loadUpColorz(nMode : Int)
     {
+        //print("loadupcolorz \(nMode)")
         colorz256.removeAll()
         if nMode == 3 //hue is special
         {
@@ -219,7 +220,7 @@ class PianoKeys: SCNNode {
         if(tt < 1.0/2.0) {return q}
         if(tt < 2.0/3.0) {return p + (q - p) * (2.0/3.0 - tt) * 6.0}
         return p;
-    } //end hue2rgb\\
+    } //end hue2rgb
 
 
     //-----------(PianoKeys)=============================================
@@ -245,6 +246,30 @@ class PianoKeys: SCNNode {
 
         return (r,g,b);
     } //end hslToRgb
+
+    //--flatkeys-----------------------------------------------
+    func makeHighlightCylinder() ->SCNNode{
+        hiCylGeom = SCNCylinder(radius: octWid*0.4,
+                                height: 0.1)
+        hiCylGeom.firstMaterial?.diffuse.contents  = UIColor.clear
+        let childNode = SCNNode(geometry: hiCylGeom)
+        childNode.eulerAngles = SCNVector3Make(0, 0, Float(Double.pi/2.0))
+        childNode.position = SCNVector3(0,0.5,0)
+        return childNode
+    } //end makeHighlightCylinder
+
+    //--flatkeys-----------------------------------------------
+    func placeAndColorHighlightCylinder(midiNote : Int)
+    {
+        let noff = midiNote - centerMidi
+        hiCylNode.position = SCNVector3(CGFloat(noff) * CGFloat(keyWid) ,octWid*0.7,0)
+        if topMidi == bottomMidi {return}
+        // get color....
+        let midiFloat = 255.0 * Float(midiNote - bottomMidi) /  Float(topMidi - bottomMidi)
+        let midiColor = colorz256[Int(midiFloat)];
+        hiCylGeom.firstMaterial?.diffuse.contents  = midiColor
+        hiCylGeom.firstMaterial?.emission.contents = midiColor
+    } //end placeAndColorHighlightCylinder
 
 
     //--flatkeys-----------------------------------------------
