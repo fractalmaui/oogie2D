@@ -78,7 +78,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     
     @IBAction func testSelect(_ sender: Any) {
-        dumpDebugShit()
+        //asdf
+        writeGMPercussionPatches()
+        //dumpDebugShit()
  
     } //end testSelect
     
@@ -3047,7 +3049,48 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
     } //end writePercussionPatches
     
-   
+    //DIAGNOSTIC: Write out fresh patches for all GMpercussion samples...
+    //  subfolder 
+   //asdf
+    func writeGMPercussionPatches()
+    {
+        
+        let purl = Bundle.main.resourceURL!.appendingPathComponent("GMPercussion").path
+        do {
+            let files = try FileManager.default.contentsOfDirectory(atPath: purl)
+            print("contents of percussion folder...")
+            for file in files
+            {
+                let duh = file
+                let sf = file.split(separator: ".")
+                let pname = String(sf[0])
+                
+               // if let pname = sf[0] as String
+               // {
+                    var oop     = OogiePatch()
+                    oop.name    = pname
+                    oop.attack  = 0
+                    oop.decay   = 0
+                    oop.sustain = 0
+                    oop.release = 0
+                    oop.sLevel  = 0
+                    oop.duty    = 0
+                    oop.wave    = 0
+                    oop.type    = Int(PERCUSSION_VOICE)
+                    oop.saveItem(filename:pname, cat:"GM") //Write it out! 11/14 new arg
+                    print("write GMpercussion \(pname)")
+
+               // }
+                
+
+            }
+        }catch{
+            fatalError("error: no percussion!")
+        }
+        
+     
+    }
+    
     //=====<oogie2D mainVC>====================================================
     // canned for synth 0
     func setupSynthOrSample(oov : OogieVoice)
