@@ -523,13 +523,14 @@ short *audioRecBuffer;
         sBufs[which] = NULL;
     }
     int totalFrames = sNumPackets * sChans;
-    //NSLog(@" ...Malloc sbufs[%d] size %lu",which,sNumPackets * sChans * sizeof(float));
+    NSLog(@" ...Malloc sbufs[%d] size %lu",which,sNumPackets * sChans * sizeof(float));
 	sBufs[which] = malloc(totalFrames * sizeof(float)); //DHS 10/6
 	if (!sBufs[which]) return;
     sBufLens[which] = totalFrames;
     //NSLog(@" ...Buildsample[%d]: frames %d  ",which,totalFrames);
 
-    for ( i = 0; i < sBufLens[which]; i+=sChans)  // step through by #channels per packet
+    //DHS 4/12/20 saw overflow by 1 error, reduce loop by 1 to avoid
+    for ( i = 0; i < sBufLens[which]-1; i+=sChans)  // step through by #channels per packet
 	{	
         if (i >= swaveSize) 
         {
@@ -667,7 +668,7 @@ short *audioRecBuffer;
     if ( (attackLength  == 0) && (decayLength   == 0) &&
          (sustainLength == 0) && (releaseLength == 0) )
     {
-        NSLog(@"  ...allzero ENV %d...",which);
+       // NSLog(@"  ...allzero ENV %d...",which);
         return;
     }
     //envelope was in use? Clobber it!
@@ -1875,7 +1876,7 @@ short *audioRecBuffer;
     sampleSize =  readsize;
     if (!err)  AudioFileClose(fileID);
     gotSample = 1;
-    if (err != 0) NSLog(@" loadsample error: %d",(int)err);
+    if (err != 0) NSLog(@" loadsample error: %d [%@]",(int)err,fileName);
     //else NSLog(@" ...load sample OK");
     //    NSLog(@" dump of sample %@========================",fileName);
     //    for (int i=0;i<64;i++) NSLog(@" swave[%d] %x",i,swave[i]);
@@ -1975,9 +1976,6 @@ double drand(double lo_range,double hi_range )
             } //end for i
         } //end frameCount > 0
     }  //end while
-
-    NSLog(@" done doogoititie size %d",j);
-
     sBufs[whichBuffer] = malloc(j * sizeof(float));
     if (!sBufs[whichBuffer]) return;
     //ok we have data, convert it! to unsigned short

@@ -87,7 +87,7 @@ private init()
 
     synthPatchDictionary     = DataManager.loadBuiltinSynthPatchesToDict(OogiePatch.self,
                                                                          fromFactory: false)
-    percussionPatchDictionary     = DataManager.loadBuiltinPercussionPatchesToDict(OogiePatch.self,
+    percussionPatchDictionary  = DataManager.loadBuiltinGMPercussionPatchesToDict(OogiePatch.self,
                                                                          fromFactory: false)
     percKitPatchDictionary     = DataManager.loadBuiltinPercKitPatchesToDict(OogiePatch.self,
                                                                          fromFactory: false)
@@ -346,7 +346,7 @@ private init()
         switch (Int32(ptype))
         {
             case PERCKIT_VOICE   : name = "kit1"
-            case PERCUSSION_VOICE: name = "low_mid_tom"
+            case PERCUSSION_VOICE: name = "M033_Metronome Click"
             case SAMPLE_VOICE    : name = "gm_001_c3" //10/16
             default              : name = "bubbles"
         }

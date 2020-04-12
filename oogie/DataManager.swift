@@ -215,6 +215,7 @@ public class DataManager {
     {
         var                  name = "SynthPatches"
         if      (n == "PE") {name = "PercussionPatches"}
+        else if (n == "GP") {name = "GMPercussionPatches"} //4/10/20
         else if (n == "PK") {name = "PercKitPatches"}
         else if (n == "GM") {name = "GMPatches"}
         return name
@@ -456,6 +457,12 @@ public class DataManager {
     static func loadBuiltinPercussionPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
     {
         return loadUpDictWithPatchesFromSubfolder(type, subFolder: "PercussionPatches", fromFactory:     fromFactory)
+    }
+     
+    //======(DataManager)=============================================
+    static func loadBuiltinGMPercussionPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
+    {
+        return loadUpDictWithPatchesFromSubfolder(type, subFolder: "GMPercussionPatches", fromFactory:     fromFactory)
     }
      
     //======(DataManager)=============================================

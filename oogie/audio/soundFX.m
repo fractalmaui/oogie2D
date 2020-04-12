@@ -588,47 +588,49 @@ int HH,LL,SS;  //Used in rgb -> HLS
 //   sends samplesLoadedNotification when done
 -(void) loadAudioForOOGIE
 {
+    
     //Do load in bkgd...
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),  ^{
                        dispatch_sync(dispatch_get_main_queue(), ^{
-                           
                            NSURL *path = NSBundle.mainBundle.resourceURL;
                            PSampleOffset = 8;  //Start loading percussion here..
                            // First, load percussion.........................................
-                           [percBufferDict removeAllObjects]; //clear dict...
-                           //GM percussion folder crashes app on this sample:
-                           //  Low Wood Block.wav  ....WTF?
-                           //NSString* subfolder = @"GMPercussion"; //12/18
-                           NSString* subfolder = @"Percussion";
+                           [percBufferDict removeAllObjects]; //clear dicts...
+                           [GMBufferDict   removeAllObjects];
+                           NSString* subfolder = @"GMPercussion"; //4/12/20
                            int sampleNumber = PSampleOffset;
                            NSURL *p2 = [path URLByAppendingPathComponent:subfolder];
                            //p2 produces a warning as 2nd arg, but use absoluteString and it fails, WTF?
                            NSArray *directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:p2 error:NULL];
-                           for (NSString*fname in directoryContent)
+                           NSArray *sortedDirectoryContent = [directoryContent sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
+                           for (NSString*fname in sortedDirectoryContent)
                            {
-                               //NSLog(@" perc patch %@",fname);
-                               [synth  loadSampleFromPath : subfolder : fname];
-                               [synth buildSampleTable:sampleNumber];
-                               soundFileLoaded[sampleNumber] = true;
-                               NSArray* substrs         = [fname componentsSeparatedByString:@"."];
-                               NSString *drumName       = substrs[0];
-                               drumName                 = drumName.lowercaseString; //convert to lowercase
-                               NSString *drumNameNUB    = [drumName stringByReplacingOccurrencesOfString:@"_"  withString:@" "];
-                               percBufferDict[drumName] = [NSNumber numberWithInteger:sampleNumber];
-                               //Lets find the default midi key...
-                               int keyMatch = -1;
-                               for (int i=0;i<45;i++)
+                               if ([fname containsString:@"wav"]) //4/20 only load GM samples!
                                {
-                                   if ( [drumNameNUB isEqualToString:GM_Percussion_Names[i]] ) {keyMatch = i;break;}//Match!
-                               } //end for i
-                               percMidiKeyDict[drumName] = [NSNumber
-                                                            numberWithInteger:gm_percUssIoN_startKeY+keyMatch];
-                               soundFileLoaded[sampleNumber] = TRUE; //Indicate sample is ready to play...
-                               sampleNumber++;
+                                   NSLog(@" load perc patch %@",fname);
+                                   [synth  loadSampleFromPath : subfolder : fname];
+                                   [synth buildSampleTable:sampleNumber];
+                                   soundFileLoaded[sampleNumber] = true;
+                                   NSArray* substrs         = [fname componentsSeparatedByString:@"."];
+                                   NSString *drumName       = substrs[0];
+                                   drumName                 = drumName.lowercaseString; //convert to lowercase
+                                   NSString *drumNameNUB    = [drumName stringByReplacingOccurrencesOfString:@"_"  withString:@" "];
+                                   percBufferDict[drumName] = [NSNumber numberWithInteger:sampleNumber];
+                                   //Lets find the default midi key...
+                                   int keyMatch = -1;
+                                   for (int i=0;i<45;i++)
+                                   {
+                                       if ( [drumNameNUB isEqualToString:GM_Percussion_Names[i]] ) {keyMatch = i;break;}//Match!
+                                   } //end for i
+                                   percMidiKeyDict[drumName] = [NSNumber
+                                                                numberWithInteger:gm_percUssIoN_startKeY+keyMatch];
+                                   soundFileLoaded[sampleNumber] = TRUE; //Indicate sample is ready to play...
+                                   sampleNumber++;
+
+                               }
                            } //end for fname
                            // Second, load GeneralMidi.........................................
                            GMSampleOffset = sampleNumber;  //Start loading percussion here..
-                           [GMBufferDict removeAllObjects]; //clear dict...
                            subfolder = @"GeneralMidi";
                            sampleNumber = GMSampleOffset;
                            p2 = [path URLByAppendingPathComponent:subfolder];
@@ -643,7 +645,6 @@ int HH,LL,SS;  //Used in rgb -> HLS
                                NSArray* substrs         = [fname componentsSeparatedByString:@"."];
                                NSString *sampleName     = substrs[0];
                                sampleName               = sampleName.lowercaseString; //convert to lowercase
-                               NSString *sampleNameNUB    = [sampleName stringByReplacingOccurrencesOfString:@"_"  withString:@" "];
                                GMBufferDict[sampleName] = [NSNumber numberWithInteger:sampleNumber];
                                soundFileLoaded[sampleNumber] = TRUE; //Indicate sample is ready to play...
                                sampleNumber++;
@@ -658,8 +659,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
     //NSLog(@"duh end loadaudio");
 } //end loadAudioForOOGIE
 
-
-
+ 
 
 #pragma mark -
 #pragma mark AudioBufferPlayerDelegate

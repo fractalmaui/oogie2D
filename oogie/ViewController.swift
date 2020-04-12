@@ -79,8 +79,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     @IBAction func testSelect(_ sender: Any) {
         //asdf
-        writeGMPercussionPatches()
-        //dumpDebugShit()
+        //writeGMPercussionPatches()
+        dumpDebugShit()
  
     } //end testSelect
     
@@ -571,6 +571,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=======>ARKit MainVC===================================
     //Param knob change...
     @IBAction func paramChanged(_ sender: Any) {
+        //print("paramchanged...");
         knobValue = paramKnob.value //Assume value is pre-clamped to range
         if knobMode == KnobStates.SELECT_PARAM //select param  9/13 changes
         {
@@ -615,8 +616,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             {
             case "latitude":  lastFieldDouble = selectedVoice.OVS.yCoord
             case "longitude": lastFieldDouble = selectedVoice.OVS.xCoord
-            case "type":      lastFieldDouble = Double(selectedVoice.OOP.type)    //DHS 10/13
-            lastFieldPatch  = selectedVoice.OOP //DHS 10/15
+            case "type":      lastFieldDouble = Double(selectedVoice.OOP.type)    //DHS 10/13 asdf
+                              lastFieldPatch  = selectedVoice.OOP //DHS 10/15
+                                print(" glpv type \(lastFieldPatch)");
             case "patch":     lastFieldPatch  = selectedVoice.OOP
             //10/14 get patch index in array of names too!
             let pname = selectedVoice.OVS.patchName.lowercased()
@@ -776,9 +778,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
              case "patch":
                  if intChoiceChanged{ changeVoicePatch(name:getSelectedFieldStringForKnobValue (kv : knobValue))}
              case "type":
+                //print("snpv type")
                  if intChoiceChanged
                  {
                      workString = getSelectedFieldStringForKnobValue (kv : knobValue)
+                     print(" change voice type...%d %@",knobValue,workString);
                      changeVoiceType(typeString:workString , needToRefreshOriginalValue: needToRefreshOriginalValue)
                      selectedMarker.updateTypeString(newType : workString)
                  }
@@ -1012,6 +1016,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             case "latitude":    selectedVoice.OVS.yCoord      = oldD
             case "longitude":   selectedVoice.OVS.xCoord      = oldD
             case "type":        selectedVoice.OOP.type        = Int(oldD)
+            print(" rlpv type"); //asdf
             case "patch":       selectedVoice.OOP             = lastFieldPatch
             case "scale":       selectedVoice.OVS.keySig      = Int(oldD)
             case "level":       selectedVoice.OVS.level       = oldD
@@ -3111,7 +3116,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         else if (oov.OOP.type == PERCUSSION_VOICE)
         {
             //DHS 10/14 set up pointer to percussion sample...
-            oov.bufferPointer = Int((sfx() as! soundFX).getPercussionBuffer(oov.OOP.name))
+            oov.bufferPointer = Int((sfx() as! soundFX).getPercussionBuffer(oov.OOP.name.lowercased()))
         }
         else if (oov.OOP.type == SAMPLE_VOICE)
         {

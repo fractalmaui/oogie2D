@@ -359,7 +359,7 @@ class OogieVoice: NSObject, NSCopying {
         bufferPointer = 0;
         if OOP.type == PERCUSSION_VOICE
         {
-            bufferPointer = Int((sfx() as! soundFX).getPercussionBuffer(OOP.name))
+            bufferPointer = Int((sfx() as! soundFX).getPercussionBuffer(OOP.name.lowercased())) //4/12/20
         }
         else if OOP.type == SAMPLE_VOICE
         {
