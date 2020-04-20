@@ -11,6 +11,7 @@
 //  10/4  add fixed params for note,vol,pan
 //  2/3   add comment field
 //  2/28  redo bottom / top midi
+//  4/18  add rotTrigger
 
 import Foundation
 struct OVStruct : Codable {
@@ -35,6 +36,7 @@ struct OVStruct : Codable {
     var volFixed     : Int
     var panFixed     : Int
     var octave       : Int
+    var rotTrigger   : Double   //4/18 for triggering percussion
     
     //10/3 move from oogiePatch..
     //  no save with voice as it was!
@@ -59,19 +61,19 @@ struct OVStruct : Codable {
         yCoord       = 0.1 //DHS 9/16 off equator
         sampleOffset = 0
         detune       = 0
-        pitchShift   = 1
+        pitchShift   = 0   //4/19 why was this 1?
         whichSamp    = 0
-        sampleOffset   = 0
+        sampleOffset = 0
         midiDevice   = 0
         midiChannel  = 0
-        noteMode     = 0
-        volMode      = 0
-        panMode      = 0
+        noteMode     = 3    //4/14/20 initialize to Hue for note modes
+        volMode      = 9    //        ...fixed for volume / pan
+        panMode      = 9
         noteFixed    = 64   //Middle C   10/4 add fixed values for all channels
         volFixed     = 128  //half level
         panFixed     = 128  //center pan
-
         octave       = 0
+        rotTrigger   = 0.0    //no rotation trigger
         //10/3 moved in from patch. these are performance variables!
         poly        = 1
         mono        = 0
@@ -95,7 +97,7 @@ struct OVStruct : Codable {
         yCoord       = 0.1 //DHS 9/16 off equator
         sampleOffset = 0
         detune       = 0
-        pitchShift   = 1
+        pitchShift   = 0  //4/19
         whichSamp    = 0
         sampleOffset   = 0
         midiDevice   = 0

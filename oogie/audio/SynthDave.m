@@ -27,6 +27,8 @@
 //                 wraparound as opposed to assuming synths occupy low 8 buffers exclusively
 // DHS 10/17     add support for sample envelopes
 // DHS 11/9      add buildInPlace arg to buildEnvelope, copyBuffer, copyEnvelope
+//     4/12/20   just malloc swave ONCE
+
 #import <QuartzCore/CABase.h>
 #import "SynthDave.h"
 #include "oogieMidiStubs.h"
@@ -160,7 +162,9 @@ short *audioRecBuffer;
 		_gain               = 0.59f; //OVERall gain factor
 		finalMixGain        = 1.0;
 		gotSample           = 0;
-		swave               = NULL; //temp sample file storage....
+        //4/12/20 just alloc the WAV file storage buffer ONCE, max size
+        swave = (unsigned short *)malloc(MAX_SAMPLE_SIZE);
+        //MAX_SAMPLE_SIZE
         swaveSize           = 0;
 		glpan = grpan       = 0.5;  //set to center pan for now
         gportlast           = MIDI_MIDDLE_C;  //last note; default to center of keyboard
@@ -224,12 +228,7 @@ short *audioRecBuffer;
 {
 	int loop;
     NSLog(@" dealloc: Free all");
-	if (swave != NULL) 
-	{
-		free(swave);
-        swaveSize = 0;
-		swave = NULL;
-	}
+    swaveSize = 0;
 	LOOPIT(MAX_SAMPLES)
 	if (sBufs[loop] != NULL)
 	{
@@ -523,7 +522,7 @@ short *audioRecBuffer;
         sBufs[which] = NULL;
     }
     int totalFrames = sNumPackets * sChans;
-    NSLog(@" ...Malloc sbufs[%d] size %lu",which,sNumPackets * sChans * sizeof(float));
+    //NSLog(@" ...Malloc sbufs[%d] size %lu",which,sNumPackets * sChans * sizeof(float));
 	sBufs[which] = malloc(totalFrames * sizeof(float)); //DHS 10/6
 	if (!sBufs[which]) return;
     sBufLens[which] = totalFrames;
@@ -1706,6 +1705,12 @@ short *audioRecBuffer;
     NSURL *fileURL = nil;
 	AudioStreamBasicDescription outFormat;
 	UInt32 thePropSize = sizeof(outFormat);
+    if (swave == NULL) //ERROR! Swave failed!
+    {
+        swaveSize = 0;
+        NSLog(@"loadSample ERROR swave unallocated!");
+        return;
+    }
     NSLog(@" ..sample name %@ type %@",name,type);
     if ([type  isEqual: @"WEB"]) //we're pulling sample down from web?
         {
@@ -1762,26 +1767,9 @@ short *audioRecBuffer;
 		 //NSLog(@"Sample file too big! (over %d)  %d",MAX_SAMPLE_SIZE,(int)bCount);
 		 return;	
 	}
-	// freeup old swave is needed
-	if (swave != NULL) 
-	{
-        //NSLog(@"  Free swave " );
-		free(swave);
-		swave = NULL;
-	}
 	//OK, short data!
     sws = sNumPackets * sChans * sizeof(short);
-	swave = (unsigned short *)malloc(sws);
-    if (swave == NULL) //ERROR! Swave failed!
-    {
-        swaveSize = 0;
-        //NSLog(@"Swave alloc failed (%d bytes) ",sws);
-        return;	
-    }
-    else
-    {
-        swaveSize = sNumPackets * sChans;
-    }
+    swaveSize = sNumPackets * sChans;
     readsize = sNumPackets * sChans;
     outNumBytes = -1;
     if (!err) err = AudioFileReadPacketData(fileID, FALSE, &outNumBytes, NULL, 0, &readsize, swave);
@@ -1848,27 +1836,10 @@ short *audioRecBuffer;
         //NSLog(@"Sample file too big! (over %d)  %d",MAX_SAMPLE_SIZE,(int)bCount);
         return;
     }
-    // freeup old swave is needed
-    if (swave != NULL)
-    {
-        //NSLog(@"  Free swave " );
-        free(swave);
-        swave = NULL;
-    }
     //OK, short data!
-    //NSLog(@"  Malloc swave, size %d chans %d",sNumPackets,sChans);
     sws = sNumPackets * sChans * sizeof(short);
-    swave = (unsigned short *)malloc(sws);
-    if (swave == NULL) //ERROR! Swave failed!
-    {
-        swaveSize = 0;
-        //NSLog(@"Swave alloc failed (%d bytes) ",sws);
-        return;
-    }
-    else
-    {
-        swaveSize = sNumPackets * sChans;
-    }
+    swaveSize = sNumPackets * sChans;
+
     readsize = sNumPackets * sChans;
     outNumBytes = 0; //DHS 10/10 init to avoid warning
     //DHS 10/10 use this call! not ...PacketData

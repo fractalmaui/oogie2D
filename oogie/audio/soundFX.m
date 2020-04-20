@@ -607,7 +607,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
                            {
                                if ([fname containsString:@"wav"]) //4/20 only load GM samples!
                                {
-                                   NSLog(@" load perc patch %@",fname);
+                                   //NSLog(@" load perc patch %@",fname);
                                    [synth  loadSampleFromPath : subfolder : fname];
                                    [synth buildSampleTable:sampleNumber];
                                    soundFileLoaded[sampleNumber] = true;

@@ -24,6 +24,9 @@
 //  1/29  add getParmLimsForPipe, remove Patch as pipe input
 //  2/5   fix bug in getParamCount!!
 //  2/28  redo top/bottom midi
+//  4/18  add rotTrigger support
+//  4/19  add angle arg to playColors, pull pitchFloat
+
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -65,6 +68,7 @@ let PChanParams : [Any]      = ["PChan",     "string" , "Red", "Green", "Blue", 
 let NFixedParams : [Any]     = ["NFixed",    "double" ,  0.0 , 1.0 , 0.2 , 100.0, 20.0 ]
 let VFixedParams : [Any]     = ["VFixed",    "double" ,  0.0 , 1.0 , 0.5 , 255.0,  0.0 ]
 let PFixedParams : [Any]     = ["PFixed",    "double" ,  0.0 , 1.0 , 0.5 , 255.0,  0.0 ]
+let RotTriggerParams : [Any]     = ["RotTrigger",    "double" ,  0.0 , 256.0 , 0.0 , 1.0,  0.0 ]
 // 2/28 are these ranges wrong now???
 let BottomMidiParams : [Any] = ["BottomMidi","double" ,  0.0 , 1.0 , 0.2 , 120.0,  8.0 ]
 let TopMidiParams : [Any]    = ["TopMidi",   "double" ,  0.0 , 1.0 , 0.8 , 120.0,  8.0 ]
@@ -75,11 +79,11 @@ let VCommParams    : [Any]    = ["Comment",   "text", "mt"]
 let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch",
                              "Scale","Level",
                              "NChan","VChan","PChan",
-                             "NFixed","VFixed","PFixed",
+                             "NFixed","VFixed","PFixed","RotTrigger",
                              "BottomMidi","TopMidi","MidiChannel","Name","Comment"]
 let voiceParamNamesOKForPipe : [String]    = ["Latitude", "Longitude",
                                             "Scale","Level","NChan","VChan","PChan",
-                                            "NFixed","VFixed","PFixed",
+                                            "NFixed","VFixed","PFixed","RotTrigger",
                                             "BottomMidi","TopMidi","MidiChannel"]
 
 var voiceParamsDictionary = Dictionary<String, [Any]>()
@@ -111,8 +115,6 @@ let MAX_LOOX = 8
 
 class OogieVoice: NSObject, NSCopying {
 
-    var pitchFloat = 0.0
-
     var OOP  = OogiePatch() //this is a struct
     var OVS  = OVStruct()   //  another struct
     var allP = AllPatches.sharedInstance
@@ -137,10 +139,10 @@ class OogieVoice: NSObject, NSCopying {
     var midiNote = 0
     var lastnoteplayed = 0
     var hiLiteFrame = 0
-    var bufferPointer = 0; //Points to sample buffer
+    var bufferPointer = 0 //Points to sample buffer
     var bufferPointerSet = [Int]() //Array of sample buffers for percussion kit
-    var triggerKey    = -1; //For percussion, GMidi note
-
+    var triggerKey    = -1 //For percussion, GMidi note
+    var beat = 0   //4/18 for rotTrigger usage
     // Work vars for color conversion
     var RRR = 0
     var GGG = 0
@@ -153,7 +155,7 @@ class OogieVoice: NSObject, NSCopying {
     var KKK  = 0
     var YYY  = 0
     
-    let masterPitch = 0 //DHS 11/18
+    var masterPitch = 0 //DHS 4/19 set from app delegate
     let quantTime = 0   //DHS 11/18
     
     var inPipes  = Set<String>()    //1/22 use insert and remove to manage...
@@ -173,6 +175,8 @@ class OogieVoice: NSObject, NSCopying {
         OVS.panFixed  = 128
         //9/8 unique ID for tab
         uid = ProcessInfo.processInfo.globallyUniqueString
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        masterPitch = appDelegate.masterPitch //4/19
         setupParams()
     }
     
@@ -206,12 +210,35 @@ class OogieVoice: NSObject, NSCopying {
         voiceParamsDictionary["09"] = NFixedParams   //10/4 n/v/p fixed
         voiceParamsDictionary["10"] = VFixedParams
         voiceParamsDictionary["11"] = PFixedParams
-        voiceParamsDictionary["12"] = BottomMidiParams
-        voiceParamsDictionary["13"] = TopMidiParams
-        voiceParamsDictionary["14"] = MidiChannelParams
-        voiceParamsDictionary["15"] = VNameParams
-        voiceParamsDictionary["16"] = VCommParams   //2/4
+        voiceParamsDictionary["12"] = RotTriggerParams //4/18 add rot trigger
+        voiceParamsDictionary["13"] = BottomMidiParams
+        voiceParamsDictionary["14"] = TopMidiParams
+        voiceParamsDictionary["15"] = MidiChannelParams
+        voiceParamsDictionary["16"] = VNameParams
+        voiceParamsDictionary["17"] = VCommParams   //2/4
     } //end setupParams
+    
+    //-----------(oogieVoice)=============================================
+    // check to see if angle a has gone past a rotTrigger boundary
+    func getBeat(a:Double) -> Bool
+    {
+        if OVS.rotTrigger == 0.0 {return false}
+        //use truncatingRemainder?
+        let pi2 = 2.0 * .pi
+        var aoffset = a
+        while aoffset > pi2  {aoffset -= pi2}
+        //First get angle offset by xcoord (longitude)
+        aoffset = a - pi2 * OVS.xCoord   //angle is in radians, xCoord is 0..1
+        if aoffset < 0.0 {aoffset += pi2}    //wrap around if negative
+        let newBeat = Int(aoffset / (pi2 / OVS.rotTrigger)) //Integer beat count
+        if newBeat != beat
+        {
+            print("newbeat \(newBeat)")
+            beat = newBeat
+            return true
+        }
+        return false
+    } //end getBeat
     
     //-----------(oogieVoice)=============================================
     func getNthParams(n : Int) -> [Any]
@@ -346,7 +373,8 @@ class OogieVoice: NSObject, NSCopying {
     //-----------(oogieVoice)=============================================
     // 11/18 move in from mainvC. heavy lifter, lots of crap brought together
     //  needs masterPitch. should it be an arg or class member?
-    func playColors( rr : Int ,gg : Int ,bb : Int) -> Bool
+    //  4/19 add angle arg
+    func playColors( rr : Int ,gg : Int ,bb : Int, a : Double) -> Bool
     {
         var inkeyNote = 0
         var inkeyOldNote = 0
@@ -366,7 +394,7 @@ class OogieVoice: NSObject, NSCopying {
             bufferPointer = Int((sfx() as! soundFX).getGMBuffer(OOP.name))
         }
         
-        //NSLog("....npvchan %d %d %d",nchan,pchan,vchan)
+        //NSLog("....playColors:NOTE: %d npvchan %d %d %d",midiNote,nchan,pchan,vchan)
         let vt    = OOP.type
         if midiNote > 0 //Play something?
         {
@@ -384,8 +412,18 @@ class OogieVoice: NSObject, NSCopying {
             var mono = 1
             if OVS.poly != 0 { mono = 0 }
             
-            if (abs (nchan - lnchan) > 1) && nc < 20  //TEST LOW TOLER
-                //            if (abs (nchan - lnchan) > 2*OVS.thresh) && nc < 20  //dhs was 12
+            //4/19 add check for beats as needed:
+            var gotTriggered = false
+            if OVS.rotTrigger == 0 //Use colors as trigger?
+            {
+                gotTriggered = (abs (nchan - lnchan) > 2*OVS.thresh) && nc < 12
+            }
+            else //use beats trigger?
+            {
+                gotTriggered = getBeat(a: a) //uses angle from shape
+            }
+            //if (abs (nchan - lnchan) > 2*OVS.thresh) && nc < 12
+            if gotTriggered // 4/19
             {
                 (sfx() as! soundFX).setSynthMono(Int32(mono))
                 (sfx() as! soundFX).setSynthMonoUN(Int32(uniqueCount))
@@ -403,10 +441,10 @@ class OogieVoice: NSObject, NSCopying {
                     {
                         (sfx() as! soundFX).setSynthPan(Int32(OVS.panFixed))
                     }
-                    //portamento?
                     (sfx() as! soundFX).setSynthSampOffset(Int32(OVS.sampleOffset))
-                    inkeyNote = inkeyNote + masterPitch
-                    noteToPlay = inkeyNote
+                    //4/19 add master pitch,2 octave offset (synths are low sample rate)
+                    noteToPlay  = inkeyNote + masterPitch + 24
+                    //print(" inkeyNote \(inkeyNote) masterPitch \(masterPitch) noteToPlay \(noteToPlay)")
                 } //End synth block
                 else if vt == HARMONY_VOICE
                 {
@@ -417,8 +455,7 @@ class OogieVoice: NSObject, NSCopying {
                     (sfx() as! soundFX).setSynthDetune(1);
                     (sfx() as! soundFX).setSynthPan(Int32(pchan))
                     bptr = bufferPointer
-                    inkeyNote = inkeyNote + masterPitch
-                    noteToPlay = inkeyNote
+                    noteToPlay = inkeyNote + masterPitch
                     //ok playit
                     if quantTime == 0 //No Quant, play now
                     {
@@ -479,7 +516,7 @@ class OogieVoice: NSObject, NSCopying {
                     }
                     noteWasPlayed = true
                     lastnoteplayed = inkeyNote
-                    
+                    //print("...playnote \(noteToPlay)");
                 }
                 uniqueCount = Int((sfx() as! soundFX).getSynthUniqueCount())
                 hiLiteFrame = MAX_CBOX_FRAMES
@@ -813,30 +850,6 @@ class OogieVoice: NSObject, NSCopying {
                 }
             
         }//perc
-
-        // Handle pitch shift
-        if OVS.pitchShift != 0  //skip zero pitch shift
-        {
-            if OVS.pitchShift == 1  //use hue?
-            {
-                tschan = HHH
-            }
-            else if OVS.pitchShift == 2  //use luminance?
-            {
-                tschan = LLL
-            }
-            else if OVS.pitchShift == 3  //use red ?  is there a better use for mode 3?
-            {
-                tschan = chr
-            }
-            pf = Double(tschan)/255.0;   // scale to 0..1 range
-            pf = (pf-0.5)*100.0;        // shift to a tonal offset range...
-            //NSLog(@" ...setpf[%d]: %f",which,pf);
-        }
-        //DHS: pitchfloat is a special intermediately set variable...
-        //     in the viewcontroller, this value gets pulled and sent to synth...
-        //     awkward, huh???
-        pitchFloat = pf
         nchan = tnchan
         pchan = tpchan
         vchan = tvchan

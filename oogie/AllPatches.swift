@@ -234,9 +234,8 @@ private init()
     //  and subracta octaves for 3,2,1
     func loadGMOffsets()
     {
-        for (pname,ppp) in allBuiltinPatchDictionary
+        for (pname,_) in allBuiltinPatchDictionary
         {
-            var srate = 44100
             GMNamesDictionary = (sfx() as! soundFX).loadGeneralMidiNames() as! [String : String]
 
             var offset     = 64

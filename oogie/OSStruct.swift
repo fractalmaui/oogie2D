@@ -17,7 +17,6 @@
 //  10/25 change rotParams
 //  1/21  change to OSStruct for symmetry w/ OVStruct
 //  2/3   add comment field
-
 import SceneKit
 
 //Parameter area...

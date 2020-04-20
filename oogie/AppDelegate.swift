@@ -33,8 +33,7 @@
 //    https://stackoverflow.com/questions/55700757/how-do-i-add-a-skscene-to-a-scnnode-plane
 //  Compiler switching:
 //    https://stackoverflow.com/questions/24003291/ifdef-replacement-in-the-swift-language
-
-//return [NSString stringWithFormat:@"PRI-%@",[[NSProcessInfo processInfo] globallyUniqueString]];
+//  4/20 pull loadallSamples
 
 
 import UIKit
@@ -49,10 +48,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
     var window: UIWindow?
     
     var versionStr = ""
+    
+
+    var masterPitch = 0 //4/19 master pitch shift in notes
 
     //Audio Sound Effects...
     var sfx = soundFX.sharedInstance
-    var tc = texCache.sharedInstance //9/3 texture cache
+    var tc  = texCache.sharedInstance //9/3 texture cache
     
     let NUM_SFX_SAMPLES = 7  // "GM_001_C3"
     var sfxSoundFiles: [String] = ["dog" , "congaMid" , "clave00" , "bub1",
@@ -65,8 +67,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
         //Hook up sfx protocol; decl is above
         (sfx() as! soundFX).delegate = self
         
-        loadAllSamples()
-        
+        //4/14/20
+        (sfx() as! soundFX).loadAudioForOOGIE()
+
         #if V2D
         print("2D Version...")
         #endif
@@ -79,45 +82,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
 
         return true
     }
-    
-    //========AppDelegate==============================================
-    func loadAllSamples()
-    {
-        //Get percussion samples loaded, start at index 64?
-//12/27 not used?
-//        let purl = Bundle.main.resourceURL!.appendingPathComponent("Percussion").path
-//            do {
-//                let files = try FileManager.default.contentsOfDirectory(atPath: purl)
-//                print("contents of percussion folder...")
-//                print(files)
-//            }catch{
-//                fatalError("error: no percussion!")
-//            }
-        //now check GM area...
-//12/27 not used?
-//        let gurl = Bundle.main.resourceURL!.appendingPathComponent("GeneralMidi").path
-//        do {
-//            let files = try FileManager.default.contentsOfDirectory(atPath: gurl)
-//            print("contents of GMIDI folder...")
-//            print(files)
-//        }catch{
-//            fatalError("error: no GMidi!")
-//        }
-        //Load up sound effects...
-        //BUG in sfx: try loading samples 8 and up, they all get clobbered or vanish!
-        //  need to load GM stuff starting at 8!!!
-        for i in 0...NUM_SFX_SAMPLES-1
-        {
-            let sampleNumber = i
-            //NSLog("...setSoundFileName[%d] %@",i+8,sfxSoundFiles[i]);
-            (sfx() as! soundFX).setSoundFileName(Int32(sampleNumber),sfxSoundFiles[i])
-        }
-        // 10/15 NOTE this is a background call!
-        //  it may not finish until after it is time to create our scene!
-        //  but the scene depends on information gathered by this method! OUCH!
-        //10/16 add notification to see when samples are loaded...
-        (sfx() as! soundFX).loadAudioForOOGIE()
-    } //end loadAllSamples
     
     //========AppDelegate==============================================
     func applicationWillResignActive(_ application: UIApplication) {

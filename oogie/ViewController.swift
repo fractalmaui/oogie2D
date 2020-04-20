@@ -33,6 +33,7 @@
 //          make all menus w/ black text, get newname in addPipeToScene
 //  2/28   add 3d Keyboard, 2/29 hook up with touch so it plays current voice!
 //  3/30   add kb update after voice edit
+//  4/19   add setMasterPitchShiftForAllVoices
 import UIKit
 import SceneKit
 import Photos
@@ -80,7 +81,15 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     @IBAction func testSelect(_ sender: Any) {
         //asdf
         //writeGMPercussionPatches()
-        dumpDebugShit()
+        //dumpDebugShit()
+        //4/19 test pitch shift...
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        var s = appDelegate.masterPitch
+        s+=2
+        if (s > 36) {s = -36}  //wraparound at 3 octaves
+        appDelegate.masterPitch = s
+        setMasterPitchShiftForAllVoices()
+        print("pitch shift \(s)")        
  
     } //end testSelect
     
@@ -165,10 +174,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //For creating new shapes
     var shapeClockPos  : Int = 1   //0 = noon 1 = 3pm etc
     var isPlaying = false
-
-
-    let pitchShiftDefault = 0 //WILL BECOME An Appdelegate field
-    let masterPitch = 0 //WILL BECOME An Appdelegate field
     let quantTime = 0  //using this or what?
     let MAX_CBOX_FRAMES = 20 //where does this go?
     //=====<oogie2D mainVC>====================================================
@@ -590,12 +595,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
         else //edit param
         {
-            //12.2 add haptics feedback on knob change
-            if  oldKnobValue !=  paramKnob.value  //new param?
-            {
-                fbgenerator.prepare()
-                fbgenerator.selectionChanged()
-            }
             let fname = selectedFieldName.lowercased()
             setNewParamValue(fname: fname,newval: knobValue) //11/25
         } //end else
@@ -616,9 +615,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             {
             case "latitude":  lastFieldDouble = selectedVoice.OVS.yCoord
             case "longitude": lastFieldDouble = selectedVoice.OVS.xCoord
-            case "type":      lastFieldDouble = Double(selectedVoice.OOP.type)    //DHS 10/13 asdf
+            case "type":      lastFieldDouble = Double(selectedVoice.OOP.type)    //DHS 10/13
                               lastFieldPatch  = selectedVoice.OOP //DHS 10/15
-                                print(" glpv type \(lastFieldPatch)");
             case "patch":     lastFieldPatch  = selectedVoice.OOP
             //10/14 get patch index in array of names too!
             let pname = selectedVoice.OVS.patchName.lowercased()
@@ -635,6 +633,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             case "nfixed":    lastFieldDouble = Double(selectedVoice.OVS.noteFixed)
             case "pfixed":    lastFieldDouble = Double(selectedVoice.OVS.panFixed)
             case "vfixed":    lastFieldDouble = Double(selectedVoice.OVS.volFixed)
+            case "rottrigger":lastFieldDouble = Double(selectedVoice.OVS.rotTrigger)
             case "topmidi":   lastFieldDouble = Double(selectedVoice.OVS.topMidi)
             case "bottommidi":  lastFieldDouble = Double(selectedVoice.OVS.bottomMidi)
             case "midichannel": lastFieldDouble = Double(selectedVoice.OVS.midiChannel)
@@ -759,6 +758,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
          //Save our old values...
          lastBackToValue = backToOriginalValue
          lastFieldInt    = Int(newval)
+        
+        //4/13/20 add haptics feedback on knob change
+        if  intChoiceChanged   //val change?
+        {
+            fbgenerator.prepare()
+            fbgenerator.selectionChanged()
+        }
+
          
          var needRefresh = true
          var workString  = ""
@@ -800,6 +807,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
              case "pchan":  selectedVoice.OVS.panMode    = Int(knobValue)
              case "nfixed": selectedVoice.OVS.noteFixed  = intKnobCValue
              case "vfixed": selectedVoice.OVS.volFixed   = intKnobCValue
+             case "rottrigger": selectedVoice.OVS.rotTrigger   = dknobval
              case "ofixed": selectedVoice.OVS.panFixed   = intKnobCValue
              case "bottommidi":
                  let workInt = Int(unitToParam(inval: dknobval))
@@ -952,6 +960,17 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end setRotationSpeedForSelectedShape
     
     //=======>ARKit MainVC===================================
+    //  4/19 cluge?  is this the right place? asdf
+    func setMasterPitchShiftForAllVoices()
+    {
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        for (_,voice) in sceneVoices
+        {
+            voice.masterPitch = appDelegate.masterPitch
+        }
+    } //end setMasterPitchShiftForAllVoices
+    
+    //=======>ARKit MainVC===================================
     // Looks up a synth patch, changes current voice
     func changeVoicePatch(name:String)
     {
@@ -1026,6 +1045,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             case "nfixed":      selectedVoice.OVS.noteFixed   = Int(oldD)
             case "pfixed":      selectedVoice.OVS.panFixed    = Int(oldD)
             case "vfixed":      selectedVoice.OVS.volFixed    = Int(oldD)
+            case "rottrigger":  selectedVoice.OVS.rotTrigger  = oldD
             case "topmidi":     selectedVoice.OVS.topMidi     = Int(oldD)
             case "bottommidi":  selectedVoice.OVS.bottomMidi  = Int(oldD)
             case "midichannel": selectedVoice.OVS.midiChannel = Int(oldD)
@@ -2598,7 +2618,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         if let pov = skView.pointOfView
         {
             camXform = pov.transform
-            print(" save back txfm \(camXform)")
+            //print(" save back txfm \(camXform)")
         }
         //10/26 first we need to clean target...
         OVScene.voices.removeAll()
@@ -2738,6 +2758,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         case "pchan"      : voice.OVS.panMode     = Int(pipeVal)
                         case "nfixed"     : voice.OVS.noteFixed   = Int(pipeVal)
                         case "vfixed"     : voice.OVS.volFixed    = Int(pipeVal)
+                        case "rottrigger" : voice.OVS.rotTrigger  = Double(pipeVal)
                         case "pfixed"     : voice.OVS.panFixed    = Int(pipeVal)
                         case "topmidi"    : voice.OVS.topMidi     = Int(pipeVal)
                         case "bottommidi" : voice.OVS.bottomMidi  = Int(pipeVal)
@@ -2804,7 +2825,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         nextMarker.updateRGBData(rrr: rgbaTuple.R, ggg: rgbaTuple.G, bbb: rgbaTuple.B)
                         setupSynthOrSample(oov: workVoice) //load synth ADSR, send note out
                         // 11/18 move playcolors to voice
-                        nextMarker.gotPlayed = workVoice.playColors(rr: rgbaTuple.R, gg: rgbaTuple.G, bb: rgbaTuple.B)
+                        nextMarker.gotPlayed = workVoice.playColors(rr: rgbaTuple.R,
+                                                                    gg: rgbaTuple.G,
+                                                                    bb: rgbaTuple.B,
+                                                                    a : sphereNode.angle)
                     }
                 }
             } //end for counter...
@@ -3066,7 +3090,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             print("contents of percussion folder...")
             for file in files
             {
-                let duh = file
                 let sf = file.split(separator: ".")
                 let pname = String(sf[0])
                 
@@ -3109,7 +3132,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             (sfx() as! soundFX).setSynthSustainL(Int32(oov.OOP.sLevel));
             (sfx() as! soundFX).setSynthRelease(Int32(oov.OOP.release));
             (sfx() as! soundFX).setSynthDuty(Int32(oov.OOP.duty));
-            //print("build wave/env ADSR \(oov.OOP.attack) :  \(oov.OOP.decay) :  \(oov.OOP.sustain) :  \(oov.OOP.release)")
+            //print("SYNTH: build wave/env ADSR \(oov.OOP.attack) :  \(oov.OOP.decay) :  \(oov.OOP.sustain) :  \(oov.OOP.release)")
             (sfx() as! soundFX).buildaWaveTable(0,Int32(oov.OOP.wave));  //args whichvoice,whichsynth
             (sfx() as! soundFX).buildEnvelope(0,false); //arg whichvoice?
         }
