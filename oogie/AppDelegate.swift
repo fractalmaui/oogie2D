@@ -80,6 +80,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
             versionStr = nsObject as! String
         }
 
+ 
         return true
     }
     

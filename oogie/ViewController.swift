@@ -60,6 +60,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     var fadeTimer = Timer()
     var colorTimer = Timer()
+    var playColorsTimer = Timer()
     var pLabel = infoText()
     //10/29 version #
     var version = ""
@@ -79,18 +80,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     
     @IBAction func testSelect(_ sender: Any) {
-        //asdf
         //writeGMPercussionPatches()
-        //dumpDebugShit()
-        //4/19 test pitch shift...
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        var s = appDelegate.masterPitch
-        s+=2
-        if (s > 36) {s = -36}  //wraparound at 3 octaves
-        appDelegate.masterPitch = s
-        setMasterPitchShiftForAllVoices()
-        print("pitch shift \(s)")        
- 
+        dumpDebugShit()
     } //end testSelect
     
     var oogieOrigin = SCNNode()
@@ -176,10 +167,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var isPlaying = false
     let quantTime = 0  //using this or what?
     let MAX_CBOX_FRAMES = 20 //where does this go?
-    //=====<oogie2D mainVC>====================================================
+    
+   //=====<oogie2D mainVC>====================================================
     override func viewDidLoad() {
-        
-        
         super.viewDidLoad()
         //Cleanup any margin problems w/ 3D view not perfectly fitting
         self.view.backgroundColor = .black
@@ -301,18 +291,17 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //11/18  Update markers UI in foreground on a timer
         colorTimer = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.updateAllMarkers), userInfo:  nil, repeats: true)
         //...handle pipes and music production in background
-        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.03) {
-            self.playAllPipesMarkersBkgdHandler()
-        }
-        
-        
+        //4/20 test new RepeatingTimer...
+//        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.03) {
+//            self.playAllPipesMarkersBkgdHandler()
+//        }
         //2/3 DHS test
         _ = DataManager.getSceneVersion(fname:"default")
 
-        
+        //4/20 try foreground timer...
+        playColorsTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.playAllPipesMarkersBkgdHandler), userInfo:  nil, repeats: true)
 
         
-
     } //end viewDidLoad
 
     
@@ -1035,7 +1024,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             case "latitude":    selectedVoice.OVS.yCoord      = oldD
             case "longitude":   selectedVoice.OVS.xCoord      = oldD
             case "type":        selectedVoice.OOP.type        = Int(oldD)
-            print(" rlpv type"); //asdf
             case "patch":       selectedVoice.OOP             = lastFieldPatch
             case "scale":       selectedVoice.OVS.keySig      = Int(oldD)
             case "level":       selectedVoice.OVS.level       = oldD
@@ -2691,12 +2679,20 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         return ""
     } //end findPipe
 
-    
+    //Test, just measures timing...
+    @objc func playAllPipesMarkersBkgdHandler()
+    {
+        for (_,voice) in sceneVoices
+        {
+            voice.addToDebugHistory(n: 0)
+        }
+
+    }
  
     
     //=====<oogie2D mainVC>====================================================
     // 11/25 add pipes!! ONLY handles marker read / play, NO UI!
-    @objc func playAllPipesMarkersBkgdHandler()
+    @objc func playAllPipesMarkersBkgdHandler2()
     {
         //First thing we get all the data from pipes...
         for (n,p) in scenePipes //handle pipes, update pipe....
@@ -2855,9 +2851,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
         ///Ahhnd retrigger this in 30 ms, bkgd
         //2/1 try slower rate for cleaner results...
-        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.1) {  //was 0.03
-            self.playAllPipesMarkersBkgdHandler()
-        }
+// 4/20 test
+//        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.1) {  //was 0.03
+//            self.playAllPipesMarkersBkgdHandler()
+//        }
     } //end playAllPipesMarkersBkgdHandler
 
     //=====<oogie2D mainVC>====================================================

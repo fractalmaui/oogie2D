@@ -96,6 +96,14 @@ var sfx = soundFX.sharedInstance
 let MAX_LOOX = 8
 
 
+    //4/19/20 debug analysis vars
+    typealias debugTuple = (date: Date, note: Int)
+    var dhptr = 0    //history recorder ptr
+    let dhmax = 64   //history recorder size
+    // init fixed size array...
+    var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
+
+
     class Person: NSObject, NSCopying {
     var firstName: String
     var lastName: String
@@ -217,6 +225,58 @@ class OogieVoice: NSObject, NSCopying {
         voiceParamsDictionary["16"] = VNameParams
         voiceParamsDictionary["17"] = VCommParams   //2/4
     } //end setupParams
+    
+    //-----------(oogieVoice)=============================================
+    func addToDebugHistory(n:Int)
+    {
+        debugHistory[dhptr] = debugTuple(Date(),n)
+        dhptr+=1
+        if dhptr >= dhmax  //wraparound
+           {dhptr = 0
+            analyzeDebugHistory()
+        }
+    }
+    
+    //-----------(oogieVoice)=============================================
+    func analyzeDebugHistory()
+    {
+        //loop over history starting at dhptr and wrapping around
+        var ptr   = dhptr
+        var optr  = 0
+        var avet  = 0.0 //average / total
+        var avec  = 0   //ave counter
+        var mint  = 999.0   //min/max limits
+        var maxt  = -999.0
+        for i in 1...dhmax
+        {
+            if i > 1 //start getting data on 2nd loop
+            {
+                let t1 = debugHistory[optr]  //get last tuple
+                let t2 = debugHistory[ptr]   // and current one
+                if let start = t1?.date      //now get two timestamps
+                {
+                    if let end   = t2?.date
+                    {
+                        let timeInterval : Double = end.timeIntervalSince(start)
+                        print("loop \(i) : s \(start) e \(end) interval \(timeInterval)")
+                        if timeInterval < 1.0 //ignore large intervals
+                        {
+                            avet+=timeInterval
+                            avec+=1
+                            mint = min(mint,timeInterval)
+                            maxt = max(maxt,timeInterval)
+                        }
+                    }
+                }
+            }
+            optr = ptr    //remember last ptr
+            ptr  = ptr+1  //increment ptr / wraparound
+            if ptr >= dhmax {ptr = 0}
+        }
+        avet = avet / Double(avec)
+        print("ave \(avet) min/max \(mint),\(maxt)")
+        
+    } //end analyzeDebugHistory
     
     //-----------(oogieVoice)=============================================
     // check to see if angle a has gone past a rotTrigger boundary
@@ -520,8 +580,9 @@ class OogieVoice: NSObject, NSCopying {
                 }
                 uniqueCount = Int((sfx() as! soundFX).getSynthUniqueCount())
                 hiLiteFrame = MAX_CBOX_FRAMES
-                oldNote = nchan
+                oldNote     = nchan
                 saveColors()
+                addToDebugHistory(n:noteToPlay) //4/19 add debug tracker
             } //end abs toler check
         } //end midinote...
         return noteWasPlayed
@@ -740,8 +801,8 @@ class OogieVoice: NSObject, NSCopying {
         var tnchan = 0
         var tpchan = 0
         var tvchan = 0
-        var tschan = 0
-        var pf     = 0.0
+        let tschan = 0
+        let pf     = 0.0
 
         if (chr==0) && (chg==0) && (chb==0) //black means no sound/note/center pan
         {

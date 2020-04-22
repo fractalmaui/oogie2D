@@ -19,6 +19,7 @@
 		7208A4C922E2C7F3000AA144 /* Marker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7208A4C822E2C7F3000AA144 /* Marker.swift */; };
 		722753CA2333766300A2DC29 /* dog.wav in Resources */ = {isa = PBXBuildFile; fileRef = 722753C92333766300A2DC29 /* dog.wav */; };
 		722BB24522F3B2C900D990B2 /* synthPanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = 722BB24422F3B2C900D990B2 /* synthPanel.xib */; };
+		723091A7244EC1CD00A45527 /* RepeatingTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 723091A6244EC1CD00A45527 /* RepeatingTimer.swift */; };
 		72372EDE2373DC890065F58A /* Misc in Resources */ = {isa = PBXBuildFile; fileRef = 72372EDD2373DC890065F58A /* Misc */; };
 		7237D6B1230FC49F00A38D63 /* AllPatches.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7237D6B0230FC49F00A38D63 /* AllPatches.swift */; };
 		7237FEB22306952B000A571A /* OVStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7237FEB12306952B000A571A /* OVStruct.swift */; };
@@ -96,6 +97,7 @@
 		721FAF3C2338795000DC3091 /* GMidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GMidi.h; sourceTree = "<group>"; };
 		722753C92333766300A2DC29 /* dog.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dog.wav; sourceTree = "<group>"; };
 		722BB24422F3B2C900D990B2 /* synthPanel.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = synthPanel.xib; sourceTree = "<group>"; };
+		723091A6244EC1CD00A45527 /* RepeatingTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatingTimer.swift; sourceTree = "<group>"; };
 		72372EDD2373DC890065F58A /* Misc */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Misc; sourceTree = "<group>"; };
 		7237D6B0230FC49F00A38D63 /* AllPatches.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllPatches.swift; sourceTree = "<group>"; };
 		7237FEB12306952B000A571A /* OVStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OVStruct.swift; sourceTree = "<group>"; };
@@ -235,6 +237,7 @@
 				727F08DE23680A8E0054C517 /* PipeStruct.swift */,
 				727F08DC2367B5B80054C517 /* OogiePipe.swift */,
 				727F08E0236894310054C517 /* UI */,
+				723091A6244EC1CD00A45527 /* RepeatingTimer.swift */,
 			);
 			path = oogie;
 			sourceTree = "<group>";
@@ -440,6 +443,7 @@
 				7208A4C922E2C7F3000AA144 /* Marker.swift in Sources */,
 				725F034B22E304E700A6A5FD /* soundFX.m in Sources */,
 				726CA86F2376566300C382AE /* PatchEditVC.swift in Sources */,
+				723091A7244EC1CD00A45527 /* RepeatingTimer.swift in Sources */,
 				7255495E232365A70054A522 /* TextureVC.swift in Sources */,
 				727F08DD2367B5B80054C517 /* OogiePipe.swift in Sources */,
 				72AFB97E23070B640009A577 /* OSStruct.swift in Sources */,
