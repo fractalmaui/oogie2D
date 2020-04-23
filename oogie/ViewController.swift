@@ -375,7 +375,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         if (knobMode == KnobStates.SELECT_PARAM)  //Change to Edit parameter??
         {
             knobMode = KnobStates.EDIT_PARAM
-            getLastParamValue(fname : selectedFieldName.lowercased()) //Load up old vals for cancel operation
+            getLastParamValue(named : selectedFieldName.lowercased()) //Load up old vals for cancel operation
             knobValue = Float(lastFieldDouble)  //9/17 make sure knob is set to param value
             lastFieldSelectionNumber = Int(knobValue) //remember knob value to restore old deault
             pLabel.updateLabelOnly(lStr:"Edit:" + selectedFieldName)
@@ -593,10 +593,72 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     
     //=======>ARKit MainVC===================================
-    // Move object-related chunks to proper objects!
-    //=======>ARKit MainVC===================================
-    // Move object-related chunks to proper objects!
-    func getLastParamValue(fname : String)
+    // redo: move param funcs out to objects
+    func getLastParamValue(named name : String)
+    {
+        var paramTuple = (name:"",dParam:0.0,sParam:"") // params get returned here...
+        var getNumberedDisplayValue = false // used in pipes only for now...
+        if whatWeBeEditing == "voice" // get last param for voice/marker...
+        {
+            // param get: returns tuple with name, double and string result
+            paramTuple = selectedVoice.getParam(named:name)
+            //Special processing for some params...
+            switch (name)
+            {
+            case "type":      lastFieldPatch  = selectedVoice.OOP  //for type/patch, get patch
+            case "patch":     lastFieldPatch  = selectedVoice.OOP
+                //10/14 get patch index in array of names too!
+                let pname = selectedVoice.OVS.patchName.lowercased()
+                lastFieldDouble = 0.0
+                if let pindex = selectedFieldStringVals.index(of:pname)
+                {
+                lastFieldDouble = Double(pindex)
+                }
+            case "comment":  selectedMarker.updatePanels(nameStr: selectedVoice.OVS.name)  //10/11
+            default: break //Just do nothing here
+            } //end switch
+        } //end whatWeBeEditing
+        else if whatWeBeEditing == "shape" // get last param for shape...
+        {
+            // param get: returns tuple with name, double and string result
+            paramTuple = selectedShape.getParam(named:name)
+        }
+        else if whatWeBeEditing == "pipe" // get last param for pipe...
+        {
+            // param get: returns tuple with name, double and string result
+            paramTuple = selectedPipe.getParam(named:name)
+            print("pipe tuple \(paramTuple)")
+            switch (name) //input/output is special...
+            {
+            case "inputchannel":
+                getNumberedDisplayValue = true
+            case "outputparam":
+                getNumberedDisplayValue = true
+            default: break //Just do nothing here
+            }
+        } //end else
+        
+        // Special case: lookup up current string value, get numeric index
+        if getNumberedDisplayValue
+        {
+            lastFieldString = paramTuple.sParam
+            if let index = selectedFieldStringVals.index(of: lastFieldString) //1/26
+            { lastFieldDouble = Double(index) }
+        }
+        //OK, break out param, be it string or double...
+        else if paramTuple.sParam != "empty"     //Got a string back?
+            {lastFieldString = paramTuple.sParam
+             lastFieldDouble = 0.0
+            }
+        else  //otherwise...Got numeric (double)?
+            {lastFieldDouble = paramTuple.dParam
+             lastFieldString = ""
+            }
+
+    } //end getLastParamValue
+
+    
+    func getLastParamValueOLD(fname : String)
     {
         if whatWeBeEditing == "voice" // get last param for voice/marker...
         {
@@ -686,6 +748,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             }
         } //end else
     } //end getLastParamValue
+
     
     //=======>ARKit MainVC===================================
     // Called when a 3d shape params are changed.
@@ -1191,7 +1254,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             selectedFieldMin = 0.0 //DHS 9/22 wups need range for strings
             selectedFieldMax = Float(selectedFieldStringVals.count - 1)
         }
-        getLastParamValue(fname : selectedFieldName.lowercased()) //10/12 Load up current param
+        getLastParamValue(named : selectedFieldName.lowercased()) //10/12 Load up current param
         //print("sfsv \(selectedFieldStringVals)   sfdv \(selectedFieldDisplayVals)")
     } //end loadCurrentVoiceParams
     
@@ -1252,7 +1315,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             selectedFieldMin = 0.0 //DHS 9/22 wups need range for strings
             selectedFieldMax = Float(selectedFieldStringVals.count - 1)
         }
-        getLastParamValue(fname : selectedFieldName.lowercased()) //10/12 Load up current param
+        getLastParamValue(named : selectedFieldName.lowercased()) //10/12 Load up current param
     } //end breakOutSelectedFields
     
     //=======>ARKit MainVC===================================
@@ -2680,7 +2743,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end findPipe
 
     //Test, just measures timing...
-    @objc func playAllPipesMarkersBkgdHandler()
+    @objc func playAllPipesMarkersBkgdHandlerTEST()
     {
         for (_,voice) in sceneVoices
         {
@@ -2692,7 +2755,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     //=====<oogie2D mainVC>====================================================
     // 11/25 add pipes!! ONLY handles marker read / play, NO UI!
-    @objc func playAllPipesMarkersBkgdHandler2()
+    @objc func playAllPipesMarkersBkgdHandler()
     {
         //First thing we get all the data from pipes...
         for (n,p) in scenePipes //handle pipes, update pipe....

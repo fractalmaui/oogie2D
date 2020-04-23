@@ -26,7 +26,7 @@
 //  2/28  redo top/bottom midi
 //  4/18  add rotTrigger support
 //  4/19  add angle arg to playColors, pull pitchFloat
-
+//  4/22  add getParam func
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -258,7 +258,7 @@ class OogieVoice: NSObject, NSCopying {
                     if let end   = t2?.date
                     {
                         let timeInterval : Double = end.timeIntervalSince(start)
-                        print("loop \(i) : s \(start) e \(end) interval \(timeInterval)")
+                        //print("loop \(i) : s \(start) e \(end) interval \(timeInterval)")
                         if timeInterval < 1.0 //ignore large intervals
                         {
                             avet+=timeInterval
@@ -274,7 +274,7 @@ class OogieVoice: NSObject, NSCopying {
             if ptr >= dhmax {ptr = 0}
         }
         avet = avet / Double(avec)
-        print("ave \(avet) min/max \(mint),\(maxt)")
+        //print("ave \(avet) min/max \(mint),\(maxt)")
         
     } //end analyzeDebugHistory
     
@@ -293,7 +293,7 @@ class OogieVoice: NSObject, NSCopying {
         let newBeat = Int(aoffset / (pi2 / OVS.rotTrigger)) //Integer beat count
         if newBeat != beat
         {
-            print("newbeat \(newBeat)")
+           // print("newbeat \(newBeat)")
             beat = newBeat
             return true
         }
@@ -429,7 +429,38 @@ class OogieVoice: NSObject, NSCopying {
         OVS.patchName = OOP.name // Patch Name: Synth / Sample patch we are using for this voice
         OVS.saveItem()
     }
-
+    
+    //-----------(oogieVoice)=============================================
+    // 4/22/20 gets param named "whatever", returns tuple
+    func getParam(named name : String) -> (name:String , dParam:Double , sParam:String )
+    {
+        var dp = 0.0
+        var sp = "empty"
+        switch (name)
+        {
+        case "latitude":    dp = OVS.yCoord
+        case "longitude":   dp = OVS.xCoord
+        case "type":        dp = Double(OOP.type)
+        case "patch":       sp = OVS.patchName.lowercased()
+        case "scale":       dp = Double(OVS.keySig)
+        case "level":       dp = OVS.level
+        case "nchan":       dp = Double(OVS.noteMode)
+        case "vchan":       dp = Double(OVS.volMode)
+        case "pchan":       dp = Double(OVS.panMode)
+        case "nfixed":      dp = Double(OVS.noteFixed)
+        case "pfixed":      dp = Double(OVS.panFixed)
+        case "vfixed":      dp = Double(OVS.volFixed)
+        case "rottrigger":  dp = Double(OVS.rotTrigger)
+        case "topmidi":     dp = Double(OVS.topMidi)
+        case "bottommidi":  dp = Double(OVS.bottomMidi)
+        case "midichannel": dp = Double(OVS.midiChannel)
+        case "name":        sp = OVS.name    //2/4
+        case "comment":     sp = OVS.comment //2/4
+        default:print("Error:Bad voice param")
+        }
+        return(name , dp , sp)
+    } //end param
+    
     //-----------(oogieVoice)=============================================
     // 11/18 move in from mainvC. heavy lifter, lots of crap brought together
     //  needs masterPitch. should it be an arg or class member?

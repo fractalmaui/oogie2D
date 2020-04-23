@@ -6,6 +6,7 @@
 //  Copyright © 2019 fractallonomy. All rights reserved.
 //
 //  12/1 add verbose, why doesnt it work?
+//  4/22 add param func
 
 import Foundation
 import SceneKit
@@ -165,6 +166,35 @@ struct OogiePipe {
         if ss.count < 2 {return ("","")}
         return(String(ss[0]),String(ss[1]))
     } //end getTO
+    
+    //======(OogiePipe)=============================================
+    // 4/22/20 gets param named "whatever", returns tuple
+    func getParam(named name : String) -> (name:String , dParam:Double , sParam:String )
+    {
+        var dp = 0.0
+        var sp = "empty"
+        var pstr = ""
+        switch (name) //12/1 ouch!!! we need to set lastFieldDouble for multipoe chyoices!
+        {
+        case "inputchannel":
+            sp = PS.fromChannel
+        case "outputparam":
+            sp = PS.toParam
+        case "lorange" : // 12/9 add lo/hi range as strings
+            let lorg = PS.loRange
+            sp = String(lorg)
+        case "hirange" :
+            let horg = PS.hiRange
+            sp = String(horg)
+        case "name"    :
+            sp = PS.name
+        case "comment"    :
+            sp = PS.comment
+        default:print("Error:Bad pipe param")
+        }
+        return(name , dp , sp)
+    } //end param
+
     
     //======(OogiePipe)=============================================
     mutating func setupRange(lo:Double , hi:Double)

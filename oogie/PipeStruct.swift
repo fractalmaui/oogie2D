@@ -6,7 +6,7 @@
 //  Copyright © 2019 fractallonomy. All rights reserved.
 //
 // 2/3 add name,comment field
-
+// 4/22 add getParam func
 import Foundation
 struct PipeStruct : Codable {
     //These are all user-settable params for a pipe...
