@@ -7,6 +7,8 @@
 //
 //  12/1 add verbose, why doesnt it work?
 //  4/22 add param func
+//  4/23 add setParam
+//  4/25 add paramList
 
 import Foundation
 import SceneKit
@@ -38,7 +40,10 @@ struct OogiePipe {
     var gotData = false //11/25
     var uid     = "nouid"
     var vvvvb   = false
-    
+
+    var paramListDirty = true //4/25 add paramList for display purposes
+    var paramList  = [String]()
+
     //======(OogiePipe)=============================================
     // Gotta have all 4 args b4 init!
     init() // fromObject:String , fromChannel:String , toObject:String , toParam:String)
@@ -167,14 +172,28 @@ struct OogiePipe {
         return(String(ss[0]),String(ss[1]))
     } //end getTO
     
+    
+    //-----------(oogieVoice)=============================================
+    mutating func getParamList() -> [String]
+     {
+         if !paramListDirty {return paramList} //get old list if no new params
+         paramList.removeAll()
+         for pname in pipeParamNames
+         {
+             let pTuple = getParam(named : pname.lowercased())
+             paramList.append(pTuple.sParam)
+         }
+         paramListDirty = false
+         return paramList
+     } //end getParamList
+
     //======(OogiePipe)=============================================
     // 4/22/20 gets param named "whatever", returns tuple
     func getParam(named name : String) -> (name:String , dParam:Double , sParam:String )
     {
-        var dp = 0.0
+        let dp = 0.0
         var sp = "empty"
-        var pstr = ""
-        switch (name) //12/1 ouch!!! we need to set lastFieldDouble for multipoe chyoices!
+        switch (name)  //depending on param, set double or string
         {
         case "inputchannel":
             sp = PS.fromChannel
@@ -190,10 +209,29 @@ struct OogiePipe {
             sp = PS.name
         case "comment"    :
             sp = PS.comment
-        default:print("Error:Bad pipe param")
+        default:print("Error:Bad pipe param in get")
         }
-        return(name , dp , sp)
-    } //end param
+        return(name , dp , sp)  //pack up name,double,string
+    } //end getParam
+
+    //======(OogiePipe)=============================================
+    // 4/23 sets param by name to either double or string depending on type
+    //  NOTE: some fields need to be pre-processed before storing, that
+    //   is the responsibility of the caller!
+    mutating func setParam(named name : String , toDouble dval: Double , toString sval: String)
+    {
+        switch (name)
+        {
+        case "inputchannel" : PS.fromChannel = sval
+        case "outputparam"  :  PS.toParam    = sval
+        case "lorange"      : PS.loRange     = dval
+        case "hirange"      : PS.hiRange     = dval
+        case "name"         : PS.name        = sval
+        case "comment"      : PS.comment     = sval
+        default:print("Error:Bad pipe param in set")
+        }
+        paramListDirty = true
+    } //end setParam
 
     
     //======(OogiePipe)=============================================

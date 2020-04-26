@@ -344,8 +344,8 @@ private init()
         var name = "bubbles"
         switch (Int32(ptype))
         {
-            case PERCKIT_VOICE   : name = "kit1"
-            case PERCUSSION_VOICE: name = "M033_Metronome Click"
+            case PERCKIT_VOICE   : name = "Kit1"
+            case PERCUSSION_VOICE: name = "M031_Side Stick"
             case SAMPLE_VOICE    : name = "gm_001_c3" //10/16
             default              : name = "bubbles"
         }

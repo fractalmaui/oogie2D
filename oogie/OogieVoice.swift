@@ -158,13 +158,16 @@ class OogieVoice: NSObject, NSCopying {
     var HHH = 0
     var SSS = 0
     var LLL = 0
-    var CCC  = 0
-    var MMM  = 0
-    var KKK  = 0
-    var YYY  = 0
+    var CCC = 0
+    var MMM = 0
+    var KKK = 0
+    var YYY = 0
     
     var masterPitch = 0 //DHS 4/19 set from app delegate
     let quantTime = 0   //DHS 11/18
+    
+    var paramListDirty = true //4/25 add paramList for display purposes
+    var paramList  = [String]()
     
     var inPipes  = Set<String>()    //1/22 use insert and remove to manage...
     var outPipes = Set<String>()   //1/22 use insert and remove to manage...
@@ -185,7 +188,7 @@ class OogieVoice: NSObject, NSCopying {
         uid = ProcessInfo.processInfo.globallyUniqueString
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
         masterPitch = appDelegate.masterPitch //4/19
-        setupParams()
+        setupVoiceParams()
     }
     
     //-----------(oogieVoice)=============================================
@@ -203,7 +206,7 @@ class OogieVoice: NSObject, NSCopying {
     }
     
     //-----------(oogieVoice)=============================================
-    func setupParams()
+    func setupVoiceParams()
     {
         // Load up params dictionary with string / array combos
         voiceParamsDictionary["00"] = LatParams
@@ -224,7 +227,7 @@ class OogieVoice: NSObject, NSCopying {
         voiceParamsDictionary["15"] = MidiChannelParams
         voiceParamsDictionary["16"] = VNameParams
         voiceParamsDictionary["17"] = VCommParams   //2/4
-    } //end setupParams
+    } //end setupVoiceParams
     
     //-----------(oogieVoice)=============================================
     func addToDebugHistory(n:Int)
@@ -328,6 +331,7 @@ class OogieVoice: NSObject, NSCopying {
         }
     } //end getChanValueByName
     
+    
     //-----------(oogieVoice)=============================================
     // 1/29 new
     func getParmLimsForPipe(name:String) -> (lolim:Double , hilim:Double)
@@ -367,6 +371,21 @@ class OogieVoice: NSObject, NSCopying {
         return(lol,hil)
     } //end getParmLimsForPipe
     
+    //-----------(oogieVoice)=============================================
+    func getParamList() -> [String]
+    {
+        if !paramListDirty {return paramList} //get old list if no new params
+        paramList.removeAll()
+        for pname in voiceParamNames
+        {
+            let pTuple = getParam(named : pname.lowercased())
+            paramList.append(pTuple.sParam)  
+        }
+        paramListDirty = false
+        return paramList
+    } //end getParamList
+
+
     //-----------(oogieVoice)=============================================
     // using this voices internal type, get array of appropriate patchnames
     func getPatchNameArray() -> [Any]
@@ -429,19 +448,55 @@ class OogieVoice: NSObject, NSCopying {
         OVS.patchName = OOP.name // Patch Name: Synth / Sample patch we are using for this voice
         OVS.saveItem()
     }
+
+    //-----------(oogieVoice)=============================================
+    // 4/23 sets param by name to either double or string depending on type
+    //  NOTE: some fields need to be pre-processed before storing, that
+    //   is the responsibility of the caller!
+    func setParam(named name : String , toDouble dval: Double , toString sval: String)
+    {
+        let ival = Int(dval) //some params are stored as integers!
+        switch (name)
+        {
+        case "latitude"     : OVS.yCoord = dval
+        case "longitude"    : OVS.xCoord = dval
+        case "patch"        : OVS.patchName = sval
+        case "type"         : break
+        case "key"          : OVS.pitchShift = ival % 12
+        case "scale"        : OVS.keySig = ival
+        case "level"        :  OVS.level      = dval
+        case "nchan"        :  OVS.noteMode   = ival
+        case "vchan"        :  OVS.volMode    = ival
+        case "pchan"        :  OVS.panMode    = ival
+        case "nfixed"       : OVS.noteFixed  = ival
+        case "vfixed"       : OVS.volFixed   = ival
+        case "rottrigger"   : OVS.rotTrigger   = dval
+        case "ofixed"       : OVS.panFixed   = ival
+        case "bottommidi"   : OVS.bottomMidi = ival
+        case "topmidi"      : OVS.topMidi = ival
+        case "midichannel"  : OVS.midiChannel = ival
+        case "name"         : OVS.name = sval
+        case "comment"      : OVS.comment = sval
+        default: print("Error:Bad voice param in set")
+        } //end switch
+        paramListDirty = true
+    } //end setParam
     
     //-----------(oogieVoice)=============================================
-    // 4/22/20 gets param named "whatever", returns tuple
+    // 4/22/20 gets param by name, returns tuple
     func getParam(named name : String) -> (name:String , dParam:Double , sParam:String )
     {
         var dp = 0.0
-        var sp = "empty"
-        switch (name)
+        var sp = ""
+        var isString = false
+        switch (name)  //depending on param, set double or string
         {
         case "latitude":    dp = OVS.yCoord
         case "longitude":   dp = OVS.xCoord
         case "type":        dp = Double(OOP.type)
         case "patch":       sp = OVS.patchName.lowercased()
+                            isString = true
+        //OUCH! MISSING KEY!!!WTF?
         case "scale":       dp = Double(OVS.keySig)
         case "level":       dp = OVS.level
         case "nchan":       dp = Double(OVS.noteMode)
@@ -455,11 +510,14 @@ class OogieVoice: NSObject, NSCopying {
         case "bottommidi":  dp = Double(OVS.bottomMidi)
         case "midichannel": dp = Double(OVS.midiChannel)
         case "name":        sp = OVS.name    //2/4
+                            isString = true
         case "comment":     sp = OVS.comment //2/4
-        default:print("Error:Bad voice param")
+                            isString = true
+        default:print("Error:Bad voice param in get")
         }
-        return(name , dp , sp)
-    } //end param
+        if !isString  {sp = String(format: "%4.2f", dp)} //4/25 pack double as string
+        return(name , dp , sp) //pack up name,double,string
+    } //end getParam
     
     //-----------(oogieVoice)=============================================
     // 11/18 move in from mainvC. heavy lifter, lots of crap brought together
@@ -632,6 +690,7 @@ class OogieVoice: NSObject, NSCopying {
     // called when user switches type, need to reset synth/samples/whatever...
     func loadDefaultsForNewType(nt : String)
     {
+        print("ldfnt nt \(nt)")
         if  nt == "synth"
         {
             OOP = allP.getDefaultPatchByType(ptype: Int(SYNTH_VOICE))

@@ -22,25 +22,6 @@ import SceneKit
 //Parameter area...
 let maxMeters = 10.0
 
-let TexParams   : [Any] = ["Texture", "texture", "mt"]
-let RotParams   : [Any] = ["Rotation" , "double", 0.0  , 100.0   , 10.0, 1.0, 0.0 ]
-let RotTypeParams  : [Any] = ["RotationType", "string" , "Manual", "BPMX1", "BPMX2", "BPMX3", "BPMX4", "BPMX5", "BPMX6", "BPMX7", "BPMX8" ]
-let XParams     : [Any] = ["XPos" , "double", -maxMeters , maxMeters , 0.0, 1.0, 0.0 ]
-let YParams     : [Any] = ["YPos" , "double", -maxMeters , maxMeters , 0.0, 1.0, 0.0 ]
-let ZParams     : [Any] = ["ZPos" , "double", -maxMeters , maxMeters , 0.0, 1.0, 0.0 ]
-let UParams     : [Any] = ["TexXoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
-let VParams     : [Any] = ["TexYoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
-let USParams    : [Any] = ["TexXscale" , "double", 0.1 , 10.0 , 1.0, 1.0, 0.0 ]
-let VSParams    : [Any] = ["TexYscale" , "double", 0.1 , 10.0 , 1.0, 1.0, 0.0 ]
-let SNameParams : [Any] = ["Name",      "text", "mt"]
-let SCommParams : [Any] = ["Comment",   "text", "mt"]
-
-let shapeParamNames : [String] = ["Texture", "Rotation","RotationType",
-"XPos","YPos","ZPos","TexXoffset","TexYoffset","TexXscale","TexYscale","Name","Comment"]
-let shapeParamNamesOKForPipe : [String] = ["Rotation","RotationType","TexXoffset",
-                                           "TexYoffset","TexXscale","TexYscale"]
-
-var shapeParamsDictionary = Dictionary<String, [Any]>()
 
 import Foundation
 struct OSStruct : Codable {
@@ -88,41 +69,9 @@ struct OSStruct : Codable {
         //9/8 unique ID for tab
         uid = ProcessInfo.processInfo.globallyUniqueString
         getNewShape()
-        setupParams()
     }
     
-    //-----------(oogieVoice)=============================================
-    mutating func setupParams()
-    {
-        // Load up params dictionary with string / array combos
-        shapeParamsDictionary["00"] = TexParams
-        shapeParamsDictionary["01"] = RotParams
-        shapeParamsDictionary["02"] = RotTypeParams
-        shapeParamsDictionary["03"] = XParams
-        shapeParamsDictionary["04"] = YParams
-        shapeParamsDictionary["05"] = ZParams
-        shapeParamsDictionary["06"] = UParams
-        shapeParamsDictionary["07"] = VParams
-        shapeParamsDictionary["08"] = USParams
-        shapeParamsDictionary["09"] = VSParams
-        shapeParamsDictionary["10"] = SNameParams //2/4
-        shapeParamsDictionary["11"] = SCommParams //2/4
-    } //end setupParams
-        
-    //-----------(oogieVoice)=============================================
-    func getNthParams(n : Int) -> [Any]
-    {
-        if n < 0 || n >= shapeParamsDictionary.count {return []}
-        let key =  String(format: "%02d", n)
-        return shapeParamsDictionary[key]!
-    }
-    
-    //======(OSStruct)=============================================
-    func getParamCount() -> Int
-    {
-        return shapeParamNames.count
-    }
-    
+   
     //======(OSStruct)=============================================
     mutating func getNewShape()
     {

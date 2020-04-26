@@ -9,6 +9,7 @@
 // 1/14  fix bug in normals in create3DPipe
 // 1/22  redo create3DPipe, simplify args
 // 2/3   add shapeYoff to ceiling calc
+// 4/23  increase pipe radius : should this be in DB settings?
 import Foundation
 import UIKit
 import SceneKit
@@ -91,7 +92,7 @@ class PipeShape: SCNNode {
     #if VERSION_2D
     let shapeRad    : Double = 1.0
     let markerHit = 0.2
-    let pipeRad : CGFloat = 0.025
+    let pipeRad : CGFloat = 0.04 // 4/23/20 make bigger
     #elseif VERSION_AR
     let shapeRad    : Double = 0.25
     let markerHit = 0.05  //1/13
