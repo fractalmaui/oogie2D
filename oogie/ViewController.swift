@@ -84,14 +84,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     @IBAction func testSelect(_ sender: Any) {
         //writeGMPercussionPatches()
-        //dumpDebugShit()
+        dumpDebugShit()
         
-        var a = selectedVoice.getParamList()
-        print("voiceparamvals \(a)")
-        a = selectedShape.getParamList()
-        print("shapeparamvals \(a)")
-        a = selectedPipe.getParamList()
-        print("pipeparamvals  \(a)")
+//        var a = selectedVoice.getParamList()
+//        print("voiceparamvals \(a)")
+//        a = selectedShape.getParamList()
+//        print("shapeparamvals \(a)")
+//        a = selectedPipe.getParamList()
+//        print("pipeparamvals  \(a)")
 
         
     } //end testSelect
