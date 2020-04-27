@@ -27,6 +27,8 @@
 //  4/18  add rotTrigger support
 //  4/19  add angle arg to playColors, pull pitchFloat
 //  4/22  add getParam func
+//  4/26  add int param type for midi params
+//  4/27  redo top/bot midi and channel
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -65,16 +67,16 @@ let VChanParams : [Any]      = ["VChan",     "string" , "Red", "Green", "Blue", 
                                 "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow", "Fixed"]
 let PChanParams : [Any]      = ["PChan",     "string" , "Red", "Green", "Blue", "Hue",
                                 "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow", "Fixed"]
-let NFixedParams : [Any]     = ["NFixed",    "double" ,  0.0 , 1.0 , 0.2 , 100.0, 20.0 ]
-let VFixedParams : [Any]     = ["VFixed",    "double" ,  0.0 , 1.0 , 0.5 , 255.0,  0.0 ]
-let PFixedParams : [Any]     = ["PFixed",    "double" ,  0.0 , 1.0 , 0.5 , 255.0,  0.0 ]
-let RotTriggerParams : [Any]     = ["RotTrigger",    "double" ,  0.0 , 256.0 , 0.0 , 1.0,  0.0 ]
+let NFixedParams : [Any]     = ["NFixed",    "double" ,  16.0, 112.0 , 64.0  , 1.0,  0.0 ] //4/27 redo next 3
+let VFixedParams : [Any]     = ["VFixed",    "double" ,  0.0 , 255.0 , 128.0 , 1.0,  0.0 ]
+let PFixedParams : [Any]     = ["PFixed",    "double" ,  0.0 , 255.0 , 128.0 , 1.0,  0.0 ]
+let RotTriggerParams : [Any] = ["RotTrigger","double" ,  0.0 , 256.0 , 0.0 , 1.0,  0.0 ]
 // 2/28 are these ranges wrong now???
-let BottomMidiParams : [Any] = ["BottomMidi","double" ,  0.0 , 1.0 , 0.2 , 120.0,  8.0 ]
-let TopMidiParams : [Any]    = ["TopMidi",   "double" ,  0.0 , 1.0 , 0.8 , 120.0,  8.0 ]
-let MidiChannelParams : [Any] = ["MidiChannel", "double" ,  0.0 , 1.0 , 0.0 , 16.0,  1.0 ]
-let VNameParams    : [Any]    = ["Name",      "text", "mt"]
-let VCommParams    : [Any]    = ["Comment",   "text", "mt"]
+let BottomMidiParams : [Any] = ["BottomMidi","int" ,  16.0 , 112.0 , 52.0 , 1.0,  0.0 ] //4/27 redo next 3
+let TopMidiParams : [Any]    = ["TopMidi",   "int" ,  16.0 , 112.0 , 72.0 , 1.0,  0.0 ]
+let MidiChannelParams : [Any] = ["MidiChannel","int" ,  1.0 ,16.0 , 1.0 , 1.0,  0.0 ]
+let VNameParams    : [Any]   = ["Name",      "text", "mt"]
+let VCommParams    : [Any]   = ["Comment",   "text", "mt"]
 // All param names, must match first item above for each param!
 let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch",
                              "Scale","Level",
@@ -372,6 +374,18 @@ class OogieVoice: NSObject, NSCopying {
     } //end getParmLimsForPipe
     
     //-----------(oogieVoice)=============================================
+    func dumpParams() -> String
+    {
+        var s = ""
+        for pname in voiceParamNames
+        {
+            let pTuple = getParam(named : pname.lowercased())
+            s = s + String(format: "%@:%@\n",pname,pTuple.sParam)
+        }
+        return s
+    }
+    
+    //-----------(oogieVoice)=============================================
     func getParamList() -> [String]
     {
         if !paramListDirty {return paramList} //get old list if no new params
@@ -456,6 +470,8 @@ class OogieVoice: NSObject, NSCopying {
     func setParam(named name : String , toDouble dval: Double , toString sval: String)
     {
         let ival = Int(dval) //some params are stored as integers!
+        print("setParam \(dval)")
+
         switch (name)
         {
         case "latitude"     : OVS.yCoord = dval
@@ -464,12 +480,13 @@ class OogieVoice: NSObject, NSCopying {
         case "type"         : break
         case "key"          : OVS.pitchShift = ival % 12
         case "scale"        : OVS.keySig = ival
-        case "level"        :  OVS.level      = dval
-        case "nchan"        :  OVS.noteMode   = ival
-        case "vchan"        :  OVS.volMode    = ival
-        case "pchan"        :  OVS.panMode    = ival
+        case "level"        : OVS.level      = dval
+        case "nchan"        : OVS.noteMode   = ival
+        case "vchan"        : OVS.volMode    = ival
+        case "pchan"        : OVS.panMode    = ival
         case "nfixed"       : OVS.noteFixed  = ival
         case "vfixed"       : OVS.volFixed   = ival
+        case "pfixed"       : OVS.panFixed   = ival
         case "rottrigger"   : OVS.rotTrigger   = dval
         case "ofixed"       : OVS.panFixed   = ival
         case "bottommidi"   : OVS.bottomMidi = ival
@@ -503,8 +520,8 @@ class OogieVoice: NSObject, NSCopying {
         case "vchan":       dp = Double(OVS.volMode)
         case "pchan":       dp = Double(OVS.panMode)
         case "nfixed":      dp = Double(OVS.noteFixed)
-        case "pfixed":      dp = Double(OVS.panFixed)
         case "vfixed":      dp = Double(OVS.volFixed)
+        case "pfixed":      dp = Double(OVS.panFixed)
         case "rottrigger":  dp = Double(OVS.rotTrigger)
         case "topmidi":     dp = Double(OVS.topMidi)
         case "bottommidi":  dp = Double(OVS.bottomMidi)

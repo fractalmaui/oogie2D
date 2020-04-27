@@ -9,6 +9,7 @@
 //  4/22 add param func
 //  4/23 add setParam
 //  4/25 add paramList
+//  4/27 add dumpParams
 
 import Foundation
 import SceneKit
@@ -173,7 +174,20 @@ struct OogiePipe {
     } //end getTO
     
     
-    //-----------(oogieVoice)=============================================
+    //======(OogiePipe)=============================================
+    func dumpParams() -> String
+    {
+        var s = ""
+        for pname in pipeParamNames
+        {
+            let pTuple = getParam(named : pname.lowercased())
+            s = s + String(format: "%@:%@\n",pname,pTuple.sParam)
+        }
+        return s
+    }
+    
+
+    //======(OogiePipe)=============================================
     mutating func getParamList() -> [String]
      {
          if !paramListDirty {return paramList} //get old list if no new params
@@ -191,7 +205,7 @@ struct OogiePipe {
     // 4/22/20 gets param named "whatever", returns tuple
     func getParam(named name : String) -> (name:String , dParam:Double , sParam:String )
     {
-        let dp = 0.0
+        var dp = 0.0
         var sp = "empty"
         switch (name)  //depending on param, set double or string
         {
@@ -200,9 +214,11 @@ struct OogiePipe {
         case "outputparam":
             sp = PS.toParam
         case "lorange" : // 12/9 add lo/hi range as strings
+            dp = PS.loRange
             let lorg = PS.loRange
             sp = String(lorg)
         case "hirange" :
+            dp = PS.hiRange
             let horg = PS.hiRange
             sp = String(horg)
         case "name"    :

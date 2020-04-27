@@ -8,6 +8,7 @@
 //  4/22 add getParam func
 //  4/23 add setParam
 //  4/25 moved params in from OSStruct (was wrong!),add paramList
+//  4/27 add dumpParams
 import Foundation
 
 let TexParams   : [Any] = ["Texture", "texture", "mt"]
@@ -109,8 +110,20 @@ class OogieShape: NSObject {
         return(name , dp , sp)  //pack up name,double,string
     } //end getParam
 
+    //-----------(oogieShape)=============================================
+    func dumpParams() -> String
+    {
+        var s = ""
+        for pname in shapeParamNames
+        {
+            let pTuple = getParam(named : pname.lowercased())
+            s = s + String(format: "%@:%@\n",pname,pTuple.sParam)
+        }
+        return s
+    }
     
-    //-----------(oogieVoice)=============================================
+
+    //-----------(oogieShape)=============================================
     func getParamList() -> [String]
     {
         if !paramListDirty {return paramList} //get old list if no new params
@@ -132,9 +145,9 @@ class OogieShape: NSObject {
     {
         switch (name)
         {
-        case "texture"     : OOS.texture  = sval
+        case "texture"     : break  //4/27 no action here
         case "rotation"    : OOS.rotSpeed = dval
-        case "rotationtype": OOS.rotation = dval
+        case "rotationtype": OOS.rotation = floor(dval + 0.5) //4/27 fractions make no sense
         case "xpos"        : OOS.xPos     = dval
         case "ypos"        : OOS.yPos     = dval
         case "zpos"        : OOS.zPos     = dval
@@ -144,7 +157,7 @@ class OogieShape: NSObject {
         case "texyscale"   : OOS.vScale   = dval
         case "name"        : OOS.name     = sval
         case "comment"     : OOS.comment  = sval
-        default:print("Error:Bad shape param in get")
+        default:print("Error:Bad shape param in set")
         }
         paramListDirty = true
     } //end setParam

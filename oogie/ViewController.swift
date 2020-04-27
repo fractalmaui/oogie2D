@@ -37,6 +37,7 @@
 //  4/22   redo getLastParamValue, moved struct sets out to objects
 //  4/23   redo setNewParamValue,  same as above
 //  4/24   add string arg to setNewParamValue
+//  4/26   pull restoreLastParamValue, use setNewParamValue instead,add int params
 import UIKit
 import SceneKit
 import Photos
@@ -375,7 +376,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // 9/13 reset parameter to default
     @IBAction func resetSelect(_ sender: Any) {
         //print("reset to default \(selectedFieldDefault)")
-        restoreLastParamValue(oldD: Double(selectedFieldDefault),oldS: selectedFieldDefaultString) //DHS 1/26
+        //4/26 Dig up defaults value and save
+        setNewParamValue(named: selectedFieldName.lowercased(),
+                      toDouble: Double(selectedFieldDefault),
+                      toString: selectedFieldDefaultString )
         knobValue = Float(selectedFieldDefault)  //9/17 make sure knob is set to param value
         selectedMarker.updateLatLon(llat: selectedVoice.OVS.yCoord, llon: selectedVoice.OVS.xCoord)
         resetKnobToNewValues(kval:knobValue , kmin : selectedFieldMin , kmax : selectedFieldMax)
@@ -398,9 +402,18 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             textField.isHidden = selectedFieldType != "text"
             pLabel.isHidden    = selectedFieldType == "text" //12/15
 
-            if selectedFieldType == "double" //9/28 set up display for this param
+            //Set up display for the param
+            if selectedFieldType == "double"
             {
                 pLabel.setupForParam( pname : selectedFieldName , ptype : TFLOAT_TTYPE , //9/28 new
+                    pmin : selectedFieldDMult * Double(selectedFieldMin) , pmax : selectedFieldDMult * Double( selectedFieldMax) ,
+                    choiceStrings : [])
+                paramKnob.wraparound = false //10/5 wraparound
+                pLabel.showWarnings  = true  // 10/5 warnings OK
+            }
+            else if selectedFieldType == "int" //4/26 int ptype
+            {
+                pLabel.setupForParam( pname : selectedFieldName , ptype : TINT_TTYPE ,
                     pmin : selectedFieldDMult * Double(selectedFieldMin) , pmax : selectedFieldDMult * Double( selectedFieldMax) ,
                     choiceStrings : [])
                 paramKnob.wraparound = false //10/5 wraparound
@@ -548,9 +561,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             editButtonView.isHidden = false
             editButton.setTitle("OK", for: .normal)
             menuButton.setTitle("X", for: .normal)
-            if selectedFieldType == "double"  //get range for wheel...
-            {//9/23 test
-            }
             if selectedFieldType == "string"  //string array?
             {
                 let maxxx = Float(selectedFieldStringVals.count - 1)
@@ -575,7 +585,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
 
     //=======>ARKit MainVC===================================
-    //Param knob change...
+    //Param knob change... to new knob value
     @IBAction func paramChanged(_ sender: Any) {
         //print("paramchanged...");
         knobValue = paramKnob.value //Assume value is pre-clamped to range
@@ -622,6 +632,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             // param get: returns tuple with name, double and string result
             paramTuple = selectedVoice.getParam(named:name)
+            print("get ptup \(paramTuple)")
             //Special processing for some params...
             switch (name)
             {
@@ -660,17 +671,22 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         // Special case: lookup up current string value, get numeric index
         if getNumberedDisplayValue
         {
-            lastFieldString = paramTuple.sParam
-            if let index = selectedFieldStringVals.index(of: lastFieldString) //1/26
+            lastFieldString = paramTuple.sParam.lowercased() //4/27
+            if let index = selectedFieldStringVals.index(of: lastFieldString)
             { lastFieldDouble = Double(index) }
         }
         //OK, break out param, be it string or double... asdf
-        else if selectedFieldType == "string"     //Got a string back?
-            {lastFieldString = paramTuple.sParam }
+        else if selectedFieldType == "string"  ||  selectedFieldType == "text"   //4/26 Got a string back?
+        {
+            lastFieldDouble = paramTuple.dParam
+            lastFieldString = paramTuple.sParam
+        }
         else  //otherwise...Got numeric (double)?
-            {lastFieldDouble = paramTuple.dParam
-             lastFieldString = ""
-            }
+        {
+            lastFieldDouble = paramTuple.dParam
+            lastFieldString = ""
+        }
+        //print("got lfs [\(lastFieldString)]")
     } //end getLastParamValue
 
     
@@ -728,7 +744,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
          {
              if backToOriginalValue {needToRefreshOriginalValue = true}
          }
-        
+        print("snpv \(named) \(toDouble) \(toString)")
          //Save our old values...
          lastBackToValue     = backToOriginalValue
          var needRefresh     = true
@@ -751,6 +767,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             case "topmidi":
                 workDouble = Double(max(selectedVoice.OVS.bottomMidi+1,
                                              Int(unitToParam(inval: workDouble))))
+            case "midichannel": //fields that need pre-conversion before storage
+                workDouble = unitToParam(inval: workDouble) //4/26 convert range!
+
             default: break
             } //end preprocessing switch
 
@@ -797,7 +816,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                   newSpeed   = true
              case "rotationtype": setRotationTypeForSelectedShape()
                                   newSpeed   = true
-             default: needRefresh = false
+             default: break   //4/27
              }
              if needUpdate { update3DShapeByName (n:selectedShapeName) }
              if newSpeed   { setRotationSpeedForSelectedShape(s : selectedShape.OOS.rotSpeed)}
@@ -815,6 +834,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                  if selectedPipe.destination == "shape" {menuNames = shapeParamNamesOKForPipe}
                  iknob         = min(iknob,menuNames.count-1) //Double check range to avoid crash
                  workString = menuNames[iknob]
+             case "lorange","hirange": //4/27 ranges come in as text, convert!
+                workDouble = Double(workString) as! Double 
              default: break
              }
             let oldToParam = selectedPipe.PS.toParam
@@ -871,17 +892,15 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
          if needRefresh
          {
              //Update top label: is this the right place for this?
-             var pstring = named + " = "
-             if selectedFieldType == "double"
+            // 4/26 pull pstring, unused
+             if selectedFieldType == "double" || selectedFieldType == "int" //4/26 int type
              {
-                 let displayValue = selectedFieldDMult * workDouble +
+                 let displayValue = selectedFieldDMult * toDouble + //4/26 todouble was workdouble
                      selectedFieldDOffset //9/17 display value differs from knob value
-                 pstring = pstring + String(format: "%4.2f", displayValue)
                  pLabel.updateit(value: displayValue) //DHS 9/28 new display
              }
              else
              {
-                 pstring = pstring + workString
                  pLabel.updateit(value: workDouble) //DHS 9/28 new display
              }
          } //end needRefresh
@@ -980,96 +999,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     
     //=======>ARKit MainVC===================================
-    // Move each object-based chunk to appropriate object!
-    func restoreLastParamValue(oldD : Double , oldS : String)
-    {
-        let fname = selectedFieldName.lowercased()
-        if whatWeBeEditing == "voice" //10/18
-        {
-            switch (fname)  //which param?
-            {
-            case "latitude":    selectedVoice.OVS.yCoord      = oldD
-            case "longitude":   selectedVoice.OVS.xCoord      = oldD
-            case "type":        selectedVoice.OOP.type        = Int(oldD)
-            case "patch":       selectedVoice.OOP             = lastFieldPatch
-            case "scale":       selectedVoice.OVS.keySig      = Int(oldD)
-            case "level":       selectedVoice.OVS.level       = oldD
-            case "nchan":       selectedVoice.OVS.noteMode    = Int(oldD)
-            case "vchan":       selectedVoice.OVS.volMode     = Int(oldD)
-            case "pchan":       selectedVoice.OVS.panMode     = Int(oldD)
-            case "nfixed":      selectedVoice.OVS.noteFixed   = Int(oldD)
-            case "pfixed":      selectedVoice.OVS.panFixed    = Int(oldD)
-            case "vfixed":      selectedVoice.OVS.volFixed    = Int(oldD)
-            case "rottrigger":  selectedVoice.OVS.rotTrigger  = oldD
-            case "topmidi":     selectedVoice.OVS.topMidi     = Int(oldD)
-            case "bottommidi":  selectedVoice.OVS.bottomMidi  = Int(oldD)
-            case "midichannel": selectedVoice.OVS.midiChannel = Int(oldD)
-            case "name":        selectedVoice.OVS.name        = oldS  //2/4
-            case "comment":     selectedVoice.OVS.comment     = oldS  //2/4
-            default: print("restoreLastParam: bad voice ptype")
-            }
-        } //end voice
-        else if whatWeBeEditing == "shape"
-        {
-            var needUpdate = true
-            var newSpeed   = false
-            switch (fname)
-            {
-            case "texture" : selectedShape.OOS.texture  = oldS
-                needUpdate = false
-            case "rotation": selectedShape.OOS.rotSpeed =  oldD
-                needUpdate = false
-                newSpeed   = true
-            case "rotationtype": selectedShape.OOS.rotation = oldD
-                needUpdate = false
-                newSpeed   = true
-            case "xpos":       selectedShape.OOS.xPos = oldD
-            case "ypos":       selectedShape.OOS.yPos = oldD
-            case "zpos":       selectedShape.OOS.zPos = oldD
-            case "texxoffset": selectedShape.OOS.uCoord = oldD
-            case "texyoffset": selectedShape.OOS.vCoord = oldD
-            case "texxscale":  selectedShape.OOS.uScale = oldD
-            case "texyscale":  selectedShape.OOS.vScale = oldD
-            case "name":       selectedShape.OOS.name   = oldS  //2/4
-            case "comment":    selectedShape.OOS.comment = oldS //2/4
-            default: print("restoreLastParam: bad shape ptype")
-            }
-            if needUpdate { update3DShapeByName (n:selectedShapeName) }
-            if newSpeed   { setRotationSpeedForSelectedShape(s : selectedShape.OOS.rotSpeed)}
-        } //end shape
-        else if whatWeBeEditing == "pipe" //1/26 forgot this!
-        {
-            switch (fname)
-            {
-            case "inputchannel": selectedPipe.PS.fromChannel  = oldS
-            case "outputparam" :  selectedPipe.PS.toParam     = oldS
-            case "lorange"     :     selectedPipe.PS.loRange  = oldD
-            case "hirange"     :     selectedPipe.PS.hiRange  = oldD
-            case "name"        :     selectedPipe.PS.name     = oldS
-            case "comment"     :     selectedPipe.PS.name     = oldS
-            default: print("restoreLastParam: bad pipe ptype")
-            }
-            //Note this is a duplicate of code in restoreLastParamValue
-            let shapeOrVoiceName = selectedPipe.PS.toObject
-            if selectedPipe.destination == "voice"   //1/14
-            {
-                resetVoiceByName(name: shapeOrVoiceName)
-            }
-            else if selectedPipe.destination == "shape"   //1/14
-            {
-                resetShapeByName(name: shapeOrVoiceName)  //Reset shape object from scene
-            }
-            //Need to get fresh pipe range! (what about edits, they get lost!)
-            let loHiRange = getPipeRangeForParamName(pname:selectedPipe.PS.toParam.lowercased(),
-                                                      dest:selectedPipe.destination)
-            selectedPipe.setupRange(lo: loHiRange.lo, hi: loHiRange.hi) //1/14 REDO
-            //End duplicate area
-
-        } //end pipe
-
-    } //end restoreLastParamValue
-    
-    //=======>ARKit MainVC===================================
     //SHIT. no clue. do I read in gm patches, percussion patches, what?
     //11/16 look at all voices. if patch name matches, reload the OOP part
     //   of that voice and save it back into the sceneVoices dict...
@@ -1110,7 +1039,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         selectedFieldName = vArray[0] as! String
         selectedFieldType = vArray[1] as! String
         let sfname = selectedFieldName.lowercased()  //type, patch, etc...
-        if selectedFieldType == "double" && vArray.count > 6 //Get double range / default
+        if (selectedFieldType == "double" || selectedFieldType == "int") && //4/26 int ptype
+            vArray.count > 6 //Get double range / default
         {
             selectedFieldMin     = Float(vArray[2] as! Double)
             selectedFieldMax     = Float(vArray[3] as! Double)
@@ -1198,7 +1128,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         if (vArray.count < 3) {return} //avoid krash
         selectedFieldName = vArray[0] as! String
         selectedFieldType = vArray[1] as! String
-        if selectedFieldType == "double" && vArray.count > 6 //Get double range / default
+        if (selectedFieldType == "double" || selectedFieldType == "int") && //4/26 int ptype
+            vArray.count > 6 //Get double range / default
         {
             selectedFieldMin     = Float(vArray[2] as! Double)
             selectedFieldMax     = Float(vArray[3] as! Double)
@@ -1248,9 +1179,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end updatePipeByVoice
     
     //=======>ARKit MainVC===================================
-    // updates param display w/ current param and value
+    // called when knob chooses new param
     func updateSelectParamName()
     {
+        print("updateSelectParamName \(lastFieldDouble)")
         let dogStrings = ["nfixed","vfixed","pfixed","topmidi","bottommidi","midichannel"]
         //12/2 add haptics feedback on knob change
         if  selectedFieldName != oselectedFieldName  //new param?
@@ -1271,15 +1203,24 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             }
             pstr = String(format: "%4.2f", dval) //10/24 wups was int!
         }
+        else if selectedFieldType == "int" //4/26 int ptype
+        {
+            var dval = unitToParam(inval: lastFieldDouble)
+            //some fields don't need converting
+            if  dogStrings.contains( selectedFieldName.lowercased())
+            {
+                dval = lastFieldDouble;
+            }
+            pstr = String(format: "%d", Int(dval)) //10/24 wups was int!
+        }
         else if selectedFieldType == "string"
         {
             let index = Int(lastFieldDouble)
-            //10/19 prevent crash on bad display values
-            if index < selectedFieldDisplayVals.count
+            if index >= 0 && index < selectedFieldDisplayVals.count //4/26 redo limit check
             {
                 //print("lfd \(lastFieldDouble) vals count \(selectedFieldDisplayVals.count)")
                 //print("displayvals \(selectedFieldDisplayVals)")
-                pstr = selectedFieldDisplayVals[Int(lastFieldDouble)]  //10/19 wups forgot
+                pstr = selectedFieldDisplayVals[index]  //10/19 wups forgot
             }
         }
         else if selectedFieldType == "text" //10/9 new field type
@@ -2094,19 +2035,29 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
       {
           let appDelegate = UIApplication.shared.delegate as! AppDelegate
           var elDumpo     = appDelegate.versionStr
+          var title       = "Dump of scene / folder"
           //Get scene start pos
-          let sPOz =  String(format: "StartPos XYZ %4.2f,%4.2f,%4.2f",
+          let sPOz        =  String(format: "StartPos XYZ %4.2f,%4.2f,%4.2f",
                              startPosition.x, startPosition.y, startPosition.z)
           elDumpo         = elDumpo + "\n--------SceneDump--------\n" + OVScene.getDumpString() + "\n" + sPOz
           let sceneFilez  = DataManager.getDirectoryContents(whichDir: "scenes")
           let sf          = sceneFilez.joined(separator: ",")
           elDumpo         = elDumpo + "\n--------SceneFiles--------\n" + sf
           print("\(elDumpo)")
-          let alert = UIAlertController(title: "Dump of scene / folder", message: elDumpo, preferredStyle: UIAlertControllerStyle.alert)
+
+//          title = "Voice Params"
+//          elDumpo = selectedVoice.dumpParams()
+//          title = "Shape Params"
+//          elDumpo = selectedShape.dumpParams()
+        title = "Pipe Params"
+        elDumpo = selectedPipe.dumpParams()
+
+        
+        
+          let alert = UIAlertController(title: title, message: elDumpo, preferredStyle: UIAlertControllerStyle.alert)
           alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
           }))
           self.present(alert, animated: true, completion: nil)
-
       }
 
     
@@ -2451,9 +2402,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             }
         }
         
-        //1/29 (moved) Now we need to scale things so pipe will work
-        let loHiRange = getPipeRangeForParamName(pname:ps.toParam.lowercased(),dest:oop.destination)
-        oop.setupRange(lo: loHiRange.lo, hi: loHiRange.hi) //1/14 REDO
+        if op != "load" //4/27 keep lo/hi range on loads, otherwise compute based on input
+        {
+            let loHiRange = getPipeRangeForParamName(pname:ps.toParam.lowercased(),dest:oop.destination)
+            oop.setupRange(lo: loHiRange.lo, hi: loHiRange.hi) //1/14 REDO
+        }
         
         self.scenePipes[name] = oop //store pipe object
         // 1/22 for pipe management and updates:
@@ -2905,7 +2858,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func cancelEdit()
     {
         pLabel.updateLabelOnly(lStr:"Cancel Edit")
-        restoreLastParamValue(oldD: lastFieldDouble,oldS: lastFieldString) //DHS 10/10
+        //4/26 Dig up last param value and save
+        setNewParamValue(named: selectedFieldName.lowercased(),
+                      toDouble: lastFieldDouble,
+                      toString: lastFieldString )
+
         if selectedFieldType == "double"  //update marker as needed...
         {
             if whatWeBeEditing == "voice"      {
@@ -3133,25 +3090,23 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         return true
     }
     //------<UITextFieldDelegate>-------------------------
+    // 4/26 pull lastFieldString ref
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        lastFieldString = textField.text!
-         //11/25
         setNewParamValue(named: selectedFieldName.lowercased(),
                       toDouble: Double(knobValue),
-                      toString: lastFieldString )
+                      toString: textField.text! )
         pLabel.isHidden = false //10/10 show param label again
-
         editSelect( editButton)  //Simulate button hit...
         textField.resignFirstResponder() //dismiss kb if up
         return true
     }
+
     //------<UITextFieldDelegate>-------------------------
+    // 4/26 pull lastFieldString ref
     @IBAction func textChanged(_ sender: Any) {
-        lastFieldString = textField.text!
-         //11/25
         setNewParamValue(named: selectedFieldName.lowercased(),
                       toDouble: Double(knobValue),
-                      toString: lastFieldString )
+                      toString: textField.text! )
     }
 
     //--------<TextureVCDelegate.-------------------------------------
