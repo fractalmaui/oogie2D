@@ -38,6 +38,7 @@
 //  4/23   redo setNewParamValue,  same as above
 //  4/24   add string arg to setNewParamValue
 //  4/26   pull restoreLastParamValue, use setNewParamValue instead,add int params
+//  4/27   finish debugging parameters, add setParam to playAllPipesMarkers pipe handler
 import UIKit
 import SceneKit
 import Photos
@@ -303,16 +304,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
         //11/18  Update markers UI in foreground on a timer
         colorTimer = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.updateAllMarkers), userInfo:  nil, repeats: true)
-        //...handle pipes and music production in background
-        //4/20 test new RepeatingTimer...
-//        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.03) {
-//            self.playAllPipesMarkersBkgdHandler()
-//        }
-        //2/3 DHS test
         _ = DataManager.getSceneVersion(fname:"default")
 
         //4/20 try foreground timer...
-        playColorsTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.playAllPipesMarkersBkgdHandler), userInfo:  nil, repeats: true)
+        playColorsTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.playAllPipesMarkers), userInfo:  nil, repeats: true)
 
         
     } //end viewDidLoad
@@ -934,7 +929,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end setRotationSpeedForSelectedShape
     
     //=======>ARKit MainVC===================================
-    //  4/19 cluge?  is this the right place? asdf
+    //  4/19 cluge?  is this the right place?
     func setMasterPitchShiftForAllVoices()
     {
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
@@ -2598,20 +2593,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         return ""
     } //end findPipe
 
-    //Test, just measures timing...
-    @objc func playAllPipesMarkersBkgdHandlerTEST()
-    {
-        for (_,voice) in sceneVoices
-        {
-            voice.addToDebugHistory(n: 0)
-        }
-
-    }
- 
     
     //=====<oogie2D mainVC>====================================================
-    // 11/25 add pipes!! ONLY handles marker read / play, NO UI!
-    @objc func playAllPipesMarkersBkgdHandler()
+    // Fucking massive... needs to be moved to a background process
+    //   which is independent of the UI and any VC!!
+    @objc func playAllPipesMarkers()
     {
         //First thing we get all the data from pipes...
         for (n,p) in scenePipes //handle pipes, update pipe....
@@ -2628,19 +2614,18 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 {
                     if let shape = sceneShapes[pwork.PS.toObject]
                     {
-                        switch(pwork.PS.toParam.lowercased())  //WTF WHY NEED LOWERCASE!
+                        shape.setParam(named : pwork.PS.toParam.lowercased() , //4/27 set params from pipe
+                                             toDouble : Double(pipeVal) ,
+                                             toString : "")
+
+                        switch(pwork.PS.toParam.lowercased())  //Post processing for certain params...
                         {
-                        case "texxoffset": shape.OOS.uCoord = Double(pipeVal)
-                        case "texyoffset": shape.OOS.vCoord = Double(pipeVal)
-                        case "texxscale" : shape.OOS.uScale = Double(pipeVal)
-                        case "texyscale" : shape.OOS.vScale = Double(pipeVal)
-                        //YUP, name of param doesnt jibe with param it changes!
-                        case "rotation"      : shape.OOS.rotSpeed = Double(pipeVal)
-                        case "rotationtype"  : shape.OOS.rotation = Double(pipeVal)
+                        case "rotationtype"  :   //special processing for rotationtype
                         if let shape3D = shapes[pwork.PS.toObject] //12/1 rot speed
                         {  shape3D.setTimerSpeed(rs: Double(pipeVal)) }
                         default: print("illegal pipe shape param \(p.PS.toParam)")
                         }
+
                         sceneShapes[pwork.PS.toObject] = shape //save it back!
                         update3DShapeByName (n:pwork.PS.toObject)
                         //changed texture?
@@ -2659,27 +2644,17 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     if let voice = sceneVoices[tname]
                     {
                         var needPipeUpdate = false
-                        _   = false
                         switch(pwork.PS.toParam.lowercased())  //WTF WHY NEED LOWERCASE!
                         {
                         case "latitude"   : voice.OVS.yCoord      = Double(pipeVal)
                             needPipeUpdate = true
                         case "longitude"  : voice.OVS.xCoord      = Double(pipeVal)
                             needPipeUpdate = true
-                        case "scale"      : voice.OVS.keySig      = Int(pipeVal)
-                        case "level"      : voice.OVS.level       = Double(pipeVal)
-                        case "nchan"      : voice.OVS.noteMode    = Int(pipeVal)
-                        case "vchan"      : voice.OVS.volMode     = Int(pipeVal)
-                        case "pchan"      : voice.OVS.panMode     = Int(pipeVal)
-                        case "nfixed"     : voice.OVS.noteFixed   = Int(pipeVal)
-                        case "vfixed"     : voice.OVS.volFixed    = Int(pipeVal)
-                        case "rottrigger" : voice.OVS.rotTrigger  = Double(pipeVal)
-                        case "pfixed"     : voice.OVS.panFixed    = Int(pipeVal)
-                        case "topmidi"    : voice.OVS.topMidi     = Int(pipeVal)
-                        case "bottommidi" : voice.OVS.bottomMidi  = Int(pipeVal)
-                        case "midichannel": voice.OVS.midiChannel = Int(pipeVal)
-                        default: print("illegal pipe voice param \(p.PS.toParam)")
+                        default: break
                         }
+                        voice.setParam(named : pwork.PS.toParam.lowercased() , //4/27 set params from pipe
+                                             toDouble : Double(pipeVal) ,
+                                             toString : "")
                         sceneVoices[tname] = voice //save it back!
                         var index = 0
                         if needPipeUpdate
@@ -2704,8 +2679,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                             }
 
                         }
-                    }
-                }
+                    } //end let voice
+                } //end destination
             } //end pwork.gotData
         } //end for n,p
 
@@ -2767,15 +2742,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 }
             } //end for n,p
         } //end !updatingpipe
-
-        ///Ahhnd retrigger this in 30 ms, bkgd
-        //2/1 try slower rate for cleaner results...
-// 4/20 test
-//        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.1) {  //was 0.03
-//            self.playAllPipesMarkersBkgdHandler()
-//        }
     } //end playAllPipesMarkersBkgdHandler
-
+    
+    
     //=====<oogie2D mainVC>====================================================
     //Foreground, handles marker appearance...
     @objc func updateAllMarkers()
