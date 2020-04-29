@@ -470,7 +470,7 @@ class OogieVoice: NSObject, NSCopying {
     func setParam(named name : String , toDouble dval: Double , toString sval: String)
     {
         let ival = Int(dval) //some params are stored as integers!
-        print("setParam \(dval)")
+        //print("setParam \(dval)")
 
         switch (name)
         {

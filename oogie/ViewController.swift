@@ -39,6 +39,7 @@
 //  4/24   add string arg to setNewParamValue
 //  4/26   pull restoreLastParamValue, use setNewParamValue instead,add int params
 //  4/27   finish debugging parameters, add setParam to playAllPipesMarkers pipe handler
+//  4/28   replacer allMarkers array with markers3D dict
 import UIKit
 import SceneKit
 import Photos
@@ -61,84 +62,68 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     @IBOutlet weak var menuButton: UIButton!
     @IBOutlet weak var editButton: UIButton!
 
-    var frakkinNote = 0
-    
-    var fadeTimer = Timer()
     var colorTimer = Timer()
     var playColorsTimer = Timer()
     var pLabel = infoText()
-    //10/29 version #
+    //10/29 version info (mostly for debugging)
     var version = ""
     var build   = ""
     //10/17 solo
     var soloVoiceID = ""
     var touchLocation = CGPoint()
-    var touchDown     = false //10/26
     var latestTouch   = UITouch()
-    var testSample = 8
     var chooserMode = "loadAllPatches"
     var shouldNOTUpdateMarkers = false
 
     var updatingPipe = false   //1/25
     //12/2 haptics for wheel controls
     var fbgenerator = UISelectionFeedbackGenerator()
+    var oogieOrigin = SCNNode() //3D origin, all objects added to this parent
+    var pkeys = PianoKeys()    //3D keys for playing test samples
 
+    // For object migration to OOgieScene:
+    //   1> add Marker property to OogieVoice, get rid of allMarkers
+    //   2> add SphereShape property to OogieShape, get rid of shapes
+    //   3> add PipeShape property to OogiePipe, get rid of pipes
+    //       what about pipeUIDToName???
+    //   4> change OogieScene to OSCStruct, create OogieScene class which
+    //       contains an OSCStruct.
+    //  Debug this new structure.
+    //   5> Migrate all dictionaries over to new OogieScene
+    //   6> Migrate all "selected"..."lastField"... items to new Structs: SelectedField?? and LastField??
+    //          they should have the same members, maybe add definitions to OogieScene
+    //  Debug this new structure.
     
-    @IBAction func testSelect(_ sender: Any) {
-        //writeGMPercussionPatches()
-        dumpDebugShit()
-        
-//        var a = selectedVoice.getParamList()
-//        print("voiceparamvals \(a)")
-//        a = selectedShape.getParamList()
-//        print("shapeparamvals \(a)")
-//        a = selectedPipe.getParamList()
-//        print("pipeparamvals  \(a)")
-
-        
-    } //end testSelect
-    
-    var oogieOrigin = SCNNode()
-    var pkeys = PianoKeys()
-    
-    //Constructed shapes / handlpekyses
-    var allMarkers    : [Marker]     = []
     var selectedUids  : [String]     = []
     var sceneVoices   = Dictionary<String, OogieVoice>()
-    var shapes        = Dictionary<String, SphereShape>()  //10/21
-    var sceneShapes   = Dictionary<String, OogieShape>()   //1/21
+    var sceneShapes   = Dictionary<String, OogieShape>()
+    var shapes        = Dictionary<String, SphereShape>()
+    var markers3D     = Dictionary<String, Marker>()
     var scenePipes    = Dictionary<String, OogiePipe>()
-    var pipes         = Dictionary<String, PipeShape>()  //10/21
-    var pipeUIDToName = Dictionary<String, String>()      //1/22
+    var pipes         = Dictionary<String, PipeShape>()
+    var pipeUIDToName = Dictionary<String, String>()
+    
     //10/27 for finding new marker lat/lons
     let llToler = Double.pi / 10.0
     let llStep  = Double.pi / 8.0 //must be larger than toler
-
     
-    //10/25 test pattern support
-    #if USE_TESTPATTERN
-    let ifname = "tp"
-    #else
-    let ifname = "oog2-stripey00t"
-    #endif
-
-    var whatWeBeEditing = ""
+    var whatWeBeEditing = "" //voice, shape, pipe, etc...
 
     //Params knob
-    var oldKnobValue : Float = 0.0
-    var oldKnobInt   : Int = 0    //1/14
-    var knobValue    : Float = 0.0 //9/17 rename
+    var oldKnobValue    : Float = 0.0
+    var oldKnobInt      : Int = 0    //1/14
+    var knobValue       : Float = 0.0 //9/17 rename
     var lastBackToValue : Bool = false
-    var selectedObjectIndex = 0 //Points to marker/shape/latlon handles, etc
-    var selectedField = -1  //Which param we chose 0 = lat, 1 = lon, etc
+    var selectedObjectIndex  = 0 //Points to marker/shape/latlon handles, etc
+    var selectedField        = -1  //Which param we chose 0 = lat, 1 = lon, etc
+    //Can these 3 names be collapsed into selectedItemName?
     var selectedMarkerName   = ""
     var selectedShapeName    = ""
     var selectedPipeName     = ""
+    //------------------------------------------------------
+    
     var selectedFieldName    = ""
-    var oselectedFieldName    = ""
     var selectedFieldType    = ""
-    var paramWheelMin        : Float = 0.0 //These 5 fields are used w/ the knob -> floats
-    var paramWheelMax        : Float = 0.0
     var selectedFieldMin     : Float = 0.0
     var selectedFieldMax     : Float = 0.0
     var selectedFieldDefault : Float = 0.0
@@ -163,7 +148,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //All patches: singleton, holds built-in and locally saved patches...
     var allP = AllPatches.sharedInstance
     var recentlyEditedPatches : [String] = []
-    var tc = texCache.sharedInstance //9/3 texture cache
+  //  var tc = texCache.sharedInstance //9/3 texture cache
 
     var cameraNode      = SCNNode()
     let scene           = SCNScene()
@@ -179,8 +164,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //For creating new shapes
     var shapeClockPos  : Int = 1   //0 = noon 1 = 3pm etc
     var isPlaying = false
-    let quantTime = 0  //using this or what?
-    let MAX_CBOX_FRAMES = 20 //where does this go?
     
    //=====<oogie2D mainVC>====================================================
     override func viewDidLoad() {
@@ -396,7 +379,18 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             //  maybe a ui update area is where this belongs!??
             textField.isHidden = selectedFieldType != "text"
             pLabel.isHidden    = selectedFieldType == "text" //12/15
-
+            if selectedFieldType == "text" //4/28 add text placeholder, set kb type
+            {
+                textField.placeholder = selectedFieldName
+                //4/28 NEED TO set keyboard type based on field name!!!
+                // as such we need an array of "numeric" text fields, gathered
+                // from voice/shape/pipe objects and see if our fieldName is in there
+                // otherwise set kb type to default!!!
+                //for now we use a KLUGE!!!
+                textField.keyboardType = .default
+                let needNumeric = (selectedFieldName == "LoRange" || selectedFieldName == "HiRange")
+                if needNumeric {textField.keyboardType = UIKeyboardType.numbersAndPunctuation}
+            }
             //Set up display for the param
             if selectedFieldType == "double"
             {
@@ -426,7 +420,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             }
             else if selectedFieldType == "text" //10/9 new field type
             {
-                print("12/5 duh set text to \(lastFieldString)")
                 textField.text = lastFieldString //10/9 from OVS
                 textField.becomeFirstResponder() //12/5 OK KB!
             }
@@ -442,7 +435,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 //print("done edit xycoord \(selectedVoice.OVS.xCoord), \(selectedVoice.OVS.yCoord)")
                 //print("...vnotemode \(selectedVoice.OVS.noteMode)")
                 sceneVoices[selectedMarkerName] = selectedVoice    //save latest voice to sceneVoices
-                allMarkers[selectedObjectIndex] = selectedMarker //save any marker changes...
+                markers3D[selectedMarkerName]   = selectedMarker //4/28 new dict
                 pLabel.setupForParam( pname : "Param" , ptype : TSTRING_TTYPE , //9/28 new
                     pmin : 0.0 , pmax : selectedFieldDMult * Double( selectedFieldMax) ,
                     choiceStrings : voiceParamNames)
@@ -466,10 +459,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             }
             pLabel.updateLabelOnly(lStr:"Done:" + selectedFieldName)
             knobValue = Float(selectedField)  // 9/17  set knob value to old param index...
-            paramWheelMin     = 0.0
             var count = voiceParamNames.count
             if whatWeBeEditing == "shape" {count = shapeParamNames.count}
-            paramWheelMax        = Float(count - 1)
             paramKnob.wraparound = true //10/5 wraparound
             pLabel.showWarnings  = false  // 10/5 no warnings on wraparound controls
         }
@@ -571,9 +562,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             textField.isHidden   = true //10/9
             editButton.setTitle("Edit", for: .normal)
             menuButton.setTitle("Menu", for: .normal)
-            paramWheelMin = 0
-            paramWheelMax = Float(Float(selectedVoice.getParamCount() - 1))
-            resetKnobToNewValues(kval: knobValue ,kmin:paramWheelMin ,kmax: paramWheelMax)
+            resetKnobToNewValues(kval: knobValue ,kmin:0 ,kmax: Float(selectedVoice.getParamCount() - 1))
         } //end param select
         paramKnob.setKnobBitmap(bname: knobName)
     } //end updateWheelAndParamButtons
@@ -627,7 +616,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             // param get: returns tuple with name, double and string result
             paramTuple = selectedVoice.getParam(named:name)
-            print("get ptup \(paramTuple)")
             //Special processing for some params...
             switch (name)
             {
@@ -670,7 +658,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             if let index = selectedFieldStringVals.index(of: lastFieldString)
             { lastFieldDouble = Double(index) }
         }
-        //OK, break out param, be it string or double... asdf
+        //OK, break out param, be it string or double...
         else if selectedFieldType == "string"  ||  selectedFieldType == "text"   //4/26 Got a string back?
         {
             lastFieldDouble = paramTuple.dParam
@@ -739,7 +727,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
          {
              if backToOriginalValue {needToRefreshOriginalValue = true}
          }
-        print("snpv \(named) \(toDouble) \(toString)")
+         //print("snpv \(named) \(toDouble) \(toString)")
          //Save our old values...
          lastBackToValue     = backToOriginalValue
          var needRefresh     = true
@@ -752,7 +740,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 if intChoiceChanged{
                     workString = getSelectedFieldStringForKnobValue (kv : Float(workDouble))
                     changeVoicePatch(name:workString)
-                    print("kv \(workDouble) patch \(workString) storedas \(selectedVoice.OVS.patchName)")
+                    //print("kv \(workDouble) patch \(workString) storedas \(selectedVoice.OVS.patchName)")
                 }
 //            case "key","scale":
 //                 needParamUpdate = intChoiceChanged
@@ -1177,15 +1165,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // called when knob chooses new param
     func updateSelectParamName()
     {
-        print("updateSelectParamName \(lastFieldDouble)")
+        //print("updateSelectParamName \(lastFieldDouble)")
         let dogStrings = ["nfixed","vfixed","pfixed","topmidi","bottommidi","midichannel"]
-        //12/2 add haptics feedback on knob change
-        if  selectedFieldName != oselectedFieldName  //new param?
-        {
-            fbgenerator.prepare()
-            fbgenerator.selectionChanged()
-            oselectedFieldName = selectedFieldName
-        }
         var infoStr = selectedFieldName
         var pstr    = ""
         if selectedFieldType == "double"
@@ -1273,7 +1254,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     //=======>ARKit MainVC===================================
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        touchDown = false
     }
     
     //=======>ARKit MainVC===================================
@@ -1281,17 +1261,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else {return}
         latestTouch = touch
-        touchDown = false
         handleTouch(touch: touch)
     } //end touchesBegan
-    
-//    func getDogDirection(for point: CGPoint, in view: SCNView) -> SCNVector3 {
-//        let farPoint  = view.unprojectPoint(SCNVector3Make(Float(point.x), Float(point.y), 1))
-//        let nearPoint = view.unprojectPoint(SCNVector3Make(Float(point.x), Float(point.y), 0))
-//
-//        return SCNVector3Make(farPoint.x - nearPoint.x, farPoint.y - nearPoint.y, farPoint.z - nearPoint.z)
-//    }
-
     
     //=====<oogie2D mainVC>====================================================
     //10/29 called by touchesDown
@@ -1300,6 +1271,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //  user selects object they are long touching on!
         // Make all of this a subroutine called handleTouches!!!
         guard let sceneView   = skView else {return}
+        //4/27 Is latestTouch redundant? Should We use touch here???
         touchLocation  = latestTouch.location(in: sceneView)
         guard let nodeHitTest = sceneView.hitTest(touchLocation, options: nil).first else {return}
         let hitNode    = nodeHitTest.node
@@ -1330,7 +1302,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             }
             else if name.contains("shape") //Found a shape? get which one
             {
-                let testName = findShape(uid: name)
+                let testName = findShapeByUID(uid: name)
                 if (testName != "")
                 {
                     unselectAnyOldStuff(name: testName) //11/30
@@ -1367,37 +1339,37 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             } //end name... shape
             else if name.contains("marker") //Found a marker? get which one
             {
-                selectedObjectIndex = findMarker(uid: name)
-                if (selectedObjectIndex != -1)
-                {
-                    let newMarker = allMarkers[selectedObjectIndex]
-                    unselectAnyOldStuff(name:newMarker.name!) //11/30
-                    selectedMarker = newMarker           // get our marker...
-                    selectedMarker.toggleHighlight()
-                    if selectedMarker.highlighted  //hilited? Set up edit
+                    if let newMarker = findMarkerByUID(uid: name) //4/28 new dict
                     {
-                        if let smname = selectedMarker.name
+                        unselectAnyOldStuff(name:newMarker.name!) //11/30
+                        selectedMarker = newMarker           // get our marker...
+                        selectedMarker.toggleHighlight()
+                        if selectedMarker.highlighted  //hilited? Set up edit
                         {
-                            //DHS 1/16:this looks to get OLD values not edited values!
-                            if let testVoice = sceneVoices[smname] //got legit voice?
+                            if let smname = selectedMarker.name
                             {
-                                whatWeBeEditing = "voice"  //2/6 WTF?
-                                self.pLabel.updateLabelOnly(lStr:"Selected " + smname)
-                                selectedVoice = testVoice //Get associated voice for this marker
-                                selectedMarkerName = smname //points to OVS struct in scene
-                                selectedMarker.updatePanels(nameStr: selectedMarkerName) //10/11 add name panels
-                                //1/14 was redundantly pulling OVS struct from OVScene.voices!
-                                editParams(v: "voice") //1/14 switch to edit mode
-                                updatePkeys() //3/30 update kb if needed
-                            }
-                        } //end if let
-                    }
-                    else
-                    {
-                        bailOnEdit = true  //1/26 redo
-                        deselected = true
-                    }
-                } //end if selected...
+                                //DHS 1/16:this looks to get OLD values not edited values!
+                                if let testVoice = sceneVoices[smname] //got legit voice?
+                                {
+                                    whatWeBeEditing = "voice"  //2/6 WTF?
+                                    self.pLabel.updateLabelOnly(lStr:"Selected " + smname)
+                                    selectedVoice = testVoice //Get associated voice for this marker
+                                    selectedMarkerName = smname //points to OVS struct in scene
+                                    selectedMarker.updatePanels(nameStr: selectedMarkerName) //10/11 add name panels
+                                    //1/14 was redundantly pulling OVS struct from OVScene.voices!
+                                    editParams(v: "voice") //1/14 switch to edit mode
+                                    updatePkeys() //3/30 update kb if needed
+                                }
+                            } //end if let
+                        }
+                        else
+                        {
+                            bailOnEdit = true  //1/26 redo
+                            deselected = true
+                        }
+
+                }
+               // 4/28 } //end if selected...
             } //end if name
             else if name.contains("pipe") //Found a pipe? get which one
             {
@@ -1581,17 +1553,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         alert.addAction(UIAlertAction(title: "Reset", style: .default, handler: { action in
             let name = self.selectedVoice.OVS.name
             self.resetVoiceByName(name: name)  //1/14 Reset shape object from scene
-            var index = 0; //point to allMarkers so we can modify!
-            for marker in self.allMarkers   //look for our marker by name, update 3d representation and save!
+            if let marker = self.markers3D[name] //4/28 new dict
             {
-                if marker.name == name
-                {
-                    marker.updateLatLon(llat: self.selectedVoice.OVS.yCoord, llon: self.selectedVoice.OVS.xCoord)
-                    self.allMarkers[index] = marker
-                    break //get outta here!
-                }
-                index+=1;
-            } //end for marker
+                marker.updateLatLon(llat: self.selectedVoice.OVS.yCoord, llon: self.selectedVoice.OVS.xCoord)
+                self.markers3D[name] = marker  //4/28 new dict
+            }
         }))
         alert.addAction(UIAlertAction(title: "Add Pipe...", style: .default, handler: { action in
            self.addPipeStepOne(voice: self.selectedVoice)
@@ -1888,10 +1854,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func deleteVoice(voice:OogieVoice)
     {
         let name = voice.OVS.name
-        let marker = allMarkers[selectedObjectIndex]   //1/27 forgot to remove marker 3d object!
-        marker.removeFromParentNode()
-        allMarkers.remove(at: selectedObjectIndex)   // Delete from marker array
-        sceneVoices.removeValue(forKey: name)       //  and remove data structure
+        if let marker = markers3D[selectedMarkerName]   //4/28 new dict
+        {
+            marker.removeFromParentNode()
+            markers3D.removeValue(forKey: selectedMarkerName) //4/28 new dict
+            sceneVoices.removeValue(forKey: name)       //  and remove data structure
+        }
         // 2/6 what about input pipes?
     } //end deleteVoice
 
@@ -1990,10 +1958,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func clearAllNodes(scene:SCNScene)
     {
         oogieOrigin.enumerateChildNodes { (node, _) in //1/20 new origin
-        //print("remove node \(node.name)")
+            //print("remove node \(node.name)")
             if (node.name != nil) {node.removeFromParentNode()}
         }
-        allMarkers.removeAll() //DHS 11/4 blow away all 3D references
+        markers3D.removeAll() //4/28 new dict
         shapes.removeAll()
         pipes.removeAll()          //1/21 wups?
         pipeUIDToName.removeAll()  //1/22
@@ -2023,42 +1991,50 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //scene.rootNode.addChildNode(axes)
         
     } //end create3DScene
-
-      //Hopefully dumps enuf for debugging anything?
-      //-----------(oogiePipe)=============================================
-      func dumpDebugShit()
-      {
-          let appDelegate = UIApplication.shared.delegate as! AppDelegate
-          var elDumpo     = appDelegate.versionStr
-          var title       = "Dump of scene / folder"
-          //Get scene start pos
-          let sPOz        =  String(format: "StartPos XYZ %4.2f,%4.2f,%4.2f",
-                             startPosition.x, startPosition.y, startPosition.z)
-          elDumpo         = elDumpo + "\n--------SceneDump--------\n" + OVScene.getDumpString() + "\n" + sPOz
-          let sceneFilez  = DataManager.getDirectoryContents(whichDir: "scenes")
-          let sf          = sceneFilez.joined(separator: ",")
-          elDumpo         = elDumpo + "\n--------SceneFiles--------\n" + sf
-          print("\(elDumpo)")
-
-//          title = "Voice Params"
-//          elDumpo = selectedVoice.dumpParams()
-//          title = "Shape Params"
-//          elDumpo = selectedShape.dumpParams()
+    
+    
+    //=====<oogie2D mainVC>====================================================
+    @IBAction func testSelect(_ sender: Any) {
+        dumpDebugShit()
+    } //end testSelect
+    
+    //=====<oogie2D mainVC>====================================================
+    //Hopefully dumps enuf for debugging anything?
+    func dumpDebugShit()
+    {
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        var elDumpo     = appDelegate.versionStr
+        var title       = "Dump of scene / folder"
+        //Get scene start pos
+        let sPOz        =  String(format: "StartPos XYZ %4.2f,%4.2f,%4.2f",
+                                  startPosition.x, startPosition.y, startPosition.z)
+        elDumpo         = elDumpo + "\n--------SceneDump--------\n" + OVScene.getDumpString() + "\n" + sPOz
+        let sceneFilez  = DataManager.getDirectoryContents(whichDir: "scenes")
+        let sf          = sceneFilez.joined(separator: ",")
+        elDumpo         = elDumpo + "\n--------SceneFiles--------\n" + sf
+        print("\(elDumpo)")
+        
+        //        var a = selectedVoice.getParamList()
+        //        print("voiceparamvals \(a)")
+        //          title = "Voice Params"
+        //          elDumpo = selectedVoice.dumpParams()
+        //          title = "Shape Params"
+        //          elDumpo = selectedShape.dumpParams()
         title = "Pipe Params"
         elDumpo = selectedPipe.dumpParams()
-
         
         
-          let alert = UIAlertController(title: title, message: elDumpo, preferredStyle: UIAlertControllerStyle.alert)
-          alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
-          }))
-          self.present(alert, animated: true, completion: nil)
-      }
-
+        
+        let alert = UIAlertController(title: title, message: elDumpo, preferredStyle: UIAlertControllerStyle.alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
+        }))
+        self.present(alert, animated: true, completion: nil)
+    }
     
     
-    //-----------(oogiePipe)=============================================
-     func createAxes() -> SCNNode
+    
+    //=====<oogie2D mainVC>====================================================
+    func createAxes() -> SCNNode
      {
         
         let brad : CGFloat = 0.05
@@ -2299,7 +2275,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 nextMarker.name = newName //9/16 point to voice
                 //10/29 here we have int type, not string...
                 nextMarker.updateTypeInt(newTypeInt: Int32(nextVoice.OOP.type))
-                allMarkers.append(nextMarker)
+                markers3D[newName] = nextMarker //4/28 new dict
                 shape3D.addChildNode(nextMarker)
                 nextMarker.updateLatLon(llat: nextVoice.OVS.yCoord, llon: nextVoice.OVS.xCoord)
             }
@@ -2435,42 +2411,47 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
         //1/26 Need to get lats / lons the hard way for now...
         let from    = oop.PS.fromObject
-        let fmarker = findMarkerByName(name:from)
-        let flat    = fmarker.lat
-        let flon    = fmarker.lon
-        let sPos00  = getMarkerParentPositionByName(name:from)
-        let toObj   = oop.PS.toObject
-        var sPos01  = fmarker.position
-        var tlat    = Double.pi/2.0
-        var tlon    = 0.0
-        var isShape = false   //1/28
-        
-        if let sphereNode = shapes[toObj]  //Found a shape as target?
+        if let fmarker = markers3D[from] //4/28
         {
-            sPos01 = sphereNode.position
-            isShape = true
+            let flat    = fmarker.lat
+             let flon    = fmarker.lon
+             let sPos00  = getMarkerParentPositionByName(name:from)
+             let toObj   = oop.PS.toObject
+             var sPos01  = fmarker.position
+             var tlat    = Double.pi/2.0
+             var tlon    = 0.0
+             var isShape = false   //1/28
+             
+             if let sphereNode = shapes[toObj]  //Found a shape as target?
+             {
+                 sPos01 = sphereNode.position
+                 isShape = true
+             }
+             else //Assume voice/marker?
+             {
+                 if let tmarker =  markers3D[toObj] //4/28 findMarkerByName(name:toObj)
+                 {
+                    tlat    = tmarker.lat
+                    tlon    = tmarker.lon
+                    sPos01  = getMarkerParentPositionByName(name:toObj) //12/30
+                 }
+             }
+             //print("apn flatlon \(flat),\(flon)  tlatlon \(tlat),\(tlon) nn \(newNode)")
+             //  11/29 match pipe color in corners
+             pipe3DObject.pipeColor = pipe3DObject.getColorForChan(chan: oop.PS.fromChannel)
+             let pipeNode = pipe3DObject.create3DPipe(flat : flat , flon : flon , sPos00  : sPos00 ,
+                                                      tlat : tlat , tlon : tlon , sPos01  : sPos01 ,
+                                                      isShape: isShape, newNode : newNode)
+             if (newNode) //1/30
+             {
+                 pipeNode.name = n
+                 pipe3DObject.addChildNode(pipeNode)     // add pipe to 3d object
+                 oogieOrigin.addChildNode(pipe3DObject)  //1/20 new origin
+                 pipes[n] = pipe3DObject  // dictionary of 3d objects
+             }
+
         }
-        else //Assume voice/marker?
-        {
-            let tmarker = findMarkerByName(name:toObj)
-            tlat    = tmarker.lat
-            tlon    = tmarker.lon
-            sPos01  = getMarkerParentPositionByName(name:toObj) //12/30
-        }
-        //print("apn flatlon \(flat),\(flon)  tlatlon \(tlat),\(tlon) nn \(newNode)")
-        //  11/29 match pipe color in corners
-        pipe3DObject.pipeColor = pipe3DObject.getColorForChan(chan: oop.PS.fromChannel)
-        let pipeNode = pipe3DObject.create3DPipe(flat : flat , flon : flon , sPos00  : sPos00 ,
-                                                 tlat : tlat , tlon : tlon , sPos01  : sPos01 ,
-                                                 isShape: isShape, newNode : newNode)
-        if (newNode) //1/30
-        {
-            pipeNode.name = n
-            pipe3DObject.addChildNode(pipeNode)     // add pipe to 3d object
-            oogieOrigin.addChildNode(pipe3DObject)  //1/20 new origin
-            pipes[n] = pipe3DObject  // dictionary of 3d objects
-        }
-    } //end addPipeNode
+     } //end addPipeNode
 
     //=====<oogie2D mainVC>====================================================
     func foundAMarker(sname : String , lat:Double , lon:Double)  -> Bool
@@ -2488,6 +2469,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }
     
     //=====<oogie2D mainVC>====================================================
+    // used to clone markers, find new lat/lon point on sphere
     func getFreshLatLon(sname : String , lat:Double , lon:Double)  -> (lat:Double , lon:Double )
     {
         var tlon = lon
@@ -2548,36 +2530,25 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     
     //=====<oogie2D mainVC>====================================================
-    func findMarker(uid:String) -> Int
+    // 4/28 redo for dict
+    func findMarkerByUID(uid:String) -> Marker?
     {
-        var index = 0
-        for marker in allMarkers
+        for (_,m) in markers3D
         {
-            if uid == marker.uid { return index }
-            index = index + 1
+            if m.uid == uid {return m}
         }
-        return -1
+        return nil
     } //end findMarker
-    
-    //=====<oogie2D mainVC>====================================================
-    func findMarkerByName(name : String) -> Marker
-    {
-        for marker in allMarkers
-        {
-            if marker.name == name { return marker  }
-        }
-        return Marker()
-    } //end findMarkerByName
     
  
        //=====<oogie2D mainVC>====================================================
        // 10/21 shapes become dictionary
-       func findShape(uid:String) -> String
+       func findShapeByUID(uid:String) -> String
        {
            for (name,shape) in shapes
            {  if uid == shape.uid { return name } }
            return ""
-       } //end findShape
+       } //end findShapeByUID
 
     //=====<oogie2D mainVC>====================================================
     //WTF? when this is called all pipes have different uid's
@@ -2623,7 +2594,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         case "rotationtype"  :   //special processing for rotationtype
                         if let shape3D = shapes[pwork.PS.toObject] //12/1 rot speed
                         {  shape3D.setTimerSpeed(rs: Double(pipeVal)) }
-                        default: print("illegal pipe shape param \(p.PS.toParam)")
+                        default: break //4/28
                         }
 
                         sceneShapes[pwork.PS.toObject] = shape //save it back!
@@ -2659,16 +2630,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         var index = 0
                         if needPipeUpdate
                         {
-                            for marker in self.allMarkers   //look for our marker by name
+                            if let marker = self.markers3D[tname]
                             {
-                                if marker.name == tname
-                                {   //move marker as needed, save data
-                                    marker.updateLatLon(llat: voice.OVS.yCoord, llon: voice.OVS.xCoord)
-                                    self.allMarkers[index] = marker
-                                    break //get outta here!
-                                }
-                                index+=1;
-                            } //end for marker
+                                marker.updateLatLon(llat: voice.OVS.yCoord, llon: voice.OVS.xCoord)
+                                self.markers3D[tname] = marker //4/28 new dict
+                            } //end if let
                             let fname = pwork.PS.fromObject
                             if let invoice = sceneVoices[fname]
                             {
@@ -2685,24 +2651,19 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         } //end for n,p
 
         //iterate thru dictionary of voices, play each one as needed...
-        if !shouldNOTUpdateMarkers && allMarkers.count>0 //11/18 added error checks
+        if !shouldNOTUpdateMarkers  //4/28 simplify
         {
-            for counter in 0...allMarkers.count-1
+            for (vname,nextMarker) in markers3D //4/28 new dict
             {
                 var workVoice  = OogieVoice()
-                let nextMarker = allMarkers[counter]
                 if whatWeBeEditing == "voice" && knobMode != KnobStates.SELECT_PARAM &&
-                    counter == selectedObjectIndex //selected and editing? load edited voice
+                    selectedFieldName.lowercased() == vname //4/28 selected and editing?
                 {
-                    workVoice = selectedVoice
+                    workVoice = selectedVoice //load edited voice
                 }
-                else if let vname = nextMarker.name  //otherwise load OVS from scene
+                else //4/28 if let vname = nextMarker.name  //otherwise load OVS from scene
                 {
                     workVoice = sceneVoices[vname]!
-                }
-                else
-                {
-                    print("PAM error: no voice found")
                 }
                 var playit = true //10/17 add solo support
                 if soloVoiceID != "" && workVoice.uid != soloVoiceID {playit = false}
@@ -2760,12 +2721,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             if !isPlaying {startPlayingMusic()}
         }
-        shouldNOTUpdateMarkers = (allMarkers.count == 0 || vc != nil)
+        shouldNOTUpdateMarkers = (markers3D.count == 0 || vc != nil) //4/28
         if  shouldNOTUpdateMarkers  {return;}
         //iterate thru dictionary of voices...
-        for counter in 0...allMarkers.count-1
+        for (_,nextMarker) in markers3D //4/28 new dict
         {
-            let nextMarker = allMarkers[counter]
             nextMarker.updateMarkerPetalsAndColor()
             if nextMarker.gotPlayed
             {
@@ -2892,7 +2852,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func getSelectedFieldStringForKnobValue (kv : Float) -> String
     {
         let ik = min( max(Int(kv),0),selectedFieldStringVals.count-1)
-        print("ggggoooo \(ik) \(selectedFieldStringVals[ik])")
         return selectedFieldStringVals[ik]
     }
 
