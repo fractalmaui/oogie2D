@@ -20,5 +20,83 @@
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "A4ED8F4D-BAF7-4475-86C7-3EFFCCAD2B9A"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "735"
+            endingLineNumber = "735"
+            landmarkName = "setNewParamValue(editing:named:toDouble:toString:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "A4ED8F4D-BAF7-4475-86C7-3EFFCCAD2B9A - 85b64f908a29bc79"
+                  shouldBeEnabled = "No"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieScene.setNewParamValue(editing: Swift.String, named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; Swift.Array&lt;Swift.String&gt;"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieScene.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "312"
+                  endingLineNumber = "312"
+                  offsetFromSymbolStart = "7750">
+               </Location>
+               <Location
+                  uuid = "A4ED8F4D-BAF7-4475-86C7-3EFFCCAD2B9A - 85b64f908a29bc79"
+                  shouldBeEnabled = "No"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieScene.setNewParamValue(editing: Swift.String, named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; Swift.Array&lt;Swift.String&gt;"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieScene.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "312"
+                  endingLineNumber = "312"
+                  offsetFromSymbolStart = "7948">
+               </Location>
+               <Location
+                  uuid = "A4ED8F4D-BAF7-4475-86C7-3EFFCCAD2B9A - 85b64f908a29bc79"
+                  shouldBeEnabled = "No"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieScene.setNewParamValue(editing: Swift.String, named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; Swift.Array&lt;Swift.String&gt;"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieScene.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "312"
+                  endingLineNumber = "312"
+                  offsetFromSymbolStart = "8153">
+               </Location>
+               <Location
+                  uuid = "A4ED8F4D-BAF7-4475-86C7-3EFFCCAD2B9A - 85b64f908a29bc79"
+                  shouldBeEnabled = "No"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieScene.setNewParamValue(editing: Swift.String, named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; Swift.Array&lt;Swift.String&gt;"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieScene.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "312"
+                  endingLineNumber = "312"
+                  offsetFromSymbolStart = "8344">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
    </Breakpoints>
 </Bucket>

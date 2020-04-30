@@ -16,10 +16,11 @@
 // 11/23   getListOfVoices, Shapes
 //  2/1    add pipes clear in clearScene
 //  2/3    add comment field, rename ooversion
+// 4/29    rename to OSCStruct
 import Foundation
 import SceneKit
 
-struct OogieScene : Codable {
+struct OSCStruct : Codable {
     var comment   : String
     var name      : String
     var ooversion : String   //2/3 easier to find in json data!
@@ -28,7 +29,7 @@ struct OogieScene : Codable {
     var voices    : Dictionary<String, OVStruct>
     var pipes     : Dictionary<String, PipeStruct>
 
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     init()
     {
         name      = "scene000"
@@ -41,7 +42,7 @@ struct OogieScene : Codable {
         pipes     = Dictionary<String, PipeStruct>()
     }
     
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     mutating func clearScene()
     {
         name  = "empty"
@@ -50,7 +51,7 @@ struct OogieScene : Codable {
         pipes.removeAll()   //wups 2/1
     }
     
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     // creates default sphere with one default voice
     mutating func createDefaultScene(sname:String)
     {
@@ -66,14 +67,14 @@ struct OogieScene : Codable {
         shapes[shape.name]  = shape
     } //end createDefaultScene
 
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     // Scene gets saved by name
     mutating func saveItem() {
         packParams() //11/22
         DataManager.saveScene(self, with: name)
     }
     
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     //11/22 get shape names into list
     func getListOfShapes() -> [String]
     {
@@ -82,7 +83,7 @@ struct OogieScene : Codable {
         return troutput
     }
 
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     //11/22 get shape names into list
     func getListOfVoices() -> [String]
     {
@@ -93,7 +94,7 @@ struct OogieScene : Codable {
     
 
     
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     // 11/22 scene params exist separately in viewController for now,
     //  they get packed up into a string at save time...
     func setDefaultParams()
@@ -101,7 +102,7 @@ struct OogieScene : Codable {
         OVtempo = 135
     }
     
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     // 11/22 params format: name:value,name:value,...
     mutating func packParams()
     {
@@ -125,7 +126,7 @@ struct OogieScene : Codable {
 
     } //end packParams
     
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     // 11/22
     func unpackParams()
     {
@@ -171,14 +172,14 @@ struct OogieScene : Codable {
         //dump()
     } //end unpackParams
     
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     // 11/22
     func packIntParam(n:String , vi:Int) -> String
     {
         return String(format: "%@:%d", n,vi)
     }
     
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     // 11/24
     func packFloatParam(n:String , vf:Float) -> String
     {
@@ -186,7 +187,7 @@ struct OogieScene : Codable {
     }
     
 
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     // 12/27 new
     func getDumpString() -> String
     {
@@ -194,7 +195,7 @@ struct OogieScene : Codable {
         return s
     }
 
-    //======(OogieScene)=============================================
+    //======(OSCStruct)=============================================
     func dump()
     {
         DataManager.dump(self)
