@@ -25,11 +25,11 @@ let maxMeters = 10.0
 
 import Foundation
 struct OSStruct : Codable {
+    var key          : String //4/30 stored in dictionary under this key
     var name         : String
     var comment      : String    //2/3 new field
     var primitive    : String
     var texture      : String
-    var uid          : String
     var xPos         : Double
     var yPos         : Double
     var zPos         : Double
@@ -42,13 +42,13 @@ struct OSStruct : Codable {
     var rotXaxis     : Double
     var rotYaxis     : Double
     var rotZaxis     : Double
-    var shapeCount   : Int  //auto increment for each shape?
-    
+    var uid          : String
+
 
     //======(OSStruct)=============================================
     init()
     {
-        shapeCount = 0
+        key       = ""
         name      = "sphere"
         comment   = COMMENT_DEFAULT //2/3 from appDelegate
         primitive = "sphere"
@@ -66,19 +66,16 @@ struct OSStruct : Codable {
         rotXaxis  = 0.0
         rotZaxis  = 0.0
         rotYaxis  = 1.0
-        //9/8 unique ID for tab
-        uid = ProcessInfo.processInfo.globallyUniqueString
-        getNewShape()
+        //5/1 uid
+        uid = "shape_" + ProcessInfo.processInfo.globallyUniqueString
     }
     
-   
     //======(OSStruct)=============================================
-    mutating func getNewShape()
+    func getNewUID() -> String
     {
-        shapeCount = shapeCount + 1
-        name = "shape" + String(format: "%03d", shapeCount)
+        return "shape_" + ProcessInfo.processInfo.globallyUniqueString
     }
-    
+
     //======(OSStruct)=============================================
     func getPosition() ->SCNVector3
     {

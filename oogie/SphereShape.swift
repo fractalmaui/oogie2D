@@ -134,6 +134,7 @@ class SphereShape: SCNNode {
     // 10/25
     func setupTimer(rs : Double)
     {
+        //print("setup Timer Rate \(rs) for shape  \(uid)")
         sTimer.invalidate()
         setTimerSpeed(rs:rs)
         let tstep = 1.0 / Double(fps)

@@ -17,6 +17,7 @@
 //  2/1    add pipes clear in clearScene
 //  2/3    add comment field, rename ooversion
 // 4/29    rename to OSCStruct
+// 4/30    remove createDefaultScene
 import Foundation
 import SceneKit
 
@@ -51,22 +52,6 @@ struct OSCStruct : Codable {
         pipes.removeAll()   //wups 2/1
     }
     
-    //======(OSCStruct)=============================================
-    // creates default sphere with one default voice
-    mutating func createDefaultScene(sname:String)
-    {
-        name                = sname
-        var shape           = OSStruct()
-        shape.name          = "shape001" //10/27 redo
-        var voice           = OVStruct()
-        voice.name          = "voice001"
-        voice.patchName     = "SineWave"
-        voice.shapeName     = shape.name
-        //update our dictionaries
-        voices[voice.name]  = voice
-        shapes[shape.name]  = shape
-    } //end createDefaultScene
-
     //======(OSCStruct)=============================================
     // Scene gets saved by name
     mutating func saveItem() {
@@ -107,6 +92,7 @@ struct OSCStruct : Codable {
     mutating func packParams()
     {
         params = packIntParam(n: "tempo",vi: OVtempo)
+        // 5/1 camXform comes from viewController.  SLOPPY!
         params = params + "," + packFloatParam(n: "m11", vf:camXform.m11)
         params = params + "," + packFloatParam(n: "m12", vf:camXform.m12)
         params = params + "," + packFloatParam(n: "m13", vf:camXform.m13)

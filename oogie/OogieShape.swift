@@ -33,7 +33,6 @@ var shapeParamsDictionary = Dictionary<String, [Any]>()
 
 class OogieShape: NSObject {
 
-    var uid  = ""
     var OOS  = OSStruct()  // codable struct for i/o
     var inPipes = Set<String>()   //use insert and remove to manage...
     var paramListDirty = true //4/25 add paramList for display purposes
@@ -42,7 +41,6 @@ class OogieShape: NSObject {
     //-----------(oogieShape)=============================================
     override init() {
         super.init()
-        uid = ProcessInfo.processInfo.globallyUniqueString
         setupShapeParams()
     }
     
@@ -64,6 +62,8 @@ class OogieShape: NSObject {
         shapeParamsDictionary["11"] = SCommParams //2/4
     } //end setupShapeParams
         
+    
+  
     //-----------(oogieVoice)=============================================
     func getNthParams(n : Int) -> [Any]
     {
@@ -113,12 +113,13 @@ class OogieShape: NSObject {
     //-----------(oogieShape)=============================================
     func dumpParams() -> String
     {
-        var s = ""
+        var s = String(format: "[key:%@]\n",OOS.key)
         for pname in shapeParamNames
         {
             let pTuple = getParam(named : pname.lowercased())
             s = s + String(format: "%@:%@\n",pname,pTuple.sParam)
         }
+        s = s + String(format: "UID:%@\n",OOS.uid)
         return s
     }
     

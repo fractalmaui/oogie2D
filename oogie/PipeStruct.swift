@@ -10,6 +10,7 @@
 import Foundation
 struct PipeStruct : Codable {
     //These are all user-settable params for a pipe...
+    var key          : String    //4/30 stored in dictionary under this key
     var name         : String    //2/3 add comment
     var comment      : String    //2/3 add comment
     var fromObject   : String    //Format objtype : objname : "shape:shape001"
@@ -19,11 +20,13 @@ struct PipeStruct : Codable {
     var loRange      : Double    //hi/lo ranges convert incoming
     var hiRange      : Double    // channel data to desired output range
     var delay        : Int       //delay is in frames (30fps default)
+    var uid          : String
 
     //======(OogiePipe)=============================================
     init()
     {
-        name        = ""              //2/3 new fields
+        key         = ""
+        name        = ""
         comment     = COMMENT_DEFAULT //2/3
         fromObject  = "nada"
         toObject    = "nada"
@@ -32,12 +35,15 @@ struct PipeStruct : Codable {
         loRange     = 0.0
         hiRange     = 1.0
         delay       = 0
+        //5/1 uid
+        uid         = "pipe_" + ProcessInfo.processInfo.globallyUniqueString
     }
     
     //======(OogiePipe)=============================================
     //Most likely called this way from mainVC menu choices
     init( fromObject:String , fromChannel:String , toObject:String , toParam:String)
     {
+        key              = ""              //4/30
         name             = ""              //2/3 new fields
         comment          = COMMENT_DEFAULT //2/3
         self.fromObject  = fromObject
@@ -47,8 +53,15 @@ struct PipeStruct : Codable {
         loRange          = 0.0
         hiRange          = 1.0
         delay            = 0
-
+        uid              = "pipe_" + ProcessInfo.processInfo.globallyUniqueString
     }
     
+    
+    //======(OSStruct)=============================================
+    func getNewUID() -> String
+    {
+        return "pipe_" + ProcessInfo.processInfo.globallyUniqueString
+    }
+
 }
 

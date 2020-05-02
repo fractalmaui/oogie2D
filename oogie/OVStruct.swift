@@ -12,14 +12,15 @@
 //  2/3   add comment field
 //  2/28  redo bottom / top midi
 //  4/18  add rotTrigger
-
+//  4/30  change shapeName to shapeKey
 import Foundation
 struct OVStruct : Codable {
 
+    var key          : String //4/30 stored in dictionary under this key
     var name         : String
     var comment      : String
     var patchName    : String
-    var shapeName    : String //THIS MAY BE REDUNDANT?? Patch has type too!
+    var shapeKey     : String //4/30 points to shape by key
     var level        : Double
     var xCoord       : Double   // 0..1 domain X,Y vary
     var yCoord       : Double  //   according to shape voice is applied to
@@ -47,15 +48,16 @@ struct OVStruct : Codable {
     var topMidi     : Int
     var bottomMidi  : Int
     var keySig      : Int
-
+    var uid         : String //5/1
     
     //======(OVStruct)=============================================
     init()
     {
+        key          = ""
         name         = "empty"
         comment      = ""
         patchName    = "empty"
-        shapeName    = "default"
+        shapeKey     = ""
         level        = 1.0 //Overall level  9/16 make 1
         xCoord       = 0.0
         yCoord       = 0.1 //DHS 9/16 off equator
@@ -82,6 +84,8 @@ struct OVStruct : Codable {
         bottomMidi  = 12   // 2/28 redo, was out of order too!
         topMidi     = bottomMidi + 12*8
         keySig      = 0
+        //5/1 uid
+        uid = "voice_" + ProcessInfo.processInfo.globallyUniqueString
     }
     
     //======(OVStruct)=============================================
@@ -91,7 +95,7 @@ struct OVStruct : Codable {
         name         = "empty"
         comment      = COMMENT_DEFAULT //2/3 from appDelegate
         patchName    = "empty"
-        shapeName    = "default"
+        shapeKey     = ""
         level        = 1.0 //Overall level  9/16 make 1
         xCoord       = 0.0
         yCoord       = 0.1 //DHS 9/16 off equator
@@ -120,6 +124,12 @@ struct OVStruct : Codable {
 
     }
     
+    //======(OSStruct)=============================================
+    func getNewUID() -> String
+    {
+        return "voice_" + ProcessInfo.processInfo.globallyUniqueString
+    }
+
     //======(OVStruct)=============================================
     // Patch gets saved by name
     func saveItem() {

@@ -19,6 +19,7 @@
 		7208A4C922E2C7F3000AA144 /* Marker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7208A4C822E2C7F3000AA144 /* Marker.swift */; };
 		722753CA2333766300A2DC29 /* dog.wav in Resources */ = {isa = PBXBuildFile; fileRef = 722753C92333766300A2DC29 /* dog.wav */; };
 		722BB24522F3B2C900D990B2 /* synthPanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = 722BB24422F3B2C900D990B2 /* synthPanel.xib */; };
+		722CC1C3245B4AEF00686779 /* pixelData.m in Sources */ = {isa = PBXBuildFile; fileRef = 722CC1C2245B4AEF00686779 /* pixelData.m */; };
 		723091A7244EC1CD00A45527 /* RepeatingTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 723091A6244EC1CD00A45527 /* RepeatingTimer.swift */; };
 		72372EDE2373DC890065F58A /* Misc in Resources */ = {isa = PBXBuildFile; fileRef = 72372EDD2373DC890065F58A /* Misc */; };
 		7237D6B1230FC49F00A38D63 /* AllPatches.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7237D6B0230FC49F00A38D63 /* AllPatches.swift */; };
@@ -98,6 +99,8 @@
 		721FAF3C2338795000DC3091 /* GMidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GMidi.h; sourceTree = "<group>"; };
 		722753C92333766300A2DC29 /* dog.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dog.wav; sourceTree = "<group>"; };
 		722BB24422F3B2C900D990B2 /* synthPanel.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = synthPanel.xib; sourceTree = "<group>"; };
+		722CC1C2245B4AEF00686779 /* pixelData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = pixelData.m; path = oogie/pixelData.m; sourceTree = SOURCE_ROOT; };
+		722CC1C4245B4B0A00686779 /* pixelData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pixelData.h; sourceTree = "<group>"; };
 		723091A6244EC1CD00A45527 /* RepeatingTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatingTimer.swift; sourceTree = "<group>"; };
 		72372EDD2373DC890065F58A /* Misc */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Misc; sourceTree = "<group>"; };
 		7237D6B0230FC49F00A38D63 /* AllPatches.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllPatches.swift; sourceTree = "<group>"; };
@@ -211,6 +214,9 @@
 				72EE83812312536B00FFAAE1 /* Resources */,
 				725F033F22E304E700A6A5FD /* audio */,
 				5226E90F1FD4481B00C72C21 /* AppDelegate.swift */,
+				722CC1C2245B4AEF00686779 /* pixelData.m */,
+				722CC1C4245B4B0A00686779 /* pixelData.h */,
+				725F033722E2DF5C00A6A5FD /* oogieBmp.swift */,
 				5226E9111FD4481B00C72C21 /* ViewController.swift */,
 				726EAC222408D884004C4C52 /* PianoKeys.swift */,
 				726CA86E2376566200C382AE /* PatchEditVC.swift */,
@@ -222,7 +228,6 @@
 				5226E9161FD4481B00C72C21 /* Assets.xcassets */,
 				5226E9181FD4481B00C72C21 /* LaunchScreen.storyboard */,
 				725F035E22E305CC00A6A5FD /* oogie2D-Bridging-Header.h */,
-				725F033722E2DF5C00A6A5FD /* oogieBmp.swift */,
 				72D3D69522F69C19001EACA7 /* DataManager.swift */,
 				7237D6B0230FC49F00A38D63 /* AllPatches.swift */,
 				72E20BCF245A18630097A590 /* OogieScene.swift */,
@@ -447,6 +452,7 @@
 				7208A4C922E2C7F3000AA144 /* Marker.swift in Sources */,
 				725F034B22E304E700A6A5FD /* soundFX.m in Sources */,
 				726CA86F2376566300C382AE /* PatchEditVC.swift in Sources */,
+				722CC1C3245B4AEF00686779 /* pixelData.m in Sources */,
 				723091A7244EC1CD00A45527 /* RepeatingTimer.swift in Sources */,
 				7255495E232365A70054A522 /* TextureVC.swift in Sources */,
 				727F08DD2367B5B80054C517 /* OogiePipe.swift in Sources */,

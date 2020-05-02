@@ -7,3 +7,4 @@
 #import "audio/soundFX.h"
 #import "audio/SynthDave.h"
 #import "audio/oogieMidiStubs.h"
+#import "pixelData.h"

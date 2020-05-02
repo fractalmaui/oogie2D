@@ -376,12 +376,13 @@ class OogieVoice: NSObject, NSCopying {
     //-----------(oogieVoice)=============================================
     func dumpParams() -> String
     {
-        var s = ""
+        var s = String(format: "[key:%@]\n",OVS.key)
         for pname in voiceParamNames
         {
             let pTuple = getParam(named : pname.lowercased())
             s = s + String(format: "%@:%@\n",pname,pTuple.sParam)
         }
+        s = s + String(format: "UID:%@\n",OVS.uid)
         return s
     }
     
@@ -498,6 +499,7 @@ class OogieVoice: NSObject, NSCopying {
         } //end switch
         paramListDirty = true
     } //end setParam
+
     
     //-----------(oogieVoice)=============================================
     // 4/22/20 gets param by name, returns tuple

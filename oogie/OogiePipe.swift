@@ -177,12 +177,15 @@ struct OogiePipe {
     //======(OogiePipe)=============================================
     func dumpParams() -> String
     {
-        var s = ""
+        var s = String(format: "[key:%@]\n",PS.key)
         for pname in pipeParamNames
         {
             let pTuple = getParam(named : pname.lowercased())
             s = s + String(format: "%@:%@\n",pname,pTuple.sParam)
         }
+        s = s + String(format: "fromObject:%@\n",PS.fromObject)
+        s = s + String(format: "toObject  :%@\n",PS.toObject)
+        s = s + String(format: "UID:%@\n",PS.uid)
         return s
     }
     
