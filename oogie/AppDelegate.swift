@@ -42,6 +42,11 @@ import UIKit
 
 let COMMENT_DEFAULT = "..."   //2/3   stoopid global visible everywhere
 
+//5/3 SLOPPY GLOBAL: keeps track of angular position of all 3d objects.
+//      need a better solution!
+// String is object key, double is current rotation angle
+var object3DAngles = Dictionary<String, Double>()
+
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
 

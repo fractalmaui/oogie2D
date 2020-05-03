@@ -39,6 +39,9 @@
 //          peel off 3d part of voice/shape to separate methods
 //  4/29   add OSCStruct to OogieScene, migrate scene related vars/methods from here
 //  5/2    add updatePipeByUID,updatePipeByShape
+//  5/3    move playColors to oogieVoice, move bmp from 3dShape to oogieShape,
+//          change knobMode to string move playAllPipesMarkers to oogieScene,
+//          add handlePipesMarkersAnd3D
 import UIKit
 import SceneKit
 import Photos
@@ -77,15 +80,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var updatingPipe = false   //1/25
     //12/2 haptics for wheel controls
     var fbgenerator = UISelectionFeedbackGenerator()
-    var oogieOrigin = SCNNode() //3D origin, all objects added to this parent
-    var pkeys = PianoKeys()    //3D keys for playing test samples
     
 
-    //These items are attached to VC!
-    var shapes3D      = Dictionary<String, SphereShape>()
-    var markers3D     = Dictionary<String, Marker>()
-    var pipes3D       = Dictionary<String, PipeShape>()
-    
     //10/27 for finding new marker lat/lons
     let llToler = Double.pi / 10.0
     let llStep  = Double.pi / 8.0 //must be larger than toler
@@ -96,12 +92,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var oldKnobValue    : Float = 0.0
     var oldKnobInt      : Int = 0    //1/14
     var knobValue       : Float = 0.0 //9/17 rename
-    //------------------------------------------------------
-    
-    enum KnobStates { case SELECT_PARAM, EDIT_PARAM }
-    var knobMode = KnobStates.SELECT_PARAM
-    
-    var startPosition = SCNVector3(x: 0, y: 0, z:0)
+    var knobMode        = ""
 
     //Audio Sound Effects...
     var sfx = soundFX.sharedInstance
@@ -109,17 +100,27 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //All patches: singleton, holds built-in and locally saved patches...
     var allP = AllPatches.sharedInstance
     var recentlyEditedPatches : [String] = []
-  //  var tc = texCache.sharedInstance //9/3 texture cache
 
-    var cameraNode      = SCNNode()
-    let scene           = SCNScene()
-    var OVScene         = OogieScene()
-    var OVSceneName     = "default"
-    var selectedMarker  = Marker()
-    var selectedSphere  = SphereShape()  //10/18
+    // 3D scene starting pos (used in AR version)
+    var startPosition = SCNVector3(x: 0, y: 0, z:0)
+    // 3D objects
+    var cameraNode        = SCNNode()
+    let scene             = SCNScene()
+    var selectedMarker    = Marker()
+    var selectedSphere    = SphereShape()  //10/18
     var selectedPipeShape = PipeShape()   //11/30
+    // Dictionaries of 3D nodes
+    var shapes3D      = Dictionary<String, SphereShape>()
+    var markers3D     = Dictionary<String, Marker>()
+    var pipes3D       = Dictionary<String, PipeShape>()
+    var oogieOrigin = SCNNode() //3D origin, all objects added to this parent
+    var pkeys = PianoKeys()    //3D keys for playing test samples
 
-    var isPlaying = false
+
+    // Overall scene, performs bulk of data workload
+    var OVScene           = OogieScene()
+    var OVSceneName       = "default"
+    var isPlaying         = false
     
    //=====<oogie2D mainVC>====================================================
     override func viewDidLoad() {
@@ -246,7 +247,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         _ = DataManager.getSceneVersion(fname:"default")
 
         //4/20 try foreground timer...
-        playColorsTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.playAllPipesMarkers), userInfo:  nil, repeats: true)
+        playColorsTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handlePipesMarkersAnd3D), userInfo:  nil, repeats: true)
 
         
     } //end viewDidLoad
@@ -340,7 +341,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             case "updatevoicepipe":  // Pipe moved?
                 if !updatingPipe { updatePipeByVoice(v:OVScene.selectedVoice) }
             case "updateshape":  // Shape changed/moved?
-                update3DShapeByName (n:OVScene.selectedShapeKey)
+                update3DShapeByKey (key:OVScene.selectedShapeKey)
             case "updateshapename":  // Shape name/comment changed?
                 selectedSphere.updatePanels(nameStr: OVScene.selectedShape.OOS.name,
                                                comm: OVScene.selectedShape.OOS.comment)
@@ -366,9 +367,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     // 9/12 RH edit button, over rotary knob, toggles edit / param mode
     @IBAction func editSelect(_ sender: Any) {
-        if (knobMode == KnobStates.SELECT_PARAM)  //Change to Edit parameter??
+        if (knobMode == "select")  //5/3 Change to Edit parameter??
         {
-            knobMode = KnobStates.EDIT_PARAM
+            knobMode = "edit"   //5/3
             //Load up old vals for cancel operation
             OVScene.getLastParamValue(editing :whatWeBeEditing,
                                         named : OVScene.selectedFieldName.lowercased())
@@ -431,7 +432,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             }
         } //end knobmode KnobStates.SELECT_PARAM
         else{   //Done editing? back to param select?
-            knobMode  = KnobStates.SELECT_PARAM //NOT editing now...
+            knobMode  = "select" //5/3 NOT editing now...
             if whatWeBeEditing == "voice" //10/18 voice vs shape edit
             {
                 //print("done edit xycoord \(OVScene.selectedVoice.OVS.xCoord), \(OVScene.selectedVoice.OVS.yCoord)")
@@ -475,7 +476,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     // Texture Segue called just above... get textureVC handle here...
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if knobMode == KnobStates.EDIT_PARAM {cancelEdit()}  //1/14 Editing? Not any more!
+        if knobMode == "edit" {cancelEdit()}  //5/3 Editing? Not any more!
         stopPlayingMusic()
         if segue.identifier == "textureSegue" {
             if let nextViewController = segue.destination as? TextureVC {
@@ -542,7 +543,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         var knobName            = "fineGear" //assume edit
         paramKnob.isHidden      = false
         editButtonView.isHidden = false
-        if (knobMode == KnobStates.EDIT_PARAM)  //Edit?
+        if (knobMode == "edit")  //5/3 Edit?
         {
             paramKnob.isHidden      = OVScene.selectedFieldType == "text"  //10/9
             resetButton.isHidden    = OVScene.selectedFieldType == "text"  //10/9
@@ -575,7 +576,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     @IBAction func paramChanged(_ sender: Any) {
         //print("paramchanged...");
         knobValue = paramKnob.value //Assume value is pre-clamped to range
-        if knobMode == KnobStates.SELECT_PARAM //select param  9/13 changes
+        if knobMode == "select" //5/3 select param  9/13 changes
         {
             let ikv = Int(knobValue)
             if ikv != oldKnobInt //1/14 only react to int steps!
@@ -639,14 +640,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // Called when a 3d shape params are changed.
     // Makes sure the 3D representation matches the data
     //  called by param set , restore, pipe data, and cancel
-    func update3DShapeByName (n : String)
+    func update3DShapeByKey (key : String)
     {
-        if let sshape3d = shapes3D[n] //get named SphereShape
+        if let sshape3d = shapes3D[key] //get named SphereShape
         {
             var shapeStruct = OVScene.selectedShape  //Get current shape object
-            if n != OVScene.selectedShapeKey
+            if key != OVScene.selectedShapeKey
             {
-                shapeStruct = OVScene.sceneShapes[n]!
+                shapeStruct = OVScene.sceneShapes[key]!
             }
             //1/21 new struct...
             sshape3d.position = SCNVector3(shapeStruct.OOS.xPos ,shapeStruct.OOS.yPos ,shapeStruct.OOS.zPos )
@@ -655,14 +656,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                                    xt: Float(shapeStruct.OOS.uCoord),
                                                    yt: Float(shapeStruct.OOS.vCoord)
             )
-            //10/23 pass texture scaling/offsets to bitmap object too
-            sshape3d.bmp.setScaleAndOffsets(
+            //5/3 moved bmp to oogieShape
+            shapeStruct.bmp.setScaleAndOffsets(
                 sx: shapeStruct.OOS.uScale, sy: shapeStruct.OOS.vScale,
                 ox: shapeStruct.OOS.uCoord, oy: shapeStruct.OOS.vCoord)
             //4/30 handle possible rotation changes...
             sshape3d.setTimerSpeed(rs: shapeStruct.OOS.rotSpeed)
         }
-    } //end update3DShapeBYName
+    } //end update3DShapeByKey
     
     //=======>ARKit MainVC===================================
     // 10/29 types: manual, BPMX1..8
@@ -709,7 +710,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         whatWeBeEditing = v
         OVScene.selectedField = 0
-        knobMode = KnobStates.SELECT_PARAM
+        knobMode = "select"  //5/3
         updateWheelAndParamButtons()
         var choiceStrings : [String] = []
         switch(v)
@@ -737,6 +738,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //  bool updatingPipe prevents redundant calls
     func updatePipeByVoice(v:OogieVoice)
     {
+        if updatingPipe {return}  // 5/3 fail on multiple calls
         updatingPipe = true
         //Get all outgoing pipes from voice, update positions
         for puid in v.outPipes { updatePipeByUID(puid) }
@@ -747,6 +749,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // update both incoming pipes and outgoing pipes from markers 5/2
     func updatePipeByShape(s:OogieShape)
     {
+        if updatingPipe {return} // 5/3 fail on multiple calls
         updatingPipe = true
         for (_,v) in OVScene.sceneVoices // loop over voices, match with shape
         {
@@ -947,7 +950,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         }
                         else //unhighlighted?
                         {
-                            bailOnEdit = (knobMode == KnobStates.EDIT_PARAM) //5/1
+                            bailOnEdit = (knobMode == "edit") //5/3
                             deselected = true
                         }
                     }
@@ -981,7 +984,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                             }
                             else
                             {
-                                bailOnEdit = (knobMode == KnobStates.EDIT_PARAM) //5/1
+                                bailOnEdit = (knobMode == "edit") //5/3
                                 deselected = true
                             }
                         } //end let testMarker...
@@ -1011,7 +1014,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         }
                         else
                         {
-                            bailOnEdit = (knobMode == KnobStates.EDIT_PARAM) //5/1
+                            bailOnEdit = (knobMode == "edit") //5/3
                             deselected = true
                         }
                     } //end let spo
@@ -1202,7 +1205,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }))
         alert.addAction(UIAlertAction(title: "Reset", style: .default, handler: { action in
             self.OVScene.resetShapeByKey(key: self.OVScene.selectedShape.OOS.key)  //Reset shape object from scene
-            self.update3DShapeByName(n:self.OVScene.selectedShape.OOS.name)  //Ripple change thru to 3D
+            self.update3DShapeByKey(key:self.OVScene.selectedShape.OOS.name)  //Ripple change thru to 3D
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
@@ -1678,18 +1681,33 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         let sphereNode = SphereShape() //make new 3d shape, texture it
         let shapeOOS = pst.shape.OOS
         sphereNode.setBitmap(s: shapeOOS.texture)
-        sphereNode.bmp.setScaleAndOffsets(
-            sx: shapeOOS.uScale, sy: shapeOOS.vScale,
-            ox: shapeOOS.uCoord, oy: shapeOOS.vCoord)
         sphereNode.position = pst.pos3D //Place 3D object as needed..
         sphereNode.setTextureScaleAndTranslation(xs: Float(shapeOOS.uScale), ys: Float(shapeOOS.vScale), xt: Float(shapeOOS.uCoord), yt: Float(shapeOOS.vCoord))
         sphereNode.setupTimer(rs: shapeOOS.rotSpeed)
         sphereNode.name      = shapeOOS.key
+        sphereNode.key       = shapeOOS.key  //5/3 add key
         oogieOrigin.addChildNode(sphereNode)  // Add shape node to scene
-        shapes3D[shapeOOS.key]    = sphereNode     // Add shape to 3d dict
-
+        shapes3D[shapeOOS.key] = sphereNode     // Add shape to 3d dict
     } //end addShape3DNode
 
+        func addShape3DNodeOLD (pst : (shape:OogieShape,pos3D:SCNVector3))
+        {
+            let sphereNode = SphereShape() //make new 3d shape, texture it
+            let shapeOOS = pst.shape.OOS
+            sphereNode.setBitmap(s: shapeOOS.texture)
+//            sphereNode.bmp.setScaleAndOffsets(
+//                sx: shapeOOS.uScale, sy: shapeOOS.vScale,
+//                ox: shapeOOS.uCoord, oy: shapeOOS.vCoord)
+            sphereNode.position = pst.pos3D //Place 3D object as needed..
+            sphereNode.setTextureScaleAndTranslation(xs: Float(shapeOOS.uScale), ys: Float(shapeOOS.vScale), xt: Float(shapeOOS.uCoord), yt: Float(shapeOOS.vCoord))
+            sphereNode.setupTimer(rs: shapeOOS.rotSpeed)
+            sphereNode.name      = shapeOOS.key
+            oogieOrigin.addChildNode(sphereNode)  // Add shape node to scene
+            shapes3D[shapeOOS.key]    = sphereNode     // Add shape to 3d dict
+
+        } //end addShape3DNode
+
+    
     //=====<oogie2D mainVC>====================================================
     // 4/29 cleanup, peel off 3d part to separate method, data to OVScene
     func addPipeToScene(ps : PipeStruct , key : String, op : String)
@@ -1839,149 +1857,76 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
         return ""
     } //end findPipe
-
+    
     
     //=====<oogie2D mainVC>====================================================
-    // Fucking massive... needs to be moved to a background process
-    //   which is independent of the UI and any VC!!
-    @objc func playAllPipesMarkers()
+    // 5/3 calls a huuuuge routine in the scene object
+    //   gets data from pipes into params
+    //   loops over all voices and produces sounds
+    //   propagates output channels into pipes
+    // next the updates3D result is iterated over and any 3D scene updates made
+    @objc func handlePipesMarkersAnd3D()
     {
-        //First thing we get all the data from pipes...
-        for (n,p) in OVScene.scenePipes //handle pipes, update pipe....
+        // pass in edit type if any and knobmode
+        let updates3D = OVScene.playAllPipesMarkers(editing: whatWeBeEditing, knobMode: knobMode)
+        for nextString in updates3D //get next array element, a set of substrings with colon separators
         {
-            //print("n \(n) spm \(selectedPipeKey)")
-            var pwork = p //get editable copy?
-            //12/1 use selected pipe if editing!
-            if n == OVScene.selectedPipeKey  { pwork = OVScene.selectedPipe }
-            if pwork.gotData // Got data? Send to shape/voice parameter
-            {                
-                //1/14 NO conversion needed, already happens in pipe!
-                let pipeVal = pwork.getFromOBuffer(clearFlags:true)
-                if pwork.destination == "shape" //send out shape param
-                {
-                    if let shape = OVScene.sceneShapes[pwork.PS.toObject]
-                    {
-                        //print("toshape pipeval \(pipeVal)")
-                        shape.setParam(named : pwork.PS.toParam.lowercased() , //4/27 set params from pipe
-                                             toDouble : Double(pipeVal) ,
-                                             toString : "")
-
-                        switch(pwork.PS.toParam.lowercased())  //Post processing for certain params...
-                        {
-                        case "rotationtype"  :   //special processing for rotationtype
-                        if let shape3D = shapes3D[pwork.PS.toObject] //12/1 rot speed
-                        {  shape3D.setTimerSpeed(rs: Double(pipeVal)) }
-                        default: break //4/28
-                        }
-
-                        OVScene.sceneShapes[pwork.PS.toObject] = shape //save it back!
-                        update3DShapeByName (n:pwork.PS.toObject)
-                        //changed texture?
-                        if let pipe3D = pipes3D[n]
-                        {
-                            //print("texture bptr \(pwork.bptr)")
-                            let vals = pwork.ibuffer //11/28 want raw unscaled here!
-                            pipe3D.texturePipe(phase:0.0 , chan: pwork.PS.fromChannel.lowercased(),
-                                               vals: vals, vsize: vals.count , bptr : pwork.bptr)
-                        } //end pipe3D
-                    }   //end shape
-                } //end pwork.destination
-                else if pwork.destination == "voice" //1/27 send out voice param
-                {
-                    let tname = pwork.PS.toObject
-                    if let voice = OVScene.sceneVoices[tname]
-                    {
-                        var needPipeUpdate = false
-                        switch(pwork.PS.toParam.lowercased())  //WTF WHY NEED LOWERCASE!
-                        {
-                        case "latitude"   : voice.OVS.yCoord      = Double(pipeVal)
-                            needPipeUpdate = true
-                        case "longitude"  : voice.OVS.xCoord      = Double(pipeVal)
-                            needPipeUpdate = true
-                        default: break
-                        }
-                        //print("tovoice pipeval \(pipeVal)")
-                        voice.setParam(named : pwork.PS.toParam.lowercased() , //4/27 set params from pipe
-                                             toDouble : Double(pipeVal) ,
-                                             toString : "")
-                        OVScene.sceneVoices[tname] = voice //save it back!
-                        var index = 0
-                        if needPipeUpdate
-                        {
-                            if let marker = self.markers3D[tname]
-                            {
-                                marker.updateLatLon(llat: voice.OVS.yCoord, llon: voice.OVS.xCoord)
-                                self.markers3D[tname] = marker //4/28 new dict
-                            } //end if let
-                            let fname = pwork.PS.fromObject
-                            if let invoice = OVScene.sceneVoices[fname]
-                            {
-                                if !updatingPipe
-                                {
-                                    updatePipeByVoice(v:invoice)
-                                }
-                            }
-
-                        }
-                    } //end let voice
-                } //end destination
-            } //end pwork.gotData
-        } //end for n,p
-
-        //iterate thru dictionary of voices, play each one as needed...
-        if !shouldNOTUpdateMarkers  //4/28 simplify
-        {
-            for (key,nextMarker) in markers3D //4/28 new dict
+            let ops3D = nextString.split(separator: ":")
+            if ops3D.count > 1  //got valid sequence?
             {
-                var workVoice  = OogieVoice()
-                if whatWeBeEditing == "voice" && knobMode != KnobStates.SELECT_PARAM &&
-                    OVScene.selectedFieldName.lowercased() == key //4/28 selected and editing?
+                let op  = String(ops3D[0])
+                let key = String(ops3D[1])
+                switch op
                 {
-                    workVoice = OVScene.selectedVoice //load edited voice
-                }
-                else //4/28 if let vname = nextMarker.name  //otherwise load OVS from scene
-                {
-                    workVoice = OVScene.sceneVoices[key]!
-                }
-                var playit = true //10/17 add solo support
-                if soloVoiceID != "" && workVoice.uid != soloVoiceID {playit = false}
-                if  playit && !workVoice.muted  //10/17 add mute
-                {
-                    if let sphereNode = shapes3D[workVoice.OVS.shapeKey] //10/21
+                case "setTimerSpeed":   // update 3D shape timer speed?
+                    if ops3D.count > 2  // got a 3rd data value?
                     {
-                        let rgbaTuple = getShapeColor(shape:sphereNode , xCoord:workVoice.OVS.xCoord, yCoord:workVoice.OVS.yCoord, angle: sphereNode.angle) //10/25 new angle
-                        //Update marker output to 3D
-                        nextMarker.updateRGBData(rrr: rgbaTuple.R, ggg: rgbaTuple.G, bbb: rgbaTuple.B)
-                        OVScene.setupSynthOrSample(oov: workVoice) //load synth ADSR, send note out
-                        // 11/18 move playcolors to voice
-                        nextMarker.gotPlayed = workVoice.playColors(rr: rgbaTuple.R,
-                                                                    gg: rgbaTuple.G,
-                                                                    bb: rgbaTuple.B,
-                                                                    a : sphereNode.angle)
+                        guard let pipeVal = Double(ops3D[2]) else {break}  // get data from pipe
+                        guard let shape3D = shapes3D[key]    else {break}  // 3D shape to apply data to
+                        shape3D.setTimerSpeed(rs: Double(pipeVal))
                     }
-                }
-            } //end for counter...
-        } //end !shouldNot
-
-        //1/25 this is a cluge for now: updating any pipe? skip this part to avoid krash
-        if !updatingPipe
-        {
-            //11/25 Cleanup time! Feed any pipes that need data...
-            for (n,p) in OVScene.scenePipes
-            {
-                var pwork = p //get editable copy
-                if n == OVScene.selectedPipeKey  { pwork = OVScene.selectedPipe } //1/14 editing?
-                if let vvv = OVScene.sceneVoices[p.PS.fromObject] //find pipe source voice
-                {
-                    //get latest desired channel from the marker / voice
-                    let floatVal = Float(vvv.getChanValueByName(n:p.PS.fromChannel.lowercased()))
-                    pwork.addToBuffer(f: floatVal) //...and send to pipe
-                    OVScene.scenePipes[n] = pwork //Save pipe back into scene
-                    if n == OVScene.selectedPipeKey  { OVScene.selectedPipe = pwork } //1/14 editing?
-                }
-            } //end for n,p
-        } //end !updatingpipe
-    } //end playAllPipesMarkersBkgdHandler
+                case "update3DShapeByKey": update3DShapeByKey (key:key) //handle shape param change
+                case "updatePipeTexture":  // update pipe texture motion
+                    if let pipe3D = pipes3D[key] //get 3D pipe handle
+                    {
+                        guard let pipe = OVScene.scenePipes[key] else {break} //also need pipe data handle
+                        let vals = pipe.ibuffer // get raw pipe input data...pass to 3D object
+                        pipe3D.texturePipe(phase:0.0 , chan: pipe.PS.fromChannel.lowercased(),
+                                           vals: vals, vsize: vals.count , bptr : pipe.bptr)
+                    } //end pipe3D
+                case "updateMarkerPosition":  // change a marker 3D position
+                    if let marker = markers3D[key]
+                    {
+                        guard let voice = OVScene.sceneVoices[key] else {break}
+                        marker.updateLatLon(llat: voice.OVS.yCoord, llon: voice.OVS.xCoord)
+                        self.markers3D[key] = marker   //save updated marker
+                    } //end if let
+                case "updatePipePosition":  //change a pipe 3D position
+                    if let invoice = OVScene.sceneVoices[key]
+                    {
+                        if !updatingPipe { updatePipeByVoice(v:invoice) }
+                    }
+                case "updateMarkerRGB": // change marker color (3 xtra args)
+                    if ops3D.count > 4  //got valid sequence? (op:key:r:g:b)
+                    {
+                        guard let rr = Int(ops3D[2]) else {break}  //get rgb ints
+                        guard let gg = Int(ops3D[3]) else {break}
+                        guard let bb = Int(ops3D[4]) else {break}
+                        guard let marker3D = markers3D[key] else {break}
+                        marker3D.updateRGBData(rrr: rr, ggg: gg, bbb: bb)
+                    }
+                case "updateMarkerPlayed":   // update marker played status?
+                    if ops3D.count > 2      // got a 3rd data value?
+                    {
+                        let gotPlayed      = String(ops3D[2])   // get data from pipe
+                        guard let marker3D = markers3D[key] else {break}
+                        marker3D.gotPlayed = gotPlayed == "1"
+                    }
+                default:break
+                }  //end switch
+            }     //end count > 1
+        } //end for nextString
+    } //end handlePipesMarkersAnd3D
     
     
     //=====<oogie2D mainVC>====================================================
@@ -2044,7 +1989,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     // Menu / etc button bottom left
     @IBAction func buttonSelect(_ sender: Any) {
-        if (knobMode == KnobStates.SELECT_PARAM) //User not editing a parameter? this is a menu button
+        if (knobMode == "select") //5/3 User not editing a parameter? this is a menu button
         {
             //GM BASS 44.1khz  WtF? won't play
             (sfx() as! soundFX).makeTicSound(withPitchandLevelandPan: 8,16,80,128)
@@ -2078,14 +2023,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 selectedMarker.updateLatLon(llat: OVScene.selectedVoice.OVS.yCoord, llon: OVScene.selectedVoice.OVS.xCoord)
             }
             else if whatWeBeEditing == "shape" {
-                update3DShapeByName (n:OVScene.selectedShapeKey)
+                update3DShapeByKey (key:OVScene.selectedShapeKey)
                 if let sshape = shapes3D[OVScene.selectedShapeKey] //1/26 also set 3d node spin rate to last value
                 { sshape.setTimerSpeed(rs: OVScene.selectedShape.OOS.rotSpeed) //1/14 invalidate/reset timer
                 }
             } //end else
             //1/26 missing pipe?
         }
-        knobMode = KnobStates.SELECT_PARAM //back to select mode
+        knobMode = "select" //back to select mode
         updateWheelAndParamButtons()
     } //end cancelEdit
     
@@ -2095,39 +2040,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
     }
 
-    
-    // look at current xy, get color based on bmp
-    //=====<oogie2D mainVC>====================================================
-    // 8/23 assumes only one shape and only one pointer!
-    //  XYCoord are in radian units, Y is -pi/2 to pi/2
-    //   most math is done in 0..1 XY coords, then bmp size applied
-    func getShapeColor(shape: SphereShape, xCoord : Double , yCoord : Double , angle : Double) -> (R:Int , G:Int , B:Int , A:Int)
-    {
-        let aoff = Double.pi / 2.0  //10/25 why are we a 1/4 turn off?
-        // 11/3 fix math error in xpercent!
-        var xpercent = (angle + aoff - xCoord) / twoPi  //11/3 apply xcoord B4 dividing!
-        xpercent = -1.0 * xpercent                     //  and flip X direction
-        //Keep us in range 0..1
-        while xpercent > 1.0 {xpercent = xpercent - 1.0}
-        while xpercent < 0.0 {xpercent = xpercent + 1.0}
-        let ypercent = 1.0 - ((yCoord + .pi/2) / .pi)
-        let bmpX = Int(Double(shape.bmp.wid) * xpercent)
-        let bmpY = Int(Double(shape.bmp.hit) * ypercent) //9/15 redo!
-        let cp = CGPoint(x: bmpX, y: bmpY)
-        //print("gsc[\(shape.name)] cp \(cp)")
-        let pColor = shape.bmp.getPixelColor(pos: cp) //pColor is class member
-        //Sloppy! need to get RGB though...
-        var pr : CGFloat = 0.0
-        var pg : CGFloat = 0.0
-        var pb : CGFloat = 0.0
-        var pa : CGFloat = 0.0
-        pColor.getRed(&pr, green: &pg, blue: &pb, alpha: &pa)
-        // print("xycoord \(xCoord),\(yCoord) : bmpxy \(bmpX),\(bmpY)")
-        // print("...rgb \(pr),\(pg),\(pb)")
-        return (Int(pr * 255.0),Int(pg * 255.0),Int(pb * 255.0),Int(pa * 255.0))
-    } //end getShapeColor
-    
-     
+      
     //------<UITextFieldDelegate>-------------------------
     // 10/9  UITExtFieldDelegate...
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
@@ -2168,10 +2081,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //--------<TextureVCDelegate.-------------------------------------
     func gotTexture(name: String, tex: UIImage)
     {
-        if let sshape = shapes3D[OVScene.selectedShapeKey]
+        if let shape3D = shapes3D[OVScene.selectedShapeKey]
         {
-            sshape.setBitmapImage(i: tex) //set 3d shape texture
-            sshape.name           = name // save texture name
+            
+            shape3D.setBitmapImage(i: tex) //set 3d shape texture
+            shape3D.name           = name // save texture name
             OVScene.selectedShape.OOS.texture = name
             //11/24 Store immediately back into scene!
             OVScene.sceneShapes[OVScene.selectedShapeKey] = OVScene.selectedShape

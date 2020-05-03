@@ -43,6 +43,15 @@ class OogieShape: NSObject {
     var inPipes = Set<String>()   //use insert and remove to manage...
     var paramListDirty = true //4/25 add paramList for display purposes
     var paramList  = [String]()
+    //5/3 move bmp from SphereShape
+    var bmp = oogieBmp() //10/21 bmp used for color gathering
+    let tc  = texCache.sharedInstance //10/21 for loading textures...
+
+    #if USE_TESTPATTERN
+    let defaultTexture = "tp"
+    #else
+    let defaultTexture = "oog2-stripey00t"
+    #endif
 
     //-----------(oogieShape)=============================================
     override init() {
@@ -143,6 +152,27 @@ class OogieShape: NSObject {
         paramListDirty = false
         return paramList
     } //end getParamList
+    
+    
+    //-----------(SphereShape)=============================================
+    // 9/2 add default support
+    func setBitmap (s : String)
+    {
+        let tekture = UIImage(named: defaultTexture)
+        if s != "default" //non-default? try from cache!
+        {
+            if let ctek = tc.texDict[s]
+            {
+                bmp.setupImage(i:ctek)
+                return
+            }
+            else {
+                print("error fetching texture \(s)")
+            }
+        }
+        bmp.setupImage(i:tekture!)
+    } //end setBitmap
+
 
     //-----------(oogieShape)=============================================
     // 4/23 sets param by name to either double or string depending on type

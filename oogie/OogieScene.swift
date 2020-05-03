@@ -141,6 +141,12 @@ class OogieScene: NSObject {
         newOSStruct.key     = newKey
         let newOogieShape   = OogieShape()   // 1/21 new shape struct
         newOogieShape.OOS   = newOSStruct
+        //5/3 wups forgot texture!
+        newOogieShape.setBitmap(s: shapeOSS.texture)
+        newOogieShape.bmp.setScaleAndOffsets(  //5/3 bmp now in oogieShape
+            sx: shapeOSS.uScale, sy: shapeOSS.vScale,
+            ox: shapeOSS.uCoord, oy: shapeOSS.vCoord)
+
         sceneShapes[newKey] = newOogieShape  //save latest shap to working dictionary
         return (newOogieShape,pos3D)
     } //end addShapeSceneData
@@ -974,6 +980,127 @@ class OogieScene: NSObject {
         DataManager.saveScene(self.OSC, with: sname)
     } //end packupSceneAndSave
 
+    
+    //=====<oogie2D mainVC>====================================================
+    // Fucking massive... needs to be moved to a background process
+    //   which is independent of the UI and any VC!!
+    // 5/3 move to scene, now returns list of 3D updates in key:operation format
+    @objc func playAllPipesMarkers(editing:String , knobMode:String) -> [String]
+    {
+        var updates3D = [String]()
+        //First thing we get all the data from pipes...
+        for (key,p) in scenePipes //handle pipes, update pipe....
+        {
+            //print("n \(n) spm \(selectedPipeKey)")
+            var pwork = p //get editable copy?
+            //12/1 use selected pipe if editing!
+            if key == selectedPipeKey  { pwork = selectedPipe }
+            if pwork.gotData // Got data? Send to shape/voice parameter
+            {
+                //1/14 NO conversion needed, already happens in pipe!
+                let pipeVal = pwork.getFromOBuffer(clearFlags:true)
+                if pwork.destination == "shape" //send out shape param
+                {
+                    let toKey = pwork.PS.toObject
+                    if let shape = sceneShapes[toKey]
+                    {
+                        //print("toshape pipeval \(pipeVal)")
+                        shape.setParam(named : pwork.PS.toParam.lowercased() , //4/27 set params from pipe
+                            toDouble : Double(pipeVal) ,
+                            toString : "")
+                        
+                        switch(pwork.PS.toParam.lowercased())  //Post processing for certain params...
+                        {
+                        case "rotationtype"  :   //special processing for rotationtype
+                            updates3D.append(String(format: "setTimerSpeed:%@:%f", toKey,pipeVal))
+                            sceneShapes[toKey] = shape //save it back!
+                        default: break //4/28
+                        }
+                        sceneShapes[toKey] = shape //save modified shape
+                        updates3D.append(String(format: "update3DShapeByKey:%@", pwork.PS.toObject))
+                        //Assume pipe texture needs updating...
+                        updates3D.append(String(format: "updatePipeTexture:%@", key))
+                    }   //end shape
+                } //end pwork.destination
+                else if pwork.destination == "voice" //1/27 send out voice param
+                {
+                    let toKey = pwork.PS.toObject
+                    if let voice = sceneVoices[toKey]
+                    {
+                        var needPipeUpdate = false
+                        switch(pwork.PS.toParam.lowercased())  //WTF WHY NEED LOWERCASE!
+                        {
+                        case "latitude"   : voice.OVS.yCoord      = Double(pipeVal)
+                        needPipeUpdate = true
+                        case "longitude"  : voice.OVS.xCoord      = Double(pipeVal)
+                        needPipeUpdate = true
+                        default: break
+                        }
+                        //print("tovoice pipeval \(pipeVal)")
+                        voice.setParam(named : pwork.PS.toParam.lowercased() , //4/27 set params from pipe
+                            toDouble : Double(pipeVal) ,
+                            toString : "")
+                        sceneVoices[toKey] = voice //save it back!
+                        if needPipeUpdate  //Move a pipe? move it and/or marker?
+                        {
+                            updates3D.append(String(format: "updateMarkerPosition:%@:%@",toKey))
+                            updates3D.append(String(format: "updatePipePosition:%@", pwork.PS.fromObject))
+                        }
+                    } //end let voice
+                } //end destination
+            } //end pwork.gotData
+        } //end for n,p
+        
+        //iterate thru dictionary of voices, play each one as needed...
+        // 5/3 NOTE we need to know if a voice is being edited below!!
+        for (key,workVoice) in sceneVoices //4/28 new dict
+        {
+            var workVoice  = OogieVoice()
+            if editing == "voice" && knobMode != "select" &&
+                selectedFieldName.lowercased() == key //4/28 selected and editing?
+            {
+                workVoice = selectedVoice //load edited voice
+            }
+            else //otherwise load next voice from scene
+            {
+                workVoice = sceneVoices[key]!
+            }
+            var playit = true //10/17 add solo support
+            //SOLO??                   if soloVoiceID != "" && workVoice.uid != soloVoiceID {playit = false}
+            if  playit && !workVoice.muted  //10/17 add mute
+            {
+                if let shape = sceneShapes[workVoice.OVS.shapeKey] //get our voice parent shape...
+                {
+                    let rgbaTuple = workVoice.getShapeColor(shape:shape) //find color under marker
+                    //Update marker output to 3D
+                    updates3D.append(String(format: "updateMarkerRGB:%@:%d:%d:%d", key,rgbaTuple.R,rgbaTuple.G,rgbaTuple.B))
+                    setupSynthOrSample(oov: workVoice) //load synth ADSR, send note out
+                    let gotPlayed = workVoice.playColors(rr: rgbaTuple.R,
+                                                         gg: rgbaTuple.G,
+                                                         bb: rgbaTuple.B)
+                    updates3D.append(String(format: "updateMarkerPlayed:%@:%d",key,gotPlayed))
+                }
+            }
+        } //end for counter...
+        
+        //1/25 this is a cluge for now: updating any pipe? skip this part to avoid krash
+        //11/25 Cleanup time! Feed any pipes that need data...
+        for (n,p) in scenePipes
+        {
+            var pwork = p //get editable copy
+            if n == selectedPipeKey  { pwork = selectedPipe } //1/14 editing?
+            if let vvv = sceneVoices[p.PS.fromObject] //find pipe source voice
+            {
+                //get latest desired channel from the marker / voice
+                let floatVal = Float(vvv.getChanValueByName(n:p.PS.fromChannel.lowercased()))
+                pwork.addToBuffer(f: floatVal) //...and send to pipe
+                scenePipes[n] = pwork //Save pipe back into scene
+                if n == selectedPipeKey  { selectedPipe = pwork } //1/14 editing?
+            }
+        } //end for n,p
+        return updates3D // pass 3D updates back to caller
+    } //end playAllPipesMarkers
+    
     
     //-----------(oogieScene)=============================================
     func paramToUnit (inval : Double) -> Double

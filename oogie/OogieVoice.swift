@@ -29,6 +29,7 @@
 //  4/22  add getParam func
 //  4/26  add int param type for midi params
 //  4/27  redo top/bot midi and channel
+//  5/3   move in getShapeColor from mainVC 
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -376,6 +377,43 @@ class OogieVoice: NSObject, NSCopying {
         return(lol,hil)
     } //end getParmLimsForPipe
     
+    
+    //=====<oogie2D mainVC>====================================================
+    // 8/23 assumes only one shape and only one pointer!
+    //  XYCoord are in radian units, Y is -pi/2 to pi/2
+    //   most math is done in 0..1 XY coords, then bmp size applied
+    // 5/3 moved in from mainVC, reduce args
+//    func getShapeColor(shape: SphereShape, xCoord : Double , yCoord : Double , angle : Double) -> (R:Int , G:Int , B:Int , A:Int)
+    func getShapeColor(shape:OogieShape) -> (R:Int , G:Int , B:Int , A:Int)
+    {
+        let aoff = Double.pi / 2.0  //10/25 why are we a 1/4 turn off?
+        //get angle from sloppy global! bail with black color if not present
+        guard let angle = object3DAngles[OVS.shapeKey] else {return (0,0,0,0)}
+        //print("getShapeColor:voice \(OVS.key) shape \(OVS.shapeKey) : angle \(angle)")//
+        // 11/3 fix math error in xpercent!
+        var xpercent = (angle + aoff - OVS.xCoord) / twoPi  //11/3 apply xcoord B4 dividing!
+        xpercent = -1.0 * xpercent                     //  and flip X direction
+        //Keep us in range 0..1
+        while xpercent > 1.0 {xpercent = xpercent - 1.0}
+        while xpercent < 0.0 {xpercent = xpercent + 1.0}
+        let ypercent = 1.0 - ((OVS.yCoord + .pi/2) / .pi)
+        let bmpX = Int(Double(shape.bmp.wid) * xpercent)
+        let bmpY = Int(Double(shape.bmp.hit) * ypercent) //9/15 redo!
+        let cp = CGPoint(x: bmpX, y: bmpY)
+        //print("gsc[\(shape.name)] cp \(cp)")
+        let pColor = shape.bmp.getPixelColor(pos: cp) //pColor is class member
+        //Sloppy! need to get RGB though...
+        var pr : CGFloat = 0.0
+        var pg : CGFloat = 0.0
+        var pb : CGFloat = 0.0
+        var pa : CGFloat = 0.0
+        pColor.getRed(&pr, green: &pg, blue: &pb, alpha: &pa)
+        //print("...xycoord \(OVS.xCoord),\(OVS.yCoord) : bmpxy \(bmpX),\(bmpY)")
+        //print("...rgb \(pr),\(pg),\(pb)")
+        return (Int(pr * 255.0),Int(pg * 255.0),Int(pb * 255.0),Int(pa * 255.0))
+    } //end getShapeColor
+    
+    
     //-----------(oogieVoice)=============================================
     func dumpParams() -> String
     {
@@ -547,11 +585,11 @@ class OogieVoice: NSObject, NSCopying {
     // 11/18 move in from mainvC. heavy lifter, lots of crap brought together
     //  needs masterPitch. should it be an arg or class member?
     //  4/19 add angle arg
-    func playColors( rr : Int ,gg : Int ,bb : Int, a : Double) -> Bool
+    func playColors( rr : Int ,gg : Int ,bb : Int) -> Bool
     {
         var inkeyNote = 0
         var inkeyOldNote = 0
-        //this sets midiNote! 
+        //this sets midiNote!
         setInputColor(chr: rr, chg: gg, chb: bb)
         //DHS TEST ONLY!!! this should be modulated by vchan ? depending on voice mode
         (sfx() as! soundFX).setSynthGain(128)
@@ -593,7 +631,10 @@ class OogieVoice: NSObject, NSCopying {
             }
             else //use beats trigger?
             {
-                gotTriggered = getBeat(a: a) //uses angle from shape
+                if let angle = object3DAngles[OVS.key] //5/3 for beats
+                {
+                    gotTriggered = getBeat(a: angle) //uses angle from shape
+                }
             }
             //if (abs (nchan - lnchan) > 2*OVS.thresh) && nc < 12
             if gotTriggered // 4/19

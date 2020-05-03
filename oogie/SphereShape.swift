@@ -16,6 +16,7 @@
 //  10/24 add #if to set object size,adjust rot speed
 //  10/27 add unHighlight
 //  2/3   add 2nd row of test in createNamePlateImage
+//  5/3   add objectAngles update, move bmp to oogieShape
 import SceneKit
 
 class SphereShape: SCNNode {
@@ -24,6 +25,7 @@ class SphereShape: SCNNode {
     var highlighted = false
     var zoomed = false
     var uid = ""
+    var key = "" //5/3
     let tc = texCache.sharedInstance //10/21 for loading textures...
 
     
@@ -62,7 +64,6 @@ class SphereShape: SCNNode {
     var boxPanel     = SCNBox()
     var panelNodes   : [SCNNode] = []
     var jsize = CGSize(width: 512, height: 32) //overall description image size
-    var bmp = oogieBmp() //10/21 bmp used for color gathering
 
     
     //-----------(SphereShape)=============================================
@@ -144,11 +145,10 @@ class SphereShape: SCNNode {
     //-----------(SphereShape)=============================================
     @objc func advanceRotation()
     {
-       // pLabel.fadeOut()
         angle += dangle
-      //  print("rot: \(angle)")
+      //  print("shape \(key) rot: \(angle)")
         shapeNode.eulerAngles = SCNVector3Make(0, Float(angle), 0)
-
+        if key != "" {object3DAngles[key] = angle}  //5/3 use sloppy global!
     }
     
     //-----------(SphereShape)=============================================
@@ -232,7 +232,6 @@ class SphereShape: SCNNode {
     {
         sphere.firstMaterial?.diffuse.contents  = i
         sphere.firstMaterial?.emission.contents = i
-        bmp.setupImage(i: i) //also set up data gathering bitmap area
     }
     
     //-----------(SphereShape)=============================================
