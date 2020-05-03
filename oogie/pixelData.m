@@ -1,3 +1,9 @@
+//         _          _ ____        _
+//   _ __ (_)_  _____| |  _ \  __ _| |_ __ _
+//  | '_ \| \ \/ / _ \ | | | |/ _` | __/ _` |
+//  | |_) | |>  <  __/ | |_| | (_| | || (_| |
+//  | .__/|_/_/\_\___|_|____/ \__,_|\__\__,_|
+//  |_|
 //
 //  pixelData.m
 //  oogie2D
@@ -26,7 +32,7 @@
 } //end init
 
 //======(pixelData)==========================================
--(void) getImageBitmap : (UIImage*) i
+-(void) setupImageBitmap : (UIImage*) i
 {
     
     twidth  = (int)CGImageGetWidth (i.CGImage);
@@ -43,7 +49,9 @@
 //======(pixelData)==========================================
 -(UIColor*) getRGBAtPoint : (int) xc : (int) yc
 {
-    int ptr = 3*yc + xc;
+    if (xc < 0 || xc >= twidth)  return [UIColor blackColor];
+    if (yc < 0 || yc >= theight) return [UIColor blackColor];
+    int ptr = 4*((yc*twidth) + xc);
     UIColor *c = [UIColor colorWithRed:(CGFloat)imageData[ptr]/255.0
                                  green:(CGFloat)imageData[ptr+1]/255.0
                                   blue:(CGFloat)imageData[ptr+2]/255.0

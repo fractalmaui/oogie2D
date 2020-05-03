@@ -1,3 +1,9 @@
+//    ___              _      ____  _
+//   / _ \  ___   __ _(_) ___|  _ \(_)_ __   ___
+//  | | | |/ _ \ / _` | |/ _ \ |_) | | '_ \ / _ \
+//  | |_| | (_) | (_| | |  __/  __/| | |_) |  __/
+//   \___/ \___/ \__, |_|\___|_|   |_| .__/ \___|
+//               |___/               |_|
 //
 //  OogiePipe.swift
 //  oogie2D
@@ -10,6 +16,7 @@
 //  4/23 add setParam
 //  4/25 add paramList
 //  4/27 add dumpParams
+//  5/2  add calls to setupRange in param lo/hi range change
 
 import Foundation
 import SceneKit
@@ -91,6 +98,7 @@ struct OogiePipe {
     mutating func addToBuffer (f : Float)
     {
         let cf = convertData(f : f)
+        //print("add2buf f \(f) -> \(cf)")
         if ibuffer.count < pbSize
         {
             ibuffer.append(f)
@@ -243,8 +251,8 @@ struct OogiePipe {
         {
         case "inputchannel" : PS.fromChannel = sval
         case "outputparam"  :  PS.toParam    = sval
-        case "lorange"      : PS.loRange     = dval
-        case "hirange"      : PS.hiRange     = dval
+        case "lorange"      : PS.loRange     = dval ; setupRange(lo: PS.loRange,hi: PS.hiRange)  //5/2
+        case "hirange"      : PS.hiRange     = dval ; setupRange(lo: PS.loRange,hi: PS.hiRange)  //5/2
         case "name"         : PS.name        = sval
         case "comment"      : PS.comment     = sval
         default:print("Error:Bad pipe param in set")

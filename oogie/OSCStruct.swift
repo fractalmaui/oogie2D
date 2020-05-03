@@ -1,23 +1,19 @@
-//
+//    ___  ____   ____ ____  _                   _
+//   / _ \/ ___| / ___/ ___|| |_ _ __ _   _  ___| |_
+//  | | | \___ \| |   \___ \| __| '__| | | |/ __| __|
+//  | |_| |___) | |___ ___) | |_| |  | |_| | (__| |_
+//   \___/|____/ \____|____/ \__|_|   \__,_|\___|\__|                                                 
 //  OogleScene.swift
 //  oogie2D
 //
-//  Created by Dave Scruton on 8/24/19.
+//  Created by Dave Scruton on 4/30/20.
 //  Copyright © 2020 fractallonomy. All rights reserved.
 //
-//  a shape looks like this:
-//    shapeName : edits
-//   where shapeName refers to a canned shape, and edits describe any changes to it
-//    like:  xpos = 2.0 , ypos = 3.0 , uScale = 0.5, etc
-//
-//  9/15   add dump
-// 10/27   redu createDefaultScene
-// 11/22   add version , params strings
-// 11/23   getListOfVoices, Shapes
-//  2/1    add pipes clear in clearScene
-//  2/3    add comment field, rename ooversion
-// 4/29    rename to OSCStruct
-// 4/30    remove createDefaultScene
+//  This used to be OogieScene, but I moved it into a sub-struct
+//   that is now part of OogieScene. That way I could add things
+//   like the runtime scene storage, selected items, etc. without
+//   breaking the Codable protocol.
+
 import Foundation
 import SceneKit
 

@@ -1,3 +1,9 @@
+//   ____  _            ____  _                   _
+//  |  _ \(_)_ __   ___/ ___|| |_ _ __ _   _  ___| |_
+//  | |_) | | '_ \ / _ \___ \| __| '__| | | |/ __| __|
+//  |  __/| | |_) |  __/___) | |_| |  | |_| | (__| |_
+//  |_|   |_| .__/ \___|____/ \__|_|   \__,_|\___|\__|
+//          |_|
 //
 //  PipeStruct.swift
 //  oogie2D
@@ -50,7 +56,7 @@ struct PipeStruct : Codable {
         self.fromChannel = fromChannel.lowercased()
         self.toObject    = toObject
         self.toParam     = toParam.lowercased()
-        loRange          = 0.0
+        loRange          = 0.1
         hiRange          = 1.0
         delay            = 0
         uid              = "pipe_" + ProcessInfo.processInfo.globallyUniqueString

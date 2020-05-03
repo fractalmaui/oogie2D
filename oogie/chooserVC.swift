@@ -1,6 +1,11 @@
+//        _                             __     ______
+//    ___| |__   ___   ___  ___  ___ _ _\ \   / / ___|
+//   / __| '_ \ / _ \ / _ \/ __|/ _ \ '__\ \ / / |
+//  | (__| | | | (_) | (_) \__ \  __/ |   \ V /| |___
+//   \___|_| |_|\___/ \___/|___/\___|_|    \_/  \____|
 //
 //  chooserVC.swift
-//  chooser
+//  Oogie2D
 //
 //  Created by Dave Scruton on 10/30/19.
 //  Copyright © 2020 fractallonomy. All rights reserved.

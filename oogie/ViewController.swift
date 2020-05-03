@@ -1861,6 +1861,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 {
                     if let shape = OVScene.sceneShapes[pwork.PS.toObject]
                     {
+                        //print("toshape pipeval \(pipeVal)")
                         shape.setParam(named : pwork.PS.toParam.lowercased() , //4/27 set params from pipe
                                              toDouble : Double(pipeVal) ,
                                              toString : "")
@@ -1899,6 +1900,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                             needPipeUpdate = true
                         default: break
                         }
+                        //print("tovoice pipeval \(pipeVal)")
                         voice.setParam(named : pwork.PS.toParam.lowercased() , //4/27 set params from pipe
                                              toDouble : Double(pipeVal) ,
                                              toString : "")

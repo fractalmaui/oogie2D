@@ -1,7 +1,7 @@
-//                     _    __     __    _
-//    ___   ___   __ _(_) __\ \   / /__ (_) ___ ___
-//   / _ \ / _ \ / _` | |/ _ \ \ / / _ \| |/ __/ _ \
-//  | (_) | (_) | (_| | |  __/\ V / (_) | | (_|  __/
+//    ___              _    __     __    _
+//   / _ \  ___   __ _(_) __\ \   / /__ (_) ___ ___
+//  | | | |/ _ \ / _` | |/ _ \ \ / / _ \| |/ __/ _ \
+//  | |_| | (_) | (_| | |  __/\ V / (_) | | (_|  __/
 //   \___/ \___/ \__, |_|\___| \_/ \___/|_|\___\___|
 //               |___/
 //
@@ -60,6 +60,8 @@ let ScaleParams : [Any] = ["Scale",          "string" ,"major" ,"minor" ,"blues"
                            "lydian" ,"phrygin" ,"pixolydian" ,"locrian" ,"egyptian",
                            "hungarian" ,"algerian","japanese" ]
 let LevelParams    : [Any]   = ["Level" ,    "double", 0.0 , 1.0 , 0.5 , 255.0, 0.0 ]
+//5/2 add thresh
+let ThreshParams : [Any]     = ["Threshold", "double" ,1.0, 255.0 , 5.0  , 1.0,  0.0 ]
 //  10/4 add nvp chan/fixed / midi params
 let NChanParams : [Any]      = ["NChan",     "string" , "Red", "Green", "Blue", "Hue",
                                 "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow", "Fixed"]
@@ -79,12 +81,12 @@ let VNameParams    : [Any]   = ["Name",      "text", "mt"]
 let VCommParams    : [Any]   = ["Comment",   "text", "mt"]
 // All param names, must match first item above for each param!
 let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch",
-                             "Scale","Level",
+                             "Scale","Level","Threshold",
                              "NChan","VChan","PChan",
                              "NFixed","VFixed","PFixed","RotTrigger",
                              "BottomMidi","TopMidi","MidiChannel","Name","Comment"]
 let voiceParamNamesOKForPipe : [String]    = ["Latitude", "Longitude",
-                                            "Scale","Level","NChan","VChan","PChan",
+                                            "Scale","Level","Threshold","NChan","VChan","PChan",
                                             "NFixed","VFixed","PFixed","RotTrigger",
                                             "BottomMidi","TopMidi","MidiChannel"]
 
@@ -217,18 +219,19 @@ class OogieVoice: NSObject, NSCopying {
         voiceParamsDictionary["03"] = PatchParams
         voiceParamsDictionary["04"] = ScaleParams
         voiceParamsDictionary["05"] = LevelParams
-        voiceParamsDictionary["06"] = NChanParams   //10/4 n/v/p channels
-        voiceParamsDictionary["07"] = VChanParams
-        voiceParamsDictionary["08"] = PChanParams
-        voiceParamsDictionary["09"] = NFixedParams   //10/4 n/v/p fixed
-        voiceParamsDictionary["10"] = VFixedParams
-        voiceParamsDictionary["11"] = PFixedParams
-        voiceParamsDictionary["12"] = RotTriggerParams //4/18 add rot trigger
-        voiceParamsDictionary["13"] = BottomMidiParams
-        voiceParamsDictionary["14"] = TopMidiParams
-        voiceParamsDictionary["15"] = MidiChannelParams
-        voiceParamsDictionary["16"] = VNameParams
-        voiceParamsDictionary["17"] = VCommParams   //2/4
+        voiceParamsDictionary["06"] = ThreshParams  //5/2 add threshold
+        voiceParamsDictionary["07"] = NChanParams   //10/4 n/v/p channels
+        voiceParamsDictionary["08"] = VChanParams
+        voiceParamsDictionary["09"] = PChanParams
+        voiceParamsDictionary["10"] = NFixedParams   //10/4 n/v/p fixed
+        voiceParamsDictionary["11"] = VFixedParams
+        voiceParamsDictionary["12"] = PFixedParams
+        voiceParamsDictionary["13"] = RotTriggerParams //4/18 add rot trigger
+        voiceParamsDictionary["14"] = BottomMidiParams
+        voiceParamsDictionary["15"] = TopMidiParams
+        voiceParamsDictionary["16"] = MidiChannelParams
+        voiceParamsDictionary["17"] = VNameParams
+        voiceParamsDictionary["18"] = VCommParams   //2/4
     } //end setupVoiceParams
     
     //-----------(oogieVoice)=============================================
@@ -480,8 +483,9 @@ class OogieVoice: NSObject, NSCopying {
         case "patch"        : OVS.patchName = sval
         case "type"         : break
         case "key"          : OVS.pitchShift = ival % 12
-        case "scale"        : OVS.keySig = ival
+        case "scale"        : OVS.keySig     = ival
         case "level"        : OVS.level      = dval
+        case "threshold"    : OVS.thresh     = ival
         case "nchan"        : OVS.noteMode   = ival
         case "vchan"        : OVS.volMode    = ival
         case "pchan"        : OVS.panMode    = ival
@@ -518,6 +522,7 @@ class OogieVoice: NSObject, NSCopying {
         //OUCH! MISSING KEY!!!WTF?
         case "scale":       dp = Double(OVS.keySig)
         case "level":       dp = OVS.level
+        case "threshold":   dp = Double(OVS.thresh)
         case "nchan":       dp = Double(OVS.noteMode)
         case "vchan":       dp = Double(OVS.volMode)
         case "pchan":       dp = Double(OVS.panMode)
@@ -584,7 +589,7 @@ class OogieVoice: NSObject, NSCopying {
             var gotTriggered = false
             if OVS.rotTrigger == 0 //Use colors as trigger?
             {
-                gotTriggered = (abs (nchan - lnchan) > 2*OVS.thresh) && nc < 12
+                gotTriggered = (abs (nchan - lnchan) > OVS.thresh) && nc < 12 //5/2 
             }
             else //use beats trigger?
             {

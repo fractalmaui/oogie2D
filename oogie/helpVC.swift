@@ -1,6 +1,12 @@
+//   _          _    __     ______
+//  | |__   ___| |_ _\ \   / / ___|
+//  | '_ \ / _ \ | '_ \ \ / / |
+//  | | | |  __/ | |_) \ V /| |___
+//  |_| |_|\___|_| .__/ \_/  \____|
+//               |_|
 //
 //  helpVC.swift
-//  PatchEditor
+//  Oogie2D
 //
 //  Created by Dave Scruton on 11/8/19.
 //  Copyright © 2020 fractallonomy. All rights reserved.

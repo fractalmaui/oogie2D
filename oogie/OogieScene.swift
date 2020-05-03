@@ -1,10 +1,17 @@
+//    ___              _      ____
+//   / _ \  ___   __ _(_) ___/ ___|  ___ ___ _ __   ___
+//  | | | |/ _ \ / _` | |/ _ \___ \ / __/ _ \ '_ \ / _ \
+//  | |_| | (_) | (_| | |  __/___) | (_|  __/ | | |  __/
+//   \___/ \___/ \__, |_|\___|____/ \___\___|_| |_|\___|
+//               |___/
 //
 //  OogieScene.swift
 //  oogie2D
 //
 //  Created by Dave Scruton on 4/29/20.
-//  Copyright © 2020 Brian Advent. All rights reserved.
+//  Copyright © 2020 fractallonomy. All rights reserved.
 //
+
 
 import Foundation
 import SceneKit
@@ -172,6 +179,7 @@ class OogieScene: NSObject {
         else
         {
             updateMaxPipeKey(loadedKey: key) //keep up with keycount!
+            oop.setupRange(lo: oop.PS.loRange, hi: oop.PS.hiRange) //5/2 wups forgot!
         }
         oop.PS.key  = newKey // 4/30 at start name and key are the same
         oop.PS.name = newKey
@@ -192,7 +200,7 @@ class OogieScene: NSObject {
     // Looks up a synth patch, changes current voice
     func changeVoicePatch(name:String)
     {
-        print("cvp \(name)")
+        // tprint("cvp \(name)")
         let sPatch = allP.getPatchByName(name: name)
         selectedVoice.OOP = sPatch //take oogiePatch, attach to voice
         selectedVoice.OVS.patchName = name //4/25 is this needed?
@@ -481,7 +489,7 @@ class OogieScene: NSObject {
              case "texxoffset","texyoffset" :pmax = 1.0
              case "texxscale" ,"texyscale"  :
                  pmin = 0.01
-                 pmax = 10.0
+                 pmax = 100.0 //5/2 why not bigger range?
              default:pmax = 255.0
              }
          }
