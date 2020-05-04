@@ -163,13 +163,13 @@ class OogieScene: NSObject {
         {
             oop.destination    = "shape"
             shape.inPipes.insert(oop.uid) //Add our UID to shape object
-            sceneShapes[toObj] = shape    // save shape back
+// 5/3 NO NEED            sceneShapes[toObj] = shape    // save shape back
         }
         else if let voice = sceneVoices[toObj] //Assume voice instead...
         {
             oop.destination    = "voice"
             voice.inPipes.insert(oop.uid) //Add our UID to voice inpipes
-            sceneVoices[toObj] = voice    // save voice back
+// 5/3 NO NEED            sceneVoices[toObj] = voice    // save voice back
         }
         else  //4/28
         {
@@ -196,7 +196,7 @@ class OogieScene: NSObject {
         if let fromVoice = sceneVoices[from]
         {
             fromVoice.outPipes.insert(oop.uid) //Add our UID to voice object
-            sceneVoices[from] = fromVoice //DUH 1/25
+// 5/3 NO NEED            sceneVoices[from] = fromVoice //DUH 1/25
         }
         return oop
     } //end addPipeSceneData
@@ -268,7 +268,7 @@ class OogieScene: NSObject {
         if let voice = sceneVoices[vname] //and the voice...
         {
             voice.outPipes.remove(pipe.uid) //delete UID entry
-            sceneVoices[vname] = voice     // save voice back
+// 5/3 NO NEED            sceneVoices[vname] = voice     // save voice back
         }
     } //end removeVoiceOutputPipe
     
@@ -280,7 +280,7 @@ class OogieScene: NSObject {
         if let shape = sceneShapes[sname]  //and the shape...
         {
             shape.inPipes.remove(pipe.uid) //delete UID entry
-            sceneShapes[sname] = shape    // save shape back
+// 5/3 NO NEED            sceneShapes[sname] = shape    // save shape back
         }
     } //end removeShapeInputPipe
 
@@ -737,11 +737,11 @@ class OogieScene: NSObject {
          {
              if vkey == key
              {
-                 if let sss = sceneVoices[key] //gawd this is awkward. get substructure ...
+                 if let voice = sceneVoices[key] //gawd this is awkward. get substructure ...
                  {
-                     sss.OVS = s;
-                     sceneVoices[key] = sss; //store it back
-                     if key == selectedMarkerKey {selectedVoice = sss}  //Reset seleted voice?
+                     voice.OVS = s;
+// 5/3 NO NEED                     sceneVoices[key] = sss; //store it back
+                     if key == selectedMarkerKey {selectedVoice = voice}  //Reset seleted voice?
                  }
              }
          }
@@ -1016,7 +1016,7 @@ class OogieScene: NSObject {
                             sceneShapes[toKey] = shape //save it back!
                         default: break //4/28
                         }
-                        sceneShapes[toKey] = shape //save modified shape
+// 5/3 NO NEED                        sceneShapes[toKey] = shape //save modified shape
                         updates3D.append(String(format: "update3DShapeByKey:%@", pwork.PS.toObject))
                         //Assume pipe texture needs updating...
                         updates3D.append(String(format: "updatePipeTexture:%@", key))
@@ -1040,7 +1040,7 @@ class OogieScene: NSObject {
                         voice.setParam(named : pwork.PS.toParam.lowercased() , //4/27 set params from pipe
                             toDouble : Double(pipeVal) ,
                             toString : "")
-                        sceneVoices[toKey] = voice //save it back!
+// 5/3 NO NEED                        sceneVoices[toKey] = voice //save it back!
                         if needPipeUpdate  //Move a pipe? move it and/or marker?
                         {
                             updates3D.append(String(format: "updateMarkerPosition:%@:%@",toKey))

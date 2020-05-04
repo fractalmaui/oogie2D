@@ -17,8 +17,10 @@
 //  10/27 add unHighlight
 //  2/3   add 2nd row of test in createNamePlateImage
 //  5/3   add objectAngles update, move bmp to oogieShape
+//  5/4   add haltTimer, was still running after object deletion!
 import SceneKit
 
+ 
 class SphereShape: SCNNode {
     var rotSpeed: Double = 8.0
     var rotDate = Date()
@@ -27,7 +29,6 @@ class SphereShape: SCNNode {
     var uid = ""
     var key = "" //5/3
     let tc = texCache.sharedInstance //10/21 for loading textures...
-
     
     #if USE_TESTPATTERN
     let defaultTexture = "tp"
@@ -87,7 +88,6 @@ class SphereShape: SCNNode {
         //10/11 add name for touch ID
         uid = "shape_" + ProcessInfo.processInfo.globallyUniqueString
         shapeNode.name = uid
-
         self.addChildNode(shapeNode)
         rotDate = Date() //reset start date
         
@@ -132,6 +132,12 @@ class SphereShape: SCNNode {
     }
     
     //-----------(SphereShape)=============================================
+    func haltTimer()
+    {
+        sTimer.invalidate()
+    }
+    
+    //-----------(SphereShape)=============================================
     // 10/25
     func setupTimer(rs : Double)
     {
@@ -145,11 +151,11 @@ class SphereShape: SCNNode {
     //-----------(SphereShape)=============================================
     @objc func advanceRotation()
     {
+        if key == "empty" {return} //No update if not a valid active shape
         angle += dangle
-      //  print("shape \(key) rot: \(angle)")
         shapeNode.eulerAngles = SCNVector3Make(0, Float(angle), 0)
         if key != "" {object3DAngles[key] = angle}  //5/3 use sloppy global!
-    }
+    } //end advanceRotation
     
     //-----------(SphereShape)=============================================
      // black bkgd, long line of name text

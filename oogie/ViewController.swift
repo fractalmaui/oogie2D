@@ -42,6 +42,8 @@
 //  5/3    move playColors to oogieVoice, move bmp from 3dShape to oogieShape,
 //          change knobMode to string move playAllPipesMarkers to oogieScene,
 //          add handlePipesMarkersAnd3D
+//  5/4    change deleteVoice and deleteShape to work with keys,
+//          also halt Shape timers b4 delete
 import UIKit
 import SceneKit
 import Photos
@@ -92,7 +94,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var oldKnobValue    : Float = 0.0
     var oldKnobInt      : Int = 0    //1/14
     var knobValue       : Float = 0.0 //9/17 rename
-    var knobMode        = ""
+    var knobMode        = "select"
 
     //Audio Sound Effects...
     var sfx = soundFX.sharedInstance
@@ -131,6 +133,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //Our basic camera, out on the Z axis
         cameraNode = SCNNode()
         cameraNode.camera = SCNCamera()
+        
+        selectedSphere.key = "empty" //this keeps keys clean when timer goes off
 
         //2/6 get bounding sphere, place camera according.y
         //let sss = oogieOrigin.boundingSphere
@@ -357,7 +361,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     //12/5 update pipe label and graphfff
                     pipe3D.updateInfo(nameStr: OVScene.selectedPipe.PS.name, vals: OVScene.selectedPipe.ibuffer)
                     pipe3D.pipeColor = pipe3D.getColorForChan(chan: OVScene.selectedPipe.PS.fromChannel)
-                    pipes3D[OVScene.selectedPipeKey] = pipe3D
+// 5/3 NO NEED                    pipes3D[OVScene.selectedPipeKey] = pipe3D
                 }
             default: break
             }
@@ -1176,7 +1180,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             if let marker = self.markers3D[key] //4/28 new dict
             {
                 marker.updateLatLon(llat: self.OVScene.selectedVoice.OVS.yCoord, llon: self.OVScene.selectedVoice.OVS.xCoord)
-                self.markers3D[key] = marker  //4/28 new dict
+// 5/3 NO NEED                self.markers3D[key] = marker  //4/28 new dict
             }
         }))
         alert.addAction(UIAlertAction(title: "Add Pipe...", style: .default, handler: { action in
@@ -1233,7 +1237,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         print("Delete Shape... \(shape.name)")
         let alert = UIAlertController(title: "Delete Selected Shape?", message: "Shape will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
-            self.deleteShape(shape: shape)
+            self.deleteShapeByKey(key: shape.key)  //5/4 use key
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
@@ -1241,14 +1245,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }  //end deleteShapePrompt
     
     //=====<oogie2D mainVC>====================================================
-    // 2/6 redo: removes shape from scene / SCNNode
-    func deleteShape(shape:OSStruct)
+    // 2/6 redo: removes shape from scene / SCNNode 5/4 use key
+    func deleteShapeByKey(key:String)
     {
-        let name = OVScene.selectedShapeKey //4/30 use shape dictionary key!
-           // shape.name
-        if let shape3D = shapes3D[name] // got something to delete?
+        if let shape3D = shapes3D[key] // got something to delete?
         {
-            if let shapeNode = OVScene.sceneShapes[name] //2/6 first,Get rid of any pipes!
+            if let shapeNode = OVScene.sceneShapes[key] //2/6 first,Get rid of any pipes!
             {
                 if shapeNode.inPipes.count > 0
                 {
@@ -1257,7 +1259,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         deletePipeByUID(puid: puid, nodeOnly : false)
                     }
                 }
-                for (n,v) in OVScene.sceneVoices   //2/6 delete any voices too!
+                for (vkey,v) in OVScene.sceneVoices   //2/6 delete any voices too!
                 {
                     for puid in v.inPipes //get rid of any incoming pipes
                     {
@@ -1265,14 +1267,15 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     }
                     
                     //Voice parented to this shape? delete it!
-                    if v.OVS.shapeKey == n { deleteVoice(voice:v)}
+                    if v.OVS.shapeKey == vkey { deleteVoiceByKey(key:vkey)}
                 }
                 shape3D.removeFromParentNode()          //Blow away 3d Shape
-                shapes3D.removeValue(forKey: name)       //  delete dict 3d entry
-                OVScene.sceneShapes.removeValue(forKey: name) //  delete dict data entry
+                shape3D.haltTimer()   //5/4 timer seems to linger after delete!!!
+                shapes3D.removeValue(forKey: key)       //  delete dict 3d entry
+                OVScene.sceneShapes.removeValue(forKey: key) //  delete dict data entry
             } //end let shapeNode
         } // end let shape3D
-    } //end deleteShape
+    } //end deleteShapeByKey
     
     //=====<oogie2D mainVC>====================================================
     // 1/21 when a pipe source or destination is deleted, the pipe must go too...
@@ -1426,7 +1429,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         print("Delete Voice... \(voice.OVS.name)")
         let alert = UIAlertController(title: "Delete Selected Voice?", message: "Voice will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
-            self.deleteVoice(voice: voice)
+            self.deleteVoiceByKey(key: voice.OVS.key)
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
@@ -1435,17 +1438,16 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     //=====<oogie2D mainVC>====================================================
     // 10/27 removes voice from scene / SCNNode
-    func deleteVoice(voice:OogieVoice)
+    func deleteVoiceByKey(key:String)  //5/4 use key
     {
-        let name = voice.OVS.name
-        if let marker = markers3D[OVScene.selectedMarkerKey]   //4/28 new dict
+        if let marker = markers3D[key]   //4/28 new dict
         {
             marker.removeFromParentNode()
-            markers3D.removeValue(forKey: OVScene.selectedMarkerKey) //4/28 new dict
-            OVScene.sceneVoices.removeValue(forKey: name)       //  and remove data structure
+            markers3D.removeValue(forKey: key) //4/28 new dict
+            OVScene.sceneVoices.removeValue(forKey: key)       //  and remove data structure
         }
         // 2/6 what about input pipes?
-    } //end deleteVoice
+    } //end deleteVoiceByKey
 
     //=====<oogie2D mainVC>====================================================
     func removeVoice()
@@ -1478,8 +1480,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func clearScene()
     {
         self.OVScene.OSC.clearScene()       // Clear everything...
-        self.OVScene.clearOogieStructs()
-        self.clearAllNodes(scene:scene)    // Clear any SCNNodes
+        self.OVScene.clearOogieStructs()    // Clear data structures
+        self.clearAll3DNodes(scene:scene)    // Clear any SCNNodes
         self.OVScene.createDefaultScene(named: "default")  //2/1/20 add an object
         self.create3DScene(scene:scene) //  then create new scene from file
         cameraNode.transform = SCNMatrix4Identity
@@ -1487,17 +1489,19 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end clearScene
     
     //=====<oogie2D mainVC>====================================================
-    func clearAllNodes(scene:SCNScene)
+    func clearAll3DNodes(scene:SCNScene)
     {
         oogieOrigin.enumerateChildNodes { (node, _) in //1/20 new origin
             //print("remove node \(node.name)")
             if (node.name != nil) {node.removeFromParentNode()}
         }
         markers3D.removeAll() //4/28 new dict
+        // 5/4 iterate over all shapes and halt timers first
+        for (_,shape3D) in shapes3D { shape3D.haltTimer() }
         shapes3D.removeAll()
         pipes3D.removeAll()          //1/21 wups?
         OVScene.pipeUIDToName.removeAll()  //1/22
-    } //end clearAllNodes
+    } //end clearAll3DNodes
     
     
     //=====<oogie2D mainVC>====================================================
@@ -1741,7 +1745,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         let from    = oop.PS.fromObject
         if let fmarker = markers3D[from] //4/28
         {
-            let flat    = fmarker.lat
+             let flat    = fmarker.lat
              let flon    = fmarker.lon
              let sPos00  = getMarkerParentPositionByName(name:from)
              let toObj   = oop.PS.toObject
@@ -1899,7 +1903,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     {
                         guard let voice = OVScene.sceneVoices[key] else {break}
                         marker.updateLatLon(llat: voice.OVS.yCoord, llon: voice.OVS.xCoord)
-                        self.markers3D[key] = marker   //save updated marker
+// 5/3 NO NEED                        self.markers3D[key] = marker   //save updated marker
                     } //end if let
                 case "updatePipePosition":  //change a pipe 3D position
                     if let invoice = OVScene.sceneVoices[key]
@@ -2083,7 +2087,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         if let shape3D = shapes3D[OVScene.selectedShapeKey]
         {
-            
             shape3D.setBitmapImage(i: tex) //set 3d shape texture
             shape3D.name           = name // save texture name
             OVScene.selectedShape.OOS.texture = name
@@ -2108,11 +2111,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.OVScene.OSC = DataManager.loadScene(OVSceneName, with: OSCStruct.self)
             self.OVScene.OSC.unpackParams()       //DHS 11/22 unpack scene params
             setCamXYZ() //11/24 get any 3D scene cam position...
-            self.clearAllNodes(scene:scene)  // Clear any SCNNodes
+            self.clearAll3DNodes(scene:scene)   // Clear any SCNNodes
+//            self.clearScene()                //get rid of old scene data
             self.create3DScene(scene:scene) //  then create new scene from file
             pLabel.updateLabelOnly(lStr:"Loaded " + OVSceneName)
         }
-
     } //end choseFile
     
     
