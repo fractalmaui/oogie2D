@@ -1098,6 +1098,8 @@ class OogieScene: NSObject {
                 if n == selectedPipeKey  { selectedPipe = pwork } //1/14 editing?
             }
         } //end for n,p
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "got3DUpdatesNotification"), object: "myObject", userInfo: ["updates3D": updates3D])
+
         return updates3D // pass 3D updates back to caller
     } //end playAllPipesMarkers
     

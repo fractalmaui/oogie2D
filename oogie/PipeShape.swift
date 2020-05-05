@@ -16,6 +16,7 @@
 // 1/22  redo create3DPipe, simplify args
 // 2/3   add shapeYoff to ceiling calc
 // 4/23  increase pipe radius : should this be in DB settings?
+// 5/4   add uid name to sphere nodes
 import Foundation
 import UIKit
 import SceneKit
@@ -180,7 +181,8 @@ class PipeShape: SCNNode {
         let tuple = createCornerSphere(pos: p)
         ballGeomz.append(tuple.g)// 11/30 add geometry storage too
         let nextNode  = tuple.n
-        nextNode.name =  String(format: "ball %d",ballGeomz.count)
+        //nextNode.name =  String(format: "ball %d",ballGeomz.count)
+        nextNode.name = uid //  5/4 for select / deselect
         parent.addChildNode(nextNode)
         ballz.append(nextNode) //keep track for highlight
     } //end addBall

@@ -44,6 +44,7 @@
 //          add handlePipesMarkersAnd3D
 //  5/4    change deleteVoice and deleteShape to work with keys,
 //          also halt Shape timers b4 delete
+//         add notification between playAllPipes in OogieScene and handle3DUpdates
 import UIKit
 import SceneKit
 import Photos
@@ -246,6 +247,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //10/16 add notification to see when samples are loaded...
         NotificationCenter.default.addObserver(self, selector: #selector(self.samplesLoaded(notification:)), name: Notification.Name("samplesLoadedNotification"), object: nil)
 
+        //5/4 add notification for 3D updates from color player...
+        NotificationCenter.default.addObserver(self, selector: #selector(self.got3DUpdates(notification:)), name: Notification.Name("got3DUpdatesNotification"), object: nil)
+
+        
         //11/18  Update markers UI in foreground on a timer
         colorTimer = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.updateAllMarkers), userInfo:  nil, repeats: true)
         _ = DataManager.getSceneVersion(fname:"default")
@@ -284,6 +289,20 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //DHS 10/16 create our scene?
         create3DScene(scene: scene)
     }
+
+
+    
+    //=====<oogie2D mainVC>====================================================
+    // 5/4 Called from notification got3DUpdatesNotification
+    @objc func got3DUpdates(notification: NSNotification)
+    {
+        if let uinfo = notification.userInfo
+        {
+            let updates3D = uinfo["updates3D"] as! [String] //array
+            handle3DUpdates(updates3D:updates3D)
+        }
+    } //end got3DUpdates
+
 
     //=====<oogie2D mainVC>====================================================
     @objc func wheelTap(sender:UITapGestureRecognizer)
@@ -1862,6 +1881,72 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         return ""
     } //end findPipe
     
+    var updating3D = false
+    //=====<oogie2D mainVC>====================================================
+    func handle3DUpdates(updates3D:[String])
+    {
+        if updating3D {return}
+        updating3D = true
+                for nextString in updates3D //get next array element, a set of substrings with colon separators
+                {
+                    let ops3D = nextString.split(separator: ":")
+                    if ops3D.count > 1  //got valid sequence?
+                    {
+                        let op  = String(ops3D[0])
+                        let key = String(ops3D[1])
+                        switch op
+                        {
+                        case "setTimerSpeed":   // update 3D shape timer speed?
+                            if ops3D.count > 2  // got a 3rd data value?
+                            {
+                                guard let pipeVal = Double(ops3D[2]) else {break}  // get data from pipe
+                                guard let shape3D = shapes3D[key]    else {break}  // 3D shape to apply data to
+                                shape3D.setTimerSpeed(rs: Double(pipeVal))
+                            }
+                        case "update3DShapeByKey": update3DShapeByKey (key:key) //handle shape param change
+                        case "updatePipeTexture":  // update pipe texture motion
+                            if let pipe3D = pipes3D[key] //get 3D pipe handle
+                            {
+                                guard let pipe = OVScene.scenePipes[key] else {break} //also need pipe data handle
+                                let vals = pipe.ibuffer // get raw pipe input data...pass to 3D object
+                                pipe3D.texturePipe(phase:0.0 , chan: pipe.PS.fromChannel.lowercased(),
+                                                   vals: vals, vsize: vals.count , bptr : pipe.bptr)
+                            } //end pipe3D
+                        case "updateMarkerPosition":  // change a marker 3D position
+                            if let marker = markers3D[key]
+                            {
+                                guard let voice = OVScene.sceneVoices[key] else {break}
+                                marker.updateLatLon(llat: voice.OVS.yCoord, llon: voice.OVS.xCoord)
+        // 5/3 NO NEED                        self.markers3D[key] = marker   //save updated marker
+                            } //end if let
+                        case "updatePipePosition":  //change a pipe 3D position
+                            if let invoice = OVScene.sceneVoices[key]
+                            {
+                                if !updatingPipe { updatePipeByVoice(v:invoice) }
+                            }
+                        case "updateMarkerRGB": // change marker color (3 xtra args)
+                            if ops3D.count > 4  //got valid sequence? (op:key:r:g:b)
+                            {
+                                guard let rr = Int(ops3D[2]) else {break}  //get rgb ints
+                                guard let gg = Int(ops3D[3]) else {break}
+                                guard let bb = Int(ops3D[4]) else {break}
+                                guard let marker3D = markers3D[key] else {break}
+                                marker3D.updateRGBData(rrr: rr, ggg: gg, bbb: bb)
+                            }
+                        case "updateMarkerPlayed":   // update marker played status?
+                            if ops3D.count > 2      // got a 3rd data value?
+                            {
+                                let gotPlayed      = String(ops3D[2])   // get data from pipe
+                                guard let marker3D = markers3D[key] else {break}
+                                marker3D.gotPlayed = gotPlayed == "1"
+                            }
+                        default:break
+                        }  //end switch
+                    }     //end count > 1
+                } //end for nextString
+        updating3D = false
+
+    }
     
     //=====<oogie2D mainVC>====================================================
     // 5/3 calls a huuuuge routine in the scene object
@@ -1871,65 +1956,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // next the updates3D result is iterated over and any 3D scene updates made
     @objc func handlePipesMarkersAnd3D()
     {
-        // pass in edit type if any and knobmode
-        let updates3D = OVScene.playAllPipesMarkers(editing: whatWeBeEditing, knobMode: knobMode)
-        for nextString in updates3D //get next array element, a set of substrings with colon separators
-        {
-            let ops3D = nextString.split(separator: ":")
-            if ops3D.count > 1  //got valid sequence?
-            {
-                let op  = String(ops3D[0])
-                let key = String(ops3D[1])
-                switch op
-                {
-                case "setTimerSpeed":   // update 3D shape timer speed?
-                    if ops3D.count > 2  // got a 3rd data value?
-                    {
-                        guard let pipeVal = Double(ops3D[2]) else {break}  // get data from pipe
-                        guard let shape3D = shapes3D[key]    else {break}  // 3D shape to apply data to
-                        shape3D.setTimerSpeed(rs: Double(pipeVal))
-                    }
-                case "update3DShapeByKey": update3DShapeByKey (key:key) //handle shape param change
-                case "updatePipeTexture":  // update pipe texture motion
-                    if let pipe3D = pipes3D[key] //get 3D pipe handle
-                    {
-                        guard let pipe = OVScene.scenePipes[key] else {break} //also need pipe data handle
-                        let vals = pipe.ibuffer // get raw pipe input data...pass to 3D object
-                        pipe3D.texturePipe(phase:0.0 , chan: pipe.PS.fromChannel.lowercased(),
-                                           vals: vals, vsize: vals.count , bptr : pipe.bptr)
-                    } //end pipe3D
-                case "updateMarkerPosition":  // change a marker 3D position
-                    if let marker = markers3D[key]
-                    {
-                        guard let voice = OVScene.sceneVoices[key] else {break}
-                        marker.updateLatLon(llat: voice.OVS.yCoord, llon: voice.OVS.xCoord)
-// 5/3 NO NEED                        self.markers3D[key] = marker   //save updated marker
-                    } //end if let
-                case "updatePipePosition":  //change a pipe 3D position
-                    if let invoice = OVScene.sceneVoices[key]
-                    {
-                        if !updatingPipe { updatePipeByVoice(v:invoice) }
-                    }
-                case "updateMarkerRGB": // change marker color (3 xtra args)
-                    if ops3D.count > 4  //got valid sequence? (op:key:r:g:b)
-                    {
-                        guard let rr = Int(ops3D[2]) else {break}  //get rgb ints
-                        guard let gg = Int(ops3D[3]) else {break}
-                        guard let bb = Int(ops3D[4]) else {break}
-                        guard let marker3D = markers3D[key] else {break}
-                        marker3D.updateRGBData(rrr: rr, ggg: gg, bbb: bb)
-                    }
-                case "updateMarkerPlayed":   // update marker played status?
-                    if ops3D.count > 2      // got a 3rd data value?
-                    {
-                        let gotPlayed      = String(ops3D[2])   // get data from pipe
-                        guard let marker3D = markers3D[key] else {break}
-                        marker3D.gotPlayed = gotPlayed == "1"
-                    }
-                default:break
-                }  //end switch
-            }     //end count > 1
-        } //end for nextString
+        // pass in edit type if any and knobmode, sends back notification of 3D changes
+        OVScene.playAllPipesMarkers(editing: whatWeBeEditing, knobMode: knobMode)
     } //end handlePipesMarkersAnd3D
     
     
