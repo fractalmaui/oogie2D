@@ -16,7 +16,9 @@
 		5262740E1FD44F3400790D87 /* SphereShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5262740D1FD44F3400790D87 /* SphereShape.swift */; };
 		720110AD232B5D5A00E02CCE /* fineGear.png in Resources */ = {isa = PBXBuildFile; fileRef = 720110AC232B5D5A00E02CCE /* fineGear.png */; };
 		720220BA238C6B6B001F7483 /* PipeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720220B9238C6B6B001F7483 /* PipeShape.swift */; };
+		720796062465239C0052CE39 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 720796052465239B0052CE39 /* Settings.bundle */; };
 		7208A4C922E2C7F3000AA144 /* Marker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7208A4C822E2C7F3000AA144 /* Marker.swift */; };
+		7210EBFD246526F60085DAC7 /* PercussionPatches in Resources */ = {isa = PBXBuildFile; fileRef = 7210EBFC246526F60085DAC7 /* PercussionPatches */; };
 		722753CA2333766300A2DC29 /* dog.wav in Resources */ = {isa = PBXBuildFile; fileRef = 722753C92333766300A2DC29 /* dog.wav */; };
 		722BB24522F3B2C900D990B2 /* synthPanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = 722BB24422F3B2C900D990B2 /* synthPanel.xib */; };
 		722CC1C3245B4AEF00686779 /* pixelData.m in Sources */ = {isa = PBXBuildFile; fileRef = 722CC1C2245B4AEF00686779 /* pixelData.m */; };
@@ -52,7 +54,6 @@
 		727A5613233996D80095BA90 /* percIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 727A560F233996D80095BA90 /* percIcon.png */; };
 		727A5614233996D80095BA90 /* sampleIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 727A5610233996D80095BA90 /* sampleIcon.png */; };
 		727A5615233996D80095BA90 /* percKitIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 727A5611233996D80095BA90 /* percKitIcon.png */; };
-		727E3BBC235541C500CD59B5 /* PercussionPatches in Resources */ = {isa = PBXBuildFile; fileRef = 727E3BBB235541C500CD59B5 /* PercussionPatches */; };
 		727F08DD2367B5B80054C517 /* OogiePipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727F08DC2367B5B80054C517 /* OogiePipe.swift */; };
 		727F08DF23680A8E0054C517 /* PipeStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727F08DE23680A8E0054C517 /* PipeStruct.swift */; };
 		7280B826237B60640055EB77 /* FactorySettings in Resources */ = {isa = PBXBuildFile; fileRef = 7280B825237B60630055EB77 /* FactorySettings */; };
@@ -95,7 +96,9 @@
 		5262740D1FD44F3400790D87 /* SphereShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphereShape.swift; sourceTree = "<group>"; };
 		720110AC232B5D5A00E02CCE /* fineGear.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = fineGear.png; sourceTree = "<group>"; };
 		720220B9238C6B6B001F7483 /* PipeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipeShape.swift; sourceTree = "<group>"; };
+		720796052465239B0052CE39 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		7208A4C822E2C7F3000AA144 /* Marker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Marker.swift; sourceTree = "<group>"; };
+		7210EBFC246526F60085DAC7 /* PercussionPatches */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PercussionPatches; sourceTree = "<group>"; };
 		721FAF3C2338795000DC3091 /* GMidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GMidi.h; sourceTree = "<group>"; };
 		722753C92333766300A2DC29 /* dog.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dog.wav; sourceTree = "<group>"; };
 		722BB24422F3B2C900D990B2 /* synthPanel.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = synthPanel.xib; sourceTree = "<group>"; };
@@ -141,7 +144,6 @@
 		727A560F233996D80095BA90 /* percIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = percIcon.png; sourceTree = "<group>"; };
 		727A5610233996D80095BA90 /* sampleIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sampleIcon.png; sourceTree = "<group>"; };
 		727A5611233996D80095BA90 /* percKitIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = percKitIcon.png; sourceTree = "<group>"; };
-		727E3BBB235541C500CD59B5 /* PercussionPatches */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PercussionPatches; sourceTree = SOURCE_ROOT; };
 		727EDCE22335C0D70028B011 /* moog01.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = moog01.wav; path = Percussion/moog01.wav; sourceTree = "<group>"; };
 		727F08DC2367B5B80054C517 /* OogiePipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogiePipe.swift; sourceTree = "<group>"; };
 		727F08DE23680A8E0054C517 /* PipeStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipeStruct.swift; sourceTree = "<group>"; };
@@ -188,10 +190,10 @@
 		5226E9031FD4481B00C72C21 = {
 			isa = PBXGroup;
 			children = (
+				7210EBFC246526F60085DAC7 /* PercussionPatches */,
 				7280B825237B60630055EB77 /* FactorySettings */,
 				72C91CDF235835B1009858F1 /* GMPatches */,
 				72CBCBA82435A88600793828 /* GMPercussionPatches */,
-				727E3BBB235541C500CD59B5 /* PercussionPatches */,
 				726323F42339FBDB00F393D4 /* PercKitPatches */,
 				7249379A230468F00053BC79 /* SynthPatches */,
 				725F034D22E3054300A6A5FD /* Samples */,
@@ -246,6 +248,7 @@
 				727F08DC2367B5B80054C517 /* OogiePipe.swift */,
 				727F08E0236894310054C517 /* UI */,
 				723091A6244EC1CD00A45527 /* RepeatingTimer.swift */,
+				720796052465239B0052CE39 /* Settings.bundle */,
 			);
 			path = oogie;
 			sourceTree = "<group>";
@@ -390,6 +393,7 @@
 				72DEB0A52320C049005A9505 /* rainbowRing.png in Resources */,
 				726323F52339FBDB00F393D4 /* PercKitPatches in Resources */,
 				727A5612233996D80095BA90 /* synthIcon.png in Resources */,
+				720796062465239C0052CE39 /* Settings.bundle in Resources */,
 				72B3E89D2342ECA300F30AB7 /* dawgj.jpg in Resources */,
 				72FAEDE923AC969300FFCEA5 /* GMPercussion in Resources */,
 				726CA877237658A600C382AE /* dnArrow.png in Resources */,
@@ -421,8 +425,8 @@
 				725F033E22E3036400A6A5FD /* sg2.png in Resources */,
 				727A5615233996D80095BA90 /* percKitIcon.png in Resources */,
 				5226E9151FD4481B00C72C21 /* Main.storyboard in Resources */,
-				727E3BBC235541C500CD59B5 /* PercussionPatches in Resources */,
 				722753CA2333766300A2DC29 /* dog.wav in Resources */,
+				7210EBFD246526F60085DAC7 /* PercussionPatches in Resources */,
 				723B1AB7233341C100AAD931 /* bub1.wav in Resources */,
 				722BB24522F3B2C900D990B2 /* synthPanel.xib in Resources */,
 				726CA8752376580300C382AE /* helpit.jpg in Resources */,

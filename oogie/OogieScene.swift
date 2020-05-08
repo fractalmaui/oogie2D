@@ -27,9 +27,11 @@ class OogieScene: NSObject {
     var sceneVoices = Dictionary<String, OogieVoice>()
     var sceneShapes = Dictionary<String, OogieShape>()
     var scenePipes    = Dictionary<String, OogiePipe>()
+        
     var maxVoiceKey = 0 //Used to generate new keys
     var maxShapeKey = 0
     var maxPipeKey  = 0
+    var masterPitch = 0
 
     //Selected items
     var selectedFieldName    = ""
@@ -67,6 +69,12 @@ class OogieScene: NSObject {
     let llStep  = Double.pi / 8.0 //must be larger than toler
     //For creating new shapes
     var shapeClockPos  : Int = 1   //0 = noon 1 = 3pm etc
+    var sceneLoaded = false  //5/7
+    var handlingLoop = false
+    var needToHaltLoop = false
+    var needFreshLoop  = false
+    var loopTimer = Timer()
+
     
     //-----------(oogieScene)=============================================
     override init() {
@@ -107,6 +115,9 @@ class OogieScene: NSObject {
         }
         
         newVoice.OVS = newOVS
+        //5/8 set master pitch from app delegate.. better place for this?
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        newVoice.masterPitch = appDelegate.masterPitch  // 5/8 this has to come from app delegate!!!
         if newVoice.OOP.type == PERCKIT_VOICE { newVoice.getPercLooxBufferPointerSet()  }
         setupSynthOrSample(oov: newVoice); //More synth-specific stuff
         newVoice.OVS.key    = newKey      // 4/30 set key
@@ -147,6 +158,8 @@ class OogieScene: NSObject {
             sx: shapeOSS.uScale, sy: shapeOSS.vScale,
             ox: shapeOSS.uCoord, oy: shapeOSS.vCoord)
 
+        newOogieShape.setupSpinTimer(rs: shapeOSS.rotSpeed) //5/7 start timer..
+
         sceneShapes[newKey] = newOogieShape  //save latest shap to working dictionary
         return (newOogieShape,pos3D)
     } //end addShapeSceneData
@@ -163,13 +176,11 @@ class OogieScene: NSObject {
         {
             oop.destination    = "shape"
             shape.inPipes.insert(oop.uid) //Add our UID to shape object
-// 5/3 NO NEED            sceneShapes[toObj] = shape    // save shape back
         }
         else if let voice = sceneVoices[toObj] //Assume voice instead...
         {
             oop.destination    = "voice"
             voice.inPipes.insert(oop.uid) //Add our UID to voice inpipes
-// 5/3 NO NEED            sceneVoices[toObj] = voice    // save voice back
         }
         else  //4/28
         {
@@ -196,7 +207,6 @@ class OogieScene: NSObject {
         if let fromVoice = sceneVoices[from]
         {
             fromVoice.outPipes.insert(oop.uid) //Add our UID to voice object
-// 5/3 NO NEED            sceneVoices[from] = fromVoice //DUH 1/25
         }
         return oop
     } //end addPipeSceneData
@@ -268,7 +278,6 @@ class OogieScene: NSObject {
         if let voice = sceneVoices[vname] //and the voice...
         {
             voice.outPipes.remove(pipe.uid) //delete UID entry
-// 5/3 NO NEED            sceneVoices[vname] = voice     // save voice back
         }
     } //end removeVoiceOutputPipe
     
@@ -280,7 +289,6 @@ class OogieScene: NSObject {
         if let shape = sceneShapes[sname]  //and the shape...
         {
             shape.inPipes.remove(pipe.uid) //delete UID entry
-// 5/3 NO NEED            sceneShapes[sname] = shape    // save shape back
         }
     } //end removeShapeInputPipe
 
@@ -740,7 +748,6 @@ class OogieScene: NSObject {
                  if let voice = sceneVoices[key] //gawd this is awkward. get substructure ...
                  {
                      voice.OVS = s;
-// 5/3 NO NEED                     sceneVoices[key] = sss; //store it back
                      if key == selectedMarkerKey {selectedVoice = voice}  //Reset seleted voice?
                  }
              }
@@ -820,7 +827,7 @@ class OogieScene: NSObject {
                 if intChoiceChanged
                 {
                     workString = getSelectedFieldStringForKnobValue (kv : Float(workDouble))
-                    print(" change voice type...%d %@",workDouble,workString);
+                    //print(" change voice type...%d %@",workDouble,workString);
                     changeVoiceType(typeString:workString , needToRefreshOriginalValue: needToRefreshOriginalValue)
                     results.append("updatevoicetype")
                 }
@@ -980,15 +987,63 @@ class OogieScene: NSObject {
         DataManager.saveScene(self.OSC, with: sname)
     } //end packupSceneAndSave
 
+    //-----------(oogieScene)=============================================
+    // 5/8 starts the loop bkgd process
+    func startLoop()
+    {
+        // this is used to keep the background loop from running too fast
+        loopTimer = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.loopTick), userInfo:  nil, repeats: true)
+        needFreshLoop  = true
+        needToHaltLoop = false
+        DispatchQueue.global(qos: .background).async {
+            self.handleLoop()
+        }
+    }
     
-    //=====<oogie2D mainVC>====================================================
+    //-----------(oogieScene)=============================================
+    // 5/8 halts the loop bkgd process
+    func haltLoop()
+    {
+        needToHaltLoop = true
+        loopTimer.invalidate()
+    }
+    
+    //-----------(oogieScene)=============================================
+    // 5/8 makes sure loop runs slower than all-out
+    @objc func loopTick()
+    {
+        needFreshLoop = true
+    }
+
+
+    //-----------(oogieScene)=============================================
+    // stupidly simple: a timer periodically sets loopOK to true, while
+    //  this method is called infinitely from a background queue dispatch
+    // this method then clears loopOK so it matches the timer
+    @objc func handleLoop()
+    {
+        while !needToHaltLoop
+        {
+            if sceneLoaded && needFreshLoop
+            {
+                playAllPipesMarkers(editing: "", knobMode: "select")
+                needFreshLoop = false
+            }
+        }
+        print("loop exited!")
+    } //end handleLoop
+    
+    //-----------(oogieScene)=============================================
     // Fucking massive... needs to be moved to a background process
     //   which is independent of the UI and any VC!!
     // 5/3 move to scene, now returns list of 3D updates in key:operation format
-    @objc func playAllPipesMarkers(editing:String , knobMode:String) -> [String]
+    @objc func playAllPipesMarkers(editing:String , knobMode:String) // NOT NEEDED -> [String]
     {
+        if (sceneVoices.count == 0) {return } //5/7 bogus errors?
+        //let pstartTime = Date()
         var updates3D = [String]()
         //First thing we get all the data from pipes...
+ 
         for (key,p) in scenePipes //handle pipes, update pipe....
         {
             //print("n \(n) spm \(selectedPipeKey)")
@@ -1008,7 +1063,6 @@ class OogieScene: NSObject {
                         shape.setParam(named : pwork.PS.toParam.lowercased() , //4/27 set params from pipe
                             toDouble : Double(pipeVal) ,
                             toString : "")
-                        
                         switch(pwork.PS.toParam.lowercased())  //Post processing for certain params...
                         {
                         case "rotationtype"  :   //special processing for rotationtype
@@ -1016,7 +1070,6 @@ class OogieScene: NSObject {
                             sceneShapes[toKey] = shape //save it back!
                         default: break //4/28
                         }
-// 5/3 NO NEED                        sceneShapes[toKey] = shape //save modified shape
                         updates3D.append(String(format: "update3DShapeByKey:%@", pwork.PS.toObject))
                         //Assume pipe texture needs updating...
                         updates3D.append(String(format: "updatePipeTexture:%@", key))
@@ -1040,7 +1093,6 @@ class OogieScene: NSObject {
                         voice.setParam(named : pwork.PS.toParam.lowercased() , //4/27 set params from pipe
                             toDouble : Double(pipeVal) ,
                             toString : "")
-// 5/3 NO NEED                        sceneVoices[toKey] = voice //save it back!
                         if needPipeUpdate  //Move a pipe? move it and/or marker?
                         {
                             updates3D.append(String(format: "updateMarkerPosition:%@:%@",toKey))
@@ -1053,7 +1105,8 @@ class OogieScene: NSObject {
         
         //iterate thru dictionary of voices, play each one as needed...
         // 5/3 NOTE we need to know if a voice is being edited below!!
-        for (key,workVoice) in sceneVoices //4/28 new dict
+        // 5/7 saw access violation crash here!!! WTF?
+        for (key,nextVoice) in sceneVoices //4/28 new dict
         {
             var workVoice  = OogieVoice()
             if editing == "voice" && knobMode != "select" &&
@@ -1063,7 +1116,7 @@ class OogieScene: NSObject {
             }
             else //otherwise load next voice from scene
             {
-                workVoice = sceneVoices[key]!
+                workVoice = nextVoice
             }
             var playit = true //10/17 add solo support
             //SOLO??                   if soloVoiceID != "" && workVoice.uid != soloVoiceID {playit = false}
@@ -1075,7 +1128,8 @@ class OogieScene: NSObject {
                     //Update marker output to 3D
                     updates3D.append(String(format: "updateMarkerRGB:%@:%d:%d:%d", key,rgbaTuple.R,rgbaTuple.G,rgbaTuple.B))
                     setupSynthOrSample(oov: workVoice) //load synth ADSR, send note out
-                    let gotPlayed = workVoice.playColors(rr: rgbaTuple.R,
+                    //DHS try and get current angle computed from shape
+                    let gotPlayed = workVoice.playColors(angle: shape.computeCurrentAngle(),                                                            rr: rgbaTuple.R,
                                                          gg: rgbaTuple.G,
                                                          bb: rgbaTuple.B)
                     updates3D.append(String(format: "updateMarkerPlayed:%@:%d",key,gotPlayed))
@@ -1099,8 +1153,11 @@ class OogieScene: NSObject {
             }
         } //end for n,p
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "got3DUpdatesNotification"), object: "myObject", userInfo: ["updates3D": updates3D])
+        //let pendTime = Date()
+        //let algoTime = pendTime.timeIntervalSince(pstartTime)
+        //NSLog(" ...algo time %f",algoTime)
 
-        return updates3D // pass 3D updates back to caller
+        return //NOT NEEDED updates3D // pass 3D updates back to caller
     } //end playAllPipesMarkers
     
     

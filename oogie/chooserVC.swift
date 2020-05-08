@@ -20,7 +20,8 @@ import Foundation
 protocol chooserDelegate
 {
     func newFolderContents(c: [String])
-    func choseFile(name: String)
+    func chooserChoseFile(name: String)
+    func chooserCancelled()
     func needToSaveFile(name: String)
 }
 
@@ -156,6 +157,7 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     func cancelAndDismiss()
     {
         chosenFile = ""
+        delegate?.chooserCancelled()
         dismiss(animated: true, completion: nil)
     }
     
@@ -228,12 +230,12 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         {
             let ss = chosenFile.split(separator: ":")//11/13 Compound strings?
             if ss.count == 2  {chosenFile = String(ss[0])} // found one? Choose first part
-            delegate?.choseFile(name: chosenFile)
+            delegate?.chooserChoseFile(name: chosenFile)
             dismiss(animated: true, completion: nil)
         }
         else if mode == "load"
         {
-            delegate?.choseFile(name: chosenFile)
+            delegate?.chooserChoseFile(name: chosenFile)
             dismiss(animated: true, completion: nil)
         }
         else if mode == "save"

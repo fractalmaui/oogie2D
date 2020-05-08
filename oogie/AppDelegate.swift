@@ -41,11 +41,7 @@ import UIKit
 
 
 let COMMENT_DEFAULT = "..."   //2/3   stoopid global visible everywhere
-
-//5/3 SLOPPY GLOBAL: keeps track of angular position of all 3d objects.
-//      need a better solution!
-// String is object key, double is current rotation angle
-var object3DAngles = Dictionary<String, Double>()
+var appSettings = Dictionary<String, Any>()
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
@@ -85,7 +81,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
             versionStr = nsObject as! String
         }
 
- 
+        loadSettings()
         return true
     }
     
@@ -119,6 +115,37 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
         (sfx() as! soundFX).makeTicSound(withPitchandLevelandPan: 6,64,20,128)
     }
 
+    //====(AppDelegate)----------------------------------------------
+    // 5/7 add settings bundle...
+    func loadSettings()
+    {
+        let defaults = UserDefaults.standard
+        defaults.synchronize()
+        let dd = defaults.double(forKey: "spinTimerPeriod")
+        if (dd == 0.0) //no settings yet?
+        {
+            defaults.setValue(0.1, forKey: "colorTimerPeriod")
+            defaults.setValue(0.1, forKey: "spinTimerPeriod")
+            defaults.setValue(0.1, forKey: "blinkTimerPeriod")
+            print("reset defaults ...")
+        }
+        print("spintimer  is \(defaults.double(forKey: "spinTimerPeriod"))")
+        print("colortimer is \(defaults.double(forKey: "colorTimerPeriod"))")
+        print("blinktimer is \(defaults.double(forKey: "blinkTimerPeriod"))")
+        appSettings["colorTimerPeriod"] = defaults.double(forKey: "colorTimerPeriod")
+        appSettings["spinTimerPeriod"]  = defaults.string(forKey: "spinTimerPeriod")
+        appSettings["blinkTimerPeriod"] = defaults.double(forKey: "blinkTimerPeriod")
+    } //end loadSettings
 
-}
+    //====(AppDelegate)----------------------------------------------
+    // no need yet...
+    func saveSettings()
+    {
+//        let defaults = UserDefaults.standard
+//        defaults.setValue(appSettings["colorTimerPeriod"], forKey: "colorTimerPeriod")
+//        defaults.setValue(myTextField.text, forKey: textFieldKeyConstant)
+//        defaults.set(mySwitch.isOn, forKey: switchKeyConstant)
+    }
+    
+} //end AppDelegate
 

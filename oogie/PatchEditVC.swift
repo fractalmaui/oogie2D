@@ -24,6 +24,7 @@
 //  11/15 add subfolders to builtin saves, add save info prompt
 //  11/16 get patchname again when save is hit, in case KB is up
 //  2/27  pull stuff for PERCKIT_VOICE in setupSynthOrSample
+//  5/8   update chooser protocol, add chooserCancelled
 import UIKit
 
 protocol patchEditVCDelegate
@@ -1222,13 +1223,19 @@ class PatchEditVC: UIViewController,
             self.playTestNote(midiNote: 64)
         }
 
-    }
+    } //end loadPatchFromChooserAndUpdateUI
     
+
+    //---<chooserDelegate>--------------------------------------
+    func chooserCancelled()
+    {
+       print("chooser cancel")
+    }
 
     //---<chooserDelegate>--------------------------------------
     //Delegate callback from Chooser... handles multiple
     //   filetypes
-    func choseFile(name: String)
+    func chooserChoseFile(name: String)
     {
         if chooserMode == "loadAllPatches"
         {

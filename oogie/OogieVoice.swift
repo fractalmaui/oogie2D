@@ -191,8 +191,7 @@ class OogieVoice: NSObject, NSCopying {
         OVS.panFixed  = 128
         //9/8 unique ID for tab
         uid = ProcessInfo.processInfo.globallyUniqueString
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        masterPitch = appDelegate.masterPitch //4/19
+        masterPitch = 0
         setupVoiceParams()
     }
     
@@ -242,7 +241,7 @@ class OogieVoice: NSObject, NSCopying {
         dhptr+=1
         if dhptr >= dhmax  //wraparound
            {dhptr = 0
-            analyzeDebugHistory()
+            //analyzeDebugHistory()
         }
     }
     
@@ -267,7 +266,7 @@ class OogieVoice: NSObject, NSCopying {
                     if let end   = t2?.date
                     {
                         let timeInterval : Double = end.timeIntervalSince(start)
-                        //print("loop \(i) : s \(start) e \(end) interval \(timeInterval)")
+                        print("loop \(i) : s \(start) e \(end) interval \(timeInterval)")
                         if timeInterval < 1.0 //ignore large intervals
                         {
                             avet+=timeInterval
@@ -283,27 +282,39 @@ class OogieVoice: NSObject, NSCopying {
             if ptr >= dhmax {ptr = 0}
         }
         avet = avet / Double(avec)
-        //print("ave \(avet) min/max \(mint),\(maxt)")
+        print("ave \(avet) min/max \(mint),\(maxt)")
         
     } //end analyzeDebugHistory
     
+    
+    var dogcount = 0
+    var lasta  = 0.0
+    var lastba = 0.0
+    var lastbeatTime = Date()
     //-----------(oogieVoice)=============================================
     // check to see if angle a has gone past a rotTrigger boundary
+    // BUG: angle is still varying WILDLY, and beat misses when this happens!
     func getBeat(a:Double) -> Bool
     {
         if OVS.rotTrigger == 0.0 {return false}
-        //use truncatingRemainder?
         let pi2 = 2.0 * .pi
-        var aoffset = a
-        while aoffset > pi2  {aoffset -= pi2}
-        //First get angle offset by xcoord (longitude)
-        aoffset = a - pi2 * OVS.xCoord   //angle is in radians, xCoord is 0..1
-        if aoffset < 0.0 {aoffset += pi2}    //wrap around if negative
-        let newBeat = Int(aoffset / (pi2 / OVS.rotTrigger)) //Integer beat count
+        var a0to2pi = a
+        // get our radian offset around the circle...
+        a0to2pi.formTruncatingRemainder(dividingBy:pi2)
+        a0to2pi = a0to2pi - (pi2 * OVS.xCoord) //apply x offset
+        let doubleBeat = a0to2pi / (pi2 / OVS.rotTrigger)
+        let newBeat = Int(floor(doubleBeat))
+        //NSLog("getBeat a %f angle %f  aoff %f  newBeat %d",
+        //      a,a0to2pi,a-lasta ,newBeat)
+        lasta = a
         if newBeat != beat
         {
-           // print("newbeat \(newBeat)")
+            let beatTime = Date()
+            //let beatDelta = beatTime.timeIntervalSince(lastbeatTime)
+            //NSLog("...newbeat %d tdelta %f adelta %f",newBeat,beatDelta,a - lastba)
             beat = newBeat
+            lastbeatTime = beatTime
+            lastba = a
             return true
         }
         return false
@@ -388,7 +399,7 @@ class OogieVoice: NSObject, NSCopying {
     {
         let aoff = Double.pi / 2.0  //10/25 why are we a 1/4 turn off?
         //get angle from sloppy global! bail with black color if not present
-        guard let angle = object3DAngles[OVS.shapeKey] else {return (0,0,0,0)}
+        let angle = shape.angle
         //print("getShapeColor:voice \(OVS.key) shape \(OVS.shapeKey) : angle \(angle)")//
         // 11/3 fix math error in xpercent!
         var xpercent = (angle + aoff - OVS.xCoord) / twoPi  //11/3 apply xcoord B4 dividing!
@@ -585,14 +596,15 @@ class OogieVoice: NSObject, NSCopying {
     // 11/18 move in from mainvC. heavy lifter, lots of crap brought together
     //  needs masterPitch. should it be an arg or class member?
     //  4/19 add angle arg
-    func playColors( rr : Int ,gg : Int ,bb : Int) -> Bool
+    func playColors(angle : Double, rr : Int ,gg : Int ,bb : Int) -> Bool
     {
+        //print("playColors...")
         var inkeyNote = 0
         var inkeyOldNote = 0
         //this sets midiNote!
         setInputColor(chr: rr, chg: gg, chb: bb)
         //DHS TEST ONLY!!! this should be modulated by vchan ? depending on voice mode
-        (sfx() as! soundFX).setSynthGain(128)
+        //(sfx() as! soundFX).setSynthGain(128)
         
         var noteWasPlayed = false
         bufferPointer = 0;
@@ -607,7 +619,7 @@ class OogieVoice: NSObject, NSCopying {
         
         //NSLog("....playColors:NOTE: %d npvchan %d %d %d",midiNote,nchan,pchan,vchan)
         let vt    = OOP.type
-        if midiNote > 0 //Play something?
+        if midiNote > 0  || OVS.rotTrigger != 0//Play something?
         {
             //NSLog("OVPlayColors:Midinote %d",midiNote)
             (sfx() as! soundFX).setSynthMIDI(Int32(OVS.midiDevice), Int32(OVS.midiChannel)) //chan: 0-16
@@ -631,14 +643,13 @@ class OogieVoice: NSObject, NSCopying {
             }
             else //use beats trigger?
             {
-                if let angle = object3DAngles[OVS.key] //5/3 for beats
-                {
+                    //print("beats key \(OVS.key) angle \(angle)")
                     gotTriggered = getBeat(a: angle) //uses angle from shape
-                }
             }
             //if (abs (nchan - lnchan) > 2*OVS.thresh) && nc < 12
             if gotTriggered // 4/19
             {
+               // NSLog(" bing!==============")
                 (sfx() as! soundFX).setSynthMono(Int32(mono))
                 (sfx() as! soundFX).setSynthMonoUN(Int32(uniqueCount))
                 var noteToPlay = -1
@@ -755,7 +766,7 @@ class OogieVoice: NSObject, NSCopying {
     // called when user switches type, need to reset synth/samples/whatever...
     func loadDefaultsForNewType(nt : String)
     {
-        print("ldfnt nt \(nt)")
+        //print("ldfnt nt \(nt)")
         if  nt == "synth"
         {
             OOP = allP.getDefaultPatchByType(ptype: Int(SYNTH_VOICE))

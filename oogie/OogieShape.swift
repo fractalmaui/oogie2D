@@ -15,6 +15,7 @@
 //  4/23 add setParam
 //  4/25 moved params in from OSStruct (was wrong!),add paramList
 //  4/27 add dumpParams
+//  5/6  move spinTimer and shape spin in from SphereShape
 import Foundation
 
 let TexParams   : [Any] = ["Texture", "texture", "mt"]
@@ -35,7 +36,6 @@ let shapeParamNames : [String] = ["Texture", "Rotation","RotationType",
 let shapeParamNamesOKForPipe : [String] = ["Rotation","RotationType","TexXoffset",
                                            "TexYoffset","TexXscale","TexYscale"]
 
-var shapeParamsDictionary = Dictionary<String, [Any]>()
 
 class OogieShape: NSObject {
 
@@ -47,6 +47,15 @@ class OogieShape: NSObject {
     var bmp = oogieBmp() //10/21 bmp used for color gathering
     let tc  = texCache.sharedInstance //10/21 for loading textures...
 
+    //5/6 move shape rotation in from SphereShape
+    var shapeParamsDictionary = Dictionary<String, [Any]>()
+    var angle  : Double = 0.0 //Rotation angle
+    var rotTime : Double = 1.0
+    var spinTimer = Timer()
+    var refAngle : Double = 0.0
+    var refDate  = Date()
+    var oldTInterval : Double = 0.0
+    
     #if USE_TESTPATTERN
     let defaultTexture = "tp"
     #else
@@ -138,7 +147,6 @@ class OogieShape: NSObject {
         return s
     }
     
-
     //-----------(oogieShape)=============================================
     func getParamList() -> [String]
     {
@@ -153,8 +161,65 @@ class OogieShape: NSObject {
         return paramList
     } //end getParamList
     
+    //-----------(oogieShape)=============================================
+    func computeCurrentAngle() -> Double
+    {
+        let cDate = Date()
+        //5/6 how long we be spinnin?
+        let timeInterval : Double = cDate.timeIntervalSince(refDate)
+        oldTInterval = timeInterval
+        return refAngle + (2.0 * Double.pi)*(timeInterval/rotTime)
+    } //end computeCurrentAngle
     
-    //-----------(SphereShape)=============================================
+    //-----------(oogieShape)=============================================
+    // 5/6 redo to use actual time between two Dates, the timer is assumed WRONG
+    @objc func advanceRotation()
+    {
+        angle = computeCurrentAngle()
+    } //end advanceRotation
+    
+    //-----------(oogieShape)=============================================
+    func haltSpinTimer()
+    {
+        spinTimer.invalidate()
+    }
+    
+    
+    //-----------(oogieShape)=============================================
+    func setRotationTypeAndSpeed()
+    {
+        var rspeed = 8.0
+        var irot = Int(OOS.rotation)
+        if irot > 0
+        {
+            if irot > 8 {irot = 8}
+            rspeed = 60.0 / Double(OVtempo) //time for one beat
+            //11/23 change rotation speed mapping
+            rspeed = rspeed * 1.0 * Double(irot) //4/4 timing, apply rot type
+        }
+        OOS.rotSpeed = rspeed //ok set new speed now
+        setTimerSpeed(rs:rspeed)
+    } //end setRotationTypeForSelectedShape
+    
+    //-----------(oogieShape)=============================================
+     func setTimerSpeed(rs : Double)
+     {
+         rotTime  = rs
+         refAngle = angle    //5/6 reset reference angle and date
+         refDate  = Date()
+     }
+
+    //-----------(oogieShape)=============================================
+    func setupSpinTimer(rs : Double)
+    {
+        spinTimer.invalidate()
+        setTimerSpeed(rs:rs)
+        let tstep = 0.002   //5/6 try finer rotation step
+        spinTimer = Timer.scheduledTimer(timeInterval: tstep, target: self, selector: #selector(self.advanceRotation), userInfo:  nil, repeats: true)
+    }
+    
+    
+    //-----------(oogieShape)=============================================
     // 9/2 add default support
     func setBitmap (s : String)
     {
@@ -184,7 +249,9 @@ class OogieShape: NSObject {
         {
         case "texture"     : break  //4/27 no action here
         case "rotation"    : OOS.rotSpeed = dval
+            setTimerSpeed(rs : OOS.rotSpeed)  //5/7 update spin timer
         case "rotationtype": OOS.rotation = floor(dval + 0.5) //4/27 fractions make no sense
+              setRotationTypeAndSpeed() //5/7 set internal rot speed
         case "xpos"        : OOS.xPos     = dval
         case "ypos"        : OOS.yPos     = dval
         case "zpos"        : OOS.zPos     = dval

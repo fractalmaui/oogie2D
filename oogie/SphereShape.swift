@@ -9,15 +9,11 @@
 //  SphereShape.swift
 //  oogie2D
 //
-//  Copyright © 2019 fractallonomy
+//  Copyright © 2020 fractallonomy
 //
-//  Need to add timer reset every animation period!
-//  10/21 support image input
-//  10/24 add #if to set object size,adjust rot speed
 //  10/27 add unHighlight
 //  2/3   add 2nd row of test in createNamePlateImage
-//  5/3   add objectAngles update, move bmp to oogieShape
-//  5/4   add haltTimer, was still running after object deletion!
+//  5/7   move shape rotation over to oogieShape
 import SceneKit
 
  
@@ -35,13 +31,6 @@ class SphereShape: SCNNode {
     #else
     let defaultTexture = "oog2-stripey00t"
     #endif
-
-    //10/25 first 2 vars come from scene ? global settings?
-    var fps = 30
-    var bpm = 135
-    var angle  : Double = 0.0 //Rotation angle
-    var dangle : Double = 0.0 //incremental angle
-    var sTimer = Timer()
 
     //10/11 add torii / box label panels
     var sphere       = SCNSphere()
@@ -119,44 +108,15 @@ class SphereShape: SCNNode {
             self.addChildNode(boxNode)
             panelNodes.append(boxNode)
         }
-        
-        setupTimer(rs: rotSpeed)
     } //end init
-    
+
     //-----------(SphereShape)=============================================
-    // 10/25
-    func setTimerSpeed(rs : Double)
+    // sets angle of 3D shape to follow rotation from oogieShape
+    func setAngle(a:Double)
     {
-        rotSpeed = rs
-        dangle = (2.0 * Double.pi) / (Double(fps) * rotSpeed)
+        shapeNode.eulerAngles = SCNVector3Make(0, Float(a), 0)
     }
-    
-    //-----------(SphereShape)=============================================
-    func haltTimer()
-    {
-        sTimer.invalidate()
-    }
-    
-    //-----------(SphereShape)=============================================
-    // 10/25
-    func setupTimer(rs : Double)
-    {
-        //print("setup Timer Rate \(rs) for shape  \(uid)")
-        sTimer.invalidate()
-        setTimerSpeed(rs:rs)
-        let tstep = 1.0 / Double(fps)
-        sTimer = Timer.scheduledTimer(timeInterval: tstep, target: self, selector: #selector(self.advanceRotation), userInfo:  nil, repeats: true)
-    }
-    
-    //-----------(SphereShape)=============================================
-    @objc func advanceRotation()
-    {
-        if key == "empty" {return} //No update if not a valid active shape
-        angle += dangle
-        shapeNode.eulerAngles = SCNVector3Make(0, Float(angle), 0)
-        if key != "" {object3DAngles[key] = angle}  //5/3 use sloppy global!
-    } //end advanceRotation
-    
+
     //-----------(SphereShape)=============================================
      // black bkgd, long line of name text
     public func createNamePlateImage(label : String , comm: String) -> UIImage {
@@ -245,25 +205,6 @@ class SphereShape: SCNNode {
         super.init(coder: aDecoder)
     }
     
-    //-----------(SphereShape)=============================================
-    // May not be accurate...? assumes runAction produces a clock that is correct
-    //  returns radian angle
-    func getOLDAngle () -> Double
-    {
-//This just doesn't work, rotation axis changes at least 2X!
-//        let rotation3 = self.eulerAngles
-//        var yrot = Double(rotation3.y)
-        let curDate = Date()
-        let dd = curDate.timeIntervalSince(rotDate)
-        //8 second rotational time performed by SCNAction, is it accurate?
-        //  its likely it will wander, curDate needs to be synced periodically
-        //  with the animation start!
-        var yrot = (dd / rotSpeed) * 2.0 * Double.pi //Radians?
-        yrot = yrot - Double.pi*0.5
-        //let degrees = Int(yrot * 180.0 / Double.pi)
-        //print(degrees % 36)
-        return yrot
-    }
     
     //-----------(SphereShape)=============================================
     func toggleHighlight()
