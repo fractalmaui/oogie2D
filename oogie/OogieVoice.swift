@@ -29,7 +29,8 @@
 //  4/22  add getParam func
 //  4/26  add int param type for midi params
 //  4/27  redo top/bot midi and channel
-//  5/3   move in getShapeColor from mainVC 
+//  5/3   move in getShapeColor from mainVC
+//  5/9   add detune as editable param, change detune rules in playColors
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -74,6 +75,7 @@ let NFixedParams : [Any]     = ["NFixed",    "double" ,  16.0, 112.0 , 64.0  , 1
 let VFixedParams : [Any]     = ["VFixed",    "double" ,  0.0 , 255.0 , 128.0 , 1.0,  0.0 ]
 let PFixedParams : [Any]     = ["PFixed",    "double" ,  0.0 , 255.0 , 128.0 , 1.0,  0.0 ]
 let RotTriggerParams : [Any] = ["RotTrigger","double" ,  0.0 , 256.0 , 0.0 , 1.0,  0.0 ]
+let DetuneParams : [Any]     = ["Detune",     "string" , "Off", "On"]   //5/9
 // 2/28 are these ranges wrong now???
 let BottomMidiParams : [Any] = ["BottomMidi","int" ,  16.0 , 112.0 , 52.0 , 1.0,  0.0 ] //4/27 redo next 3
 let TopMidiParams : [Any]    = ["TopMidi",   "int" ,  16.0 , 112.0 , 72.0 , 1.0,  0.0 ]
@@ -84,11 +86,11 @@ let VCommParams    : [Any]   = ["Comment",   "text", "mt"]
 let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch",
                              "Scale","Level","Threshold",
                              "NChan","VChan","PChan",
-                             "NFixed","VFixed","PFixed","RotTrigger",
+                             "NFixed","VFixed","PFixed","RotTrigger","Detune",   // 5/9
                              "BottomMidi","TopMidi","MidiChannel","Name","Comment"]
 let voiceParamNamesOKForPipe : [String]    = ["Latitude", "Longitude",
                                             "Scale","Level","Threshold","NChan","VChan","PChan",
-                                            "NFixed","VFixed","PFixed","RotTrigger",
+                                            "NFixed","VFixed","PFixed","RotTrigger","Detune",   // 5/9
                                             "BottomMidi","TopMidi","MidiChannel"]
 
 var voiceParamsDictionary = Dictionary<String, [Any]>()
@@ -227,11 +229,12 @@ class OogieVoice: NSObject, NSCopying {
         voiceParamsDictionary["11"] = VFixedParams
         voiceParamsDictionary["12"] = PFixedParams
         voiceParamsDictionary["13"] = RotTriggerParams //4/18 add rot trigger
-        voiceParamsDictionary["14"] = BottomMidiParams
-        voiceParamsDictionary["15"] = TopMidiParams
-        voiceParamsDictionary["16"] = MidiChannelParams
-        voiceParamsDictionary["17"] = VNameParams
-        voiceParamsDictionary["18"] = VCommParams   //2/4
+        voiceParamsDictionary["14"] = DetuneParams //5/9 add detune
+        voiceParamsDictionary["15"] = BottomMidiParams
+        voiceParamsDictionary["16"] = TopMidiParams
+        voiceParamsDictionary["17"] = MidiChannelParams
+        voiceParamsDictionary["18"] = VNameParams
+        voiceParamsDictionary["19"] = VCommParams   //2/4
     } //end setupVoiceParams
     
     //-----------(oogieVoice)=============================================
@@ -323,6 +326,11 @@ class OogieVoice: NSObject, NSCopying {
     //-----------(oogieVoice)=============================================
     func getNthParams(n : Int) -> [Any]
     {
+        if voiceParamsDictionary == nil    //5/9 saw crash here! WTF
+        {
+            print("getNthParams ERROR: nil params!")
+            return [""]
+        }
         if n < 0 || n >= voiceParamsDictionary.count {return []}
         let key =  String(format: "%02d", n)
         return voiceParamsDictionary[key]!
@@ -541,14 +549,15 @@ class OogieVoice: NSObject, NSCopying {
         case "nfixed"       : OVS.noteFixed  = ival
         case "vfixed"       : OVS.volFixed   = ival
         case "pfixed"       : OVS.panFixed   = ival
-        case "rottrigger"   : OVS.rotTrigger   = dval
+        case "rottrigger"   : OVS.rotTrigger = dval
+        case "detune"       : OVS.detune     = ival
         case "ofixed"       : OVS.panFixed   = ival
         case "bottommidi"   : OVS.bottomMidi = ival
         case "topmidi"      : OVS.topMidi = ival
         case "midichannel"  : OVS.midiChannel = ival
         case "name"         : OVS.name = sval
         case "comment"      : OVS.comment = sval
-        default: print("Error:Bad voice param in set")
+        default: print("Error:Bad voice param in set:" + name)   //5/9
         } //end switch
         paramListDirty = true
     } //end setParam
@@ -579,6 +588,7 @@ class OogieVoice: NSObject, NSCopying {
         case "vfixed":      dp = Double(OVS.volFixed)
         case "pfixed":      dp = Double(OVS.panFixed)
         case "rottrigger":  dp = Double(OVS.rotTrigger)
+        case "detune":      dp = Double(OVS.detune)   //5/9 add detune
         case "topmidi":     dp = Double(OVS.topMidi)
         case "bottommidi":  dp = Double(OVS.bottomMidi)
         case "midichannel": dp = Double(OVS.midiChannel)
@@ -586,7 +596,7 @@ class OogieVoice: NSObject, NSCopying {
                             isString = true
         case "comment":     sp = OVS.comment //2/4
                             isString = true
-        default:print("Error:Bad voice param in get")
+        default:print("Error:Bad voice param in get:" + name)  //5/9
         }
         if !isString  {sp = String(format: "%4.2f", dp)} //4/25 pack double as string
         return(name , dp , sp) //pack up name,double,string
@@ -625,7 +635,7 @@ class OogieVoice: NSObject, NSCopying {
             (sfx() as! soundFX).setSynthMIDI(Int32(OVS.midiDevice), Int32(OVS.midiChannel)) //chan: 0-16
             let nc = (sfx() as! soundFX).getSynthNoteCount()
             inkeyOldNote = oldNote
-            inkeyNote    = Int((sfx() as! soundFX).makeSureNoteis(inKey: Int32(OVS.keySig),Int32(midiNote)))
+            inkeyNote    = masterPitch + Int((sfx() as! soundFX).makeSureNoteis(inKey: Int32(OVS.keySig),Int32(midiNote)))
             // Mono: Handle releasing old note...
             if OVS.poly == 1 {(sfx() as! soundFX).releaseNote(Int32(inkeyOldNote),0)} //2nd arg, WTF??
             //TBD....[synth setTimetrax:OVgettimetrax(vloop)];
@@ -668,7 +678,7 @@ class OogieVoice: NSObject, NSCopying {
                     }
                     (sfx() as! soundFX).setSynthSampOffset(Int32(OVS.sampleOffset))
                     //4/19 add master pitch,2 octave offset (synths are low sample rate)
-                    noteToPlay  = inkeyNote + masterPitch + 24
+                    noteToPlay  = inkeyNote + 24
                     //print(" inkeyNote \(inkeyNote) masterPitch \(masterPitch) noteToPlay \(noteToPlay)")
                 } //End synth block
                 else if vt == HARMONY_VOICE
@@ -677,10 +687,10 @@ class OogieVoice: NSObject, NSCopying {
                 else if vt == SAMPLE_VOICE //10/16 add GM samples
                 {
                     (sfx() as! soundFX).setSynthGain(Int32(Double(vchan) * 0.7 * OVS.level))
-                    (sfx() as! soundFX).setSynthDetune(1);
+                    (sfx() as! soundFX).setSynthDetune(Int32(OVS.detune)); //5/9 add detune as editable param
                     (sfx() as! soundFX).setSynthPan(Int32(pchan))
                     bptr = bufferPointer
-                    noteToPlay = inkeyNote + masterPitch
+                    noteToPlay = inkeyNote
                     //ok playit
                     if quantTime == 0 //No Quant, play now
                     {
@@ -695,11 +705,15 @@ class OogieVoice: NSObject, NSCopying {
                 else if vt == PERCUSSION_VOICE
                 {
                     (sfx() as! soundFX).setSynthGain(Int32(Double(vchan) * 0.7 * OVS.level))
-                    (sfx() as! soundFX).setSynthDetune(0);
+                    (sfx() as! soundFX).setSynthDetune(Int32(OVS.detune)); //5/9 add detune as editable param
                     // 9/27 no trigger key,just trigger of tolerance..
                     (sfx() as! soundFX).setSynthPan(Int32(pchan))
                     bptr = bufferPointer
-                    noteToPlay = 32
+                    if OVS.detune == 0  //5/9 add detune on/off
+                        {noteToPlay = 32}
+                    else
+                        {noteToPlay = inkeyNote}
+
                     //ok playit
                     if quantTime == 0 //No Quant, play now
                     {
@@ -845,12 +859,11 @@ class OogieVoice: NSObject, NSCopying {
             OOP.release  = SYNTHR_DEFAULT
             OOP.duty     = SYNTHDUTY_DEFAULT
         }
-        if (OOP.type == SAMPLE_VOICE) //here's where our misc arg is important!
+        if OOP.type == SAMPLE_VOICE //here's where our misc arg is important!
         {
             OVS.whichSamp = OVS.sampleOffset + vmisc
-            OVS.detune    = 0   // Most samples will get detuned
+            OVS.detune    = 1   // Most samples will get detuned
         }
-        
         //Init percussion lookups (six are used for each voice)
         for loop in 0...MAX_LOOX-1
         {
@@ -1020,7 +1033,7 @@ class OogieVoice: NSObject, NSCopying {
         
         //Get color/etc channel out to pan channel as needed
         lpchan = 128 //start w/ reasonable default
-        if OOP.type == SYNTH_VOICE || OOP.type == SAMPLE_VOICE || OOP.type == HARMONY_VOICE
+        if OOP.type != PERCKIT_VOICE   //5/9
         {
             switch(OVS.panMode) //10/4 was using wrong property!
             {
@@ -1041,11 +1054,11 @@ class OogieVoice: NSObject, NSCopying {
         //OK, make our note fit into the range designated by user...
         let bmr = Double(OVS.topMidi-OVS.bottomMidi)  //get user target key range
         let bmn = Double(tnchan) / 256.0      //   input hue, convert to 0.0 - 1.0 range
-        if OOP.type == SYNTH_VOICE || OOP.type == SAMPLE_VOICE || OOP.type == HARMONY_VOICE
+        if OOP.type != PERCKIT_VOICE   //5/9
         {
             midiNote =  OVS.bottomMidi + Int(bmr * bmn);
         }
-        else //percussion
+        else //Perc Kit ONLY!  5/9
         {
             if OVS.detune != 0
             {
@@ -1126,7 +1139,7 @@ class OogieVoice: NSObject, NSCopying {
             OVS.panMode     = Int.random(in:0...12); //Pan MODE
             //panlr       = Double.random(0.0...1.0);  //Actual pan
             OVS.thresh      = Int.random(in:1...15);        //    perc threshold for soundoff
-            OVS.detune      = 1; // STICK TO DETUNED! ??Int.random(in:0...1);        //    perc threshold for soundoff
+            OVS.detune      = 1; // STICK TO DETUNED!
             OVS.poly = 0;
             if Int.random(in:0...5) < 2 {OVS.poly = 1}
             //TBD?

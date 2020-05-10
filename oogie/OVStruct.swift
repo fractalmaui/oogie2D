@@ -13,6 +13,7 @@
 //  2/28  redo bottom / top midi
 //  4/18  add rotTrigger
 //  4/30  change shapeName to shapeKey
+//  5/9   make detune editable param
 import Foundation
 struct OVStruct : Codable {
 

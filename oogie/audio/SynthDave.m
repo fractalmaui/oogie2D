@@ -1325,15 +1325,15 @@ short *audioRecBuffer;
                     [self decrVoiceCount:n];
 				}
 			}
-			else   //percussion samples: NO PITCH
+			else   //percussion samples: 5/2/20 add detune
 			{   
- 				if (tones[n].detune)   //Octave shift in percussion??? SHIFTIT!
+ 				if (tones[n].detune)   //Detune? use pitch to step thru...
 					tones[n].phase += 0.0029*(tones[n].pitch);
 				else 
                     tones[n].phase++; //no octave: step thru by onesies...
                 //DHS FOR some reason, percs > 8 NEVER GET HERE!
 
-				if (((int)tones[n].phase*sbc) >= sBufLens[wn]) //End sample/tone!
+				if (((int)tones[n].phase*sbc) >= sBufLens[wn]-2) //End sample/tone!
 				{
 					tones[n].state   = STATE_INACTIVE;
                     tones[n].waveNum = -1;

@@ -180,7 +180,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.OVScene.OSC = DataManager.loadScene("default", with: OSCStruct.self)
             self.OVScene.OSC.unpackParams()       //DHS 11/22 unpack scene params
             self.OVScene.sceneLoaded = true
+            #if VERSION_2D
             setCamXYZ() //11/24 get any 3D scene cam position...
+            #endif
             print("...load default scene")
         }
         else
@@ -2155,7 +2157,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.OVScene.sceneLoaded = false //5/7 add loaded flag
             self.OVScene.OSC = DataManager.loadScene(OVSceneName, with: OSCStruct.self)
             self.OVScene.OSC.unpackParams()       //DHS 11/22 unpack scene params
+            #if VERSION_2D
             setCamXYZ() //11/24 get any 3D scene cam position...
+            #endif
             self.clearAll3DNodes(scene:scene)   // Clear any SCNNodes
 //            self.clearScene()                //get rid of old scene data
             self.create3DScene(scene:scene) //  then create new scene from file
