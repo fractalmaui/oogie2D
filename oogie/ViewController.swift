@@ -58,7 +58,7 @@ let twoPi = 6.2831852
 var OVtempo = 135 //Move to params ASAP
 var camXform = SCNMatrix4()
 
-class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate,patchEditVCDelegate {
+class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate,patchEditVCDelegate,SCNSceneRendererDelegate {
 
     @IBOutlet weak var skView: SCNView!
     @IBOutlet weak var spnl: synthPanel!
@@ -155,6 +155,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         
         scene.rootNode.addChildNode(lightNode)
         let sceneView   = skView!
+        sceneView.delegate = self //5/10 why no workie?
         sceneView.scene = scene
         sceneView.showsStatistics = true
         sceneView.backgroundColor = UIColor.black
@@ -180,6 +181,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.OVScene.OSC = DataManager.loadScene("default", with: OSCStruct.self)
             self.OVScene.OSC.unpackParams()       //DHS 11/22 unpack scene params
             self.OVScene.sceneLoaded = true
+            self.OVScene.OSC.name = OVSceneName //DHS 5/10 wups
             #if VERSION_2D
             setCamXYZ() //11/24 get any 3D scene cam position...
             #endif
@@ -1575,8 +1577,43 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     //=====<oogie2D mainVC>====================================================
     @IBAction func testSelect(_ sender: Any) {
-        dumpDebugShit()
+        //dumpDebugShit()
+        testTiffie()
     } //end testSelect
+    
+    var screenCaptureFlag = false
+    var needTiffie = false
+    //=====<oogie2D mainVC>====================================================
+    func renderer(_ renderer: SCNSceneRenderer, didRenderScene scene: SCNScene, atTime time: TimeInterval) {
+        if screenCaptureFlag {
+            screenCaptureFlag = false  // unflag
+            
+             DispatchQueue.main.async {
+                let screenshot = self.skView.snapshot()
+                // Then save the screenshot, or do whatever you want
+                if self.needTiffie   //for tiffie, use center square from ss
+                {
+                    let wid  = screenshot.size.width
+                    let area = CGRect(x: 0, y: screenshot.size.height/2 - wid/2, width: wid, height: wid)
+                    let crop = screenshot.cgImage!.cropping(to: area)!
+                    let subImage = UIImage(cgImage: crop, scale: 1, orientation:.up)
+                    let json = self.OVScene.OSC.getDumpString()
+                    let ot = OogieTiffie()
+                    let title = "OOgie scene: " + self.OVScene.OSC.name
+                    ot.write(toPhotos: title , json , subImage)
+                    self.needTiffie = false
+                }
+            }
+        }
+    }
+    func testTiffie()
+    {
+        //Enable screen capture
+        screenCaptureFlag = true
+        needTiffie        = true   //after capture, save tiffie!
+        
+    }
+    
     
     //=====<oogie2D mainVC>====================================================
     //Hopefully dumps enuf for debugging anything?
@@ -2157,6 +2194,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.OVScene.sceneLoaded = false //5/7 add loaded flag
             self.OVScene.OSC = DataManager.loadScene(OVSceneName, with: OSCStruct.self)
             self.OVScene.OSC.unpackParams()       //DHS 11/22 unpack scene params
+            self.OVScene.OSC.name = OVSceneName //DHS 5/10 wups
             #if VERSION_2D
             setCamXYZ() //11/24 get any 3D scene cam position...
             #endif

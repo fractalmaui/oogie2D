@@ -317,7 +317,7 @@ class OogieScene: NSObject {
         }
         return false
     } //end foundAMarker
-
+    
     //-----------(oogieScene)=============================================
     // used to clone markers, find new lat/lon point on sphere
     func getFreshLatLon(key : String , lat:Double , lon:Double)  -> (lat:Double , lon:Double )

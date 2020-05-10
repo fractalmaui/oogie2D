@@ -8,3 +8,6 @@
 #import "audio/SynthDave.h"
 #import "audio/oogieMidiStubs.h"
 #import "pixelData.h"
+#import "tiffie.h"
+#import "OogieTiffie.h"
+#import "UIImageExtras.h"
