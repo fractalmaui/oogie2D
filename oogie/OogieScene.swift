@@ -1006,6 +1006,7 @@ class OogieScene: NSObject {
     {
         needToHaltLoop = true
         loopTimer.invalidate()
+        print("halted loop...")
     }
     
     //-----------(oogieScene)=============================================

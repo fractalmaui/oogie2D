@@ -1,9 +1,10 @@
 //
-//           __ _______ _________
-//     _____/ //_  __(_) __/ __(_)__
-//    / ___/ __// / / / /_/ /_/ / _ \
-//   / /  / /_ / / / / __/ __/ /  __/
-//  /_/   \__//_/ /_/_/ /_/ /_/\___/
+//     ____              _    _______ _________
+//    / __ \____  ____ _(_)__/_  __(_) __/ __(_)__
+//   / / / / __ \/ __ `/ / _ \/ / / / /_/ /_/ / _ \
+//  / /_/ / /_/ / /_/ / /  __/ / / / __/ __/ /  __/
+//  \____/\____/\__, /_/\___/_/ /_/_/ /_/ /_/\___/
+//             /____/
 //
 //  oogieTiffie.m
 //
@@ -44,7 +45,7 @@
     unsigned int hdr[32];
 
     _tiffieError = @"";
-    
+    jsonSize     = 0;
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
     unsigned char *imageData = malloc( theight * twidth * 4 );
     
@@ -91,18 +92,18 @@
                 if (okeydokey == 5) //found 'SMART'?
                 {
                     dataRow = tint;
-                    NSLog(@" SMART Header found, row...%d  %d/%d",dataRow,versionA,versionB);
+                    //NSLog(@" SMART Header found, row...%d  %d/%d",dataRow,versionA,versionB);
                 }
                 else
                 {
                     dataRow = TIFF_TOPROW;
-                    NSLog(@" SMART Header error, row %d",dataRow);
-                    _tiffieError = @"Image is not a TripFile";
+                    //NSLog(@" SMART Header error, row %d",dataRow);
+                    _tiffieError = @"error : Image is not a TIFFIE File";
                     return _tiffieError;
                 }
                 if (versionA != 65 || versionB != 65) //Not AA version? Error!
                 {
-                    _tiffieError = @"Bad Tiffie Version";
+                    _tiffieError = @"error : Bad TIFFIE Version";
                     return _tiffieError;
                 }
                 tint = unpackInt();
@@ -110,7 +111,6 @@
                     jsonSize = tint;
                 else
                     jsonSize = 256;
-                NSLog(@" json size %d",tint);
                 packInit(65536); //Re-init unpacking system...
             }
             if (loop >= dataRow && iptr < 65536)  //Read in all 1024!
@@ -127,7 +127,7 @@
     if (tint != TIFF_HEADER_TEST) //BOGUS DATA? Bail!
     {
         //NSLog(@" Failed TIFF_HEADER_TEST(%d) %x vs %x",getPackPtr(),tint,TIFF_HEADER_TEST);
-        _tiffieError = @"Bad Header";
+        _tiffieError = @"error : Bad TIFFIE Header";
         return _tiffieError;
     }
 
@@ -140,10 +140,9 @@
         result = [result stringByAppendingString:nextChunk];
         jptr += chunkSize;
     }
-    NSLog(@" result len %d",(int)result.length);
-
-    NSLog(@" got string [%@]",result);
-    NSLog(@" stringlen %d vs %d",result.length,jsonSize);
+    //NSLog(@" result len %d",(int)result.length);
+    //NSLog(@" got string [%@]",result);
+    //NSLog(@" stringlen %d vs %d",result.length,jsonSize);
     return result; //Indicate success!
 } //end readFromPhotos
 
@@ -171,14 +170,14 @@
 {
     int slen = (int)instring.length;
     int slen3 = slen / 3;
-    NSLog(@" padd [%@] len %d",instring,slen);
+    //NSLog(@" padd [%@] len %d",instring,slen);
     if (3*slen3 != slen) //needs padding?
     {
         slen3 *=3;
         NSString *workString = [instring stringByPaddingToLength:(slen3+3) withString:@" " startingAtIndex:0];
         instring = workString;
     }
-    NSLog(@" result [%@] padded to length %d",instring,slen3+3);
+    //NSLog(@" result [%@] padded to length %d",instring,slen3+3);
     return instring;
 } //end paddStringToNearestWord
 
@@ -196,8 +195,6 @@
 //    }
 
     const char *cstringie = [stringie UTF8String];
-//    for (loop=0;loop<slen/3;loop++)
-    NSLog(@" pack ");
     for (loop=0;loop<slen;loop++)
     {
         tint = 0xff;
@@ -341,7 +338,7 @@
     //Re-init pack area...
     // HOW DO I GET THIS ON READ?????
     packInit(65536);  //Re-init for actual data read...
-    //OK, pack up our trip!
+    //OK, pack up our data!
     packInt(TIFF_HEADER);
     //OK packitup! 1024 chars at a time...
     int jlen = (int)jsonString.length;

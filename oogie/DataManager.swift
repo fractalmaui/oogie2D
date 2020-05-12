@@ -362,6 +362,22 @@ public class DataManager {
     }
     
     //======(DataManager)=============================================
+    //  5/11 for loading in data from a stored string
+    static func load <T:Decodable>(fromString s : String,with type:T.Type) -> T
+    {
+        if let d2 = s.data(using: String.Encoding.utf8)
+        {
+            do {
+                let model = try JSONDecoder().decode(type, from: d2)
+                return model
+            }catch{
+                fatalError("loadFromString krash! ")
+            }
+        }
+        fatalError("loadFromString krash! ")
+    }
+    
+    //======(DataManager)=============================================
     // Load any kind of codable objects, needs URL
     // 10/27 OUCH! How do I return on an error w/o a fatal?
     static func load <T:Decodable> (_ url : URL , with fileName:String, with type:T.Type) -> T {
@@ -371,8 +387,19 @@ public class DataManager {
         }
         if let data = FileManager.default.contents(atPath: url2.path) {
             do {
-                let model = try JSONDecoder().decode(type, from: data)
-                return model
+                let dstring  = String(data: data, encoding: String.Encoding.utf8)
+                print("annnn.....dddd...")
+                print("dstring \(dstring)")
+                if let d2 = dstring?.data(using: String.Encoding.utf8)
+                {
+                    let model = try JSONDecoder().decode(type, from: d2)
+                    return model
+
+                }
+                //                let data2 = let cafe: Data? = "Café".data(using: .utf8) // non-nil
+//ORIGINAL                let model = try JSONDecoder().decode(type, from: data)
+//                return model
+                fatalError( "broke test crap!")
             }catch{
                 fatalError( error.localizedDescription)
             }

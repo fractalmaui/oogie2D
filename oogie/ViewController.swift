@@ -58,7 +58,7 @@ let twoPi = 6.2831852
 var OVtempo = 135 //Move to params ASAP
 var camXform = SCNMatrix4()
 
-class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate,patchEditVCDelegate,SCNSceneRendererDelegate {
+class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate,patchEditVCDelegate,SCNSceneRendererDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate  {
 
     @IBOutlet weak var skView: SCNView!
     @IBOutlet weak var spnl: synthPanel!
@@ -127,6 +127,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var OVSceneName       = "default"
     var isPlaying         = false
     var updating3D        = false
+    var screenCaptureFlag = false // Used by TIFFIE
+    var needTiffie        = false // Used by TIFFIE
 
    //=====<oogie2D mainVC>====================================================
     override func viewDidLoad() {
@@ -303,6 +305,22 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         create3DScene(scene: scene)
     }
 
+    //=====<oogie2D mainVC>====================================================
+    // assumes scene loaded into structs, finish setup...
+    func finishSettingUpScene()
+    {
+        self.OVSceneName = self.OVScene.OSC.name //5/11 wups!
+        self.OVScene.OSC.unpackParams()       //DHS 11/22 unpack scene params
+        #if VERSION_2D
+        setCamXYZ() //11/24 get any 3D scene cam position...
+        #endif
+        self.clearAll3DNodes(scene:scene)   // Clear any SCNNodes
+        self.create3DScene(scene:scene) //  then create new scene from file
+        pLabel.updateLabelOnly(lStr:"Loaded " + OVSceneName)
+        self.OVScene.sceneLoaded = true
+        OVScene.startLoop() // Start music up again...
+
+    }
 
     
     //=====<oogie2D mainVC>====================================================
@@ -1144,9 +1162,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         let alert = UIAlertController(title: tstr, message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.setValue(attStr, forKey: "attributedTitle")
         alert.view.tintColor = UIColor.black //lightText, works in darkmode
-        alert.addAction(UIAlertAction(title: "Load Scene", style: .default, handler: { action in
+        alert.addAction(UIAlertAction(title: "Load Scene...", style: .default, handler: { action in
             self.chooserMode = "load" //11/22
             self.performSegue(withIdentifier: "chooserLoadSegue", sender: self)
+        }))
+        alert.addAction(UIAlertAction(title: "Load TIFFIE...", style: .default, handler: { action in
+            self.chooseImageForSceneLoad() ///5/11 new kind of scene storage!
         }))
         alert.addAction(UIAlertAction(title: "Save Scene", style: .default, handler: { action in
             self.OVScene.packupSceneAndSave(sname:self.OVSceneName)
@@ -1155,6 +1176,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         alert.addAction(UIAlertAction(title: "Save Scene As...", style: .default, handler: { action in
             self.chooserMode = "save" //11/22
             self.performSegue(withIdentifier: "chooserSaveSegue", sender: self)
+        }))
+        alert.addAction(UIAlertAction(title: "Save TIFFIE...", style: .default, handler: { action in
+            self.packupAndSaveTiffie() ///5/11 new kind of scene storage!
         }))
         alert.addAction(UIAlertAction(title: "Patch Editor", style: .default, handler: { action in
             self.performSegue(withIdentifier: "EditPatchSegue", sender: self)
@@ -1578,11 +1602,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     @IBAction func testSelect(_ sender: Any) {
         //dumpDebugShit()
-        testTiffie()
+        packupAndSaveTiffie()
     } //end testSelect
     
-    var screenCaptureFlag = false
-    var needTiffie = false
     //=====<oogie2D mainVC>====================================================
     func renderer(_ renderer: SCNSceneRenderer, didRenderScene scene: SCNScene, atTime time: TimeInterval) {
         if screenCaptureFlag {
@@ -1602,17 +1624,20 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     let title = "OOgie scene: " + self.OVScene.OSC.name
                     ot.write(toPhotos: title , json , subImage)
                     self.needTiffie = false
+                    self.pLabel.updateLabelOnly(lStr:"Saved " + self.OVScene.OSC.name + " as TIFFIE")
                 }
             }
         }
-    }
-    func testTiffie()
+    } //end didRenderScene
+
+    //=====<oogie2D mainVC>====================================================
+    //  this just sets up some flags, the scene Renderer triggers actual save
+    func packupAndSaveTiffie()
     {
         //Enable screen capture
         screenCaptureFlag = true
         needTiffie        = true   //after capture, save tiffie!
-        
-    }
+    } //end packupAndSaveTiffie
     
     
     //=====<oogie2D mainVC>====================================================
@@ -1657,6 +1682,16 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         self.present(alert, animated: true, completion: nil)
     }
     
+    //=====<oogie2D mainVC>====================================================
+    func infoAlert(title:String , message : String)
+    {
+        let alert = UIAlertController(title: title, message: message,
+                                      preferredStyle: UIAlertController.Style.alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
+        }))
+        self.present(alert, animated: true, completion: nil)
+    }
+
     
     
     //=====<oogie2D mainVC>====================================================
@@ -1847,7 +1882,48 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
      } //end addPipe3DNode
 
- 
+    
+    //=====<oogie2D mainVC>====================================================
+    func chooseImageForSceneLoad()
+    {
+        OVScene.haltLoop() //5/8 halt playing music!
+        let imag = UIImagePickerController()
+        imag.delegate = self // as UIImagePickerControllerDelegate & UINavigationControllerDelegate
+        imag.sourceType = UIImagePickerController.SourceType.photoLibrary;
+        imag.allowsEditing = false
+        self.present(imag, animated: true, completion: nil)
+    }
+    
+    //-----<imagePickerDelegate>-------------------------------------
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: false) { }
+        OVScene.startLoop() // 5/11 restart music
+    }
+
+    //-----<imagePickerDelegate>-------------------------------------
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+        dismiss(animated:true, completion: nil)
+        if let i = info["UIImagePickerControllerOriginalImage"]
+        {
+            print("gotit")
+            let tiffie = OogieTiffie()
+            if let s = tiffie.read(fromPhotos: i as! UIImage)
+            {
+                if s.contains("error") //Error?
+                {
+                    infoAlert(title:"TIFFIE load failed" , message : s)
+                    OVScene.startLoop() // 5/11 restart music
+                }
+                else
+                {
+                    self.OVScene.OSC = DataManager.load(fromString: s, with: OSCStruct.self)
+                    finishSettingUpScene()
+                }
+            }
+        }
+    }
+    
+    
     //=====<oogie2D mainVC>====================================================
     // 11/24 load canned 3D pos back from where we got it!
     // BROKEN: sets position and rotation OK but orientation is a 4x4 and it isn't set!
@@ -2172,14 +2248,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
     }
     
-    
+    //---<chooserVCDelegate>--------------------------------------
     func chooserCancelled()
     {
         print("...cancel")
         OVScene.startLoop() // Start music up again...
     }
 
-    //---<chooserDelegate>--------------------------------------
+    //---<chooserVCDelegate>--------------------------------------
     //Delegate callback from Chooser...
     func chooserChoseFile(name: String)
     {
@@ -2193,23 +2269,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             OVSceneName  = name
             self.OVScene.sceneLoaded = false //5/7 add loaded flag
             self.OVScene.OSC = DataManager.loadScene(OVSceneName, with: OSCStruct.self)
-            self.OVScene.OSC.unpackParams()       //DHS 11/22 unpack scene params
-            self.OVScene.OSC.name = OVSceneName //DHS 5/10 wups
-            #if VERSION_2D
-            setCamXYZ() //11/24 get any 3D scene cam position...
-            #endif
-            self.clearAll3DNodes(scene:scene)   // Clear any SCNNodes
-//            self.clearScene()                //get rid of old scene data
-            self.create3DScene(scene:scene) //  then create new scene from file
-            pLabel.updateLabelOnly(lStr:"Loaded " + OVSceneName)
-            self.OVScene.sceneLoaded = true
-            OVScene.startLoop() // Start music up again...
-
+            finishSettingUpScene()
         }
     } //end choseFile
     
+
     
-    //---<chooserDelegate>--------------------------------------
+    //---<chooserVCDelegate>--------------------------------------
     // 11/17 new delegate return w/ filenames from chooser
     func newFolderContents(c: [String])
     {
@@ -2217,11 +2283,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
        // patchNum = 0
 
     }
-
-    //---<chooserDelegate>--------------------------------------
+ //
+    //---<chooserVCDelegate>--------------------------------------
     //Delegate callback from Chooser...
     func needToSaveFile(name: String) {
         OVSceneName = name
+        OVScene.OSC.name = name //5/11 forgot name!
         OVScene.packupSceneAndSave(sname:OVSceneName)
         pLabel.updateLabelOnly(lStr:"Saved " + OVSceneName)
     }
