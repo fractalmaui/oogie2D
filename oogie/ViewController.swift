@@ -1602,8 +1602,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     @IBAction func testSelect(_ sender: Any) {
         //dumpDebugShit()
-        packupAndSaveTiffie()
+        //packupAndSaveTiffie()
+       // createMTImage(name:"duhhhhhh")
+        
     } //end testSelect
+    
+    
+    
+    
     
     //=====<oogie2D mainVC>====================================================
     func renderer(_ renderer: SCNSceneRenderer, didRenderScene scene: SCNScene, atTime time: TimeInterval) {

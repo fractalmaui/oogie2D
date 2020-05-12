@@ -14,6 +14,7 @@
 //  10/27 add unHighlight
 //  2/3   add 2nd row of test in createNamePlateImage
 //  5/7   move shape rotation over to oogieShape
+//  5/11  add createMTImage, need in common area w/ oogieShape though
 import SceneKit
 
  
@@ -186,11 +187,47 @@ class SphereShape: SCNNode {
                 return
             }
             else {
-                print("error fetching texture \(s)")
+                //print("error fetching texture \(s)")
+                setBitmapImage(i:createMTImage(name:s)) //5/11
+                return
             }
         }
         setBitmapImage(i:tekture!)
     }
+    
+    //=====<oogie2D mainVC>====================================================
+    // just puts name in black bigd
+    public func createMTImage(name : String) -> UIImage {
+        let ww = 512
+        let hh = 256
+        let isize = CGSize(width: ww, height: hh) //overall image size
+        UIGraphicsBeginImageContextWithOptions(isize, false, 1)
+        let context = UIGraphicsGetCurrentContext()!
+        let rect = CGRect(origin: CGPoint.zero, size: isize)
+        context.setFillColor(UIColor.black.cgColor);
+        context.fill(rect);
+        
+        let label = name
+        let thite = hh/6
+        let textFont = UIFont(name: "Helvetica Bold", size: CGFloat(thite))!
+        let text_style=NSMutableParagraphStyle()
+        text_style.alignment=NSTextAlignment.center
+        
+        var textColor = UIColor.white
+        let xmargin : CGFloat = 300 //WTF why doesnt this stretch label?
+        let textFontAttributes = [
+            NSAttributedString.Key.font: textFont,
+            NSAttributedString.Key.foregroundColor: textColor,
+            NSAttributedString.Key.paragraphStyle: text_style
+            ] as [NSAttributedString.Key : Any]
+        let trect =  CGRect(x: -xmargin, y:  CGFloat(hh/2) - CGFloat(thite)/2.0, width: CGFloat(ww) + 2*xmargin, height: CGFloat(thite))
+        label.draw(in: trect, withAttributes: textFontAttributes)
+        let resultImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        return resultImage
+    } //end createMTImage
+
+
     
     //-----------(SphereShape)=============================================
     // 10/21 support image input
