@@ -12,6 +12,7 @@
 //  10/21 modified setupImage
 //  10/23 add scale/offsets
 //  5/2   integrate pixelData.h/m, stores bitmap data ONCE and accesses an array
+//  5/14  add cleanup for bmp data
 // https://stackoverflow.com/questions/32297704/convert-uiimage-to-nsdata-and-convert-back-to-uiimage-in-swift
 
 import Foundation
@@ -35,6 +36,13 @@ class oogieBmp: NSObject {
         {
             setupImage(i: image)
         }
+    }
+    
+    //-----------(oogieBmp)=============================================
+    //  5/14 new
+    func cleanup()
+    {
+        pd.freeImageBitmap()
     }
     
     //-----------(oogieBmp)=============================================

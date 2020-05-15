@@ -13,7 +13,11 @@
 //  5/13 Added transition integer vals to keyframes
 //  7/15 Added plugin support
 //  2/4/18 Added GenUtils for genAlert message(s)
-
+//  CRASH: have seen a bug where the scenefile gets truncated on write to TIFFIE.
+//   on read, the last closing bracket (maybe more) gets omitted, causing the
+//   JSON reader to crash.  On top of that the data unpacker fails when it tries
+//   to read a partial chunk that is too short... it gets a null for the chunk.
+// 
 #import "OogieTiffie.h"
 @implementation OogieTiffie
 
@@ -34,7 +38,7 @@
 
 
 
-//=====(roadietrip)============================================================
+//=====(oogieTiffie)=============================================================
 - (NSString*)readFromPhotos: (UIImage *)tifImage
 {
     int tptr,iptr,loop,loop1,twidth,theight,dataRow,tint,jsonSize;
@@ -136,8 +140,13 @@
     while (jptr < jsonSize)
     {
         int chunkSize = MIN(1024,jsonSize-jptr);
+        if (chunkSize < 1024) chunkSize = jsonSize-jptr;
         NSString *nextChunk = [self unpackNSString : chunkSize]; //WTF? why 9!?!?!
-        result = [result stringByAppendingString:nextChunk];
+        NSLog(@" nextchunk [%@]",nextChunk);
+        if (nextChunk != nil)
+            result = [result stringByAppendingString:nextChunk];
+        else
+            NSLog(@" ERROR: nil json chunk read in!");
         jptr += chunkSize;
     }
     //NSLog(@" result len %d",(int)result.length);
@@ -214,6 +223,7 @@
     int ssptr = 0;
 
     char pstr[65536];
+    for (loop=0;loop<65536;loop++) pstr[loop] = 0;
     for (loop=0;loop<size;loop++)
     {
         tint = unpackInt();
@@ -224,10 +234,8 @@
         pstr[ssptr] = (char)(tint & 0xff);
         ssptr+=3;
     }
-    pstr[ssptr-1] = 0;
     NSString *result = [NSString stringWithUTF8String:pstr];
-    //NSLog(@" result len %d",result.length);
-   return result;
+    return result;
 }
 
 //======(oogieTiffie)==========================================

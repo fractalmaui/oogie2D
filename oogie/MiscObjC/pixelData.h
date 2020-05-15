@@ -20,6 +20,8 @@
 }
 
 -(void) setupImageBitmap : (UIImage*) i;
+-(void) freeImageBitmap;
+
 -(UIColor*) getRGBAtPoint : (int) xc : (int) yc;
 @end
 //-(void) pixAlert : (UIViewController *) parent : (NSString *) title : (NSString *) message : (BOOL) yesnoOption;

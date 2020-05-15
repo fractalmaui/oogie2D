@@ -16,7 +16,8 @@
 //  4/25 moved params in from OSStruct (was wrong!),add paramList
 //  4/27 add dumpParams
 //  5/6  move spinTimer and shape spin in from SphereShape
-//  5/11  add createMTImage, need in common area w/ sphereShape though
+//  5/11 add createMTImage, need in common area w/ sphereShape though
+//  5/14 add cleanup for bmp data
 import Foundation
 
 let TexParams   : [Any] = ["Texture", "texture", "mt"]
@@ -67,6 +68,13 @@ class OogieShape: NSObject {
     override init() {
         super.init()
         setupShapeParams()
+    }
+    
+    //-----------(oogieShape)=============================================
+    //5/14 new
+    func cleanup()
+    {
+        bmp.cleanup()
     }
     
     //-----------(oogieVoice)=============================================

@@ -11,6 +11,7 @@
 //  Created by Dave Scruton on 4/29/20.
 //  Copyright © 2020 fractallonomy. All rights reserved.
 //
+//  5/12 add getSceneCentroidAndRadius
 
 
 import Foundation
@@ -342,76 +343,72 @@ class OogieScene: NSObject {
         }
         return(0.0 ,0.0) //give up, return zeroes
     } //end getFreshLatLon
+    
+    //-----------(oogieScene)=============================================
+    // 5/12 new
+    func getSceneCentroidAndRadius() ->(c:SCNVector3,r:Float)
+    {
+        //Bail on empty/nil scene
+        if sceneShapes.count == 0 {return(SCNVector3Zero,0.0)}
+        var X    : Double = 0.0
+        var Y    : Double = 0.0
+        var Z    : Double = 0.0
+        var X0   : Double = 0.0
+        var Z0   : Double = 0.0
+        var c    : Double = 0.0
+        //Get centroid of all shapes...
+        for (_,nextShape) in sceneShapes
+        {
+            let xx = nextShape.OOS.xPos
+            let yy = nextShape.OOS.yPos
+            let zz = nextShape.OOS.zPos
+            X = X + xx
+            Y = Y + yy
+            Z = Z + zz
+            if c == 0 //remember first XZ coords
+            {
+                X0 = xx
+                Z0 = zz
+            }
+            c = c + 1.0
+        }
+        let cx = Double(X/c) //Get centroid of all our shapes
+        let cy = Double(Y/c) //  y isnt used now btw
+        let cz = Double(Z/c)
+        var centroid = SCNVector3Make(Float(cx), Float(cy), Float(cz)) // centroid!
+        X0  = X0 - cx   //get xz distances from centroid to first shape
+        Z0  = Z0 - cz
+        let r = Float(sqrt(X0*X0 + Z0*Z0-cz))  //This is radius from centroid to all shapes
+        return(centroid,r)
+    } //end getSceneCentroidAndRadius
 
     //-----------(oogieScene)=============================================
     //   get centroid first, then go " around the clock"
     //   1/22 redo math, was wrong in computing new item offset from centroid
     func getFreshXYZ() -> SCNVector3
+    {
+        let crTuple = getSceneCentroidAndRadius() //5/12 new
+        var newPos3D = crTuple.c
+        var outerRad = crTuple.r
+        #if VERSION_2D
+        outerRad += 3.0   //1/22
+        #elseif VERSION_AR
+        outerRad += 0.5   //1/22  tighten spatial arrangement in AR
+        #endif
+        //Add our offset radius to the centroid to get fresh pos
+        switch(shapeClockPos)
         {
-            var X    : Double = 0.0
-            var Y    : Double = 0.0
-            var Z    : Double = 0.0
-            var Xmin : Double =  9999.0
-            var Xmax : Double = -9999.0
-            var Ymin : Double =  9999.0
-            var Ymax : Double = -9999.0
-            var Zmin : Double =  9999.0
-            var Zmax : Double = -9999.0
-            var X0   : Double = 0.0
-            var Z0   : Double = 0.0
-            var c    : Double = 0.0
-            //Get centroid of all shapes...
-            for (_,nextShape) in sceneShapes
-            {
-                let xx = nextShape.OOS.xPos
-                let yy = nextShape.OOS.yPos
-                let zz = nextShape.OOS.zPos
-                X = X + xx
-                Y = Y + yy
-                Z = Z + zz
-                Xmin = min(Xmin,xx)
-                Xmax = max(Xmax,xx)
-                Ymin = min(Ymin,yy)
-                Ymax = max(Ymax,yy)
-                Zmin = min(Zmin,zz)
-                Zmax = max(Zmax,zz)
-                if c == 0 //remember first XZ coords
-                {
-                    X0 = xx
-                    Z0 = zz
-                }
-                c = c + 1.0
-            }
-            if c == 0 {return SCNVector3Zero} //Nothing? centroid is origin
-            let cx = Double(X/c) //Get centroid of all our shapes
-            let cy = Double(Y/c) //  y isnt used now btw
-            let cz = Double(Z/c)
-            var newPos3D = SCNVector3Make(Float(cx), Float(cy), Float(cz)) // centroid!
-            X0  = X0 - cx   //get xz distances from centroid to first shape
-            Z0  = Z0 - cz
-            var outerRad = Float(sqrt(X0*X0 + Z0*Z0-cz))  //This is radius from centroid to all shapes
-            if c != 0 //1/22 got shape(s)?
-            {
-                #if VERSION_2D
-                outerRad += 3.0   //1/22
-                #elseif VERSION_AR
-                outerRad += 0.5   //1/22  tighten spatial arrangement in AR
-                #endif
-                //Add our offset radius to the centroid to get fresh pos
-                switch(shapeClockPos)
-                {
-                case 0:  newPos3D.z -= outerRad  //Midnight, away from user
-                case 1:  newPos3D.x += outerRad  //3oclock, to right
-                case 2:  newPos3D.z += outerRad  //6oclock, towards user
-                case 3:  newPos3D.x -= outerRad  //9oclock, to left
-                default: newPos3D.x += outerRad  //error?  to right
-                }
-            }
-            shapeClockPos = (shapeClockPos + 1) % 4  //advance positional clock
-            return newPos3D
-        } //end getFreshXYZ
-
-
+        case 0:  newPos3D.z -= outerRad  //Midnight, away from user
+        case 1:  newPos3D.x += outerRad  //3oclock, to right
+        case 2:  newPos3D.z += outerRad  //6oclock, towards user
+        case 3:  newPos3D.x -= outerRad  //9oclock, to left
+        default: newPos3D.x += outerRad  //error?  to right
+        }
+        shapeClockPos = (shapeClockPos + 1) % 4  //advance positional clock
+        return newPos3D
+    } //end getFreshXYZ
+    
+    
     //-----------(oogieScene)=============================================
     // 4/22 redo: move param funcs out to objects
     func getLastParamValue(editing : String , named name : String)

@@ -47,6 +47,9 @@
 //         add notification between playAllPipes in OogieScene and handle3DUpdates
 //  5/8    update chooser protocol, add chooserCancelled, add haltLoop and startLoop
 //           around file loads
+//  5/11   integrate TIFFIE load/save
+//  5/12   add resetCamera
+//  5/14   improve clearScene, fix missing calls to it, add colorTimerPeriod
 import UIKit
 import SceneKit
 import Photos
@@ -261,21 +264,19 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
         //5/4 add notification for 3D updates from color player...
         NotificationCenter.default.addObserver(self, selector: #selector(self.got3DUpdates(notification:)), name: Notification.Name("got3DUpdatesNotification"), object: nil)
-
-        
         //11/18  Update markers UI in foreground on a timer
-        colorTimer = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.updateAllMarkers), userInfo:  nil, repeats: true)
+        var colorTimerPeriod = 0.1 //5/14 default on settings bundle fail
+        if let ctp = appSettings["colorTimerPeriod"] as? Double //5/14 get time from settings bundle
+        {
+            colorTimerPeriod = ctp
+        }
+        print("...start colorTimer, period \(colorTimerPeriod)")
+        colorTimer = Timer.scheduledTimer(timeInterval: colorTimerPeriod, target: self, selector: #selector(self.updateAllMarkers), userInfo:  nil, repeats: true)
         _ = DataManager.getSceneVersion(fname:"default")
-
-        //4/20 try foreground timer...
-//        playColorsTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handlePipesMarkersAnd3D), userInfo:  nil, repeats: true)
-
         //Try running color player in bkgd...
         OVScene.startLoop()
-
-        
     } //end viewDidLoad
-
+    
     
     //=====<oogie2D mainVC>====================================================
     override var supportedInterfaceOrientations:UIInterfaceOrientationMask {
@@ -314,7 +315,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         #if VERSION_2D
         setCamXYZ() //11/24 get any 3D scene cam position...
         #endif
-        self.clearAll3DNodes(scene:scene)   // Clear any SCNNodes
         self.create3DScene(scene:scene) //  then create new scene from file
         pLabel.updateLabelOnly(lStr:"Loaded " + OVSceneName)
         self.OVScene.sceneLoaded = true
@@ -585,6 +585,20 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         return false
     }
     
+    //=====<oogie2D mainVC>====================================================
+    // 5/12 new
+    func resetCamera()
+    {
+        let crTuple = OVScene.getSceneCentroidAndRadius()
+        camXform = SCNMatrix4Identity //11/24 add camera matrix from scene file
+        let centroid = crTuple.c
+        let radius   = max(3,crTuple.r)
+        camXform.m41 = centroid.x  //set X coord
+        camXform.m42 = centroid.y  //set X coord
+        camXform.m43 = centroid.z + 2 * radius   //5/1 back off camera on z axis
+        setCamXYZ()
+    } //end resetCamera
+
     //=====<oogie2D mainVC>====================================================
     func resetKnobToNewValues(kval:Float , kmin : Float , kmax : Float)
     {
@@ -1193,6 +1207,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.updatePkeys() //3/30 update kb if needed
             self.pkeys.isHidden = !self.pkeys.isHidden
         }))
+        alert.addAction(UIAlertAction(title: "Reset Camera", style: .default, handler: { action in
+            self.resetCamera()
+        }))
 
         alert.addAction(UIAlertAction(title: "Dump Scene", style: .default, handler: { action in
             self.OVScene.OSC.dump()
@@ -1537,7 +1554,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         let alert = UIAlertController(title: "Clear Current Scene?", message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
             self.pLabel.updateLabelOnly(lStr:"Clear Scene...")
-            self.clearScene()
+            self.clearScene(withDefaultScene: true)
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
@@ -1546,16 +1563,25 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     
     //=====<oogie2D mainVC>====================================================
-    // 4/30 NOTE: this has a bug resetting the camera position!
-    func clearScene()
+    // 4/30 NOTE: this has a bug resetting the camera position!asdf
+    func clearScene(withDefaultScene addDefaultScene:Bool)
     {
+        // 5/7 iterate over all shapes and halt timers first
+        for (_,shape) in OVScene.sceneShapes
+        {
+            shape.haltSpinTimer()
+            shape.cleanup() // 5/14 free bmp data too!            
+        }
         self.OVScene.OSC.clearScene()       // Clear everything...
         self.OVScene.clearOogieStructs()    // Clear data structures
         self.clearAll3DNodes(scene:scene)    // Clear any SCNNodes
-        self.OVScene.createDefaultScene(named: "default")  //2/1/20 add an object
-        self.create3DScene(scene:scene) //  then create new scene from file
-        cameraNode.transform = SCNMatrix4Identity
-        cameraNode.position  = SCNVector3(x:0, y: 0, z: 6) //put camera back away from origin
+        if addDefaultScene //5/14
+        {
+            self.OVScene.createDefaultScene(named: "default")  //2/1/20 add an object
+            self.create3DScene(scene:scene) //  then create new scene from file
+            cameraNode.transform = SCNMatrix4Identity
+            cameraNode.position  = SCNVector3(x:0, y: 0, z: 6) //put camera back away from origin
+        }
     } //end clearScene
     
     //=====<oogie2D mainVC>====================================================
@@ -1566,8 +1592,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             if (node.name != nil) {node.removeFromParentNode()}
         }
         markers3D.removeAll() //4/28 new dict
-        // 5/7 iterate over all shapes and halt timers first
-        for (_,shape) in OVScene.sceneShapes { shape.haltSpinTimer() }
         shapes3D.removeAll()
         pipes3D.removeAll()          //1/21 wups?
         OVScene.pipeUIDToName.removeAll()  //1/22
@@ -1601,7 +1625,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     //=====<oogie2D mainVC>====================================================
     @IBAction func testSelect(_ sender: Any) {
-        //dumpDebugShit()
+        dumpDebugShit()
         //packupAndSaveTiffie()
        // createMTImage(name:"duhhhhhh")
         
@@ -1911,7 +1935,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         dismiss(animated:true, completion: nil)
         if let i = info["UIImagePickerControllerOriginalImage"]
         {
-            print("gotit")
             let tiffie = OogieTiffie()
             if let s = tiffie.read(fromPhotos: i as! UIImage)
             {
@@ -1922,6 +1945,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 }
                 else
                 {
+                    //print("tiffie string [\(s)]")
+                    clearScene(withDefaultScene: false) //5/14 clear before load!
                     self.OVScene.OSC = DataManager.load(fromString: s, with: OSCStruct.self)
                     finishSettingUpScene()
                 }
@@ -2273,6 +2298,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         else //handle scene?
         {
             OVSceneName  = name
+            clearScene(withDefaultScene: false) //5/14 clear before load!
             self.OVScene.sceneLoaded = false //5/7 add loaded flag
             self.OVScene.OSC = DataManager.loadScene(OVSceneName, with: OSCStruct.self)
             finishSettingUpScene()

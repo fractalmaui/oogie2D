@@ -31,6 +31,7 @@
 //  4/27  redo top/bot midi and channel
 //  5/3   move in getShapeColor from mainVC
 //  5/9   add detune as editable param, change detune rules in playColors
+//  5/14  new top/bottom midi defaults
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -55,9 +56,9 @@ let LonParams   : [Any] = ["Longitude",      "double", -1.0 * .pi , 1.0 * .pi , 
 // 10/15 NOTE: order here MUST match macro value order in synth!
 let TypeParams  : [Any] = ["Type",           "string" , "Synth", "Percussion", "PercKit", "Sample", "Harmony"]
 let PatchParams : [Any] = ["Patch",          "string","mt"]
-// 10/4 NOT SUPPORTED YET
-//let KeyParams   : [Any] = ["Key","string" , "C", "C#", "D", "D#", "E", "F",
-//                                            "F#", "G", "G#", "A", "A#", "B"]
+// 5/14 add pitch shift
+let PitchShiftParams : [Any] = ["ChromaticKey","string" , "C", "C#", "D", "D#", "E", "F",
+                                            "F#", "G", "G#", "A", "A#", "B"]
 let ScaleParams : [Any] = ["Scale",          "string" ,"major" ,"minor" ,"blues" ,"chromatic",
                            "lydian" ,"phrygin" ,"pixolydian" ,"locrian" ,"egyptian",
                            "hungarian" ,"algerian","japanese" ]
@@ -83,12 +84,12 @@ let MidiChannelParams : [Any] = ["MidiChannel","int" ,  1.0 ,16.0 , 1.0 , 1.0,  
 let VNameParams    : [Any]   = ["Name",      "text", "mt"]
 let VCommParams    : [Any]   = ["Comment",   "text", "mt"]
 // All param names, must match first item above for each param!
-let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch",
+let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch","ChromaticKey",
                              "Scale","Level","Threshold",
                              "NChan","VChan","PChan",
                              "NFixed","VFixed","PFixed","RotTrigger","Detune",   // 5/9
                              "BottomMidi","TopMidi","MidiChannel","Name","Comment"]
-let voiceParamNamesOKForPipe : [String]    = ["Latitude", "Longitude",
+let voiceParamNamesOKForPipe : [String]    = ["Latitude", "Longitude","ChromaticKey",
                                             "Scale","Level","Threshold","NChan","VChan","PChan",
                                             "NFixed","VFixed","PFixed","RotTrigger","Detune",   // 5/9
                                             "BottomMidi","TopMidi","MidiChannel"]
@@ -219,22 +220,23 @@ class OogieVoice: NSObject, NSCopying {
         voiceParamsDictionary["01"] = LonParams
         voiceParamsDictionary["02"] = TypeParams
         voiceParamsDictionary["03"] = PatchParams
-        voiceParamsDictionary["04"] = ScaleParams
-        voiceParamsDictionary["05"] = LevelParams
-        voiceParamsDictionary["06"] = ThreshParams  //5/2 add threshold
-        voiceParamsDictionary["07"] = NChanParams   //10/4 n/v/p channels
-        voiceParamsDictionary["08"] = VChanParams
-        voiceParamsDictionary["09"] = PChanParams
-        voiceParamsDictionary["10"] = NFixedParams   //10/4 n/v/p fixed
-        voiceParamsDictionary["11"] = VFixedParams
-        voiceParamsDictionary["12"] = PFixedParams
-        voiceParamsDictionary["13"] = RotTriggerParams //4/18 add rot trigger
-        voiceParamsDictionary["14"] = DetuneParams //5/9 add detune
-        voiceParamsDictionary["15"] = BottomMidiParams
-        voiceParamsDictionary["16"] = TopMidiParams
-        voiceParamsDictionary["17"] = MidiChannelParams
-        voiceParamsDictionary["18"] = VNameParams
-        voiceParamsDictionary["19"] = VCommParams   //2/4
+        voiceParamsDictionary["04"] = PitchShiftParams //5/14
+        voiceParamsDictionary["05"] = ScaleParams
+        voiceParamsDictionary["06"] = LevelParams
+        voiceParamsDictionary["07"] = ThreshParams  //5/2 add threshold
+        voiceParamsDictionary["08"] = NChanParams   //10/4 n/v/p channels
+        voiceParamsDictionary["09"] = VChanParams
+        voiceParamsDictionary["10"] = PChanParams
+        voiceParamsDictionary["11"] = NFixedParams   //10/4 n/v/p fixed
+        voiceParamsDictionary["12"] = VFixedParams
+        voiceParamsDictionary["13"] = PFixedParams
+        voiceParamsDictionary["14"] = RotTriggerParams //4/18 add rot trigger
+        voiceParamsDictionary["15"] = DetuneParams //5/9 add detune
+        voiceParamsDictionary["16"] = BottomMidiParams
+        voiceParamsDictionary["17"] = TopMidiParams
+        voiceParamsDictionary["18"] = MidiChannelParams
+        voiceParamsDictionary["19"] = VNameParams
+        voiceParamsDictionary["20"] = VCommParams   //2/4
     } //end setupVoiceParams
     
     //-----------(oogieVoice)=============================================
@@ -539,8 +541,8 @@ class OogieVoice: NSObject, NSCopying {
         case "longitude"    : OVS.xCoord = dval
         case "patch"        : OVS.patchName = sval
         case "type"         : break
-        case "key"          : OVS.pitchShift = ival % 12
         case "scale"        : OVS.keySig     = ival
+        case "chromatickey" : OVS.pitchShift = ival //5/14
         case "level"        : OVS.level      = dval
         case "threshold"    : OVS.thresh     = ival
         case "nchan"        : OVS.noteMode   = ival
@@ -579,6 +581,7 @@ class OogieVoice: NSObject, NSCopying {
                             isString = true
         //OUCH! MISSING KEY!!!WTF?
         case "scale":       dp = Double(OVS.keySig)
+        case "chromatickey":dp = Double(OVS.pitchShift)  //5/14
         case "level":       dp = OVS.level
         case "threshold":   dp = Double(OVS.thresh)
         case "nchan":       dp = Double(OVS.noteMode)
@@ -635,7 +638,8 @@ class OogieVoice: NSObject, NSCopying {
             (sfx() as! soundFX).setSynthMIDI(Int32(OVS.midiDevice), Int32(OVS.midiChannel)) //chan: 0-16
             let nc = (sfx() as! soundFX).getSynthNoteCount()
             inkeyOldNote = oldNote
-            inkeyNote    = masterPitch + Int((sfx() as! soundFX).makeSureNoteis(inKey: Int32(OVS.keySig),Int32(midiNote)))
+            // 5/14 add pitch shift
+            inkeyNote    = masterPitch + OVS.pitchShift + Int((sfx() as! soundFX).makeSureNoteis(inKey: Int32(OVS.keySig),Int32(midiNote)))
             // Mono: Handle releasing old note...
             if OVS.poly == 1 {(sfx() as! soundFX).releaseNote(Int32(inkeyOldNote),0)} //2nd arg, WTF??
             //TBD....[synth setTimetrax:OVgettimetrax(vloop)];
@@ -649,7 +653,8 @@ class OogieVoice: NSObject, NSCopying {
             var gotTriggered = false
             if OVS.rotTrigger == 0 //Use colors as trigger?
             {
-                gotTriggered = (abs (nchan - lnchan) > OVS.thresh) && nc < 12 //5/2 
+                gotTriggered = (abs (nchan - lnchan) > OVS.thresh) && nc < 12 //5/2
+                if (nc >= 12){ print(" SYNTH/sample notecount overflow!!") }
             }
             else //use beats trigger?
             {
@@ -731,8 +736,8 @@ class OogieVoice: NSObject, NSCopying {
                     var botMidi = OVS.bottomMidi
                     if (topMidi - botMidi < 10) //Handle illegal crap, this should be ELSEWHERE!!!
                     {
-                        botMidi = 12   //2/28 redo
-                        topMidi = 108
+                        botMidi = 40   //5/14 new defaults
+                        topMidi = 80
                     }
                     var octave = (nchan - botMidi) / 20 // 12 //get octave
                     octave = max(min(octave,7),0)

@@ -82,8 +82,8 @@ struct OVStruct : Codable {
         mono        = 0
         thresh      = 5
         quant       = 0
-        bottomMidi  = 12   // 2/28 redo, was out of order too!
-        topMidi     = bottomMidi + 12*8
+        bottomMidi  = 40   //5/14 new defaults
+        topMidi     = 80
         keySig      = 0
         //5/1 uid
         uid = "voice_" + ProcessInfo.processInfo.globallyUniqueString
@@ -119,8 +119,8 @@ struct OVStruct : Codable {
         mono        = 0
         thresh      = 5
         quant       = 0
-        bottomMidi  = 12   // 2/28 redo, was out of order too!
-        topMidi     = bottomMidi + 12*8
+        bottomMidi  = 40   // 5/14 new defaults
+        topMidi     = 80
         keySig      = 0
 
     }

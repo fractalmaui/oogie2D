@@ -11,6 +11,7 @@
 //  Created by Dave Scruton on 4/30/20.
 //  Copyright © 2020 fractallonomy. All rights reserved.
 //
+//  5/14 add freeImageBitmap 
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
@@ -45,6 +46,14 @@
     CGContextClearRect( tcontext, CGRectMake( 0, 0, twidth, theight ) );
     CGContextDrawImage( tcontext, CGRectMake( 0, 0, twidth, theight ), i.CGImage );
 } //end getImageBitmap
+
+
+//======(pixelData)==========================================
+// 5/14 new
+-(void) freeImageBitmap
+{
+    free(imageData);
+}
 
 //======(pixelData)==========================================
 -(UIColor*) getRGBAtPoint : (int) xc : (int) yc

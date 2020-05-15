@@ -264,6 +264,7 @@ public class DataManager {
         let encoder = JSONEncoder()
         do {
             let data = try encoder.encode(object)
+            //DEBUG ONLY let dstring  = String(data: data, encoding: String.Encoding.utf8)
             if FileManager.default.fileExists(atPath: url2.path) {
                 try FileManager.default.removeItem(at: url2)
             }
@@ -387,28 +388,15 @@ public class DataManager {
         }
         if let data = FileManager.default.contents(atPath: url2.path) {
             do {
-                let dstring  = String(data: data, encoding: String.Encoding.utf8)
-                print("annnn.....dddd...")
-                print("dstring \(dstring)")
-                if let d2 = dstring?.data(using: String.Encoding.utf8)
-                {
-                    let model = try JSONDecoder().decode(type, from: d2)
-                    return model
-
-                }
-                //                let data2 = let cafe: Data? = "Café".data(using: .utf8) // non-nil
-//ORIGINAL                let model = try JSONDecoder().decode(type, from: data)
-//                return model
-                fatalError( "broke test crap!")
+                let model = try JSONDecoder().decode(type, from: data)
+                return model
             }catch{
                 fatalError( error.localizedDescription)
             }
-            
         }else{
             fatalError("Data unavailable at path \(url2.path)")
         }
-        
-    }
+    } //end load
  
     //======(DataManager)=============================================
     // Load any kind of codable objects
