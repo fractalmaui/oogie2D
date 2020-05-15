@@ -246,7 +246,7 @@ class OogieVoice: NSObject, NSCopying {
         dhptr+=1
         if dhptr >= dhmax  //wraparound
            {dhptr = 0
-            //analyzeDebugHistory()
+            analyzeDebugHistory()
         }
     }
     
@@ -307,15 +307,18 @@ class OogieVoice: NSObject, NSCopying {
         // get our radian offset around the circle...
         a0to2pi.formTruncatingRemainder(dividingBy:pi2)
         a0to2pi = a0to2pi - (pi2 * OVS.xCoord) //apply x offset
+        while a0to2pi < 0.0
+        {
+            a0to2pi = a0to2pi + pi2
+        }
         let doubleBeat = a0to2pi / (pi2 / OVS.rotTrigger)
         let newBeat = Int(floor(doubleBeat))
-        //NSLog("getBeat a %f angle %f  aoff %f  newBeat %d",
-        //      a,a0to2pi,a-lasta ,newBeat)
+        //NSLog("getBeat a %f angle %f  aoff %f  ", a,a0to2pi,a-lasta  )
         lasta = a
         if newBeat != beat
         {
             let beatTime = Date()
-            //let beatDelta = beatTime.timeIntervalSince(lastbeatTime)
+            let beatDelta = beatTime.timeIntervalSince(lastbeatTime)
             //NSLog("...newbeat %d tdelta %f adelta %f",newBeat,beatDelta,a - lastba)
             beat = newBeat
             lastbeatTime = beatTime
@@ -683,8 +686,8 @@ class OogieVoice: NSObject, NSCopying {
                     }
                     (sfx() as! soundFX).setSynthSampOffset(Int32(OVS.sampleOffset))
                     //4/19 add master pitch,2 octave offset (synths are low sample rate)
-                    noteToPlay  = inkeyNote + 24
-                    //print(" inkeyNote \(inkeyNote) masterPitch \(masterPitch) noteToPlay \(noteToPlay)")
+                    noteToPlay    = inkeyNote + 24
+                    noteWasPlayed = true   //5/15
                 } //End synth block
                 else if vt == HARMONY_VOICE
                 {

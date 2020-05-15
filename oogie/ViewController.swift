@@ -1579,8 +1579,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             self.OVScene.createDefaultScene(named: "default")  //2/1/20 add an object
             self.create3DScene(scene:scene) //  then create new scene from file
+            #if VERSION_2D
             cameraNode.transform = SCNMatrix4Identity
             cameraNode.position  = SCNVector3(x:0, y: 0, z: 6) //put camera back away from origin
+            #endif
         }
     } //end clearScene
     
@@ -2087,7 +2089,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     {
                         let gotPlayed      = String(ops3D[2])   // get data from pipe
                         guard let marker3D = markers3D[key] else {break}
-                        marker3D.gotPlayed = gotPlayed == "1"
+                        if gotPlayed == "1" {marker3D.gotPlayed = true}  //5/15
                     }
                 default:break
                 }  //end switch

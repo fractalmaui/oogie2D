@@ -19,6 +19,7 @@
 //  11/18 add updateRGBValues, separate data from display methods
 //         data is updated in bkgd while UI is updated in foreground
 //  2/6   add blinking torus on each note played
+//  5/15  change blinkTick and updateActivity to make blinks clearer
 //  Try to animate torus on select / deselect:
 //   https://developer.apple.com/documentation/scenekit/animation/animating_scenekit_content
 import UIKit
@@ -452,7 +453,8 @@ class Marker: SCNNode {
         //2/6 black out torus briefly to indicate note played, timer restores color
         torus1.firstMaterial?.emission.contents  = UIColor.black
         torus2.firstMaterial?.emission.contents  = UIColor.black
-        blinkTimer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(self.blinkTick), userInfo:  nil, repeats: false)
+        // 5/15 change timer from .01 to .08
+        blinkTimer = Timer.scheduledTimer(timeInterval: 0.08, target: self, selector: #selector(self.blinkTick), userInfo:  nil, repeats: false)
     }
     
     
@@ -463,6 +465,7 @@ class Marker: SCNNode {
         blinkTimer.invalidate()
         torus1.firstMaterial?.emission.contents  = UIColor.white
         torus2.firstMaterial?.emission.contents  = UIColor.white
+        gotPlayed = false //5/15 clear our played flag
     }
 
     //-------(Marker)-------------------------------------

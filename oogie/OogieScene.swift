@@ -74,7 +74,7 @@ class OogieScene: NSObject {
     var handlingLoop = false
     var needToHaltLoop = false
     var needFreshLoop  = false
-    var loopTimer = Timer()
+//    var loopTimer = Timer()
 
     
     //-----------(oogieScene)=============================================
@@ -989,7 +989,7 @@ class OogieScene: NSObject {
     func startLoop()
     {
         // this is used to keep the background loop from running too fast
-        loopTimer = Timer.scheduledTimer(timeInterval: 0.03, target: self, selector: #selector(self.loopTick), userInfo:  nil, repeats: true)
+//        loopTimer = Timer.scheduledTimer(timeInterval: 0.02, target: self, selector: #selector(self.loopTick), userInfo:  nil, repeats: true)
         needFreshLoop  = true
         needToHaltLoop = false
         DispatchQueue.global(qos: .background).async {
@@ -1002,17 +1002,18 @@ class OogieScene: NSObject {
     func haltLoop()
     {
         needToHaltLoop = true
-        loopTimer.invalidate()
+//        loopTimer.invalidate()
         print("halted loop...")
     }
     
     //-----------(oogieScene)=============================================
     // 5/8 makes sure loop runs slower than all-out
-    @objc func loopTick()
-    {
-        needFreshLoop = true
-    }
+//    @objc func loopTick()
+//    {
+//        needFreshLoop = true
+//    }
 
+    var lastSampleTime = Date()
 
     //-----------(oogieScene)=============================================
     // stupidly simple: a timer periodically sets loopOK to true, while
@@ -1022,10 +1023,16 @@ class OogieScene: NSObject {
     {
         while !needToHaltLoop
         {
-            if sceneLoaded && needFreshLoop
+            if sceneLoaded
             {
-                playAllPipesMarkers(editing: "", knobMode: "select")
-                needFreshLoop = false
+                let sampleTime = Date()
+                if sampleTime.timeIntervalSince(lastSampleTime) > 0.005
+                {
+                    playAllPipesMarkers(editing: "", knobMode: "select")
+                    needFreshLoop = false
+                    lastSampleTime = sampleTime
+                }
+                
             }
         }
         print("loop exited!")
