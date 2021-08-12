@@ -32,6 +32,7 @@
 //  5/3   move in getShapeColor from mainVC
 //  5/9   add detune as editable param, change detune rules in playColors
 //  5/14  new top/bottom midi defaults
+//  8/11/21 MODIFY OVStruct, add performance controls portamento, etc...
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -153,7 +154,11 @@ class OogieVoice: NSObject, NSCopying {
 
     var muted = false //10/17
     var midiNote = 0
+    // 8/11/21 last note...type are for delay
     var lastnoteplayed = 0
+    var lastgain = 0
+    var lastbuf = 0
+    var lasttype: Int32 = 0
     var hiLiteFrame = 0
     var bufferPointer = 0 //Points to sample buffer
     var bufferPointerSet = [Int]() //Array of sample buffers for percussion kit
@@ -183,7 +188,7 @@ class OogieVoice: NSObject, NSCopying {
     //-----------(oogieVoice)=============================================
     override init() {
         super.init()
-        OOP.type      = SYNTH_TYPE
+        OOP.type      = Int(SYNTH_VOICE)   //7/1/21 was SYNTH_TYPE
         OOP.attack    = 10
         OOP.decay     = 10
         OOP.sustain   = 50
@@ -271,7 +276,7 @@ class OogieVoice: NSObject, NSCopying {
                     if let end   = t2?.date
                     {
                         let timeInterval : Double = end.timeIntervalSince(start)
-                        print("loop \(i) : s \(start) e \(end) interval \(timeInterval)")
+                        //print("loop \(i) : s \(start) e \(end) interval \(timeInterval)")
                         if timeInterval < 1.0 //ignore large intervals
                         {
                             avet+=timeInterval
@@ -287,7 +292,7 @@ class OogieVoice: NSObject, NSCopying {
             if ptr >= dhmax {ptr = 0}
         }
         avet = avet / Double(avec)
-        print("ave \(avet) min/max \(mint),\(maxt)")
+        //print("ave \(avet) min/max \(mint),\(maxt)")
         
     } //end analyzeDebugHistory
     
@@ -473,27 +478,29 @@ class OogieVoice: NSObject, NSCopying {
         var patchNames = [String]()
         patchNames.append("Patch")
         patchNames.append("string")
-        var dict = allP.synthPatchDictionary             //assume synth patches...
-        if OOP.type == PERCKIT_VOICE
-        {
-            dict = allP.percKitPatchDictionary     //need percKit patches instead?
-        }
-        else if OOP.type == PERCUSSION_VOICE
-        {
-            dict = allP.percussionPatchDictionary  //need percussion patches instead?
-        }
-        else if OOP.type == SAMPLE_VOICE
-        {
-            dict = allP.GMPatchDictionary
-            var lilNames : [String] = []
-            for (name, _) in dict {lilNames.append(name)}
-            lilNames = lilNames.sorted()
-            for name in lilNames {  patchNames.append(name)  }
-        }
-        if OOP.type != SAMPLE_VOICE
-        {
-            for (name, _) in dict  {  patchNames.append(name)  } //append names
-        }
+//6/29/21 FIX THIS!
+//        var dict = allP.synthPatchDictionary             //assume synth patches...
+//        if OOP.type == PERCKIT_VOICE
+//        {
+//            dict = allP.percKitPatchDictionary     //need percKit patches instead?
+//        }
+//        else if OOP.type == PERCUSSION_VOICE
+//        {
+//            dict = allP.percussionPatchDictionary  //need percussion patches instead?
+//        }
+//        else if OOP.type == SAMPLE_VOICE
+//        {
+//            dict = allP.GMPatchDictionary
+//            var lilNames : [String] = []
+//            for (name, _) in dict {lilNames.append(name)}
+//            lilNames = lilNames.sorted()
+//            for name in lilNames {  patchNames.append(name)  }
+//        }
+//        if OOP.type != SAMPLE_VOICE  //sort percussion!
+//        {
+//            for (name, _) in dict  {  patchNames.append(name)  } //append names
+//            patchNames = patchNames.sorted() //5/15 wups!
+//       }
         //10/18 Samples get sorted alphabetically...
         return patchNames
     } //end getPatchNameArray
@@ -502,7 +509,7 @@ class OogieVoice: NSObject, NSCopying {
     // 9/26 find our default in allpatches
     func loadDefaultPatchForVoiceType()
     {
-        OOP = allP.getDefaultPatchByType(ptype: OOP.type)
+        //6/29/21 FIX!   OOP = allP.getDefaultPatchByType(ptype: OOP.type)
         //10/15 figger out which buffers to use...
         if OOP.type == Int(PERCKIT_VOICE) { getPercLooxBufferPointerSet() }
     }
@@ -514,7 +521,7 @@ class OogieVoice: NSObject, NSCopying {
         OVS.name = name
         OVS = DataManager.loadVoice(name, with: OVStruct.self)
         // DHS 9/27 add type to patch getter
-        OOP = allP.getPatchByName(name: OVS.patchName)
+        //6/29/21 FIX! OOP = allP.getPatchByName(name: OVS.patchName)
         //10/15 figger out which buffers to use...
         if OOP.type == Int(PERCKIT_VOICE) { getPercLooxBufferPointerSet() }
     }
@@ -562,6 +569,18 @@ class OogieVoice: NSObject, NSCopying {
         case "midichannel"  : OVS.midiChannel = ival
         case "name"         : OVS.name = sval
         case "comment"      : OVS.comment = sval
+        //8/11/21 performance params
+        case "portamento"    : OVS.portamento   = ival
+        case "viblevel"      : OVS.vibLevel     = ival
+        case "vibspeed"      : OVS.vibSpeed     = ival
+        case "vibwave"       : OVS.vibWave      = ival
+        case "vibelevel"     : OVS.vibeLevel    = ival
+        case "vibespeed"     : OVS.vibeSpeed    = ival
+        case "vibewave"      : OVS.vibeWave     = ival
+        case "delaytime"     : OVS.delayTime    = ival
+        case "delaysustain"  : OVS.delaySustain = ival
+        case "delaymix"      : OVS.delayMix     = ival
+
         default: print("Error:Bad voice param in set:" + name)   //5/9
         } //end switch
         paramListDirty = true
@@ -670,12 +689,52 @@ class OogieVoice: NSObject, NSCopying {
                // NSLog(" bing!==============")
                 (sfx() as! soundFX).setSynthMono(Int32(mono))
                 (sfx() as! soundFX).setSynthMonoUN(Int32(uniqueCount))
+                
+                
+                //sfx() as! soundFX).build
+                //Does this need to be above ADSR?
+                //if vt == SYNTH_VOICE (sfx() as! soundFX).buildaWaveTable(0, Int32(OOP.wave))
+                if vt == SYNTH_VOICE
+                {
+                    (sfx() as! soundFX).buildaWaveTable(0, Int32(OOP.wave))
+
+                }
+                (sfx() as! soundFX).setSynthAttack(Int32(OOP.attack))
+                (sfx() as! soundFX).setSynthDecay(Int32(OOP.decay))
+                (sfx() as! soundFX).setSynthSustain(Int32(OOP.sustain))
+                (sfx() as! soundFX).setSynthSustainL(Int32(OOP.sLevel))
+                (sfx() as! soundFX).setSynthRelease(Int32(OOP.release))
+//                (sfx() as! soundFX).setSynthRelease(Int32(OOP.releaseTime))
+                (sfx() as! soundFX).buildEnvelope(0,true)
+                (sfx() as! soundFX).setSynthPortamento(Int32(OVS.portamento))
+                (sfx() as! soundFX).setSynthVibAmpl(Int32(OVS.vibLevel))
+                (sfx() as! soundFX).setSynthVibSpeed(Int32(OVS.vibSpeed))
+                (sfx() as! soundFX).setSynthVibWave(Int32(OVS.vibWave))
+                (sfx() as! soundFX).setSynthVibeAmpl(Int32(OVS.vibeLevel))
+                (sfx() as! soundFX).setSynthVibeSpeed(Int32(OVS.vibeSpeed))
+                (sfx() as! soundFX).setSynthVibeWave(Int32(OVS.vibeWave))
+                if OVS.portamento > 0 //8/11 keep track of last note for portamento!
+                {
+                    (sfx() as! soundFX).setPortamentoLastNote(Int32(lastnoteplayed))
+                }
+                (sfx() as! soundFX).setSynthDelayVars(
+                    Int32(OVS.delayTime),Int32(OVS.delaySustain),Int32(OVS.delayMix)
+                )
+                // 8/11/21 set these 3 to defaults for now, will become params
+                (sfx() as! soundFX).setSynthPLevel(50);
+                (sfx() as! soundFX).setSynthPKeyOffset(50);
+                (sfx() as! soundFX).setSynthPKeyDetune(50);
+
                 var noteToPlay = -1
                 var bptr = 0
                 //-------SYNTH: built-in canned wave samples--------------------------
                 if vt == SYNTH_VOICE
                 {
-                    (sfx() as! soundFX).setSynthGain(Int32(Double(vchan) * 0.7 * OVS.level))
+                    lastgain = Int(Double(vchan) * 0.7 * OVS.level) // 8/11 for delay
+                    lastbuf  = 0
+                    lasttype = SYNTH_VOICE
+
+                    (sfx() as! soundFX).setSynthGain(Int32(lastgain))
                     if OVS.panMode != 11  //No fixed pan? Use pchan
                     {
                         (sfx() as! soundFX).setSynthPan(Int32(pchan))
@@ -687,6 +746,17 @@ class OogieVoice: NSObject, NSCopying {
                     (sfx() as! soundFX).setSynthSampOffset(Int32(OVS.sampleOffset))
                     //4/19 add master pitch,2 octave offset (synths are low sample rate)
                     noteToPlay    = inkeyNote + 24
+                    if quantTime == 0 //No Quant, play now
+                    {
+                        (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(vt))
+                    }
+                    else
+                    {
+                        (sfx() as! soundFX).playNote(withDelay:  32 , Int32(bptr) ,Int32(vt),Int32(quantTime))
+                    }
+                    noteWasPlayed = true
+                    lastnoteplayed = inkeyNote
+                    applyDelayIfAny() //8/11/21
                     noteWasPlayed = true   //5/15
                 } //End synth block
                 else if vt == HARMONY_VOICE
@@ -694,10 +764,14 @@ class OogieVoice: NSObject, NSCopying {
                 } //end harmony block
                 else if vt == SAMPLE_VOICE //10/16 add GM samples
                 {
-                    (sfx() as! soundFX).setSynthGain(Int32(Double(vchan) * 0.7 * OVS.level))
+                    lastgain = Int(Double(vchan) * 0.7 * OVS.level) //8/11 for delay
+
+                    (sfx() as! soundFX).setSynthGain(Int32(lastgain))
                     (sfx() as! soundFX).setSynthDetune(Int32(OVS.detune)); //5/9 add detune as editable param
                     (sfx() as! soundFX).setSynthPan(Int32(pchan))
                     bptr = bufferPointer
+                    lastbuf  = bptr //8/11 for delay
+                    lasttype = SAMPLE_VOICE
                     noteToPlay = inkeyNote
                     //ok playit
                     if quantTime == 0 //No Quant, play now
@@ -706,32 +780,39 @@ class OogieVoice: NSObject, NSCopying {
                     }
                     else
                     {
-                        (sfx() as! soundFX).queueNote(Int32(inkeyNote), Int32(bptr) ,Int32(vt))
+                        (sfx() as! soundFX).playNote(withDelay: Int32(inkeyNote), Int32(bptr) ,Int32(vt),Int32(quantTime))
                     }
                     noteWasPlayed = true
+                    lastnoteplayed = inkeyNote
+                    applyDelayIfAny() //8/11/21
                 } //end sample block 9/22
                 else if vt == PERCUSSION_VOICE
                 {
-                    (sfx() as! soundFX).setSynthGain(Int32(Double(vchan) * 0.7 * OVS.level))
+                    lastgain = Int(Double(vchan) * 0.7 * OVS.level) // 8/11 for delay
+                    (sfx() as! soundFX).setSynthGain(Int32(lastgain))
                     (sfx() as! soundFX).setSynthDetune(Int32(OVS.detune)); //5/9 add detune as editable param
                     // 9/27 no trigger key,just trigger of tolerance..
                     (sfx() as! soundFX).setSynthPan(Int32(pchan))
                     bptr = bufferPointer
+                    lastbuf  = bptr //8/11 for delay
+                    lasttype = PERCUSSION_VOICE
                     if OVS.detune == 0  //5/9 add detune on/off
-                        {noteToPlay = 32}
+                        {noteToPlay = 60}
                     else
                         {noteToPlay = inkeyNote}
 
                     //ok playit
                     if quantTime == 0 //No Quant, play now
                     {
-                        (sfx() as! soundFX).playNote(32, Int32(bptr) ,Int32(vt)) //Play Middle C for now...
+                        (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(vt)) //Play Middle C for now...
                     }
                     else
                     {
-                        (sfx() as! soundFX).queueNote(32, Int32(bptr) ,Int32(vt))
+                        (sfx() as! soundFX).playNote(withDelay: Int32(noteToPlay) , Int32(bptr) ,Int32(vt),Int32(quantTime))
                     }
                     noteWasPlayed = true
+                    lastnoteplayed = noteToPlay
+                    applyDelayIfAny() //8/11/21
                 } //end percussion block
                 else if vt == PERCKIT_VOICE
                 {
@@ -746,25 +827,30 @@ class OogieVoice: NSObject, NSCopying {
                     octave = max(min(octave,7),0)
                     //10/15  CRASH HERE!!!
                     bptr = bufferPointerSet[octave]
+                    lastbuf  = bptr //8/11 for delay
+                    lasttype = PERCKIT_VOICE
+
                     //print("note \(nchan) oct \(octave) bptr \(bptr)")
                     noteToPlay = 32
-                    
+//??                    lastnoteplayed = noteToPlay
+                    applyDelayIfAny() //8/11/21
+
                 } //end perckit block
                 
-                if noteToPlay != -1
-                {
-                    if quantTime == 0 //No Quant, play now
-                    {
-                        (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(vt))
-                    }
-                    else
-                    {
-                        (sfx() as! soundFX).queueNote(32, Int32(bptr) ,Int32(vt))
-                    }
-                    noteWasPlayed = true
-                    lastnoteplayed = inkeyNote
-                    //print("...playnote \(noteToPlay)");
-                }
+//                if noteToPlay != -1
+//                {
+//                    if quantTime == 0 //No Quant, play now
+//                    {
+//                        (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(vt))
+//                    }
+//                    else
+//                    {
+//                        (sfx() as! soundFX).playNote(withDelay:  32 , Int32(bptr) ,Int32(vt),Int32(quantTime))
+//                    }
+//                    noteWasPlayed = true
+//                    lastnoteplayed = inkeyNote
+//                    //print("...playnote \(noteToPlay)");
+//                }
                 uniqueCount = Int((sfx() as! soundFX).getSynthUniqueCount())
                 hiLiteFrame = MAX_CBOX_FRAMES
                 oldNote     = nchan
@@ -776,6 +862,37 @@ class OogieVoice: NSObject, NSCopying {
     } //end playColors
     
     
+    
+    //====(OOGIECAM MainVC)============================================
+    //uses workVoice, re-emits notes as needed
+    func applyDelayIfAny()
+    {
+        //Effect flag off? Bail!
+//    #ifdef DJMODE_TESTER
+//        if (fxbFlags[MVC_ALL_FX] == FALSE || fxbFlags[MVC_DELAY_FX] == FALSE) return;
+//    #endif
+        if OVS.delayMix == 0 || OVS.delayTime == 0 {return} //NO Delay? no apply
+        //Delay time goes from 0 to 100, scale to fit here...
+        let timeMS = OVS.delayTime * 10;  //goes up to 1 second that way
+        var workTime = timeMS;
+        //OK, we may need to loop a bit here...
+        var sustain      = Float(lastgain) / 255.0
+        var sustainmult  = Float(OVS.delaySustain) * 0.01 //percent value
+        if sustainmult == 1.0  {sustainmult = 0.98}
+        let mixlevel     = Float(OVS.delayMix) * 0.01; //percent value
+        while sustain > 0.05
+        {
+            var gain = Int32( mixlevel * sustain * 255.0);
+            if gain > 255  {gain = 255}
+            if gain < 0    {gain = 0}
+            (sfx() as! soundFX).setSynthGain(gain)
+            sustain = sustain * sustainmult
+            (sfx() as! soundFX).playNote(withDelay:  Int32(lastnoteplayed) , Int32(lastbuf) ,Int32(lasttype),Int32(workTime))
+            workTime+=timeMS;
+        } // end while
+
+    } //end applyDelayIfAny
+
     
     //-----------(oogieVoice)=============================================
     //    func savePatch (name:String)
@@ -791,24 +908,24 @@ class OogieVoice: NSObject, NSCopying {
         //print("ldfnt nt \(nt)")
         if  nt == "synth"
         {
-            OOP = allP.getDefaultPatchByType(ptype: Int(SYNTH_VOICE))
+            //6/29/21 FIX! OOP = allP.getDefaultPatchByType(ptype: Int(SYNTH_VOICE))
         }
         else if nt == "percussion" //9/22
         {
             OOP.clear()
-            OOP = allP.getDefaultPatchByType(ptype: Int(PERCUSSION_VOICE))
+            //6/29/21 FIX! OOP = allP.getDefaultPatchByType(ptype: Int(PERCUSSION_VOICE))
             bufferPointer = Int((sfx() as! soundFX).getPercussionBuffer(OOP.name))
             triggerKey    = Int((sfx() as! soundFX).getPercussionTriggerKey(OOP.name))
         }
         else if nt == "sample" //10/16
         {
             OOP.clear()
-            OOP = allP.getDefaultPatchByType(ptype: Int(SAMPLE_VOICE))
+            //6/29/21 FIX! OOP = allP.getDefaultPatchByType(ptype: Int(SAMPLE_VOICE))
             bufferPointer = Int((sfx() as! soundFX).getGMBuffer(OOP.name))
         }
         else if nt == "perckit" //9/24
         {
-            OOP = allP.getDefaultPatchByType(ptype: Int(PERCKIT_VOICE))
+            //6/29/21 FIX! OOP = allP.getDefaultPatchByType(ptype: Int(PERCKIT_VOICE))
             getPercLooxBufferPointerSet() //10/15 figger out which buffers to use...
         }
         OVS.patchName = OOP.name  //10/15 make sure we know the new patch name!

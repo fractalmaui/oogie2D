@@ -9,12 +9,14 @@
 //  oogie2D
 //
 //  Created by Dave Scruton on 8/3/19.
+//  Copyright © 1990 - 2021 fractallonomy, inc. All Rights Reserved.
 //  Saves a patch for oogie, Codable means it can go to/from JSON txt easily
 //  9/23 made percLoox into strings
 //  10/14 pull wtype, redundant w/ wave!
 //  10/15 add dump
 //  11/17 add gotAllZeroes
-
+//  11/24 add xtraParams 
+//  2/12  3 new params, pLevel, pKeyOffset, pKeyDetune
 import Foundation
 struct OogiePatch : Codable {
     
@@ -28,12 +30,18 @@ struct OogiePatch : Codable {
     var release : Double
     var duty : Double
     var sampleOffset  : Int
+    var pLevel : Int
+    var pKeyOffset : Int
+    var pKeyDetune : Int
     var percLoox     : Array<String> = ["mt","mt","mt","mt","mt","mt","mt","mt"]
     var percLooxPans : Array<Int> = [0,1,2,3,4,5,6,7]
+    var xtraParams : String //11/24 for performance params / futurproofing
 
     var createdAt:Date
     var itemIdentifier:UUID
     
+    var SYNTH_VOICE = 1 //kluge: defined in synth area
+     
     //======(OogiePatch)=============================================
     init()
     {
@@ -47,9 +55,12 @@ struct OogiePatch : Codable {
         release = 0.0
         duty = 0.0
         sampleOffset = 0
+        pLevel     = 50   //2/12/21 new params
+        pKeyOffset = 50
+        pKeyDetune = 50
         percLoox     = ["mt","mt","mt","mt","mt","mt","mt","mt"]
         percLooxPans = [0,1,2,3,4,5,6,7]
-        
+        xtraParams   = ""
         createdAt = Date()
         itemIdentifier = UUID()
     }

@@ -20,6 +20,13 @@
 // DHS 10/17/19 add envelope support for samples
 // DHS 11/9     add copyBuffer
 // DHS 11/22    add getSRate
+// 9/16 2020: start adding harmonyVoice, make it an on/off flag!
+//              all voices can be harmony as needed!
+// 9/25 Re-partition samples: 0..31 = work area (including vibrato waves)
+//                            32..end = loaded samples area...
+// 1/26  redid arpQueue, enlarged, made doubles, changed time calculations
+// 3/2   add digital delay
+// 6/25/21 add arpTones, redo arpeggiator data struct
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioUnit/AudioUnit.h>
 #import <AudioToolbox/AudioFile.h>
@@ -113,7 +120,24 @@ typedef struct
 	float gain;             ///<   note loudness
 	float lpan;             ///<   lpan  0.0 to 1.0
 	float rpan;             ///<   ppan  0.0 to 1.0
-    float portstep,portval; //used ONLY with portamento,step=999999 means NONE
+    int portamentoLastNote; // 6/26
+    float portamentoTime;
+    float portamentoPitchFinish; // end portamento tone
+    float portamentoPitchStep;   // teeny stepsize to increase port freq
+    int  vibAmpl;    //7/17 vibrato externals
+    int  vibWave;
+    int  vibSpeed;
+    int  vibDelay;    //TBD
+    float vibIndex;
+    float vibStep;
+    BOOL vibEnabled; //7/17 internal vib vars
+    int  vibeAmpl;    //4/8 amplitude vibe
+    int  vibeWave;
+    int  vibeSpeed;
+    int  vibeDelay;    //TBD
+    float vibeIndex;
+    float vibeStep;
+    BOOL vibeEnabled; //7/17 internal vib vars
     int timetrax;
     int portcount;
     int un;
@@ -123,9 +147,10 @@ typedef struct
 ToneEvent;
 
 //Synth AND sampler is in one object....
-#define MAX_SAMPLES 256 //OK, we will hold up to this many samples at once...
+#define MAX_SAMPLES 1024 //5/10/21 had to enlarge yet again!
 #define MAX_QUEUE 32  //queue size for notes played between quant steps
-#define MAX_ARP 256  // arpeggiator size...
+#define MAX_ARP 8192  //2/26/21 enlarge arpeggiator size...
+#define MAX_ARP_BUCKETS 16 //number of buckets in each arp note storage
 @interface Synth : NSObject
 {
     float masterTune;   //DHS 1/11/13 new overall tuning, +/- .5 semitone
@@ -142,6 +167,7 @@ ToneEvent;
     int sRates[MAX_SAMPLES];         // 10/5/2019 keep track of sample rates
 	int sBufLens[MAX_SAMPLES];
 	int sBufChans[MAX_SAMPLES];      //1 = mono, 2=stereo
+    int sTuningOffsets[MAX_SAMPLES];    //10.6 single note offsets, for GM tuning
 	int sineLength;                  ///< size of sine look-up table
 	int envLength[MAX_SAMPLES];      ///< size of envelope look-up table
 	int envDataLength[MAX_SAMPLES];      ///< amount of table space taken up by env...
@@ -149,28 +175,47 @@ ToneEvent;
 	int detune;         ///< overall detune flag...
     //Last ADSR length
     int attackLength, decayLength , sustainLength, releaseLength;
-
+    //Delay section 3/2/21
+    float *delayBuf;
+    int dwptr,drptr; //read/write delay pointers
+    
 	ToneEvent tones[MAX_TONE_EVENTS];
+    int lastToneHandle; // 6/25/21 points to most recently played note
     int queuePtr,arpPtr;
     int arpPlayPtr;
-    float noteQueue[16][MAX_QUEUE];
-    float arpQueue[16][MAX_ARP];   //Arpeggiator: voice/note/volume/pan
+    float noteQueue[MAX_ARP][MAX_QUEUE];
+    double arpQueue[MAX_ARP][MAX_ARP_BUCKETS];   //Arpeggiator: just holds time now, note data is in arpTones
+    ToneEvent arpTones[MAX_ARP]; //6/25/21
 	/// fundamental frequencies for all MIDI note numbers
 	float pitches[256];
     int numPVoices;
     int numSVoices;
     float glpan,grpan; //temp pan settings: call setPan right before playnote!
-    float gporto;
-    int gportlast; // temp portamento settings
+    int portamentoLastNote; // 6/26
+    float portamentoTime;  // 6/26
+    int  vibAmpl;    //7/17 vibrato externals
+    int  vibWave;
+    int  vibSpeed;
+    int  vibDelay;
+    int  vibeAmpl;    //4/8 amplitude vibe
+    int  vibeWave;
+    int  vibeSpeed;
+    int  vibeDelay;
+    int pLevel,pKeyOffset,pKeyDetune; //2/12/21 fine tuning
     int timetrax;
     int recording,reclength,recptr,recsize;
     int needToMailAudioFile;
     int infinite;           //Synth ONLY, holds note forever...
     NSString *recFileName;
+    NSString *recFileFullPath;
     double arpTime;
     NSTimer *arptimer;
-
+    //6/22/20
+    int recordfileIndex; //used to name output recordings
     
+    // 3/2/21 digital delay
+    int delayTime,delaySustain,delayMix;
+    int delayBufSize;
 }
 
 #define NULL_VOICE -1
@@ -178,7 +223,9 @@ ToneEvent;
 #define PERCUSSION_VOICE 1
 #define PERCKIT_VOICE 2
 #define SAMPLE_VOICE 3
-#define HARMONY_VOICE 4
+#define SPLITSAMPLE_VOICE 4   //11/2
+#define HARMONY_VOICE 8  //9/16: bit 8 indicates harmony
+#define HARMONY_MASK 255 //9/16: bits 0-7
 #define MIDITRACK_VOICE 5
 #define SYNTHA_DEFAULT			4.0;
 #define SYNTHD_DEFAULT			2.0;
@@ -187,18 +234,24 @@ ToneEvent;
 #define SYNTHR_DEFAULT			20.0;
 #define SYNTHDUTY_DEFAULT		50.0;
 
+#define MAX_DELAY_SECONDS 2
+
 @property (nonatomic, assign) float gain;
 @property (nonatomic, assign) int mono;
 @property (nonatomic, assign) int poly;
-
+@property (nonatomic, weak) NSString *recFileFolder;
+@property (nonatomic, assign) float recGain;
 
 -(void) copyBuffer : (int) from : (int) to : (BOOL) clear;
 -(void) copyEnvelope : (int) from : (int) to;
 
 
--(void)startRecording:(int)newlen;
+-(void)startRecording:(int)maxRecordingTime;
 -(void)stopRecording:(int)cancel;
-- (void)writeOutputSampleFile:(NSString *)name :(NSString *)type;
+-(void) pauseRecording;
+-(void) unpauseRecording;
+
+//4/2/21 no need - (void)writeOutputSampleFile:(NSString *)name :(NSString *)type;
  
 // Initializes the Synth.
 - (id)initWithSampleRate:(float)sampleRate;
@@ -210,7 +263,10 @@ ToneEvent;
 - (float)getLVolume ;
 - (float)getRVolume ;
 -(NSString *)getAudioOutputFileName;
+-(NSString *)getAudioOutputFullPath;
 -(NSArray *) getEnvelopeForDisplay: (int) which : (int) size;
+-(int) getEnvelopeSize : (int) which;
+-(float) getSampleProgressAsPercent : (int) n : (int) buf;
 
 //DHS set master tune
 - (void)setMasterTune:(int)nt;
@@ -224,7 +280,6 @@ ToneEvent;
 - (void)playNote:(int)midiNote :(int)wnum :(int)type;
 - (void)playNoteWithDelay:(int)midiNote : (int) wnum : (int) type : (int) delayms;
 - (void)playPitchedNote:(float)pitch :(int)wnum;
-- (void)queueNote:(int)midiNote :(int)wnum :(int)type;
 - (void)emptyQueue;
 
 //  Releases a note that is currently playing.
@@ -244,39 +299,71 @@ ToneEvent;
 - (void)buildSawTable: (int) which;
 - (void)buildSquareTable: (int) which;
 - (void)cleanupNotes:(int)which;
+- (void)cleanupBuffersAbove:(int)index;
 - (void)decrVoiceCount:(int)n;
 - (float)getADSR: (int)which : (int)where ;
+- (int)getBufferSize: (int) index;
+- (float)getBufferPlaytime: (int) index;
+- (float)getBufferPlaytime: (int) index;
 - (int)getNoteCount;
 - (int)getEnvDataLen:(int)which  ;
-- (int)getUniqueCount; 
+- (NSDictionary*) getSampleHeader:(NSString *)soundFilePath;
+- (int)getUniqueCount;
+- (int) getLastToneHandle; //6/25/21
+
 - (void)incrVoiceCount:(int)n;
 - (void)setMonoUN: (int)un ;
 - (void)releaseAllNotes;
+- (void)releaseAllLoopedNotes;
+- (void)releaseAllNonLoopedNotes;
 - (void)releaseNoteByBin:(int)n;
 - (void)releaseAllNotesByWaveNum:(int)wn  ;
 - (void)releaseNote:(int)midiNote :(int)wnum;
 - (void)setInfinite:(int)n;
 - (void)setPan: (int)newPanInt ;
 - (void)setPortamento: (int)pn ;
-- (void)setPortLast: (int)lastnote ;
+- (void)setPortamentoLastNote: (int)lastnote ;
 - (void)setAttack: (int)newVal ;
 - (void)setDecay: (int)newVal ;
 - (void)setSustain: (int)newVal; 
 - (void)setSustainL: (int)newVal; 
 - (void)setRelease: (int)newVal ;
 - (void)setDuty: (int)newVal ;
-- (void)setSampOffset: (int)newVal; 
+- (void)setSampOffset : (int)percent; 
 - (void)setDetune: (int)newVal ;
 - (void)setTimetrax: (int)newVal ;
+- (void) setToneGainByHandle : (int) handle : (int) newGain;
 - (void)setMIDI: (int)mdev :(int)mchan;
 - (void) setNeedsEnvelope : (int) which : (BOOL) onoff; //10/17
 - (void)setMidiOn: (int)onoff ;
 - (int) getMidiOn;  
-- (void) setWaveNum: (int) wnum;
+- (void) setWaveNum:  (int) wnum;
+- (void) setVibAmpl:  (int) newVal;
+- (void) setVibWave:  (int) newVal;
+- (void) setVibSpeed: (int) newVal;
+- (void) setVibDelay: (int) newVal;
+- (void) setVibeAmpl:  (int) newVal;
+- (void) setVibeWave:  (int) newVal;
+- (void) setVibeSpeed: (int) newVal;
+- (void) setVibeDelay: (int) newVal;
+- (void) setNoteOffset: (int) which : (NSString*) fname;
+//2/12/21 fine tuning
+-(void) setPLevel     : (int) a1; //patch level
+-(void) setPKeyOffset : (int) a1;
+-(void) setPKeyDetune : (int) a1;
+
+-(void) setDelayVars : (int)dtime : (int)dsustain : (int)dmix;
+-(void) delaySend : (float)ml : (float) mr;
+-(float) delayReturnLorRWithAutoIncrement;
+
+
+
 - (void)loadSample:(NSString *)name :(NSString *)type ;
 - (void)loadSampleFromPath : (NSString *)subFolder : (NSString *)fileName;
 - (void) dumpBuffer : (int) which : (int) dsize;
 
 -(void) doogitie  : (NSString *)name : (int) whichBuffer;
+
+-(void) testDump;
 
 @end

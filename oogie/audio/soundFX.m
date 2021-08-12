@@ -20,6 +20,14 @@
 // DHS 10/6     Add GM Names, getGMName func
 // DHS 11/6     move GeneralMidiNames to Misc subfolder
 // DHS 11/9     add getWorkBuffer, getEnvelopeForDisplay
+// DHS 6/19-22  add recording hooks into synth
+// 2/12/21      add fineTuning
+// 2/19/21      add playNoteWithDelay to support delay
+// 4/8          add ampl Vibe support
+// 4/20 fix warnings inside closures, added self-> etc as needed
+// 5/10  enlarge sample space to 1024
+// 5/17  add # punct check in loadSamplesNow
+// 6/26  pull queueNote
 #include "soundFX.h"
 
 @implementation soundFX
@@ -69,6 +77,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
         player.gain = 2.0f;
         float oogieMasterLevel = 1.0;
         [synth setMasterLevel:oogieMasterLevel];
+        synth.recGain = 1.0; //8/29 values over 1 cause CLIPPING!
         //NSLog(@"Start sampleplayer..." );
         [player start];
         for (int i=0;i<MAX_SOUNDFILES;i++)
@@ -107,6 +116,20 @@ int HH,LL,SS;  //Used in rgb -> HLS
     [player stop];
 }
 
+//=====(soundFX)==========================================
+// 6/21/20
+-(void)startRecording:(int)maxRecordingTime { [synth startRecording:maxRecordingTime]; }
+//=====(soundFX)==========================================
+// 6/21/20
+-(void)stopRecording:(int)cancel { [synth stopRecording:cancel]; }
+
+//=====(soundFX)==========================================
+// 6/22/20 more handoffs...
+-(void)pauseRecording { [synth pauseRecording]; }
+-(void)unpauseRecording { [synth unpauseRecording]; }
+-(NSString *)getAudioOutputFileName{ return [synth getAudioOutputFileName]; }
+-(NSString *)getAudioOutputFullPath{ return [synth getAudioOutputFullPath]; }
+
 
 //=====(soundFX)==========================================
 - (void) releaseAllNotesByWaveNum : (int) which
@@ -121,11 +144,22 @@ int HH,LL,SS;  //Used in rgb -> HLS
 } //end releaseAllNotes 
 
 //=====(soundFX)==========================================
+// 6/23/21
+- (void)releaseAllLoopedNotes{ [synth releaseAllLoopedNotes];}
+- (void)releaseAllNonLoopedNotes{ [synth releaseAllNonLoopedNotes];}
+
+//=====(soundFX)==========================================
 - (void) setMasterLevel : (float) level
 {
     [synth setMasterLevel : level];
 }
 
+//=====(soundFX)==========================================
+// 10/6 pass the buck
+-(void) setNoteOffset: (int) which : (NSString*) fname
+{
+    [synth setNoteOffset:which:fname];
+} //end setNoteOffset
 
 //=====(soundFX)==========================================
 - (void) setPan : (int) pan
@@ -134,10 +168,45 @@ int HH,LL,SS;  //Used in rgb -> HLS
 } //end setPan
 
 //=====(soundFX)==========================================
+// 6/23
+- (void)setPortamentoLastNote: (int)lastnote
+{
+    [synth setPortamentoLastNote:lastnote];
+}
+
+//=====(soundFX)==========================================
+// 6/22 for recording output
+-(void) setRecordingFolder : (NSString *) fname
+{
+    synth.recFileFolder = fname;
+}
+
+//=====(soundFX)==========================================
+// 10/31
+- (int)getBufferSize: (int) index { return [synth getBufferSize:index];}
+
+//=====(soundFX)==========================================
+// 6/25/21 
+- (float)getBufferPlaytime: (int) index { return [synth getBufferPlaytime:index];}
+
+//=====(soundFX)==========================================
+// 7/17 for retreiving sample name
+-(NSString*) getSoundFileName : (int) index
+{
+   if (index < 0) return @"";
+   if (index >= MAX_SOUNDFILES) return @"";
+   return soundFileNames[index];
+}
+
+//=====(soundFX)==========================================
 -(void) setSoundFileName : (int) index : (NSString *)sfname
 {
     if (index < 0) return;
-    if (index >= MAX_SOUNDFILES) return;
+    if (index >= MAX_SOUNDFILES)
+    {
+        NSLog(@" ERROR:setSoundFileName sample index out of range %d",index); //10/18
+        return;
+    }
     soundFileNames[index] = sfname;
     index++; //Use for count value
     if (index > soundFileCount) soundFileCount = index;
@@ -151,6 +220,13 @@ int HH,LL,SS;  //Used in rgb -> HLS
     if (index >= 36) return;
     puzzleColors[index] = color;
     
+}
+
+//=====(soundFX)==========================================
+// 5/24
+-(int) getEnvelopeSize : (int) which
+{
+    return [synth getEnvelopeSize:which];
 }
 
 
@@ -237,6 +313,12 @@ int HH,LL,SS;  //Used in rgb -> HLS
 {
     return [synth getUniqueCount];
 }
+
+// 6/25/21
+-(int)  getSynthLastToneHandle { return [synth getLastToneHandle];};
+// 6/25/21 for sample progress
+-(float)  getSynthSampleProgressAsPercent : (int) a1 : (int) a2 { return [synth getSampleProgressAsPercent : a1 : a2];}
+
 -(int) makeSureNoteisInKey:(int)a1 :(int)a2
 {
   return [synth makeSureNoteisInKey : a1 : a2];
@@ -245,9 +327,11 @@ int HH,LL,SS;  //Used in rgb -> HLS
 {
     [synth playNote : a1 : a2 : a3];
 }
--(void) queueNote : (int) a1 : (int) a2 : (int) a3
+
+//2/19/21 to support delay
+-(void) playNoteWithDelay : (int) a1 : (int) a2 : (int) a3 : (int) a4
 {
-    [synth queueNote : a1 : a2 : a3];
+    [synth playNoteWithDelay: a1 : a2 : a3 : a4];
 }
 -(void) releaseNote : (int) a1 : (int) a2
 {
@@ -273,6 +357,11 @@ int HH,LL,SS;  //Used in rgb -> HLS
 {
     synth.gain = (float)a1/255.0;
 }
+-(void) setSynthInfinite : (int) a1 // 6/23/21
+{
+    synth.infinite = a1;
+}
+
 -(void) setSynthMasterLevel : (int) a1
 {
     [synth setMasterLevel : a1];
@@ -330,12 +419,15 @@ int HH,LL,SS;  //Used in rgb -> HLS
 }
 -(void) setSynthSampOffset : (int) a1
 {
-    [synth setSampOffset : a1];
+    [synth setSampOffset:a1];
 }
 -(void) setSynthSustain : (int) a1
 {
     [synth setSustain : a1];
 }
+//6/25/21
+-(void) setSynthToneGainByHandle : (int) a1 : (int) a2 {[synth setToneGainByHandle:a1 :a2];}
+
 -(void) setSynthSustainL : (int) a1
 {
     [synth setSustainL : a1];
@@ -343,6 +435,45 @@ int HH,LL,SS;  //Used in rgb -> HLS
 -(void) setSynthWaveNum : (int) a1
 {
     [synth setWaveNum : a1];
+}
+
+//7/17/20 synth vibrato ... just pass the buck down to synth
+- (void) setSynthVibAmpl:  (int) a1   {[synth setVibAmpl  : a1];}
+- (void) setSynthVibWave:  (int) a1   {[synth setVibWave  : a1];}
+- (void) setSynthVibSpeed: (int) a1   {[synth setVibSpeed : a1];}
+- (void) setSynthVibDelay: (int) a1   {[synth setVibDelay : a1];}
+//4/8/21 synth amplitude vibe . . .
+- (void) setSynthVibeAmpl:  (int) a1   {[synth setVibeAmpl  : a1];}
+- (void) setSynthVibeWave:  (int) a1   {[synth setVibeWave  : a1];}
+- (void) setSynthVibeSpeed: (int) a1   {[synth setVibeSpeed : a1];}
+- (void) setSynthVibeDelay: (int) a1   {[synth setVibeDelay : a1];}
+
+//3/2/21 digital delay
+-(void) setSynthDelayVars : (int)a1 : (int)a2 : (int)a3
+{
+    [synth setDelayVars : a1 : a2 : a3];
+}
+-(void) synthDelaySend : (float)a1 : (float) a2
+{
+    [synth delaySend:a1 :a2];
+}
+-(float) synthDelayReturnLorRWithAutoIncrement
+{
+    return [synth delayReturnLorRWithAutoIncrement];
+}
+
+
+
+//2/12/21 add fine tuning
+-(void) setSynthPLevel     : (int) a1 {[synth setPLevel : a1];}
+-(void) setSynthPKeyOffset : (int) a1 {[synth setPKeyOffset : a1];}
+-(void) setSynthPKeyDetune : (int) a1 {[synth setPKeyDetune : a1];}
+
+
+
+-(void) testDump
+{
+    [synth testDump];
 }
 
 
@@ -392,7 +523,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
 
 //=====(soundFX)==========================================
 // 9/22 test
-- (void)makePercSound : (int) which: (int) note
+- (void)makePercSound : (int) which : (int) note
 {
     [synth setDetune: 0];
     synth.gain = 1.0;
@@ -479,6 +610,12 @@ int HH,LL,SS;  //Used in rgb -> HLS
     
 } //end makeTicSoundWithPitch
 
+//=========(soundFX)========================================================================
+// 4/27 pass da buck
+- (NSDictionary*) getSampleHeader:(NSString *)soundFilePath
+{
+    return [synth getSampleHeader: soundFilePath];
+}
 
 
 //=========(soundFX)========================================================================
@@ -490,13 +627,65 @@ int HH,LL,SS;  //Used in rgb -> HLS
     for(loop=0;loop<soundFileCount;loop++)
     {
         if (sampnum >= MAX_SAMPLES) break; //DHS aug 2012 fix. was using loop!
-        //NSLog(@" ...loadsamp(%d) Name %@",loop,hdkSoundFiles[loop]);
         [synth loadSample:soundFileNames[loop]:@"wav"];
         [synth buildSampleTable:sampnum];
         sampnum++;
     }
 } //End loadAudio
 
+
+//=========(soundFX)========================================================================
+// probs loading CAF files, here are some linx, skips $ named files
+//  https://stackoverflow.com/questions/6593118/how-to-reverse-an-audio-file
+//asdf  6/23 load user stuff , to buffers 256 and up
+// returns filenames that were loaded but a sample failure could result in output offset
+// 10/18/20 add sample base offset for user samples
+// 10/29 add soundpack name
+-(NSArray *) loadSamplesNow : (NSString*)pname : (int) sampleBase
+{
+    //NSLog(@" load samples now... %@ at %d",pname,sampleBase);
+    NSArray *fileNames;
+    NSString *docFolderFullPath;
+    if ([pname isEqualToString:@"UserSamples"]) //10/29 find user samples
+    {
+        //THIS filenames get should be a generic function!, also is in samplesVC
+        NSArray  *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString *documentsDirectory = [paths objectAtIndex:0];
+        docFolderFullPath = [documentsDirectory stringByAppendingPathComponent:@"samples"];
+        fileNames = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:docFolderFullPath error:Nil];
+    }
+    else //11/2 purchased samples? THIS SECTION DOESNT WORK!
+    {
+        return nil;
+//        NSURL *path = NSBundle.mainBundle.resourceURL;
+//        NSURL *p2 = [path URLByAppendingPathComponent:pname];
+//        NSArray *directoryContent = directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:p2 error:NULL];
+//        docFolderFullPath = p2.absoluteString; //10/29
+//
+//        fileNames = [directoryContent sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
+    }
+    int loop,sampnum = sampleBase; //10/18 Loop over samples, skip 6 (already loaded)
+    //    for(loop=0;loop<NUM_SAMPLES;loop++)
+    NSMutableArray *outFnames = [[NSMutableArray alloc] init];
+    for(loop=0;loop<fileNames.count;loop++)
+    {
+        NSString *nextFname = fileNames[loop];
+        NSString *fullName = [docFolderFullPath
+                              stringByAppendingPathComponent:nextFname];
+        // 5/17 add # check
+        if (![fullName containsString : @"$"] && ![fullName containsString : @"#"]) //NO dollar signs please!
+        {
+            [outFnames addObject:nextFname];
+            //NSLog(@" load user samp %@ to buffer %d",fullName,sampnum);
+            if (sampnum >= MAX_SAMPLES) break; //DHS aug 2012 fix. was using loop!
+            [synth loadSample:fullName:@"USR"];  //NOTE NO WAVS HERE!???
+            [synth buildSampleTable:sampnum];
+            sampnum++;
+        }
+    }
+    //NSLog(@" ......user samples loaded OK");
+    return outFnames; //ASSUMES PERFECT LOAD BTW!!!
+} //End loadSamplesNow
 
 //=========(soundFX)========================================================================
 // Loads MOST samples in bkgd, but immediate # is loaded
@@ -507,9 +696,14 @@ int HH,LL,SS;  //Used in rgb -> HLS
     int sampnum = immediateSampleNum;
     if (sampnum >= 0 && sampnum != 99)  //Got an immediate sample to load?  DHS 2/8/
     {
-        // Set this up to preload one sample in foreground... (6 is typical)
-        [synth loadSample:soundFileNames[sampnum]:@"wav"];
-        [synth buildSampleTable:sampnum];
+        //9/25 check for error names!
+        NSString *sname = soundFileNames[sampnum];
+        if (sname != nil && sname.length > 2)
+        {
+            // Set this up to preload one sample in foreground... (6 is typical)
+            [synth loadSample:sname:@"wav"];
+            [synth buildSampleTable:sampnum];
+        }
     }
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
@@ -522,20 +716,28 @@ int HH,LL,SS;  //Used in rgb -> HLS
                                //Not preloaded sample?
                                if (loop != immediateSampleNum)
                                {
-                                   [synth loadSample:soundFileNames[loop]:@"wav"];
-                                   [synth buildSampleTable:ssampnum];
-                                   soundFileLoaded[ssampnum] = true;
-                                   //NSLog(@" ...loaded sample[%d][%@] into buffer %d",loop,soundFileNames[loop],ssampnum);
+                                   //9/25 check for error names!
+                                   NSString *sname = self->soundFileNames[loop];
+                                   if (sname != nil && sname.length > 2)
+                                   {
+                                       [self->synth loadSample:sname:@"wav"];
+                                       [self->synth buildSampleTable:ssampnum];
+                                       self->soundFileLoaded[ssampnum] = true;
+                                       NSLog(@" ...loaded sample[%d][%@] into buffer %d",
+                                             loop,sname,ssampnum);
+                                   }
                                }
                                ssampnum++;
                            }
-                          [_delegate didLoadSFX];
+                           [self->_delegate didLoadSFX];
+                           // 7/1/21 let other VCs know!
+                           [[NSNotificationCenter defaultCenter] postNotificationName:@"samplesLoadedNotification"
+                                                                               object:nil userInfo:nil];
+
                        });
                        
                    }
                    ); //END outside dispatch
-    
-    
 } //end loadAudioBKGD
 
 //=========(soundFX)========================================================================
@@ -581,6 +783,13 @@ int HH,LL,SS;  //Used in rgb -> HLS
     return GMNamesDict[[NSString stringWithFormat:@"%d",buffer]];
 }
 
+//=========(soundFX)========================================================================
+- (float)getLVolume { return [synth getLVolume]; } //6/12/20
+
+//=========(soundFX)========================================================================
+- (float)getRVolume { return [synth getRVolume]; } //6/12/20
+
+#ifdef OOGIE_2D
 
 //=========(soundFX)========================================================================
 // Major overhaul, needs to look at local folders and possibly folders on device...
@@ -638,7 +847,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
                            directoryContent = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:p2 error:NULL];
                            for (NSString*fname in directoryContent)
                            {
-                               //NSLog(@" sample patch %@",fname);
+                               NSLog(@" GM sample patch %@",fname);
                                [synth  loadSampleFromPath : subfolder : fname];
                                [synth buildSampleTable:sampleNumber];
                                soundFileLoaded[sampleNumber] = true;
@@ -652,12 +861,12 @@ int HH,LL,SS;  //Used in rgb -> HLS
                            //NSLog(@" loaded all samples...");
                            [[NSNotificationCenter defaultCenter] postNotificationName:@"samplesLoadedNotification"
                                                                                object:nil userInfo:nil];
-
                        }); //END inner dispatch
                        
                    } ); //END outside dispatch
     //NSLog(@"duh end loadaudio");
 } //end loadAudioForOOGIE
+#endif
 
  
 
@@ -1049,6 +1258,13 @@ int dtp;
 {
     [synth copyEnvelope:from :to];
 }
+
+// 10/31
+- (void)cleanupBuffersAbove:(int)index
+{
+    [synth cleanupBuffersAbove : index];
+}
+
 
 //DHS 10/10/19 el dumpo
 - (void) dumpBuffer : (int) which : (int) dsize;

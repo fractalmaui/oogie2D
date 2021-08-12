@@ -11,3 +11,6 @@
 #import "tiffie.h"
 #import "OogieTiffie.h"
 #import "UIImageExtras.h"
+#import "controlPanel.h"
+#import "oogieStyles.h"
+#import "genOogie.h"

@@ -150,7 +150,7 @@ class PatchEditVC: UIViewController,
     var patchNum   = 0
     
     var patchName = "default"
-    var patchInfo = PatchieInfo()
+    //6/29/21 FIX!  var patchInfo = PatchieInfo()
     var opatch    = OogiePatch()
     var needToUseADSR = false
     var newPatchNamez : [String] = []
@@ -317,11 +317,11 @@ class PatchEditVC: UIViewController,
     }
     
     //=====PatchEditorVC===========================================
-    func getFreshPatchinfo() -> PatchieInfo
-    {
-        if let pinfo = allP.patchInfoDict[opatch.name] {return pinfo}
-        return PatchieInfo()
-    }
+// 6/29/21 FIX    func getFreshPatchinfo() -> PatchieInfo
+//    {
+//        //6/29/21 FIX!  if let pinfo = allP.patchInfoDict[opatch.name] {return pinfo}
+//        return PatchieInfo()
+//    }
     
     //=====PatchEditorVC===========================================
     // called from setupSynthOrSample
@@ -344,15 +344,15 @@ class PatchEditVC: UIViewController,
     func updateForPatchInfo()
     {
         //Try to get patch info for this patch
-        patchInfo = getFreshPatchinfo()
-        factoryButton.isHidden = true
-        var s = "User Patch"
-        if patchInfo.builtin {s = "Builtin Patch"}
-        print(patchInfo)
-        //Update BOTH contrasting labels...
-        bTLabel.text = s
-        tTLabel.text = s
-        factoryButton.isHidden = !patchInfo.factorySettingWasChanged
+// 6/29/21 FIX        patchInfo = getFreshPatchinfo()
+//        factoryButton.isHidden = true
+//        var s = "User Patch"
+//        if patchInfo.builtin {s = "Builtin Patch"}
+//        print(patchInfo)
+//        //Update BOTH contrasting labels...
+//        bTLabel.text = s
+//        tTLabel.text = s
+//        factoryButton.isHidden = !patchInfo.factorySettingWasChanged
     } //end updateForPatchInfo
     
     //=====PatchEditorVC===========================================
@@ -745,7 +745,7 @@ class PatchEditVC: UIViewController,
         (sfx() as! soundFX).setSynthPan(128)
         var noteToPlay  = midiNote
         //some patches need octave changes
-        let gMidiOffset = allP.getOffsetForGMPatch(name:opatch.name)
+        let gMidiOffset = 0  //6/29/21 FIX!  allP.getOffsetForGMPatch(name:opatch.name)
         //print("name \(opatch.name) offset \(gMidiOffset)")
         if (opatch.type == SAMPLE_VOICE)
         {
@@ -789,12 +789,12 @@ class PatchEditVC: UIViewController,
         // 11/22 redid logic here, perc and sample both need gmidioffset for various reasons
         if (opatch.type == PERCUSSION_VOICE)
         {
-            gMidiOffset = allP.getOffsetForGMPatch(name:opatch.name)
+            //6/29/21 FIX!      gMidiOffset = allP.getOffsetForGMPatch(name:opatch.name)
             (sfx() as! soundFX).setSynthDetune(0); //11/17 no detune!
         }
         else if (opatch.type == SAMPLE_VOICE)
         {
-            gMidiOffset = allP.getOffsetForGMPatch(name:opatch.name)
+            //6/29/21 FIX!  gMidiOffset = allP.getOffsetForGMPatch(name:opatch.name)
             (sfx() as! soundFX).setSynthSampOffset(Int32(opatch.sampleOffset))
             (sfx() as! soundFX).setSynthDetune(1);
         }
@@ -804,7 +804,7 @@ class PatchEditVC: UIViewController,
             if (octave < 0 || octave > 7) {octave = 0}
             let pName = opatch.percLoox[octave]
             //11/22 perc kit is special, has a bunch of names!
-            gMidiOffset = allP.getOffsetForGMPatch(name:pName)
+            //6/29/21 FIX!  gMidiOffset = allP.getOffsetForGMPatch(name:pName)
             //Dont use work buffer, use built-in samples
             bptr  = (sfx() as! soundFX).getPercussionBuffer(pName.lowercased())
             noteToPlay = 64
@@ -885,28 +885,28 @@ class PatchEditVC: UIViewController,
     func checkPatchAndSave()
     {
         //11/14 use allpatches test for exist
-        if allP.patchExists(name:patchName) { replacePatchPrompt()  }
-        else //New patches go to user area!! asdf
-        {
-            allNew = false //Indicate we have at least one replaced patch!
-            allP.addNewUserPatch (p : opatch , n : patchName) // 11/17 update allpatches!
-            patchInfo.category = "US" //This patch just became a user patch!
-            packupAndSavePatch(pName:patchName)
-        }
+// //6/29/21 FIX!          if allP.patchExists(name:patchName) { replacePatchPrompt()  }
+//        else //New patches go to user area!! asdf
+//        {
+//            allNew = false //Indicate we have at least one replaced patch!
+//            allP.addNewUserPatch (p : opatch , n : patchName) // 11/17 update allpatches!
+//            patchInfo.category = "US" //This patch just became a user patch!
+//            packupAndSavePatch(pName:patchName)
+//        }
     } //end checkPatchAndSave
     
     //=====PatchEditorVC===========================================
     func replacePatchPrompt()
     {
         var msg = umsg //user message
-        if let pi = allP.patchInfoDict[patchName] //Got info?
-        {
-            if pi.builtin { msg = bmsg}  //izzit builtin? set message
-        }
-        else
-        {
-            print("Err: looking up patch")
-        }
+// //6/29/21 FIX!         if let pi = allP.patchInfoDict[patchName] //Got info?
+//        {
+//            if pi.builtin { msg = bmsg}  //izzit builtin? set message
+//        }
+//        else
+//        {
+//            print("Err: looking up patch")
+//        }
         //FIX 11/14  if PatchieInfo
         let alert = UIAlertController(title: "Patch \(patchName) Exists, Replace?", message: msg,
                                       preferredStyle: UIAlertController.Style.alert)
@@ -933,8 +933,8 @@ class PatchEditVC: UIViewController,
     //Look at patchName, get fresh copy name from allpatches
     func packupAndSaveCopyOfPatch()
     {
-        let nname = allP.getNewNameForCopy(n : patchName)
-        packupAndSavePatch(pName: nname) //Save with our new name
+        //6/29/21 FIX!          let nname = allP.getNewNameForCopy(n : patchName)
+        //6/29/21 FIX!  packupAndSavePatch(pName: nname) //Save with our new name
     } //end packupAndSaveCopyOfPatch
 
     
@@ -957,16 +957,16 @@ class PatchEditVC: UIViewController,
 
         //        patchInfo = getFreshPatchinfo()
         //get a folder destination...
-        _ = patchInfo //for debugger
-        _ = allP.getCategoryFolderName(n: patchInfo.category)
-        //Note patchName is different from internal name
-        opatch.saveItem(filename: pName , cat: patchInfo.category)
-        //Add filename to our saved names array...
-        if !newPatchNamez.contains(patchName) {newPatchNamez.append(pName)}
-        delegate?.patchEditVCSavePatchNow(name: pName)
-        // 11/13 mark change in allpatches...
-        allP.changedAPatch (name:pName)
-        showSavedPatchAlert()   //11/15
+// //6/29/21 FIX!         _ = patchInfo //for debugger
+//        _ = allP.getCategoryFolderName(n: patchInfo.category)
+//        //Note patchName is different from internal name
+//        opatch.saveItem(filename: pName , cat: patchInfo.category)
+//        //Add filename to our saved names array...
+//        if !newPatchNamez.contains(patchName) {newPatchNamez.append(pName)}
+//        delegate?.patchEditVCSavePatchNow(name: pName)
+//        // 11/13 mark change in allpatches...
+//        allP.changedAPatch (name:pName)
+//        showSavedPatchAlert()   //11/15
 
         //asdf
     } //end packupAndSavePatch
@@ -1011,7 +1011,7 @@ class PatchEditVC: UIViewController,
             }
             let yval = CGFloat(nextval)*yscale
             let r = CGRect(x: x, y: yscale-yval , width: step, height: yval)
-            context.drawBoxGradient(in: r, startingWith: colorz[segment].cgColor, finishingWith: UIColor.black.cgColor)
+            context.pvcDrawBoxGradient(in: r, startingWith: colorz[segment].cgColor, finishingWith: UIColor.black.cgColor)
             //context.fill(r);   //for solid fill
             x = x + step
             oldval = nextval
@@ -1035,7 +1035,7 @@ class PatchEditVC: UIViewController,
             (sfx() as! soundFX).setSynthSustainL(Int32(opatch.sLevel));
             (sfx() as! soundFX).setSynthRelease(Int32(opatch.release));
             (sfx() as! soundFX).setSynthDuty(Int32(opatch.duty));
-            //print("build wave/env ADSR \(opatch.attack) :  \(opatch.decay) :  \(opatch.sustain) :  \(opatch.release)")
+            print("build wave/env ADSR SL \(opatch.attack) :  \(opatch.decay) :  \(opatch.sustain) :  \(opatch.release):  \(opatch.sLevel)")
             (sfx() as! soundFX).buildaWaveTable(Int32(bptr),Int32(opatch.wave));  //args whichvoice,whichsynth
             //print("SYNTH Build Envelope \(opatch.name) bptr \(Int(bptr))")
             (sfx() as! soundFX).buildEnvelope(Int32(bptr),true); //arg whichvoice?
@@ -1206,22 +1206,22 @@ class PatchEditVC: UIViewController,
 
     func loadPatchFromChooserAndUpdateUI (name : String)
     {
-        opatch = allP.getPatchByName(name: name)
-        allP.dumpBuiltinPatch(n: name)
-        patchName = name
-        //ADSR present? Use it! 11/13
-        needToUseADSR = (opatch.attack  > 0)  || (opatch.decay   > 0) ||
-                        (opatch.sustain > 0)  || (opatch.release > 0) ||
-                        (opatch.sLevel  > 0)
-        print("setupfor file \(name) adsr \(needToUseADSR)")
-
-        DispatchQueue.main.async {   //UI stuff goes on main thread
-            self.setFieldsFromPatch()
-            self.updateForPatchInfo()  //ask allpatches if new patch info came in
-
-            self.updateViewsBasedOnPatchType() //this changes subview sizes!
-            self.playTestNote(midiNote: 64)
-        }
+// //6/29/21 FIX!         opatch = allP.getPatchByName(name: name)
+//        allP.dumpBuiltinPatch(n: name)
+//        patchName = name
+//        //ADSR present? Use it! 11/13
+//        needToUseADSR = (opatch.attack  > 0)  || (opatch.decay   > 0) ||
+//                        (opatch.sustain > 0)  || (opatch.release > 0) ||
+//                        (opatch.sLevel  > 0)
+//        print("setupfor file \(name) adsr \(needToUseADSR)")
+//
+//        DispatchQueue.main.async {   //UI stuff goes on main thread
+//            self.setFieldsFromPatch()
+//            self.updateForPatchInfo()  //ask allpatches if new patch info came in
+//
+//            self.updateViewsBasedOnPatchType() //this changes subview sizes!
+//            self.playTestNote(midiNote: 64)
+//        }
 
     } //end loadPatchFromChooserAndUpdateUI
     
@@ -1279,7 +1279,7 @@ class PatchEditVC: UIViewController,
 
 
 extension CGContext {
-  func drawBoxGradient(
+  func pvcDrawBoxGradient(
     in rect: CGRect,
     startingWith startColor: CGColor,
     finishingWith endColor: CGColor

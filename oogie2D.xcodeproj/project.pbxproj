@@ -20,15 +20,15 @@
 		720796062465239C0052CE39 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 720796052465239B0052CE39 /* Settings.bundle */; };
 		7208A4C922E2C7F3000AA144 /* Marker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7208A4C822E2C7F3000AA144 /* Marker.swift */; };
 		7210EBFD246526F60085DAC7 /* PercussionPatches in Resources */ = {isa = PBXBuildFile; fileRef = 7210EBFC246526F60085DAC7 /* PercussionPatches */; };
-		722753CA2333766300A2DC29 /* dog.wav in Resources */ = {isa = PBXBuildFile; fileRef = 722753C92333766300A2DC29 /* dog.wav */; };
+		72246CF5268DD9C100EC9F11 /* animals in Resources */ = {isa = PBXBuildFile; fileRef = 72246CF2268DD76000EC9F11 /* animals */; };
 		722BB24522F3B2C900D990B2 /* synthPanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = 722BB24422F3B2C900D990B2 /* synthPanel.xib */; };
 		722CC1C3245B4AEF00686779 /* pixelData.m in Sources */ = {isa = PBXBuildFile; fileRef = 722CC1C2245B4AEF00686779 /* pixelData.m */; };
 		723091A7244EC1CD00A45527 /* RepeatingTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 723091A6244EC1CD00A45527 /* RepeatingTimer.swift */; };
 		72372EDE2373DC890065F58A /* Misc in Resources */ = {isa = PBXBuildFile; fileRef = 72372EDD2373DC890065F58A /* Misc */; };
 		7237D6B1230FC49F00A38D63 /* AllPatches.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7237D6B0230FC49F00A38D63 /* AllPatches.swift */; };
 		7237FEB22306952B000A571A /* OVStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7237FEB12306952B000A571A /* OVStruct.swift */; };
-		723B1AB12333406A00AAD931 /* vwhorn44k.wav in Resources */ = {isa = PBXBuildFile; fileRef = 723B1AB02333406A00AAD931 /* vwhorn44k.wav */; };
-		723B1AB7233341C100AAD931 /* bub1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 723B1AB6233341C000AAD931 /* bub1.wav */; };
+		724886B126C4C89F00249263 /* controlPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 724886B026C4C89F00249263 /* controlPanel.m */; };
+		724886B726C4CB6400249263 /* genOogie.m in Sources */ = {isa = PBXBuildFile; fileRef = 724886B626C4CB6400249263 /* genOogie.m */; };
 		7249379B230468F00053BC79 /* SynthPatches in Resources */ = {isa = PBXBuildFile; fileRef = 7249379A230468F00053BC79 /* SynthPatches */; };
 		724C877F231F8587008E4625 /* texCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 724C877E231F8587008E4625 /* texCache.swift */; };
 		724F3D1D24687A0500A9A3E7 /* OogieTiffie.m in Sources */ = {isa = PBXBuildFile; fileRef = 724F3D1C24687A0400A9A3E7 /* OogieTiffie.m */; };
@@ -48,6 +48,7 @@
 		725F034C22E304E700A6A5FD /* oogieMidiStubs.m in Sources */ = {isa = PBXBuildFile; fileRef = 725F034622E304E700A6A5FD /* oogieMidiStubs.m */; };
 		726323F52339FBDB00F393D4 /* PercKitPatches in Resources */ = {isa = PBXBuildFile; fileRef = 726323F42339FBDB00F393D4 /* PercKitPatches */; };
 		72632E49237889C200867962 /* oogieLogoNotes.png in Resources */ = {isa = PBXBuildFile; fileRef = 72632E48237889C200867962 /* oogieLogoNotes.png */; };
+		726BE5C0268C608D0097BC04 /* SPStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726BE5BF268C608D0097BC04 /* SPStruct.swift */; };
 		726CA86F2376566300C382AE /* PatchEditVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726CA86E2376566200C382AE /* PatchEditVC.swift */; };
 		726CA8712376566800C382AE /* helpVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726CA8702376566800C382AE /* helpVC.swift */; };
 		726CA8742376580300C382AE /* rhArrow.png in Resources */ = {isa = PBXBuildFile; fileRef = 726CA872237657FF00C382AE /* rhArrow.png */; };
@@ -76,8 +77,6 @@
 		72D04B0122E6C232001922E2 /* OogieVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D04B0022E6C232001922E2 /* OogieVoice.swift */; };
 		72D3D69622F69C19001EACA7 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D3D69522F69C19001EACA7 /* DataManager.swift */; };
 		72D3D69822F69C61001EACA7 /* OogiePatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D3D69722F69C61001EACA7 /* OogiePatch.swift */; };
-		72D4A29623332C45002C4D45 /* GeneralMidi in Resources */ = {isa = PBXBuildFile; fileRef = 72D4A29423332C44002C4D45 /* GeneralMidi */; };
-		72D4A29723332C45002C4D45 /* Percussion in Resources */ = {isa = PBXBuildFile; fileRef = 72D4A29523332C45002C4D45 /* Percussion */; };
 		72DB6EAA2329C4CA005406DC /* Knob.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DB6EA92329C4C9005406DC /* Knob.swift */; };
 		72DB6EAE2329C56B005406DC /* rightBevel.png in Resources */ = {isa = PBXBuildFile; fileRef = 72DB6EAB2329C567005406DC /* rightBevel.png */; };
 		72DB6EB02329C56B005406DC /* bottomBevel.png in Resources */ = {isa = PBXBuildFile; fileRef = 72DB6EAD2329C56A005406DC /* bottomBevel.png */; };
@@ -109,6 +108,7 @@
 		7208A4C822E2C7F3000AA144 /* Marker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Marker.swift; sourceTree = "<group>"; };
 		7210EBFC246526F60085DAC7 /* PercussionPatches */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PercussionPatches; sourceTree = "<group>"; };
 		721FAF3C2338795000DC3091 /* GMidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GMidi.h; sourceTree = "<group>"; };
+		72246CF2268DD76000EC9F11 /* animals */ = {isa = PBXFileReference; lastKnownFileType = folder; path = animals; sourceTree = "<group>"; };
 		722753C92333766300A2DC29 /* dog.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dog.wav; sourceTree = "<group>"; };
 		722BB24422F3B2C900D990B2 /* synthPanel.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = synthPanel.xib; sourceTree = "<group>"; };
 		722CC1C2245B4AEF00686779 /* pixelData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = pixelData.m; path = oogie/MiscObjC/pixelData.m; sourceTree = SOURCE_ROOT; };
@@ -117,10 +117,13 @@
 		72372EDD2373DC890065F58A /* Misc */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Misc; sourceTree = "<group>"; };
 		7237D6B0230FC49F00A38D63 /* AllPatches.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllPatches.swift; sourceTree = "<group>"; };
 		7237FEB12306952B000A571A /* OVStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OVStruct.swift; sourceTree = "<group>"; };
-		723B1AB02333406A00AAD931 /* vwhorn44k.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = vwhorn44k.wav; sourceTree = "<group>"; };
 		723B1AB22333418400AAD931 /* clave00.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = clave00.wav; path = Percussion/clave00.wav; sourceTree = "<group>"; };
 		723B1AB4233341B800AAD931 /* congaMid.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = congaMid.wav; path = Percussion/congaMid.wav; sourceTree = "<group>"; };
-		723B1AB6233341C000AAD931 /* bub1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = bub1.wav; sourceTree = "<group>"; };
+		724886AF26C4C89F00249263 /* controlPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = controlPanel.h; sourceTree = "<group>"; };
+		724886B026C4C89F00249263 /* controlPanel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = controlPanel.m; sourceTree = "<group>"; };
+		724886B326C4CA9B00249263 /* oogieStyles.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = oogieStyles.h; sourceTree = "<group>"; };
+		724886B526C4CB6400249263 /* genOogie.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = genOogie.h; sourceTree = "<group>"; };
+		724886B626C4CB6400249263 /* genOogie.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = genOogie.m; sourceTree = "<group>"; };
 		7249379A230468F00053BC79 /* SynthPatches */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SynthPatches; sourceTree = "<group>"; };
 		724C877E231F8587008E4625 /* texCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = texCache.swift; sourceTree = "<group>"; };
 		724F3D1B24687A0400A9A3E7 /* OogieTiffie.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OogieTiffie.h; path = oogie/OogieTiffie.h; sourceTree = SOURCE_ROOT; };
@@ -148,6 +151,7 @@
 		725F035E22E305CC00A6A5FD /* oogie2D-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "oogie2D-Bridging-Header.h"; sourceTree = "<group>"; };
 		726323F42339FBDB00F393D4 /* PercKitPatches */ = {isa = PBXFileReference; lastKnownFileType = folder; path = PercKitPatches; sourceTree = "<group>"; };
 		72632E48237889C200867962 /* oogieLogoNotes.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = oogieLogoNotes.png; sourceTree = "<group>"; };
+		726BE5BF268C608D0097BC04 /* SPStruct.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SPStruct.swift; sourceTree = "<group>"; };
 		726CA86E2376566200C382AE /* PatchEditVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PatchEditVC.swift; sourceTree = "<group>"; };
 		726CA8702376566800C382AE /* helpVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = helpVC.swift; sourceTree = "<group>"; };
 		726CA872237657FF00C382AE /* rhArrow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = rhArrow.png; sourceTree = "<group>"; };
@@ -167,6 +171,8 @@
 		7283A65C234085400088560D /* infoText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = infoText.swift; sourceTree = "<group>"; };
 		728D0B192377B67D003CC45A /* icon256.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon256.png; sourceTree = "<group>"; };
 		728D0B1B2377B804003CC45A /* oogieLogo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = oogieLogo.png; sourceTree = "<group>"; };
+		72A11254268C5EBC00B25E95 /* vwhorn44k.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = vwhorn44k.wav; sourceTree = "<group>"; };
+		72A11258268C5EF800B25E95 /* bub1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = bub1.wav; sourceTree = "<group>"; };
 		72AE3D602360A515008EEEB7 /* tp.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = tp.png; sourceTree = "<group>"; };
 		72AFB97D23070B640009A577 /* OSStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSStruct.swift; sourceTree = "<group>"; };
 		72B3E89C2342ECA300F30AB7 /* dawgj.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = dawgj.jpg; sourceTree = "<group>"; };
@@ -177,8 +183,6 @@
 		72D04B0022E6C232001922E2 /* OogieVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogieVoice.swift; sourceTree = "<group>"; };
 		72D3D69522F69C19001EACA7 /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
 		72D3D69722F69C61001EACA7 /* OogiePatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogiePatch.swift; sourceTree = "<group>"; };
-		72D4A29423332C44002C4D45 /* GeneralMidi */ = {isa = PBXFileReference; lastKnownFileType = folder; path = GeneralMidi; sourceTree = "<group>"; };
-		72D4A29523332C45002C4D45 /* Percussion */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Percussion; sourceTree = "<group>"; };
 		72DB6EA92329C4C9005406DC /* Knob.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Knob.swift; path = oogie/UI/Knob.swift; sourceTree = SOURCE_ROOT; };
 		72DB6EAB2329C567005406DC /* rightBevel.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = rightBevel.png; sourceTree = "<group>"; };
 		72DB6EAD2329C56A005406DC /* bottomBevel.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = bottomBevel.png; sourceTree = "<group>"; };
@@ -247,9 +251,15 @@
 				72EE838223125D7B00FFAAE1 /* OSCStruct.swift */,
 				72D3D69722F69C61001EACA7 /* OogiePatch.swift */,
 				7237FEB12306952B000A571A /* OVStruct.swift */,
+				724886AF26C4C89F00249263 /* controlPanel.h */,
+				724886B026C4C89F00249263 /* controlPanel.m */,
+				724886B326C4CA9B00249263 /* oogieStyles.h */,
+				724886B526C4CB6400249263 /* genOogie.h */,
+				724886B626C4CB6400249263 /* genOogie.m */,
 				7208A4C822E2C7F3000AA144 /* Marker.swift */,
 				72D04B0022E6C232001922E2 /* OogieVoice.swift */,
 				72AFB97D23070B640009A577 /* OSStruct.swift */,
+				726BE5BF268C608D0097BC04 /* SPStruct.swift */,
 				5262740D1FD44F3400790D87 /* SphereShape.swift */,
 				7257DFB523D7864600CC2CE0 /* OogieShape.swift */,
 				726EAC222408D884004C4C52 /* PianoKeys.swift */,
@@ -304,16 +314,15 @@
 		725F034D22E3054300A6A5FD /* Samples */ = {
 			isa = PBXGroup;
 			children = (
+				72246CF2268DD76000EC9F11 /* animals */,
 				72FAEDE823AC969200FFCEA5 /* GMPercussion */,
 				72372EDD2373DC890065F58A /* Misc */,
 				727EDCE22335C0D70028B011 /* moog01.wav */,
+				72A11258268C5EF800B25E95 /* bub1.wav */,
 				722753C92333766300A2DC29 /* dog.wav */,
-				723B1AB6233341C000AAD931 /* bub1.wav */,
 				723B1AB4233341B800AAD931 /* congaMid.wav */,
 				723B1AB22333418400AAD931 /* clave00.wav */,
-				723B1AB02333406A00AAD931 /* vwhorn44k.wav */,
-				72D4A29423332C44002C4D45 /* GeneralMidi */,
-				72D4A29523332C45002C4D45 /* Percussion */,
+				72A11254268C5EBC00B25E95 /* vwhorn44k.wav */,
 			);
 			path = Samples;
 			sourceTree = "<group>";
@@ -422,6 +431,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				72246CF5268DD9C100EC9F11 /* animals in Resources */,
 				726CA8742376580300C382AE /* rhArrow.png in Resources */,
 				72DB6EAE2329C56B005406DC /* rightBevel.png in Resources */,
 				72DEB0A52320C049005A9505 /* rainbowRing.png in Resources */,
@@ -443,10 +453,8 @@
 				724F3D2624687D3400A9A3E7 /* white64x64.png in Resources */,
 				7280B826237B60640055EB77 /* FactorySettings in Resources */,
 				72CBCBA92435A88700793828 /* GMPercussionPatches in Resources */,
-				723B1AB12333406A00AAD931 /* vwhorn44k.wav in Resources */,
 				727A5613233996D80095BA90 /* percIcon.png in Resources */,
 				72DEB0A42320C049005A9505 /* chex4x4.png in Resources */,
-				72D4A29723332C45002C4D45 /* Percussion in Resources */,
 				725F033A22E2FF2500A6A5FD /* spectrumGradient.png in Resources */,
 				7280B829237CC5A60055EB77 /* ProfileNOT.png in Resources */,
 				72F1DA452468BE8C003056D0 /* bg128.png in Resources */,
@@ -456,15 +464,12 @@
 				5226E9171FD4481B00C72C21 /* Assets.xcassets in Resources */,
 				72C3D672234F074800560EC4 /* wheel01.png in Resources */,
 				72C91CE0235835B1009858F1 /* GMPatches in Resources */,
-				72D4A29623332C45002C4D45 /* GeneralMidi in Resources */,
 				728D0B1C2377B804003CC45A /* oogieLogo.png in Resources */,
 				724F3D2424687D3400A9A3E7 /* meashst.jpg in Resources */,
 				725F033E22E3036400A6A5FD /* sg2.png in Resources */,
 				727A5615233996D80095BA90 /* percKitIcon.png in Resources */,
 				5226E9151FD4481B00C72C21 /* Main.storyboard in Resources */,
-				722753CA2333766300A2DC29 /* dog.wav in Resources */,
 				7210EBFD246526F60085DAC7 /* PercussionPatches in Resources */,
-				723B1AB7233341C100AAD931 /* bub1.wav in Resources */,
 				722BB24522F3B2C900D990B2 /* synthPanel.xib in Resources */,
 				726CA8752376580300C382AE /* helpit.jpg in Resources */,
 			);
@@ -479,6 +484,7 @@
 			files = (
 				7283A65D234085400088560D /* infoText.swift in Sources */,
 				5226E9121FD4481B00C72C21 /* ViewController.swift in Sources */,
+				724886B726C4CB6400249263 /* genOogie.m in Sources */,
 				72EE838323125D7B00FFAAE1 /* OSCStruct.swift in Sources */,
 				720404942467C19B00E12164 /* tiffie.m in Sources */,
 				720220BA238C6B6B001F7483 /* PipeShape.swift in Sources */,
@@ -499,6 +505,7 @@
 				722CC1C3245B4AEF00686779 /* pixelData.m in Sources */,
 				723091A7244EC1CD00A45527 /* RepeatingTimer.swift in Sources */,
 				7255495E232365A70054A522 /* TextureVC.swift in Sources */,
+				724886B126C4C89F00249263 /* controlPanel.m in Sources */,
 				727F08DD2367B5B80054C517 /* OogiePipe.swift in Sources */,
 				72AFB97E23070B640009A577 /* OSStruct.swift in Sources */,
 				72D3D69822F69C61001EACA7 /* OogiePatch.swift in Sources */,
@@ -512,6 +519,7 @@
 				7237D6B1230FC49F00A38D63 /* AllPatches.swift in Sources */,
 				725F033822E2DF5C00A6A5FD /* oogieBmp.swift in Sources */,
 				725F034C22E304E700A6A5FD /* oogieMidiStubs.m in Sources */,
+				726BE5C0268C608D0097BC04 /* SPStruct.swift in Sources */,
 				725F034922E304E700A6A5FD /* AudioBufferPlayer.m in Sources */,
 				72B7C5CB2322E48500175D4C /* ColorTools.swift in Sources */,
 			);

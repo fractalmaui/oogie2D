@@ -50,6 +50,7 @@
 //  5/11   integrate TIFFIE load/save
 //  5/12   add resetCamera
 //  5/14   improve clearScene, fix missing calls to it, add colorTimerPeriod
+//  8/11/21 pull rotary editor, add same editor as in oogieCam
 import UIKit
 import SceneKit
 import Photos
@@ -61,7 +62,8 @@ let twoPi = 6.2831852
 var OVtempo = 135 //Move to params ASAP
 var camXform = SCNMatrix4()
 
-class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate,patchEditVCDelegate,SCNSceneRendererDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate  {
+class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate,patchEditVCDelegate,SCNSceneRendererDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate,
+                      controlPanelDelegate{
 
     @IBOutlet weak var skView: SCNView!
     @IBOutlet weak var spnl: synthPanel!
@@ -72,6 +74,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     @IBOutlet weak var menuButton: UIButton!
     @IBOutlet weak var editButton: UIButton!
 
+    @IBOutlet weak var allPanels: UIView!
     var colorTimer = Timer()
     var playColorsTimer = Timer()
     var pLabel = infoText()
@@ -84,11 +87,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var latestTouch   = UITouch()
     var chooserMode = "loadAllPatches"
     var shouldNOTUpdateMarkers = false
-
+    var oldvpname = ""; //for control value changes
     var updatingPipe = false   //1/25
     //12/2 haptics for wheel controls
     var fbgenerator = UISelectionFeedbackGenerator()
-    
+    var cPanel = controlPanel()
 
     //10/27 for finding new marker lat/lons
     let llToler = Double.pi / 10.0
@@ -243,6 +246,17 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         resetButton.frame = pRect
         resetButton.layer.cornerRadius = 40
         resetButton.isHidden = true
+        
+        //8/11/21 allpanels view...
+        let allphit = 320
+        allPanels.frame = CGRect(x: 0 , y: Int(viewHit) - allphit, width: Int(viewWid), height: allphit)
+        if let cp = controlPanel.init(frame: CGRect(x: 0 , y: 0, width: Int(viewWid), height: allphit))
+        {
+            cPanel = cp
+            allPanels.addSubview(cPanel)
+        }
+        allPanels.isHidden = true
+        
 
         //Sept 28 NEW top label!
         pLabel = infoText(frame: CGRect(x: 0,y: 32,width: viewWid,height: 80))
@@ -300,8 +314,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     @objc func samplesLoaded(notification: NSNotification)
     {
         //DHS 11/22 all patches needs to do a final sweep...
-        allP.getAllPatchInfo() //11/22 Get sample rates, key offsets, etc.
-        allP.loadGMOffsets()  //11/22
+       //6/29/21 FIX! allP.getAllPatchInfo() //11/22 Get sample rates, key offsets, etc.
+        //6/29/21 FIX! allP.loadGMOffsets()  //11/22
         //DHS 10/16 create our scene?
         create3DScene(scene: scene)
     }
@@ -373,7 +387,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         update3DSceneForSceneChanges(sceneChanges)
         knobValue = Float(OVScene.selectedFieldDefault)  //9/17 make sure knob is set to param value
         selectedMarker.updateLatLon(llat: OVScene.selectedVoice.OVS.yCoord, llon: OVScene.selectedVoice.OVS.xCoord)
-        resetKnobToNewValues(kval:knobValue , kmin : OVScene.selectedFieldMin , kmax : OVScene.selectedFieldMax)
+        //8/11/21 resetKnobToNewValues(kval:knobValue , kmin : OVScene.selectedFieldMin , kmax : OVScene.selectedFieldMax)
     }
     
     //=====<oogie2D mainVC>====================================================
@@ -432,108 +446,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     // 9/12 RH edit button, over rotary knob, toggles edit / param mode
     @IBAction func editSelect(_ sender: Any) {
-        if (knobMode == "select")  //5/3 Change to Edit parameter??
-        {
-            knobMode = "edit"   //5/3
-            //Load up old vals for cancel operation
-            OVScene.getLastParamValue(editing :whatWeBeEditing,
-                                        named : OVScene.selectedFieldName.lowercased())
-            knobValue = Float(OVScene.lastFieldDouble)  //9/17 make sure knob is set to param value
-            OVScene.lastFieldSelectionNumber = Int(knobValue) //remember knob value to restore old deault
-            pLabel.updateLabelOnly(lStr:"Edit:" + OVScene.selectedFieldName)
+        //8/11 REDO! this button now just pops up and down the side-to-side params editor, just like in OC
 
-            if OVScene.selectedFieldMax == OVScene.selectedFieldMin {print("ERROR: no param range")}
-            //12/15 textfield and plabel occupy same screen space!
-            //  maybe a ui update area is where this belongs!??
-            textField.isHidden = OVScene.selectedFieldType != "text"
-            pLabel.isHidden    = OVScene.selectedFieldType == "text" //12/15
-            if OVScene.selectedFieldType == "text" //4/28 add text placeholder, set kb type
-            {
-                textField.placeholder = OVScene.selectedFieldName
-                //4/28 NEED TO set keyboard type based on field name!!!
-                // as such we need an array of "numeric" text fields, gathered
-                // from voice/shape/pipe objects and see if our fieldName is in there
-                // otherwise set kb type to default!!!
-                //for now we use a KLUGE!!!
-                textField.keyboardType = .default
-                let needNumeric = (OVScene.selectedFieldName == "LoRange" || OVScene.selectedFieldName == "HiRange")
-                if needNumeric {textField.keyboardType = UIKeyboardType.numbersAndPunctuation}
-            }
-            //Set up display for the param
-            if OVScene.selectedFieldType == "double"
-            {
-                pLabel.setupForParam( pname : OVScene.selectedFieldName , ptype : TFLOAT_TTYPE , //9/28 new
-                    pmin : OVScene.selectedFieldDMult * Double(OVScene.selectedFieldMin) , pmax : OVScene.selectedFieldDMult * Double( OVScene.selectedFieldMax) ,
-                    choiceStrings : [])
-                paramKnob.wraparound = false //10/5 wraparound
-                pLabel.showWarnings  = true  // 10/5 warnings OK
-            }
-            else if OVScene.selectedFieldType == "int" //4/26 int ptype
-            {
-                pLabel.setupForParam( pname : OVScene.selectedFieldName , ptype : TINT_TTYPE ,
-                    pmin : OVScene.selectedFieldDMult * Double(OVScene.selectedFieldMin) , pmax : OVScene.selectedFieldDMult * Double( OVScene.selectedFieldMax) ,
-                    choiceStrings : [])
-                paramKnob.wraparound = false //10/5 wraparound
-                pLabel.showWarnings  = true  // 10/5 warnings OK
-            }
-            else if OVScene.selectedFieldType == "string"
-            {
-                //10/18 DHS for GM patches, here we need to substitute
-                
-                pLabel.setupForParam( pname : OVScene.selectedFieldName , ptype : TSTRING_TTYPE , //9/28 new
-                    pmin : 0.0 , pmax : OVScene.selectedFieldDMult * Double( OVScene.selectedFieldMax) ,
-                    choiceStrings : OVScene.selectedFieldDisplayVals) //10/18 separate display vals from string vals
-                paramKnob.wraparound = true   //10/5 wraparound
-                pLabel.showWarnings  = false  // 10/5 no warnings on wraparound controls
-            }
-            else if OVScene.selectedFieldType == "text" //10/9 new field type
-            {
-                textField.text = OVScene.lastFieldString //10/9 from OVS
-                textField.becomeFirstResponder() //12/5 OK KB!
-            }
-            else if OVScene.selectedFieldType == "texture" //10/21 handle textures
-            {
-                self.performSegue(withIdentifier: "textureSegue", sender: self)
-            }
-        } //end knobmode KnobStates.SELECT_PARAM
-        else{   //Done editing? back to param select?
-            knobMode  = "select" //5/3 NOT editing now...
-            if whatWeBeEditing == "voice" //10/18 voice vs shape edit
-            {
-                //print("done edit xycoord \(OVScene.selectedVoice.OVS.xCoord), \(OVScene.selectedVoice.OVS.yCoord)")
-                //print("...vnotemode \(OVScene.selectedVoice.OVS.noteMode)")
-                OVScene.sceneVoices[OVScene.selectedMarkerKey] = OVScene.selectedVoice    //save latest voice to sceneVoices
-                markers3D[OVScene.selectedMarkerKey]   = selectedMarker //4/28 new dict
-                pLabel.setupForParam( pname : "Param" , ptype : TSTRING_TTYPE , //9/28 new
-                    pmin : 0.0 , pmax : OVScene.selectedFieldDMult * Double( OVScene.selectedFieldMax) ,
-                    choiceStrings : voiceParamNames)
-                updatePkeys()
-            }
-            else if whatWeBeEditing == "shape"
-            {
-                OVScene.sceneShapes[OVScene.selectedShapeKey] = OVScene.selectedShape    //10/21 save latest voice to sceneVoices
-                pLabel.setupForParam( pname : "Param" , ptype : TSTRING_TTYPE , //9/28 new
-                    pmin : 0.0 , pmax : OVScene.selectedFieldDMult * Double( OVScene.selectedFieldMax) ,
-                    choiceStrings : shapeParamNames)
-            }
-            else if whatWeBeEditing == "pipe" //DHS 12/4
-            {
-                
-                //Save our pipe info back to scene
-                OVScene.scenePipes[OVScene.selectedPipeKey] = OVScene.selectedPipe
-                pLabel.setupForParam( pname : "Param" , ptype : TSTRING_TTYPE , //9/28 new
-                    pmin : 0.0 , pmax : OVScene.selectedFieldDMult * Double( OVScene.selectedFieldMax) ,
-                    choiceStrings : pipeParamNames)
-            }
-            pLabel.updateLabelOnly(lStr:"Done:" + OVScene.selectedFieldName)
-            knobValue = Float(OVScene.selectedField)  // 9/17  set knob value to old param index...
-            var count = voiceParamNames.count
-            if whatWeBeEditing == "shape" {count = shapeParamNames.count}
-            paramKnob.wraparound = true //10/5 wraparound
-            pLabel.showWarnings  = false  // 10/5 no warnings on wraparound controls
-        }
-
-        updateWheelAndParamButtons()
     } //end editSelect
     
     
@@ -564,6 +478,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
         //11/8
         else if segue.identifier == "EditPatchSegue" {
+            OVScene.haltLoop() //5/8 halt playing music!
             if let nextViewController = segue.destination as? PatchEditVC {
                     nextViewController.delegate = self
                 //plass in OVScene.selected patch if popup appeared...
@@ -600,14 +515,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end resetCamera
 
     //=====<oogie2D mainVC>====================================================
-    func resetKnobToNewValues(kval:Float , kmin : Float , kmax : Float)
-    {
-        paramKnob.minimumValue = kmin
-        paramKnob.maximumValue = kmax
-        paramKnob.setValue(kval) //and set knob control
-    } //end resetKnobToNewValues
-
-    //=====<oogie2D mainVC>====================================================
     // 3/30 updates 3d keyboard for OVScene.selected voice....
     func updatePkeys()
     {
@@ -616,84 +523,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                   tMidi : self.OVScene.selectedVoice.OVS.topMidi)
     } //end updatePkeys
     
-    //=====<oogie2D mainVC>====================================================
-    //  9/13 uses knobMode, updates buttons / wheels at bottom of screen
-    func updateWheelAndParamButtons()
-    {
-        var knobName            = "fineGear" //assume edit
-        paramKnob.isHidden      = false
-        editButtonView.isHidden = false
-        if (knobMode == "edit")  //5/3 Edit?
-        {
-            paramKnob.isHidden      = OVScene.selectedFieldType == "text"  //10/9
-            resetButton.isHidden    = OVScene.selectedFieldType == "text"  //10/9
-            editButtonView.isHidden = false
-            editButton.setTitle("OK", for: .normal)
-            menuButton.setTitle("X", for: .normal)
-            if OVScene.selectedFieldType == "string"  //string array?
-            {
-                let maxxx = Float(OVScene.selectedFieldStringVals.count - 1)
-                //print("set param minmax to 0.0 , \(maxxx)")
-                OVScene.selectedFieldMin = 0.0
-                OVScene.selectedFieldMax = maxxx
-            }
-            resetKnobToNewValues(kval: knobValue ,kmin: OVScene.selectedFieldMin ,kmax: OVScene.selectedFieldMax)
-        } //end edit select
-        else{   //back to param select?
-            knobName = "wheel01"
-            resetButton.isHidden = true
-            textField.isHidden   = true //10/9
-            editButton.setTitle("Edit", for: .normal)
-            menuButton.setTitle("Menu", for: .normal)
-            resetKnobToNewValues(kval: knobValue ,kmin:0 ,kmax: Float(OVScene.selectedVoice.getParamCount() - 1))
-        } //end param select
-        paramKnob.setKnobBitmap(bname: knobName)
-    } //end updateWheelAndParamButtons
 
 
-    //=======>ARKit MainVC===================================
-    //Param knob change... to new knob value
-    @IBAction func paramChanged(_ sender: Any) {
-        //print("paramchanged...");
-        knobValue = paramKnob.value //Assume value is pre-clamped to range
-        if knobMode == "select" //5/3 select param  9/13 changes
-        {
-            let ikv = Int(knobValue)
-            if ikv != oldKnobInt //1/14 only react to int steps!
-            {
-                fbgenerator.prepare() // 1/14 haptics
-                fbgenerator.selectionChanged()
-                OVScene.selectedField = ikv  //1/14
-                if whatWeBeEditing == "voice"  {OVScene.loadCurrentVoiceParams()}
-                if whatWeBeEditing == "shape"  {OVScene.loadCurrentShapeParams()}
-                if whatWeBeEditing == "pipe"   {OVScene.loadCurrentPipeParams()}
-                OVScene.getLastParamValue(editing : whatWeBeEditing ,
-                                            named : OVScene.selectedFieldName.lowercased())
-                updateSelectParamName()
-            }
-            oldKnobInt = ikv
-        }
-            
-        else //edit param
-        {
-            let fname = OVScene.selectedFieldName.lowercased()
-            if  (Int(knobValue) != OVScene.lastFieldInt)   //haptics feedback on value change
-            {
-                fbgenerator.prepare()
-                fbgenerator.selectionChanged()
-            }
-           let sceneChanges =  OVScene.setNewParamValue(editing : whatWeBeEditing,
-                                       named : fname,
-                                    toDouble : Double(knobValue),
-                                    toString : OVScene.lastFieldString)
-            update3DSceneForSceneChanges(sceneChanges)
-            updateParamLabel(toDouble:Double(knobValue))
-
-            OVScene.lastFieldInt = Int(knobValue)  //for choice changes,like type or patch
-        } //end else
-        oldKnobValue = paramKnob.value //12/2 move to bottom
-
-    } //end paramChanged
     
     //=======>ARKit MainVC===================================
     func updateParamLabel(toDouble:Double)
@@ -783,36 +614,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
     } //end setMasterPitchShiftForAllVoices
     
-
-    //=======>ARKit MainVC===================================
-    // 12/1 make generic for all types of params...
-    func editParams(v:String)
-    {
-        whatWeBeEditing = v
-        OVScene.selectedField = 0
-        knobMode = "select"  //5/3
-        updateWheelAndParamButtons()
-        var choiceStrings : [String] = []
-        switch(v)
-        {
-            case  "voice" : OVScene.loadCurrentVoiceParams()
-                            choiceStrings = voiceParamNames
-            case  "shape" : OVScene.loadCurrentShapeParams()
-                            choiceStrings = shapeParamNames
-            case  "pipe"  : OVScene.loadCurrentPipeParams()
-                            choiceStrings = pipeParamNames
-            default: return; //Bail on bad type
-        }
-        OVScene.getLastParamValue(editing : whatWeBeEditing ,
-                    named : OVScene.selectedFieldName.lowercased())
-        pLabel.setupForParam( pname : "Param" , ptype : TSTRING_TTYPE , //9/28 new
-            pmin : 0.0 , pmax : OVScene.selectedFieldDMult * Double( OVScene.selectedFieldMax) ,
-            choiceStrings : choiceStrings)
-        pLabel.showWarnings  = false
-        paramKnob.wraparound = true
-    } //end editParams
-    
-    
+  
     //=======>ARKit MainVC===================================
     //1/22 updates pipes going FROM a voice,
     //  bool updatingPipe prevents redundant calls
@@ -862,89 +664,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }
     
     
-    
-    //=======>ARKit MainVC===================================
-    // called when knob chooses new param
-    func updateSelectParamName()
-    {
-        //print("updateSelectParamName \(lastFieldDouble)")
-        let dogStrings = ["nfixed","vfixed","pfixed","topmidi","bottommidi","midichannel"]
-        var infoStr = OVScene.selectedFieldName
-        var pstr    = ""
-        if OVScene.selectedFieldType == "double"
-        {
-            var dval = OVScene.unitToParam(inval: OVScene.lastFieldDouble)
-            //some fields don't need converting
-            if  dogStrings.contains( OVScene.selectedFieldName.lowercased())
-            {
-                dval = OVScene.lastFieldDouble;
-            }
-            pstr = String(format: "%4.2f", dval) //10/24 wups was int!
-        }
-        else if OVScene.selectedFieldType == "int" //4/26 int ptype
-        {
-            var dval = OVScene.unitToParam(inval: OVScene.lastFieldDouble)
-            //some fields don't need converting
-            if  dogStrings.contains( OVScene.selectedFieldName.lowercased())
-            {
-                dval = OVScene.lastFieldDouble;
-            }
-            pstr = String(format: "%d", Int(dval)) //10/24 wups was int!
-        }
-        else if OVScene.selectedFieldType == "string"
-        {
-            let index = Int(OVScene.lastFieldDouble)
-            if index >= 0 && index < OVScene.selectedFieldDisplayVals.count //4/26 redo limit check
-            {
-                //print("lfd \(lastFieldDouble) vals count \(selectedFieldDisplayVals.count)")
-                //print("displayvals \(selectedFieldDisplayVals)")
-                pstr = OVScene.selectedFieldDisplayVals[index]  //10/19 wups forgot
-            }
-        }
-        else if OVScene.selectedFieldType == "text" //10/9 new field type
-        {
-            //12/5 DUH what kinda edit we be doin?
-            if whatWeBeEditing == "voice"    //2/3 handle name/comment
-            {
-                switch(OVScene.selectedFieldName.lowercased())
-                {
-                    case "name"    : pstr = OVScene.selectedVoice.OVS.name //2/3 new
-                    case "comment" : pstr = OVScene.selectedVoice.OVS.comment
-                    default        : pstr = "empty"
-                }
-            }
-            else if whatWeBeEditing == "shape"    //2/3 handle name/comment
-            {
-                switch(OVScene.selectedFieldName.lowercased())
-                {
-                    case "name"    : pstr = OVScene.selectedShape.OOS.name //2/3 new
-                    case "comment" : pstr = OVScene.selectedShape.OOS.comment
-                    default        : pstr = "empty"
-                }
-            }
-            else if whatWeBeEditing == "pipe"
-            {
-                //12/9 which to handle? name, lo/hi ranges...
-                switch(OVScene.selectedFieldName.lowercased())
-                {
-                    case "lorange" : pstr = OVScene.lastFieldString
-                    case "hirange" : pstr = OVScene.lastFieldString
-                    case "name"    : pstr = OVScene.selectedPipe.PS.name //2/3 new
-                    case "comment" : pstr = OVScene.selectedPipe.PS.comment
-                    default        : pstr = "empty"
-                }
-            }
-        }
-        else if OVScene.selectedFieldType == "texture" //10/9 new field type
-        {
-            pstr = OVScene.selectedShape.OOS.texture //10/22 is this the only texture?
-        }
-        infoStr = OVScene.selectedFieldName + ":" + pstr
-
-        pLabel.updateLabelOnly(lStr: infoStr)
-    } //end updateSelectParamName
-    
-    
+     
     //=======>ARKit MainVC===================================
     // 10/17 there isnt a real double-tap detector, so instead
     //  we will use touchesMoved to put up a popup for the marker...
@@ -1025,7 +745,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                 //2/3 add name/comment to 3d shape info box
                                 selectedSphere.updatePanels(nameStr: OVScene.selectedShape.OOS.name,
                                                             comm: OVScene.selectedShape.OOS.comment)
-                                editParams(v: "shape") //this also update screen
+                                print("FIXIT: editparams!")
+                                // 8/11 FIXIT editParams(v: "shape") //this also update screen
                             }
                         }
                         else //unhighlighted?
@@ -1046,6 +767,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         {
                             selectedMarker = testMarker
                             selectedMarker.toggleHighlight()
+                            allPanels.isHidden = !selectedMarker.highlighted
                             if selectedMarker.highlighted  //hilited? Set up edit
                             {
                                 //DHS 1/16:this looks to get OLD values not edited values!
@@ -1058,7 +780,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                     OVScene.selectedMarkerKey = key      //points to OVS struct in scene
                                     selectedMarker.updatePanels(nameStr: OVScene.selectedMarkerKey) //10/11 add name panels
                                     //1/14 was redundantly pulling OVS struct from OVScene.voices!
-                                    editParams(v: "voice") //1/14 switch to edit mode
+                                    print("FIXIT: editparams!")
+                                    // 8/11 FIXIT editParams(v: "voice") //1/14 switch to edit mode
                                     updatePkeys() //3/30 update kb if needed
                                 }
                             }
@@ -1090,7 +813,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         if selectedPipeShape.highlighted  //hilited? Set up edit
                         {
                             self.pLabel.updateLabelOnly(lStr:"Selected " + spo.PS.name)
-                            editParams(v:"pipe") //this also update screen
+                            print("FIXIT: editparams!")
+                            // 8/11 FIXIT editParams(v:"pipe") //this also update screen
                         }
                         else
                         {
@@ -1200,6 +924,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         alert.addAction(UIAlertAction(title: "Clear Scene", style: .default, handler: { action in
             self.clearScenePrompt()
         }))
+        alert.addAction(UIAlertAction(title: "Dump Buffers", style: .default, handler: { action in
+            self.dumpBuffers()
+        }))
         alert.addAction(UIAlertAction(title: "Textures...", style: .default, handler: { action in
             self.performSegue(withIdentifier: "textureSegue", sender: self)
         }))
@@ -1212,6 +939,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }))
 
         alert.addAction(UIAlertAction(title: "Dump Scene", style: .default, handler: { action in
+            let d = self.allP.getBufferReport() 
+
             self.OVScene.OSC.dump()
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
@@ -1549,9 +1278,30 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }
     
     //=====<oogie2D mainVC>====================================================
+    func dumpBuffers()
+    {
+        let d = allP.getBufferReport();
+        print("dump \(d)")
+        var dstr = ""
+        for i in 0..<MAX_SAMPLES
+        {
+            let nn = NSNumber(value:i)
+//                i; //asdf
+            let bn = d[nn];
+            let bsize = (sfx() as! soundFX).getBufferSize(Int32(i))
+            if bsize > 0
+            {
+                dstr = dstr + "[\(i)]:\(bsize): \(bn) \n"
+            }
+        }
+       print(dstr)
+
+    } //end dumpBuffers
+    
+    //=====<oogie2D mainVC>====================================================
     func clearScenePrompt()
     {
-        let alert = UIAlertController(title: "Clear Current Scene?", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+    let alert = UIAlertController(title: "Clear Current Scene?", message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
             self.pLabel.updateLabelOnly(lStr:"Clear Scene...")
             self.clearScene(withDefaultScene: true)
@@ -1627,7 +1377,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     //=====<oogie2D mainVC>====================================================
     @IBAction func testSelect(_ sender: Any) {
-        dumpDebugShit()
+        //dumpDebugShit()
         //packupAndSaveTiffie()
        // createMTImage(name:"duhhhhhh")
         
@@ -2219,7 +1969,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             //1/26 missing pipe?
         }
         knobMode = "select" //back to select mode
-        updateWheelAndParamButtons()
+        //8/11/21 updateWheelAndParamButtons()
     } //end cancelEdit
     
     //=====<oogie2D mainVC>====================================================
@@ -2294,8 +2044,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         if chooserMode == "loadAllPatches"
         {
-            let ppp = allP.getPatchByName(name: name)
-            print("ppp \(ppp)")
+            //6/29/21 FIX! let ppp = allP.getPatchByName(name: name)
+            //6/29/21 FIX! print("ppp \(ppp)")
         }
         else //handle scene?
         {
@@ -2346,6 +2096,78 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             OVScene.reloadAllPatchesInScene(namez : namez)
         }
         
+    }
+    
+    
+    
+    //asdf
+    func didSetControlValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ undoable: Bool)
+    {
+        print("mainvc: didSetControlValue \(which) \(newVal) \(pname)")
+//        NSString *sliderNames[] = {@"Threshold",@"Bottom Note",@"Top Note",
+//            @"padding",@"Overdrive",@"Portamento",
+//            @"FVib Level" ,@"FVib Speed" ,@"",
+//            @"AVib Level" ,@"AVib Speed",@"",   //4/7 add vibe
+//            @"Delay Time" ,@"Delay Sustain",@"Delay Mix"}; //2/19 note paddings b4 delay for vibwave
+
+        var vpname = ""
+        switch which
+        {
+        case 0:  vpname = "threshold"
+        case 1:  vpname = "bottommidi"
+        case 2:  vpname = "topmidi"
+        case 3:  vpname = "keysig"
+        case 4:  vpname = "level"
+        case 5:  vpname = "portamento"
+        case 6:  vpname = "viblevel"
+        case 7:  vpname = "vibspeed"
+        case 8:  vpname = "vibwave"
+        case 9:  vpname = "vibelevel"
+        case 10: vpname = "vibespeed"
+        case 11: vpname = "vibewave"
+        case 12: vpname = "delaytime"
+        case 13: vpname = "delaysustain"
+        case 14: vpname = "delaymix"
+        default: break
+        }
+        
+        OVScene.selectedVoice.setParam(named:vpname, toDouble: Double(newVal),toString: "")
+        //Wow do we need to do this for every edit change?
+        OVScene.sceneVoices[OVScene.selectedMarkerKey] = OVScene.selectedVoice
+
+        let cs = [""]
+        if vpname != oldvpname
+        {
+            pLabel.setupForParam( pname : pname , ptype : TFLOAT_TTYPE ,
+                                  pmin : 0 , pmax : 100 , choiceStrings: cs)
+//            func setupForParam( pname : String , ptype : Int ,
+//                                pmin : Double , pmax : Double ,
+//                                choiceStrings : [String])
+            oldvpname = vpname; //remember for next time
+        }
+        //asdf
+        pLabel.updateit(value: Double(newVal)) //DHS 9/28 new display
+        
+    }
+    
+//    -(void) didSetControlValue  : (int) which : (float) newVal : (NSString*) pname : (BOOL)undoable;
+    func didSelectRight() {
+        print("right")
+    }
+    func didSelectLeft() {
+        print("left")
+    }
+    func controlNeedsProMode() {
+        print("controlNeedsProMode")
+    }
+    func didSelectControlDice() {
+        print("didSelectControlDice")
+    }
+    func didSelectControlReset() {
+        print("didSelectControlReset")
+    }
+    func updateControlModeInfo(_ infostr: String!) {
+        pLabel.updateLabelOnly(lStr: infostr)
     }
 
 } //end vc class, line 1413 as of 10/10

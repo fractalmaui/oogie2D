@@ -331,6 +331,19 @@ public class DataManager {
         }
         
     }
+    
+    //======(DataManager)=============================================
+    // 11/12 for loading in purchased patches from their subfolders...
+    static func loadPurchasedPatchesToDict <T:Decodable> (_ type:T.Type , subFolder : String ) -> Dictionary<String, T>
+    {
+        var path = ""
+        // 2/5/21 try moving purchased stuff up one level in file hierarchy...
+        path = Bundle.main.resourceURL!.appendingPathComponent(subFolder).path
+        path = path + "/patches"
+        return loadAllToDict ( url: URL.init(fileURLWithPath: path) , with:type)
+    }
+
+
 
     //======(DataManager)=============================================
     //  patches may come from more than one folder, hence the url
@@ -366,6 +379,7 @@ public class DataManager {
     //  5/11 for loading in data from a stored string
     static func load <T:Decodable>(fromString s : String,with type:T.Type) -> T
     {
+        print("loadScene \(s)")
         if let d2 = s.data(using: String.Encoding.utf8)
         {
             do {
@@ -485,7 +499,13 @@ public class DataManager {
     {
         return loadUpDictWithPatchesFromSubfolder(type, subFolder: "PercKitPatches", fromFactory:     fromFactory)
     }
-
+    
+    //======(DataManager)=============================================
+     static func loadBuiltinCritterPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
+     {
+         return loadUpDictWithPatchesFromSubfolder(type, subFolder: "CritterPatches", fromFactory:     fromFactory)
+     }
+  
     //======(DataManager)=============================================
     static func loadBuiltinGMPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
     {

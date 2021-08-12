@@ -49,7 +49,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
     var window: UIWindow?
     
     var versionStr = ""
-    
+    let externalSampleBase   = 256;
+    //All patches: singleton, holds built-in and locally saved patches...
+    var allP = AllPatches.sharedInstance
 
     var masterPitch = 0 //4/19 master pitch shift in notes
 
@@ -69,7 +71,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
         (sfx() as! soundFX).delegate = self
         
         //4/14/20
-        (sfx() as! soundFX).loadAudioForOOGIE()
+        (sfx() as! soundFX).loadAudio(); //  5/28 FIX THISForOOGIE()
 
         #if V2D
         print("2D Version...")
@@ -80,8 +82,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
         {
             versionStr = nsObject as! String
         }
+        // 10/18 for general patch access throughout, change viewControler too!
+        //BUG! allp is loading its samples and patches BEFORE it knows if anything was bought...
+        //  there needs to be an alloc phase for allp AND then a load all patches phase!
+        //10/21 allpatches needs to know if anything was bought!
+//        NSArray* A = [self getPurchasedSoundPacksKeys];
+//        [allP setPSPNWithA:A]; //cryptic, huh!
+        allP.loadAllSoundPacksAndPatches();
+//        [allP loadAllSoundPacksAndPatches]; //10/23 move sample/patch load down here!
 
         loadSettings()
+        loadSamples()  //7/1/21
         return true
     }
     
@@ -113,6 +124,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
     {
         //Honk a horn to indiucate we've started!
         (sfx() as! soundFX).makeTicSound(withPitchandLevelandPan: 6,64,20,128)
+        print("OK! samples loaded now")
     }
 
     //====(AppDelegate)----------------------------------------------
@@ -147,5 +159,55 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
 //        defaults.set(mySwitch.isOn, forKey: switchKeyConstant)
     }
     
+    
+    //====(AppDelegate)----------------------------------------------
+    //  6/12/20 redid
+    func loadSamples()
+    {
+        var loop=0
+       // workVoice = [voices objectAtIndex:0];
+        
+        let folders = ["GMPercussion","animals"]
+        
+        var fcount = 0
+        var sampnum = LOAD_SAMPLE_OFFSET; //starting point for samples...
+        for subFolder in folders
+        {
+            if fcount == 1 { sampnum = Int32(externalSampleBase) }
+            var url = URL(fileURLWithPath: "") //Start w/ empty path
+            url = (Bundle.main.resourceURL?.appendingPathComponent(subFolder))!
+            var fileNamez : [String] = []
+            do {
+                fileNamez = try FileManager.default.contentsOfDirectory(atPath: url.path)
+            }
+            catch{
+                print("could not find \(url)")
+                return
+            }
+            fileNamez = fileNamez.sorted() //sort by alpha?
+            for fname in fileNamez
+            {
+                if fname.lowercased().contains(".wav") //valid wav files only
+                {
+                    let fnameParts = fname.split(separator: ".")
+                    if (fnameParts.count >= 1)
+                    {
+                        let nameOnly = String(fnameParts[0])
+                        let fullPath = subFolder + "/" + nameOnly
+                        (sfx() as! soundFX).setNoteOffset(Int32(sampnum), nameOnly)
+                        (sfx() as! soundFX).setSoundFileName(Int32(sampnum),fullPath)
+                        allP.linkBufferToPatch(nn: NSNumber(value: sampnum), ss: nameOnly)
+                        sampnum+=1
+                    }
+                }
+            } //end for fname
+            fcount+=1; //update folder count
+        }
+        (sfx() as! soundFX).loadAudioBKGD(-1)
+    } //end loadSamples
+
+
+
+
 } //end AppDelegate
 

@@ -70,38 +70,39 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         //        static func getDirectoryContents(whichDir : String) -> [String]
         typez.removeAll()
         //OUCH! here we should show patch GM instrument name too!
-        if mode == "loadAllPatches"   //show user/sunth/perc/perckit/sample folders
-        {
-            filez.removeAll()
-            if allP.yuserPatchDictionary.count > 0  //do we have any user patches?
-            {
-                filez = Array(allP.yuserPatchDictionary.keys).sorted()
-                for _ in 0...allP.yuserPatchDictionary.count-1 {typez.append(5)}
-            }
-            filez = filez + Array(allP.synthPatchDictionary.keys).sorted()
-            for _ in 0...allP.synthPatchDictionary.count-1 {typez.append(1)}
-            filez = filez + Array(allP.percussionPatchDictionary.keys).sorted()
-            for _ in 0...allP.percussionPatchDictionary.count-1 {typez.append(2)}
-            filez = filez + Array(allP.percKitPatchDictionary.keys).sorted()
-            for _ in 0...allP.percKitPatchDictionary.count-1 {typez.append(3)}
-            //Append GM instrument names
-            var aab : [String] = []
-            for s in Array(allP.GMPatchDictionary.keys).sorted()
-              {
-                aab.append(s + ":" + allP.getInstrumentNameFromGMFilename(fname:s))
-              }
-            filez = filez + aab
-            for _ in 0...allP.GMPatchDictionary.count-1 {typez.append(4)}
-        }
-        else // 12/28 add check Sample chooser modes? just get single folder
-        {
-            filez = DataManager.getDirectoryContents(whichDir: chooserFolder)
-            if filez.count > 0
-            {
-                for _ in 0...filez.count-1 {typez.append(4)} //11/13 add sample type
-                
-            }
-        }
+// 6/29/21 FIX THIS!
+//        if mode == "loadAllPatches"   //show user/sunth/perc/perckit/sample folders
+//        {
+//            filez.removeAll()
+//            if allP.yuserPatchDictionary.count > 0  //do we have any user patches?
+//            {
+//                filez = Array(allP.yuserPatchDictionary.keys).sorted()
+//                for _ in 0...allP.yuserPatchDictionary.count-1 {typez.append(5)}
+//            }
+//            filez = filez + Array(allP.synthPatchDictionary.keys).sorted()
+//            for _ in 0...allP.synthPatchDictionary.count-1 {typez.append(1)}
+//            filez = filez + Array(allP.percussionPatchDictionary.keys).sorted()
+//            for _ in 0...allP.percussionPatchDictionary.count-1 {typez.append(2)}
+//            filez = filez + Array(allP.percKitPatchDictionary.keys).sorted()
+//            for _ in 0...allP.percKitPatchDictionary.count-1 {typez.append(3)}
+//            //Append GM instrument names
+//            var aab : [String] = []
+//            for s in Array(allP.GMPatchDictionary.keys).sorted()
+//              {
+//                aab.append(s + ":" + allP.getInstrumentNameFromGMFilename(fname:s))
+//              }
+//            filez = filez + aab
+//            for _ in 0...allP.GMPatchDictionary.count-1 {typez.append(4)}
+//        }
+//        else // 12/28 add check Sample chooser modes? just get single folder
+//        {
+//            filez = DataManager.getDirectoryContents(whichDir: chooserFolder)
+//            if filez.count > 0
+//            {
+//                for _ in 0...filez.count-1 {typez.append(4)} //11/13 add sample type
+//
+//            }
+//        }
         //print("chooser folder \(chooserFolder)")
         saveButton.isHidden = true //NO NEED? (mode == "load")        
         if mode == "loadAllPatches"

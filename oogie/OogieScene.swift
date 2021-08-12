@@ -103,7 +103,7 @@ class OogieScene: NSObject {
             newOVS.uid = newOVS.getNewUID()
         }
         //Finish filling out voice structures
-        newVoice.OOP = allP.getPatchByName(name:newOVS.patchName)
+        //6/29/21 FIX!  newVoice.OOP = allP.getPatchByName(name:newOVS.patchName)
         //10/27 support cloning.. just finds unused lat/lon space on same shape
         if op == "clone" || op == "new"
         {
@@ -218,8 +218,8 @@ class OogieScene: NSObject {
     func changeVoicePatch(name:String)
     {
         // tprint("cvp \(name)")
-        let sPatch = allP.getPatchByName(name: name)
-        selectedVoice.OOP = sPatch //take oogiePatch, attach to voice
+        //6/29/21 FIX!          let sPatch = allP.getPatchByName(name: name)
+        //6/29/21 FIX!          selectedVoice.OOP = sPatch //take oogiePatch, attach to voice
         selectedVoice.OVS.patchName = name //4/25 is this needed?
         self.setupSynthOrSample(oov: selectedVoice); //More synth-specific stuff
     }
@@ -619,27 +619,27 @@ class OogieScene: NSObject {
             if sfname == "patch" //11/16 look for user patches to choose
             {
                 //11/16 get user shtuff first?
-                let yuserPatches = allP.getUserPatchesForVoiceType(type: selectedVoice.OOP.type)
-                //print("got uptch type\(selectedVoice.OOP.type) \(yuserPatches)")
-                for (name,_) in yuserPatches  //for each, add to string / display arrays
-                {
-                    selectedFieldStringVals.append(name)
-                    selectedFieldDisplayVals.append(name)
-                }
+// 6/29/21 fix               let yuserPatches = allP.getUserPatchesForVoiceType(type: selectedVoice.OOP.type)
+//                //print("got uptch type\(selectedVoice.OOP.type) \(yuserPatches)")
+//                for (name,_) in yuserPatches  //for each, add to string / display arrays
+//                {
+//                    selectedFieldStringVals.append(name)
+//                    selectedFieldDisplayVals.append(name)
+//                }
             }
             for i in 2...vArray.count-1 //OK add more fields from params or built-in filenames
             {
                 let fname = vArray[i] as! String
                 selectedFieldStringVals.append(fname)
                 //10/26 handle GM SAMPLE patches specially..
-                if sfname == "patch" &&
-                    selectedVoice.OOP.type == SAMPLE_VOICE
-                {
-                    selectedFieldDisplayVals.append( //try to get instrument name...
-                        allP.getInstrumentNameFromGMFilename(fname: fname))
-                }
-                else // non-patches, just display the field strings
-                { selectedFieldDisplayVals.append(fname) }
+// 6/29/21 FIX!               if sfname == "patch" &&
+//                    selectedVoice.OOP.type == SAMPLE_VOICE
+//                {
+//                    selectedFieldDisplayVals.append( //try to get instrument name...
+//                        allP.getInstrumentNameFromGMFilename(fname: fname))
+//                }
+//                else // non-patches, just display the field strings
+//                { selectedFieldDisplayVals.append(fname) }
             }
             //New patch defaults? OK for every type?  11/16
             if sfname == "patch"   //11/16 wow this needs new stuff!!
@@ -725,9 +725,9 @@ class OogieScene: NSObject {
             let nnnn = voice.OVS.patchName
             if namez.contains(nnnn)  // is this a patch of interest?
             {
-                let ppp = allP.getPatchByName(name: nnnn)
+                //6/29/21 FIX!                  let ppp = allP.getPatchByName(name: nnnn)
                 print("  ...reloading patch\(nnnn)")
-                voice.OOP         = ppp   //reset voice patch, and save back to scene dictionary
+                //6/29/21 FIX!                  voice.OOP         = ppp   //reset voice patch, and save back to scene dictionary
                 sceneVoices[name] = voice
             } //end if namez
         }    //end for

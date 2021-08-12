@@ -51,6 +51,20 @@ struct OVStruct : Codable {
     var keySig      : Int
     var uid         : String //5/1
     
+    //8/11/21 performance params
+    var portamento   : Int
+    var vibLevel     : Int
+    var vibSpeed     : Int
+    var vibWave      : Int
+    var vibeLevel    : Int
+    var vibeSpeed    : Int
+    var vibeWave     : Int
+    var delayTime    : Int
+    var delaySustain : Int
+    var delayMix     : Int
+
+ 
+    
     //======(OVStruct)=============================================
     init()
     {
@@ -85,6 +99,19 @@ struct OVStruct : Codable {
         bottomMidi  = 40   //5/14 new defaults
         topMidi     = 80
         keySig      = 0
+        
+        //8/11 performance params
+        portamento   = 0
+        vibLevel     = 0
+        vibSpeed     = 0
+        vibWave      = 0
+        vibeLevel    = 0
+        vibeSpeed    = 0
+        vibeWave     = 0
+        delayTime    = 0
+        delaySustain = 0
+        delayMix     = 0
+
         //5/1 uid
         uid = "voice_" + ProcessInfo.processInfo.globallyUniqueString
     }

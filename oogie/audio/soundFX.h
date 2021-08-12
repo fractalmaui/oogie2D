@@ -15,13 +15,18 @@
 #import <UIKit/UIKit.h>
 #import "AudioBufferPlayer.h"
 #import "SynthDave.h"
+#define NO_OOGIE_2D
+#ifdef OOGIE_2D
 #import "GMidi.h"
+#endif
 @protocol sfxDelegate;
 
 #define NUM_ANALSESSION_INTS    32
 #define NUM_ANALSESSION_DOUBLES 16
+#define LOAD_SAMPLE_OFFSET 32   //9/25 new value: load all samples above HERE
 
-#define MAX_SOUNDFILES 64
+//Absolute max for samples! must be large enuf for add-ons and full GM percussion!
+#define MAX_SOUNDFILES 1024
 
 @interface soundFX : NSObject <AudioBufferPlayerDelegate>
 {
@@ -54,17 +59,25 @@
 + (id)sharedInstance;
 -(void) loadAudio;
 -(void) loadAudioBKGD : (int) immediateSampleNum;
--(void) loadAudioBKGDForOOGIE : (int) immediateSampleNum;
--(void) loadAudioForOOGIE;
+// 3/27/21 no need -(void) loadAudioBKGDForOOGIE : (int) immediateSampleNum;
+// 4/16 obsolete -(void) loadAudioForOOGIE;
+-(NSArray *) loadSamplesNow : (NSString*)pname : (int) sampleBase;
 -(NSMutableDictionary*) loadGeneralMidiNames;
 -(void) copyBuffer : (int) from : (int) to : (BOOL) clear;
 -(void) copyEnvelope : (int) from : (int) to;
+- (void)cleanupBuffersAbove:(int)index;
 
 - (void) dumpBuffer : (int) which : (int) dsize;
+- (float)getLVolume ;
+- (float)getRVolume ;
+- (int)getBufferSize: (int) index;
+- (float)getBufferPlaytime: (int) index;
+
 -(int) getSampleRate : (NSString*)name : (int) type;
 -(void) glintmusic : (int) whichizzit : (int) psx;
 -(NSString*) getGMName : (int) buffer;
 -(NSArray *) getEnvelopeForDisplay: (int) which : (int) size;
+-(int) getEnvelopeSize : (int) which;
 -(int) getPercussionTriggerKey : (NSString *)name;
 -(int) getPercussionBuffer     : (NSString *)name;
 -(int) getGMBuffer     : (NSString *)name;
@@ -80,11 +93,18 @@
 - (void) muzak : (int)which : (int) mtimeoff;
 - (void) releaseAllNotesByWaveNum : (int) which;
 - (void)releaseAllNotes;
+- (void)releaseAllLoopedNotes;
+- (void)releaseAllNonLoopedNotes;
+
 - (void) setSoundFileName : (int) index : (NSString *)sfname;
+- (NSString*) getSoundFileName : (int) index;
 - (void) setMasterLevel : (float) level;
 - (void) setPan : (int) pan;
+- (void)setPortamentoLastNote: (int)lastnote;
 - (void) setPuzzleColor : (int) index : (UIColor *)color;
 - (void) swapPuzzleColors : (int) pfrom : (int) pto;
+
+-(void) testDump;
 
 
 //DHS 3/10
@@ -94,16 +114,21 @@
 //DHS 2019: Synth convenience functions, for oogie/swift
 - (void)buildEnvelope:(int)a1 : (BOOL) a2;
 -(void) buildaWaveTable : (int) a1 : (int) a2;
+- (NSDictionary*) getSampleHeader:(NSString *)soundFilePath;
 -(int)  getSynthNoteCount;
 -(int)  getSynthUniqueCount;
+-(int)  getSynthLastToneHandle;
+-(float)  getSynthSampleProgressAsPercent : (int) a1 : (int) a2;
+
 -(int)  makeSureNoteisInKey : (int) a1 : (int) a2;
 -(void) playNote : (int) a1 : (int) a2 : (int) a3;
--(void) queueNote : (int) a1 : (int) a2 : (int) a3;
+-(void) playNoteWithDelay : (int) a1 : (int) a2 : (int) a3 : (int) a4;
 -(void) releaseNote : (int) a1 : (int) a2;
 -(void) setSynthAttack : (int) a1;
 -(void) setSynthDecay : (int) a1;
 -(void) setSynthDetune : (int) a1;
 -(void) setSynthDuty : (int) a1;
+-(void) setSynthInfinite : (int) a1; // 6/23/21
 -(void) setSynthGain : (int) a1;
 -(void) setSynthMasterLevel : (int) a1;
 -(void) setSynthMasterTune : (int) a1;
@@ -121,9 +146,40 @@
 -(void) setSynthSampOffset : (int) a1;
 -(void) setSynthSustain : (int) a1;
 -(void) setSynthSustainL : (int) a1;
+-(void) setSynthToneGainByHandle : (int) handle : (int) newGain; //6/25/21
+
 -(void) setSynthWaveNum : (int) a1;
+// 7/17 vibrato support
+- (void) setSynthVibAmpl:  (int) newVal;
+- (void) setSynthVibWave:  (int) newVal;
+- (void) setSynthVibSpeed: (int) newVal;
+- (void) setSynthVibDelay: (int) newVal;
+- (void) setSynthVibeAmpl:  (int) newVal; //4/8 new amplitude vibe
+- (void) setSynthVibeWave:  (int) newVal;
+- (void) setSynthVibeSpeed: (int) newVal;
+- (void) setSynthVibeDelay: (int) newVal;
+
+//3/2/21 internal synth digital delay
+-(void) setSynthDelayVars : (int)a1 : (int)a2 : (int)a3;
+-(void) synthDelaySend : (float)a1 : (float) a2;
+-(float) synthDelayReturnLorRWithAutoIncrement;
+
+// 2/12/21 fine tune support
+-(void) setSynthPLevel : (int) a1; //patch level
+-(void) setSynthPKeyOffset : (int) a1;
+-(void) setSynthPKeyDetune : (int) a1;
+
+// 6/21 hand down to synth
+-(void)startRecording:(int)maxRecordingTime;
+-(void)stopRecording:(int)cancel;
+-(void) pauseRecording;
+-(void) unpauseRecording;
+-(NSString *)getAudioOutputFileName;
+-(NSString *)getAudioOutputFullPath;
+-(void) setRecordingFolder : (NSString *) fname;
 
 -(void) loadAudioToBuffer : (NSString*)name : (int) whichBuffer;
+-(void) setNoteOffset: (int) which : (NSString*) fname; //10/6
 
 
 @end
