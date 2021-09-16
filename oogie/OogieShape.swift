@@ -59,7 +59,7 @@ class OogieShape: NSObject {
     var oldTInterval : Double = 0.0
     
     #if USE_TESTPATTERN
-    let defaultTexture = "tp"
+    let defaultTexture = "spectrumOLD" //"tp"  8/12 testd
     #else
     let defaultTexture = "oog2-stripey00t"
     #endif

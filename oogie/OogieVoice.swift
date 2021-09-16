@@ -33,6 +33,7 @@
 //  5/9   add detune as editable param, change detune rules in playColors
 //  5/14  new top/bottom midi defaults
 //  8/11/21 MODIFY OVStruct, add performance controls portamento, etc...
+//  9/1   add loadRandomPercKitPatch, etc
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -79,11 +80,16 @@ let PFixedParams : [Any]     = ["PFixed",    "double" ,  0.0 , 255.0 , 128.0 , 1
 let RotTriggerParams : [Any] = ["RotTrigger","double" ,  0.0 , 256.0 , 0.0 , 1.0,  0.0 ]
 let DetuneParams : [Any]     = ["Detune",     "string" , "Off", "On"]   //5/9
 // 2/28 are these ranges wrong now???
-let BottomMidiParams : [Any] = ["BottomMidi","int" ,  16.0 , 112.0 , 52.0 , 1.0,  0.0 ] //4/27 redo next 3
-let TopMidiParams : [Any]    = ["TopMidi",   "int" ,  16.0 , 112.0 , 72.0 , 1.0,  0.0 ]
+let BottomMidiParams : [Any] = ["BottomMidi","int" ,  16.0 , 112.0 , 52.0 , 1.0,  20.0 ] //9/14/21 change last item
+let TopMidiParams : [Any]    = ["TopMidi",   "int" ,  16.0 , 112.0 , 72.0 , 1.0,  20.0 ]
 let MidiChannelParams : [Any] = ["MidiChannel","int" ,  1.0 ,16.0 , 1.0 , 1.0,  0.0 ]
 let VNameParams    : [Any]   = ["Name",      "text", "mt"]
 let VCommParams    : [Any]   = ["Comment",   "text", "mt"]
+
+//9/14/21 for all effects ranging 0..100
+let fx100Params : [Any]    = ["FX",   "int" ,  0.0 , 0.0 , 0.0 , 1.0,  0.0 ]
+
+
 // All param names, must match first item above for each param!
 let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch","ChromaticKey",
                              "Scale","Level","Threshold",
@@ -96,6 +102,7 @@ let voiceParamNamesOKForPipe : [String]    = ["Latitude", "Longitude","Chromatic
                                             "BottomMidi","TopMidi","MidiChannel"]
 
 var voiceParamsDictionary = Dictionary<String, [Any]>()
+var voiceParamsDictionaryOLD = Dictionary<String, [Any]>()
 // 9/23 canned perc kit defaults
 let percDefaults : [String] = ["Bass_Drum_1","Acoustic_Snare","Low_Tom","Low_Mid_Tom",
                               "High_Tom","Open_Hi_Hat","Closed_Hi_Hat","Ride_Cymbal_1"]
@@ -130,7 +137,8 @@ let MAX_LOOX = 8
     }
 }
 
-class OogieVoice: NSObject, NSCopying {
+// 8/12/21 make accessible in objective C
+@objc class OogieVoice: NSObject, NSCopying {
 
     var OOP  = OogiePatch() //this is a struct
     var OVS  = OVStruct()   //  another struct
@@ -221,27 +229,51 @@ class OogieVoice: NSObject, NSCopying {
     func setupVoiceParams()
     {
         // Load up params dictionary with string / array combos
-        voiceParamsDictionary["00"] = LatParams
-        voiceParamsDictionary["01"] = LonParams
-        voiceParamsDictionary["02"] = TypeParams
-        voiceParamsDictionary["03"] = PatchParams
-        voiceParamsDictionary["04"] = PitchShiftParams //5/14
-        voiceParamsDictionary["05"] = ScaleParams
-        voiceParamsDictionary["06"] = LevelParams
-        voiceParamsDictionary["07"] = ThreshParams  //5/2 add threshold
-        voiceParamsDictionary["08"] = NChanParams   //10/4 n/v/p channels
-        voiceParamsDictionary["09"] = VChanParams
-        voiceParamsDictionary["10"] = PChanParams
-        voiceParamsDictionary["11"] = NFixedParams   //10/4 n/v/p fixed
-        voiceParamsDictionary["12"] = VFixedParams
-        voiceParamsDictionary["13"] = PFixedParams
-        voiceParamsDictionary["14"] = RotTriggerParams //4/18 add rot trigger
-        voiceParamsDictionary["15"] = DetuneParams //5/9 add detune
-        voiceParamsDictionary["16"] = BottomMidiParams
-        voiceParamsDictionary["17"] = TopMidiParams
-        voiceParamsDictionary["18"] = MidiChannelParams
-        voiceParamsDictionary["19"] = VNameParams
-        voiceParamsDictionary["20"] = VCommParams   //2/4
+        voiceParamsDictionary["latitude"] = LatParams
+        voiceParamsDictionary["longitude"] = LonParams
+        voiceParamsDictionary["type"] = TypeParams
+        voiceParamsDictionary["patch"] = PatchParams
+        voiceParamsDictionary["pitch"] = PitchShiftParams //5/14
+        voiceParamsDictionary["keysig"] = ScaleParams
+        voiceParamsDictionary["level"] = LevelParams
+        voiceParamsDictionary["overdrive"] = LevelParams
+        voiceParamsDictionary["threshold"] = ThreshParams  //5/2 add threshold
+        voiceParamsDictionary["nchan"] = NChanParams   //10/4 n/v/p channels
+        voiceParamsDictionary["vchan"] = VChanParams
+        voiceParamsDictionary["pchan"] = PChanParams
+        voiceParamsDictionary["nfixed"] = NFixedParams   //10/4 n/v/p fixed
+        voiceParamsDictionary["vfixed"] = VFixedParams
+        voiceParamsDictionary["pfixed"] = PFixedParams
+        voiceParamsDictionary["rottrigger"] = RotTriggerParams //4/18 add rot trigger
+        voiceParamsDictionary["pkeydetune"] = DetuneParams //5/9 add detune
+        voiceParamsDictionary["bottommidi"] = BottomMidiParams
+        voiceParamsDictionary["topmidi"] = TopMidiParams
+        voiceParamsDictionary["midichan"] = MidiChannelParams
+        voiceParamsDictionary["name"] = VNameParams
+        voiceParamsDictionary["comment"] = VCommParams   //2/4
+        
+        // 9/14/21 NOTE: NEed to add performance params, portamento.... delay!!!
+        voiceParamsDictionaryOLD["00"] = LatParams
+        voiceParamsDictionaryOLD["01"] = LonParams
+        voiceParamsDictionaryOLD["02"] = TypeParams
+        voiceParamsDictionaryOLD["03"] = PatchParams
+        voiceParamsDictionaryOLD["04"] = PitchShiftParams //5/14
+        voiceParamsDictionaryOLD["05"] = ScaleParams
+        voiceParamsDictionaryOLD["06"] = LevelParams
+        voiceParamsDictionaryOLD["07"] = ThreshParams  //5/2 add threshold
+        voiceParamsDictionaryOLD["08"] = NChanParams   //10/4 n/v/p channels
+        voiceParamsDictionaryOLD["09"] = VChanParams
+        voiceParamsDictionaryOLD["10"] = PChanParams
+        voiceParamsDictionaryOLD["11"] = NFixedParams   //10/4 n/v/p fixed
+        voiceParamsDictionaryOLD["12"] = VFixedParams
+        voiceParamsDictionaryOLD["13"] = PFixedParams
+        voiceParamsDictionaryOLD["14"] = RotTriggerParams //4/18 add rot trigger
+        voiceParamsDictionaryOLD["15"] = DetuneParams //5/9 add detune
+        voiceParamsDictionaryOLD["16"] = BottomMidiParams
+        voiceParamsDictionaryOLD["17"] = TopMidiParams
+        voiceParamsDictionaryOLD["18"] = MidiChannelParams
+        voiceParamsDictionaryOLD["19"] = VNameParams
+        voiceParamsDictionaryOLD["20"] = VCommParams   //2/4
     } //end setupVoiceParams
     
     //-----------(oogieVoice)=============================================
@@ -323,7 +355,7 @@ class OogieVoice: NSObject, NSCopying {
         if newBeat != beat
         {
             let beatTime = Date()
-            let beatDelta = beatTime.timeIntervalSince(lastbeatTime)
+            //let beatDelta = beatTime.timeIntervalSince(lastbeatTime)
             //NSLog("...newbeat %d tdelta %f adelta %f",newBeat,beatDelta,a - lastba)
             beat = newBeat
             lastbeatTime = beatTime
@@ -336,16 +368,27 @@ class OogieVoice: NSObject, NSCopying {
     //-----------(oogieVoice)=============================================
     func getNthParams(n : Int) -> [Any]
     {
-        if voiceParamsDictionary == nil    //5/9 saw crash here! WTF
-        {
-            print("getNthParams ERROR: nil params!")
-            return [""]
-        }
-        if n < 0 || n >= voiceParamsDictionary.count {return []}
+// 9/13/21 comment out to silence warning!
+//        if voiceParamsDictionary == nil    //5/9 saw crash here! WTF
+//        {
+//            print("getNthParams ERROR: nil params!")
+//            return [""]
+//        }
+        if n < 0 || n >= voiceParamsDictionaryOLD.count {return []}
         let key =  String(format: "%02d", n)
-        return voiceParamsDictionary[key]!
+        return voiceParamsDictionaryOLD[key]!
     }
-    
+
+    //-----------(oogieVoice)=============================================
+    // 9/14/21 new
+    func getNamedParams(name : String) -> [Any]
+    {
+        //exists? Great!
+        if let vpd = voiceParamsDictionary[name]  { return vpd }
+        //otherwise return generic FX 0..100 params
+        return fx100Params
+    }
+
     
     //-----------(oogieVoice)=============================================
     //11/25 VERY BUSY, called by pipes! assume name is lowercase
@@ -387,7 +430,8 @@ class OogieVoice: NSObject, NSCopying {
         if found // find param name
         {
             let sindex = String(format: "%2.2d", iindex)         // convert to string for lookup
-            if let paramz = voiceParamsDictionary[sindex]       // finally, get params array
+            if let paramz = voiceParamsDictionary[name]       //  use name to get param lims
+//9/14/21 OLD            if let paramz = voiceParamsDictionaryOLD[sindex]       // finally, get params array
             {
                 let pc = paramz.count
                 if let ptype = paramz[1] as? String //Check param type
@@ -543,17 +587,21 @@ class OogieVoice: NSObject, NSCopying {
     func setParam(named name : String , toDouble dval: Double , toString sval: String)
     {
         let ival = Int(dval) //some params are stored as integers!
-        //print("setParam \(dval)")
+        print("OVsetParam \(name) -> \(dval)  \(sval)")
 
         switch (name)
         {
+        case "name"         : OVS.name    = sval
+        case "comment"      : OVS.comment = sval
         case "latitude"     : OVS.yCoord = dval
         case "longitude"    : OVS.xCoord = dval
         case "patch"        : OVS.patchName = sval
         case "type"         : break
         case "scale"        : OVS.keySig     = ival
+        case "keysig"       : OVS.keySig     = ival //9/15/21
         case "chromatickey" : OVS.pitchShift = ival //5/14
         case "level"        : OVS.level      = dval
+        case "overdrive"    : OVS.level      = dval //9/15/21
         case "threshold"    : OVS.thresh     = ival
         case "nchan"        : OVS.noteMode   = ival
         case "vchan"        : OVS.volMode    = ival
@@ -568,7 +616,6 @@ class OogieVoice: NSObject, NSCopying {
         case "topmidi"      : OVS.topMidi = ival
         case "midichannel"  : OVS.midiChannel = ival
         case "name"         : OVS.name = sval
-        case "comment"      : OVS.comment = sval
         //8/11/21 performance params
         case "portamento"    : OVS.portamento   = ival
         case "viblevel"      : OVS.vibLevel     = ival
@@ -581,7 +628,8 @@ class OogieVoice: NSObject, NSCopying {
         case "delaysustain"  : OVS.delaySustain = ival
         case "delaymix"      : OVS.delayMix     = ival
 
-        default: print("Error:Bad voice param in set:" + name)   //5/9
+        default:
+            print("Error:Bad voice param in set:" + name)   //5/9
         } //end switch
         paramListDirty = true
     } //end setParam
@@ -633,40 +681,31 @@ class OogieVoice: NSObject, NSCopying {
     //  4/19 add angle arg
     func playColors(angle : Double, rr : Int ,gg : Int ,bb : Int) -> Bool
     {
-        //print("playColors...")
         var inkeyNote = 0
         var inkeyOldNote = 0
         //this sets midiNote!
         setInputColor(chr: rr, chg: gg, chb: bb)
-        //DHS TEST ONLY!!! this should be modulated by vchan ? depending on voice mode
-        //(sfx() as! soundFX).setSynthGain(128)
-        
         var noteWasPlayed = false
         bufferPointer = 0;
-        if OOP.type == PERCUSSION_VOICE
+        if OOP.type == PERCUSSION_VOICE || OOP.type == SAMPLE_VOICE
         {
-            bufferPointer = Int((sfx() as! soundFX).getPercussionBuffer(OOP.name.lowercased())) //4/12/20
-        }
-        else if OOP.type == SAMPLE_VOICE
-        {
-            bufferPointer = Int((sfx() as! soundFX).getGMBuffer(OOP.name))
+            //9/11 use sample num from voice... for perc/samples now
+            bufferPointer = OVS.whichSamp
         }
         
         //NSLog("....playColors:NOTE: %d npvchan %d %d %d",midiNote,nchan,pchan,vchan)
         let vt    = OOP.type
         if midiNote > 0  || OVS.rotTrigger != 0//Play something?
         {
-            //NSLog("OVPlayColors:Midinote %d",midiNote)
             (sfx() as! soundFX).setSynthMIDI(Int32(OVS.midiDevice), Int32(OVS.midiChannel)) //chan: 0-16
             let nc = (sfx() as! soundFX).getSynthNoteCount()
             inkeyOldNote = oldNote
             // 5/14 add pitch shift
             inkeyNote    = masterPitch + OVS.pitchShift + Int((sfx() as! soundFX).makeSureNoteis(inKey: Int32(OVS.keySig),Int32(midiNote)))
             // Mono: Handle releasing old note...
-            if OVS.poly == 1 {(sfx() as! soundFX).releaseNote(Int32(inkeyOldNote),0)} //2nd arg, WTF??
+// 8/14 NO NEED?            if OVS.poly == 1 {(sfx() as! soundFX).releaseNote(Int32(inkeyOldNote),0)} //2nd arg, WTF??
             //TBD....[synth setTimetrax:OVgettimetrax(vloop)];
             //New note outside tolerance?
-            //print(" toler check: nchan \(nchan) lnchan \(lnchan) nc \(nc) thresh \(OVS.thresh)",nchan,lnchan,nc )
             
             var mono = 1
             if OVS.poly != 0 { mono = 0 }
@@ -686,7 +725,10 @@ class OogieVoice: NSObject, NSCopying {
             //if (abs (nchan - lnchan) > 2*OVS.thresh) && nc < 12
             if gotTriggered // 4/19
             {
-               // NSLog(" bing!==============")
+                //NSLog("OVPlayColors:Midinote %d",midiNote)
+                //print(" toler check: nchan \(nchan) lnchan \(lnchan) nc \(nc) thresh \(OVS.thresh)",nchan,lnchan,nc )
+
+                //print(" playnote type:\(vt)  whichsamp:\(OVS.whichSamp) id:\(OVS.uid)");
                 (sfx() as! soundFX).setSynthMono(Int32(mono))
                 (sfx() as! soundFX).setSynthMonoUN(Int32(uniqueCount))
                 
@@ -700,6 +742,7 @@ class OogieVoice: NSObject, NSCopying {
 
                 }
                 (sfx() as! soundFX).setSynthAttack(Int32(OOP.attack))
+               // print("....playColors:attack \(OOP.attack)")
                 (sfx() as! soundFX).setSynthDecay(Int32(OOP.decay))
                 (sfx() as! soundFX).setSynthSustain(Int32(OOP.sustain))
                 (sfx() as! soundFX).setSynthSustainL(Int32(OOP.sLevel))
@@ -825,33 +868,23 @@ class OogieVoice: NSObject, NSCopying {
                     }
                     var octave = (nchan - botMidi) / 20 // 12 //get octave
                     octave = max(min(octave,7),0)
-                    //10/15  CRASH HERE!!!
                     bptr = bufferPointerSet[octave]
                     lastbuf  = bptr //8/11 for delay
                     lasttype = PERCKIT_VOICE
-
-                    //print("note \(nchan) oct \(octave) bptr \(bptr)")
+                 
+                    let pkPan = OOP.percLooxPans[octave]
+                    (sfx() as! soundFX).setSynthPan(Int32(pkPan))
                     noteToPlay = 32
-//??                    lastnoteplayed = noteToPlay
-                    applyDelayIfAny() //8/11/21
-
+                    if quantTime == 0 //No Quant, play now
+                    {
+                        (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(vt)) //Play Middle C for now...
+                    }
+                    else
+                    {
+                        (sfx() as! soundFX).playNote(withDelay: Int32(noteToPlay) , Int32(bptr) ,Int32(vt),Int32(quantTime))
+                    }
                 } //end perckit block
-                
-//                if noteToPlay != -1
-//                {
-//                    if quantTime == 0 //No Quant, play now
-//                    {
-//                        (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(vt))
-//                    }
-//                    else
-//                    {
-//                        (sfx() as! soundFX).playNote(withDelay:  32 , Int32(bptr) ,Int32(vt),Int32(quantTime))
-//                    }
-//                    noteWasPlayed = true
-//                    lastnoteplayed = inkeyNote
-//                    //print("...playnote \(noteToPlay)");
-//                }
-                uniqueCount = Int((sfx() as! soundFX).getSynthUniqueCount())
+                                uniqueCount = Int((sfx() as! soundFX).getSynthUniqueCount())
                 hiLiteFrame = MAX_CBOX_FRAMES
                 oldNote     = nchan
                 saveColors()
@@ -860,8 +893,6 @@ class OogieVoice: NSObject, NSCopying {
         } //end midinote...
         return noteWasPlayed
     } //end playColors
-    
-    
     
     //====(OOGIECAM MainVC)============================================
     //uses workVoice, re-emits notes as needed
@@ -939,12 +970,16 @@ class OogieVoice: NSObject, NSCopying {
 
     //-----------(oogieVoice)=============================================
     //10/15 relies heavily on structure members in this class
+    // 9/1/21 redid for new voice structs
     func getPercLooxBufferPointerSet()
     {
         bufferPointerSet.removeAll() //clear array...
         for pName in OOP.percLoox   //loop over lookup perc names...
         {   //and add approp. buffer pointers to pointer set
-            bufferPointerSet.append(Int((sfx() as! soundFX).getPercussionBuffer(pName.lowercased())))
+            
+            let nn = allP.getSampleNumberByName(ss: pName)
+            bufferPointerSet.append(Int(nn));
+            //Int((sfx() as! soundFX)getPercussionBuffer(pName.lowercased())))
         }
     } //end getPercLooxBufferPointerSet
     
@@ -1225,13 +1260,7 @@ class OogieVoice: NSObject, NSCopying {
 //        Voices[which].vchan,Voices[which].pchan,Voices[which].schan,
 //        Voices[which].midiNote);
     } //end setInputColor
-        //-----------(oogieVoice)=============================================
-    func loadPercPatch (voice:Int,which:Int)
-    {
-
-    } //end OVloadPercPatch
     
-
     //-----------(oogieVoice)=============================================
     func saveColors()
     {
@@ -1240,49 +1269,113 @@ class OogieVoice: NSObject, NSCopying {
         lvchan = vchan
         lschan = schan
     }
-
-    
     
     //-----------(oogieVoice)=============================================
-    func loadSynthPatch (voice:Int,which:Int)
+    // 9/1 new, note buffer lo/hi limits!
+    func loadRandomPercPatch(builtinBase:Int , builtinMax : Int)
     {
-        //  FOR NOW JUST RANDOMMIZE  if which == 0 //randomizer
-        if true
+        OOP.attack     = 0;
+        OOP.decay      = 0;
+        OOP.sustain    = 0;
+        OOP.sLevel     = 0;
+        OOP.release    = 0;
+        OOP.wave       = 0;
+        OOP.duty       = 0;
+        OVS.sampleOffset = Int.random(in:0...30);
+        OVS.whichSamp    = Int.random(in:builtinBase...builtinMax)
+        OVS.panMode      = Int.random(in:0...11);
+        OVS.panFixed     = Int.random(in:0...255);
+        OVS.detune       = Int(Double.random(in:0...1.5)); // 9/1 copy from oogiecam
+        OVS.poly = 1;
+        if Double.random(in:0...4.0) < 1.5 {OVS.poly = 0}
+    } //end loadRandomPercPatch
+    
+    //-----------(oogieVoice)=============================================
+    // 9/1 new, note buffer lo/hi limits!
+    func loadRandomPercKitPatch(builtinBase:Int , builtinMax : Int)
+    {
+        OOP.attack     = 0;
+        OOP.decay      = 0;
+        OOP.sustain    = 0;
+        OOP.sLevel     = 0;
+        OOP.release    = 0;
+        OOP.wave       = 0;
+        OOP.duty       = 0;
+        OVS.sampleOffset = Int.random(in:0...30);
+        OVS.whichSamp    = Int.random(in:builtinBase...builtinMax)
+        OVS.panMode      = Int.random(in:0...11);
+        OVS.panFixed     = Int.random(in:0...255);
+        OVS.detune       = 0; // no detune!
+        OVS.poly         = 1;
+        if Double.random(in:0...4.0) < 1.5 {OVS.poly = 0}
+        
+        for loop in 0...7
         {
-            OOP.attack      = Double.random(in:0.0...69.5);
-            OOP.decay       = Double.random(in:0.0...69.5);
-            OOP.sustain     = Double.random(in:0.0...89.5);
-            OOP.sLevel      = Double.random(in:0.0...99.5);
-            OOP.release     = Double.random(in:0.0...79.5);
-            OOP.duty        = Double.random(in:0...99.5);
-         //No need?    OOP.level       = Double.random(in:0.3...0.7);
-            OOP.wave        = Int.random(in:0...5);
-            //MIDI keyboard range for outgoing notes
-            OVS.bottomMidi  = 12;  // 2/28 redo top/bottom MIDI
-            OVS.topMidi     = 108; // 2/28 redo
-            OVS.keySig      = Int.random(in:0...12); //Randomize key signature too!
-            OVS.panMode     = Int.random(in:0...12); //Pan MODE
-            //panlr       = Double.random(0.0...1.0);  //Actual pan
-            OVS.thresh      = Int.random(in:1...15);        //    perc threshold for soundoff
-            OVS.detune      = 1; // STICK TO DETUNED!
-            OVS.poly = 0;
-            if Int.random(in:0...5) < 2 {OVS.poly = 1}
-            //TBD?
-            //cursorType = SYNTH_CURSOR //TBD??
-        } //end which == 0
-        else //Canned
-        {
-            //TBD?
-            //if which < 9) {cursorType = SYNTH_CURSOR}
-            //else {cursorType = SAMPLE_CURSOR}
-
+            let bptr = Int.random(in:builtinBase...builtinMax)
+            if let bname = allP.bufLookups[NSNumber(value: bptr)]
+            {
+                OOP.percLoox[loop]     = bname
+                OOP.percLooxPans[loop] = Int.random(in: 0...255);
+            }
         }
+    } //end loadRandomPercKitPatch
+    
+    //-----------(oogieVoice)=============================================
+    // 9/1 new, note buffer lo/hi limits!
+    func loadRandomSamplePatch(builtinBase:Int , builtinMax : Int , purchasedBase:Int , purchasedMax : Int)
+    {
+        OOP.attack     = 0;
+        OOP.decay      = 0;
+        OOP.sustain    = 0;
+        OOP.sLevel     = 0;
+        OOP.release    = 0;
+        OOP.wave       = 0;
+        OOP.duty       = 0;
+        
+        OVS.keySig     = Int.random(in:0...12);
 
-        OVS.noteMode = 3
-        OVS.volMode = 4
-        OOP.type = Int(SYNTH_VOICE)
-        //portamento = 0
-    } //end loadSynthPatch
+        OVS.sampleOffset = Int.random(in:0...30);
+        OVS.panMode      = Int.random(in:0...11);
+        OVS.panFixed     = Int.random(in:0...255);
+        OVS.detune       = Int(Double.random(in:0...1.5)); // 9/1 copy from oogiecam
+        OVS.poly = 1;
+        if Double.random(in:0...4.0) < 1.5 {OVS.poly = 0}
+        var which = Int.random(in:0...10);
+        if purchasedBase == 0  { which = 0 } //nothing purchased? always builtins!
+        if which < 5 //look at builtins
+        {
+            OVS.whichSamp    = Int.random(in:builtinBase...builtinMax)
+        }
+        else //purchased?
+        {
+            OVS.whichSamp    = Int.random(in:purchasedBase...purchasedMax)
+        }
+    } //end loadRandomPercPatch
+    
+    //-----------(oogieVoice)=============================================
+    // 9/1/21 redid, no args now...
+    func loadRandomSynthPatch()
+    {
+        OOP.attack      = Double.random(in:0.0...69.5);
+        OOP.decay       = Double.random(in:0.0...69.5);
+        OOP.sustain     = Double.random(in:0.0...89.5);
+        OOP.sLevel      = Double.random(in:0.0...99.5);
+        OOP.release     = Double.random(in:0.0...79.5);
+        OOP.duty        = Double.random(in:0...99.5);
+        //No need?    OOP.level       = Double.random(in:0.3...0.7);
+        OOP.wave        = Int.random(in:0...5);
+        //MIDI keyboard range for outgoing notes
+        OVS.bottomMidi  = 12;  // 2/28 redo top/bottom MIDI
+        OVS.topMidi     = 108; // 2/28 redo
+        OVS.keySig      = Int.random(in:0...12); //Randomize key signature too!
+        OVS.panMode     = Int.random(in:0...12); //Pan MODE
+        OVS.panMode     = Int.random(in:0...11);
+        OVS.panFixed    = Int.random(in:0...255);
+        OVS.thresh      = Int.random(in:1...15);        //    perc threshold for soundoff
+        OVS.detune      = Int(Double.random(in:0...1.5)); // 9/1 copy from oogiecam
+        OVS.poly = 1;
+        if Double.random(in:0...4.0) < 1.5 {OVS.poly = 0}
+    } //end loadRandomSynthPatch
     
     
 }

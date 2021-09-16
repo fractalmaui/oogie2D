@@ -58,6 +58,8 @@
 //             add arpTones, redo arpeggiator data struct
 // 6/26     pull queueNote, change playNoteWithDelay to append queue OR insert as needed
 // 6/27     add more custom releaseNote... methods
+// 7/7      add getBufferChans, copyBufferOutResampled
+// 9/10     fix deprecations in loadSampleFromPath
 #import <QuartzCore/CABase.h>
 #import "SynthDave.h"
 #include "oogieMidiStubs.h"
@@ -627,7 +629,7 @@ short *audioRecBuffer;
 //4/29    if (lastSampleRate == 48000)   properRate = DEFAULT_SAMPLE_RATE;
     sRates[which]   = properRate;
     if (err) sBufLens[which] = 8192; //STOOPID SIZE!
-    //NSLog(@"SAMPLE RATES lsr %d rate %d blen %d",lastSampleRate,sRates[which],sBufLens[which]);
+    NSLog(@"  sample[%d] rate %d blen %d",which,properRate,sBufLens[which]);
 	sBufChans[which] = 2; //always stereo
 //     NSLog(@" dump buf every 256th......");
 //     for (int i=0;i<sBufLens[which]-1;i+=256)
@@ -697,7 +699,23 @@ short *audioRecBuffer;
     return dw;
 } //end delayReturnLorRWithAutoIncrement
 
-
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+// 7/7 copy buffer to an external float buf, shrink to size needed...
+//     fbuf is assumed to be existant and at least fsize long
+-(void) copyBufferOutResampled : (int) bnum : (int)fsize : (float*) fbuf
+{
+    if (fbuf == nil) return;
+    if (sBufLens[bnum] == 0) return;
+    float bscale = (float)sBufLens[bnum] / (float)fsize; //buffer step scaling..
+    float fptr = 0.0;
+    int bptr = 0;
+    for (int i=0;i<fsize;i++)
+    {
+        bptr     = (int)fptr;
+        fbuf[i]  = sBufs[bnum][bptr];
+        fptr+=bscale;
+    }
+} //end copyBufferOutResampled
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 // 11/9 Destructive copy!
@@ -898,8 +916,23 @@ short *audioRecBuffer;
 //      NSLog(@" ...env[%d] %f",i,sEnvs[which][i]);
 //    }
     //DHS WHY doesn't i already have the length here...???
-	envDataLength[which] = i + releaseLength;
+	envDataLength[which] = i + releaseLength; //asdf
 }  //end buildEnvelope
+
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+// 8/14/21
+-(void) dumpEnvelope: (int) which
+{
+    if (envDataLength == nil || sEnvs == nil || sEnvs[which] == nil) return;
+    if (envDataLength[which] == 0) return;
+    NSLog(@" dump envelope %d, length %d",which,envDataLength[which]);
+    int emax  = envDataLength[which];
+    int istep = envDataLength[which] / 256;
+    for (int i=0;i<emax;i+=istep)
+    {
+        NSLog(@"  [%6.6d] : %f",i,sEnvs[which][i]);
+    }
+}
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 // 10/31 clear buffers above designated index
@@ -1035,12 +1068,18 @@ short *audioRecBuffer;
         t.phase    = (int)((float)SAMPLE_OFFSET * (float)sBufLens[wnum] /
                                   (float)sBufChans[wnum]); //compute offset, NOTE #chans
     }
-    t.envStep  = 0.0f;
-    t.envDelta = midiNote / 64.0f;
-    t.waveNum  = wnum;
-    t.toneType = type;
+    // 8/14/21 load raw env params too...
+    //  just express in fractions of 0..255 for now
+    t.envAttack  = (int)(255.0*ATTACK_TIME);
+    t.envDecay   = (int)(255.0*DECAY_TIME);
+    t.envSustain = (int)(255.0*SUSTAIN_TIME);
+    t.envRelease = (int)(255.0*RELEASE_TIME);
+    t.envStep    = 0.0f;
+    t.envDelta   = midiNote / 64.0f;
+    t.waveNum    = wnum;
+    t.toneType   = type;
     //2/12/21 fine tuning...
-    float pgain = 1.0;
+    float pgain  = 1.0;
     if (pLevel < 50) //attenuate level by 2x
     {
         pgain = MAX(0.5,0.5 + 0.5 * (float)pLevel/50.0);
@@ -1070,7 +1109,17 @@ short *audioRecBuffer;
         t.vibIndex   = 0.0;
         t.vibStep    = 0.3*t.vibSpeed;  //9/2
     }
-    else t.vibEnabled = FALSE;
+    else //8/14/21 explicitly clear vvib stuff...
+    {
+        t.vibEnabled = FALSE;
+        t.vibAmpl    = 0;
+        t.vibSpeed   = 0;
+        t.vibWave    = 0;
+        t.vibDelay   = 0;
+        t.vibIndex   = 0.0;
+        t.vibStep    = 0.0;
+    }
+
     //4/8 amplitude vibe support
     if (vibeAmpl > 0 && vibeSpeed > 0) //user enabled vibrato?
     {
@@ -1083,7 +1132,16 @@ short *audioRecBuffer;
         t.vibeIndex   = 0.0;
         t.vibeStep    = 0.3*t.vibeSpeed;  //9/2
     }
-    else t.vibeEnabled = FALSE;
+    else //8/14/21 explicitly clear avib stuff...
+    {
+        t.vibeEnabled = FALSE;
+        t.vibeAmpl    = 0;
+        t.vibeSpeed   = 0;
+        t.vibeWave    = 0;
+        t.vibeDelay   = 0;
+        t.vibeIndex   = 0.0;
+        t.vibeStep    = 0.0;
+    }
 
     if (type == SYNTH_VOICE || type == SAMPLE_VOICE) //6/23 add samplevoice for loop support
     {
@@ -1544,6 +1602,14 @@ short *audioRecBuffer;
 			// playing more than once, and we need to stop them all.
 		}
 	}
+} //end releaseNote
+
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+// 7/7/21 new
+- (int)getBufferChans: (int) index
+{
+    if (sBufs[index] == nil) return 1;
+    return sBufChans[index];
 }
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
@@ -1767,7 +1833,6 @@ short *audioRecBuffer;
                     }
 //                    NSLog(@"wnum %d  a/b/c is %d/%f/%d rawEnv %f elen %d -> value %f",
 //                          wn,a,b,c,sEnvs[wn][a],envLength[wn],envValue);
-                    envValue = 1.0; //KLUGE
                 }
 			}  //end synth/sample voice
 			else  //Percussion/Sample voice? We won't apply envelope
@@ -2617,8 +2682,8 @@ short *audioRecBuffer;
     NSLog(@"..... samplerate %d",lastSampleRate);
     readsize = sNumPackets * sChans;
     outNumBytes = 0; //DHS 10/10 init to avoid warning
-    //DHS 10/10 use this call! not ...PacketData
-    if (!err)err = AudioFileReadPackets (fileID,FALSE,&outNumBytes,NULL,0,&readsize,fileBuffer);
+    // 9/10 fix deprecation
+    if (!err) err = AudioFileReadPacketData(fileID, FALSE, &outNumBytes, NULL, 0, &readsize, fileBuffer);
     sampleSize =  readsize;
     if (!err)  AudioFileClose(fileID);
     gotSample = 1;
@@ -2805,7 +2870,7 @@ double drand(double lo_range,double hi_range )
     NSLog(@" Tone Dump %d ============================",which);
     NSLog(@" midiNote/pitch/phase %d %f %f",t.midiNote,t.pitch,t.phase);
     NSLog(@" adsr %d %d %d %d needsEnvelope %d",t.envAttack,t.envDecay,t.envSustain,t.envRelease,t.needsEnvelope);
-    NSLog(@" type/wave/mono/detune %d %d %d %d",t.toneType,t.waveNum,t.mono,t.detune);
+    NSLog(@" toneType/wave/mono/detune %d %d %d %d",t.toneType,t.waveNum,t.mono,t.detune);
     NSLog(@" envStep/Delta/gain/lpan/rpan  %f %f %f %f %f",t.envStep,t.envDelta,t.gain,t.lpan,t.rpan);
     NSLog(@" port lastNote/Time/PitchFinish/PitchStep %d %f %f %f",
           t.portamentoLastNote,t.portamentoTime,t.portamentoPitchFinish,t.portamentoPitchStep);

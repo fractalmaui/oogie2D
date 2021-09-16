@@ -20,12 +20,14 @@
 #import "soundFX.h"
 @protocol controlPanelDelegate;
 
-#define MAX_CONTROL_SLIDERS 15  //2/19 add delay 3sliders
-#define MAX_CONTROL_PICKERS 4
+#define MAX_CONTROL_SLIDERS 17  //2/19 add delay 3sliders
+#define MAX_CONTROL_PICKERS 5
+#define MAX_CONTROL_TEXTFIELDS 2
 #define SLIDER_BASE_TAG 1000
 #define PICKER_BASE_TAG 2000
+#define TEXT_BASE_TAG 3000
  // obPopupDelegate,
-@interface controlPanel : UIView <UIGestureRecognizerDelegate,
+@interface controlPanel : UIView <UIGestureRecognizerDelegate,UITextFieldDelegate,
                             UIPickerViewDelegate,UIPickerViewDataSource>
 {
     int viewWid,viewHit,buttonWid,buttonHit;
@@ -42,6 +44,7 @@
 
     UISlider *sliders[MAX_CONTROL_SLIDERS];
     UIPickerView *pickers[MAX_CONTROL_PICKERS];
+    UITextField *textFields[MAX_CONTROL_TEXTFIELDS];
     UIView *header,*footer;
 
     int diceRolls;  //9/9 for analytics
@@ -81,6 +84,11 @@
 @property (nonatomic, assign) int delaySustain;
 @property (nonatomic, assign) int delayMix;
 @property(nonatomic,assign)   BOOL wasEdited;
+// 9/1/21 soundpack / patch arrays
+@property (nonatomic, strong) NSArray *spNames;
+@property (nonatomic, strong) NSArray *paNames;
+@property (nonatomic, strong) NSString *vname;
+@property (nonatomic, strong) NSString *vcomment;
 
 
 - (id)initWithFrame:(CGRect)frame;
@@ -92,7 +100,7 @@
 
 @protocol controlPanelDelegate <NSObject>
 @optional
--(void) didSetControlValue  : (int) which : (float) newVal : (NSString*) pname : (BOOL)undoable;
+-(void) didSetControlValue  : (int) which : (float) newVal : (NSString*) pname : (NSString*) pvalue : (BOOL)undoable;
 -(void) didSelectRight ;
 -(void) didSelectLeft ;  
 -(void) controlNeedsProMode ;

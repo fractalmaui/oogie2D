@@ -184,6 +184,8 @@ int HH,LL,SS;  //Used in rgb -> HLS
 //=====(soundFX)==========================================
 // 10/31
 - (int)getBufferSize: (int) index { return [synth getBufferSize:index];}
+// 7/7
+- (int)getBufferChans: (int) index { return [synth getBufferChans:index];}
 
 //=====(soundFX)==========================================
 // 6/25/21 
@@ -305,6 +307,9 @@ int HH,LL,SS;  //Used in rgb -> HLS
 {
     [synth buildEnvelope:a1:a2];
 }
+// 8/14/21
+-(void) dumpEnvelope: (int) a1 {[synth dumpEnvelope:a1];}
+
 -(int)  getSynthNoteCount
 {
     return [synth getNoteCount];
@@ -628,6 +633,7 @@ int HH,LL,SS;  //Used in rgb -> HLS
     {
         if (sampnum >= MAX_SAMPLES) break; //DHS aug 2012 fix. was using loop!
         [synth loadSample:soundFileNames[loop]:@"wav"];
+        NSLog(@" load audio [%d] %@",loop,soundFileNames[loop]);
         [synth buildSampleTable:sampnum];
         sampnum++;
     }
@@ -1252,6 +1258,12 @@ int dtp;
 -(void) copyBuffer : (int) from : (int) to : (BOOL) clear
 {
     [synth copyBuffer:from : to : clear];
+}
+
+// DHS 7/7/21
+-(void) copyBufferOutResampled : (int) bnum : (int)fsize : (float*) fbuf
+{
+    [synth copyBufferOutResampled :  bnum : fsize : fbuf];
 }
 
 -(void) copyEnvelope : (int) from : (int) to;

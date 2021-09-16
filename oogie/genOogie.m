@@ -184,7 +184,49 @@ static genOogie *sharedInstance = nil;
     return @[slider]; //maybe add more handles later?
 } //end addSliderRow
 
+//=====(genOogie)======================================================================
+// 9/11/21 new for oogieAR / 2D
+-(NSArray*) addTextRow : (UIView*) parent : (int) tag : (NSString*) label :
+                (int) yoff : (int) width : (int) ysize
+{
+    int xs,ys,xi,yi;
+    
+    //get 3 columns...
+    int x1 = 0.0; //7/9/21 shrink LH margin
+    int x2 = 0.30 * width;
+    int x3 = 0.95 * width;
+    
+    xi = 0;
+    yi = yoff;
+    xs = width;
+    ys = ysize;
+    //9/15 everything lives in an UIView...
+    UIView *textRow = [[UIView alloc] init];
+    [textRow setFrame : CGRectMake(xi,yi,xs,ys)];
+    textRow.backgroundColor = [UIColor clearColor]; //[UIColor colorWithRed:0.3 green:0 blue:0 alpha:1];
+    [parent addSubview:textRow];
 
+    xi = x1; //4/26
+    yi = 0; //back to top left...
+    xs = x2-x1-5; //7/9/21 test w/ RH align
+    UILabel *l = [[UILabel alloc] initWithFrame: //label goes from col 1 to 2
+                  CGRectMake(xi,yi,xs,ys)];
+    [l setFont:OOG_LABEL_FONT];  //7/9/21
+    [l setTextColor : [UIColor whiteColor]];
+    [l setTextAlignment:OOG_LABEL_ALIGN];  //7/9/21 testo
+    l.text = label;
+    [textRow addSubview : l];
+    
+    xi = x2;
+    xs = x3-x2;
+    UITextField *textField = [[UITextField alloc] initWithFrame:CGRectMake(xi,yi,xs,ys)];
+    [textField setBackgroundColor:[UIColor colorWithRed:0.95 green:0.95 blue:0.95 alpha:1]];
+    textField.text = @"test...";
+    textField.tag          = tag;
+    [textRow addSubview:textField];
+    return @[textField]; //maybe add more handles later?
+
+} //end addTextRow
 
 
 @end

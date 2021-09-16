@@ -14,6 +14,7 @@
 //  10/5 add showWarnings flag
 //  10/21 fix typo in types
 //  2/3   add multiple lines / variable font size for comments
+//  9/11  fix possible krash in updateit
 
 import UIKit
 import Foundation
@@ -278,19 +279,23 @@ class infoText: UIView {
 
         if  fieldType == TSTRING_TTYPE
         {
-            let intItem : Int = Int(workVal)
-            if intItem < 0 {return} //10/19 prevent krash
-            if intItem > 0
+            //9/11 is there something to display?
+            if  items.count > 0
             {
-                TLlabel.text = TLArrow + items[intItem-1]
+                let intItem : Int = Int(workVal)
+                if intItem < 0 {return} //10/19 prevent krash
+                if intItem > 0
+                {
+                    TLlabel.text = TLArrow + items[intItem-1]
+                }
+                else {TLlabel.text = ""}
+                if intItem < items.count-1
+                {
+                    TRlabel.text = items[intItem+1] + TRArrow
+                }
+                else {TRlabel.text = ""}
+                titleLabel.text = paramName + " = " + items[intItem]
             }
-            else {TLlabel.text = ""}
-            if intItem < items.count-1
-            {
-                TRlabel.text = items[intItem+1] + TRArrow
-            }
-            else {TRlabel.text = ""}
-            titleLabel.text = paramName + " = " + items[intItem]
         }
         else if  fieldType == TINT_TTYPE
         {

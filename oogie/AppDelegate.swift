@@ -164,10 +164,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
     //  6/12/20 redid
     func loadSamples()
     {
-        var loop=0
+        //var loop=0
        // workVoice = [voices objectAtIndex:0];
         
-        let folders = ["GMPercussion","animals"]
+        let folders = ["GMPercussion","animals","weirdness"]   //9/11 add weirdness soundpack
         
         var fcount = 0
         var sampnum = LOAD_SAMPLE_OFFSET; //starting point for samples...
@@ -197,6 +197,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
                         (sfx() as! soundFX).setNoteOffset(Int32(sampnum), nameOnly)
                         (sfx() as! soundFX).setSoundFileName(Int32(sampnum),fullPath)
                         allP.linkBufferToPatch(nn: NSNumber(value: sampnum), ss: nameOnly)
+                        print("load sample \(fullPath)")
                         sampnum+=1
                     }
                 }

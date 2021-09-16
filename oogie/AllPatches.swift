@@ -22,6 +22,7 @@
 //  1/25  add patch name sort in loadPurchasedPatches
 //  4/26  cleanup
 //  6/23  add 4 new sPatches entries:RampLead, etc, using xtraParams field
+//  8/2   updates to handle oogiecammetalshop as productID
 import Foundation
 import UIKit
 
@@ -41,6 +42,7 @@ import UIKit
     var purchasedSoundPackNames = [String]() // 10/21 
     let SYNTH_PERC_SP_NAME = "Synth/Perc" //10/19
     let CRITTERS_SP_NAME  = "Critters" //10/19
+    let WEIRDNESS_SP_NAME = "Weirdness" //10/19
     let USER_SP_NAME      = "UserSamples" //10/19
     var bufLookups        = Dictionary<NSNumber, String>()
     var patLookups        = Dictionary<String  , NSNumber>()
@@ -259,12 +261,11 @@ import UIKit
         wP = DataManager.loadBuiltinCritterPatchesToDict(OogiePatch.self,
                                                         fromFactory: true)
         for (pname,patch) in wP {patchesDict[pname] = patch} //install patches
+        wP = DataManager.loadBuiltinWeirdnessPatchesToDict(OogiePatch.self,
+                                                        fromFactory: true)
+        for (pname,patch) in wP {patchesDict[pname] = patch} //install patches
 
 
-//12/14 WRONG! this is looking at factory area!!!
-//        wP = DataManager.loadBuiltinSgtPepperPatchesToDict(OogiePatch.self,
-//                                                        fromFactory: true)
-//        for (pname,patch) in wP {patchesDict[pname] = patch} //install patches
         allPatchCount = patchesDict.count;
         print("...got \(allPatchCount) patches")
     } //end loadPatches
@@ -283,6 +284,13 @@ import UIKit
                      "monkey","rooster","chicken","terrier","cow",
                      "horse","cicada","flipper","piggie","hawk",
                      "seal","spooky"]
+    var wPatches = [ "bananapeel","bleep","blip","bongocan","broken",
+                      "chandelier","chemicals","clicks","cocktail","drumtrickle",
+                      "explosion","fairydust","flipper","gerbil","glassstrings",
+                      "glasszap","heavypiano","nylon","radiation","rubberbands",
+                      "saucerliftoff","stellar","swoopy","theshining","tincan",
+                      "trickle","twinkle","ufochime","vibracan","waterrocks",
+                      "zap","zwip"]
     var sgtPatches = [
         "001_Grand Piano","010_Glockenspiel","012_Vibraphone","019_Rock Organ",
         "025_Acc Guitar 1","029_Elect Guitar Mute","030_Overdrive Guitar","031_Distort Guitar",
@@ -331,9 +339,9 @@ import UIKit
 
 //----(AllPatches)==============================================
 // Load builtin stuff into SPS struct(s)
-@objc func loadFactorySoundPacks()
+    @objc func loadFactorySoundPacks()
     {
-        print(" 10/21 load factory soundpacks...") // \(pname)" )
+        print(" 10/21 load factory...") // \(pname)" )
         soundPacks.removeAll()
         //first load 16 synth / perc factory soundpack...
         var factorySoundPack1 = SPStruct()
@@ -357,12 +365,20 @@ import UIKit
         {
             unpackPatch(name: pname)
             factorySoundPack2.addPatch(name: pname, patch: patch)
-            //print(" ...add critter \(pname)")
         }
         soundPacks[CRITTERS_SP_NAME] = factorySoundPack2
         allSoundPackNames.append(CRITTERS_SP_NAME)
-        //print("asp add \(CRITTERS_SP_NAME)")
-
+        
+        //8/30/21 Load weirdness, also builtin, all samples
+        var factorySoundPack3 = SPStruct()
+        for pname in wPatches
+        {
+            unpackPatch(name: pname)
+            factorySoundPack3.addPatch(name: pname, patch: patch)
+        }
+        soundPacks[WEIRDNESS_SP_NAME] = factorySoundPack3
+        allSoundPackNames.append(WEIRDNESS_SP_NAME)
+        
     } //end loadFactorySoundPacks
 
     //----(AllPatches)==============================================
@@ -498,9 +514,6 @@ import UIKit
             {
                 let sf = file.split(separator: ".")
                 let pname = String(sf[0])
-                
-                // if let pname = sf[0] as String
-                // {
                 var oop     = OogiePatch()
                 oop.name    = pname
                 oop.attack  = 0
@@ -513,10 +526,6 @@ import UIKit
                 oop.type    = Int(PERCUSSION_VOICE)
                 oop.saveItem(filename:pname, cat:"GM") //Write it out! 11/14 new arg
                 print("write GMpercussion \(pname)")
-                
-                // }
-                
-                
             }
         }catch{
             fatalError("error: no percussion!")
@@ -524,7 +533,31 @@ import UIKit
     } //end writeGMPercussionPatches
 
     
-        //----(AllPatches)==============================================
+    //----(AllPatches)==============================================
+    // 8/30/21 generic patch saver, takes input list of sample names
+    @objc func writeColorPackPatchesFromNames (files: [String])
+    {
+        for file in files
+        {
+            let sf = file.split(separator: ".")
+            let pname = String(sf[0])
+            var oop     = OogiePatch()
+            oop.name    = pname
+            oop.attack  = 0
+            oop.decay   = 0
+            oop.sustain = 0
+            oop.release = 0
+            oop.sLevel  = 0
+            oop.duty    = 0
+            oop.wave    = 0
+            oop.type    = Int(SAMPLE_VOICE)
+            oop.saveItem(filename:pname, cat:"US") //Write it out! 11/14 new arg
+            print(" ...write colorpack patch \(pname)")
+        }
+
+    }
+    
+    //----(AllPatches)==============================================
     // This writes to the /Documents/patches folder...
     func writeGMSamplePatches()
     {
@@ -558,7 +591,7 @@ import UIKit
     //----(AllPatches)==============================================
     @objc func testKrashWithDMAndFlurry()
     {
-      //  DataManager.testKrashWithAnalytics(tstr: "test Krash From Main");
+       // DataManager.testKrashWithAnalytics(tstr: "test Krash From Main");
     }
     
 }

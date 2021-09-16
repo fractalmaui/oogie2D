@@ -480,7 +480,12 @@ public class DataManager {
     {
         return loadUpDictWithPatchesFromSubfolder(type, subFolder: "SynthPatches", fromFactory:     fromFactory)
     }
-
+    //======(DataManager)=============================================
+    // 8/30/21
+    static func loadBuiltinWeirdnessPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
+    {
+        return loadUpDictWithPatchesFromSubfolder(type, subFolder: "WeirdnessPatches", fromFactory:     fromFactory)
+    }
     
     //======(DataManager)=============================================
     static func loadBuiltinPercussionPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>

@@ -46,8 +46,8 @@
             filePath = "oogie/OogieScene.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "598"
-            endingLineNumber = "598"
+            startingLineNumber = "619"
+            endingLineNumber = "619"
             landmarkName = "loadCurrentVoiceParams()"
             landmarkType = "7">
          </BreakpointContent>
@@ -62,25 +62,9 @@
             filePath = "oogie/controlPanel.m"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "85"
-            endingLineNumber = "85"
+            startingLineNumber = "119"
+            endingLineNumber = "119"
             landmarkName = "-initWithFrame:"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "678800FA-14DD-4A2A-BB95-0ADD8BE908DD"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "oogie/OogieVoice.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "713"
-            endingLineNumber = "713"
-            landmarkName = "playColors(angle:rr:gg:bb:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -94,8 +78,8 @@
             filePath = "oogie/audio/SynthDave.m"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1064"
-            endingLineNumber = "1064"
+            startingLineNumber = "1086"
+            endingLineNumber = "1086"
             landmarkName = "-loadupToneFromSynth:::"
             landmarkType = "7">
          </BreakpointContent>
@@ -110,9 +94,1256 @@
             filePath = "oogie/OogieVoice.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "874"
-            endingLineNumber = "874"
+            startingLineNumber = "905"
+            endingLineNumber = "905"
             landmarkName = "applyDelayIfAny()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "CB0C086B-B78F-4688-8831-1A11DD3402D3"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/controlPanel.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "719"
+            endingLineNumber = "719"
+            landmarkName = "-sliderAction:"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "C4F0766F-EAB0-4519-B90C-81F956F027CA"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/controlPanel.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "733"
+            endingLineNumber = "733"
+            landmarkName = "-updateSliderAndDelegateValue::"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "0C9847A0-9A8A-46A1-A414-A19C5C6F47E4"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "871"
+            endingLineNumber = "871"
+            landmarkName = "handleTouch(touch:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "61188B44-BEAC-4FA9-A3DA-D10AFAAF2FDC"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/proPanel.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "593"
+            endingLineNumber = "593"
+            landmarkName = "-configureView"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "1F67B7D2-6690-44A5-9865-772F5CC83C99"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "855"
+            endingLineNumber = "855"
+            landmarkName = "handleTouch(touch:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "C7820069-1525-460D-A917-460C04BE17EA"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "2361"
+            endingLineNumber = "2361"
+            landmarkName = "didSetProValue(_:_:_:_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "C4DCF2F7-B7CB-4FE1-AF43-AC29FD62EB3B"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/audio/SynthDave.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1182"
+            endingLineNumber = "1182"
+            landmarkName = "-playNote:::"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "3747D287-D885-48B7-ACBB-1784E51E8AFC"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/audio/SynthDave.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1162"
+            endingLineNumber = "1162"
+            landmarkName = "-loadupToneFromSynth:::"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "EB7F25E0-7AB6-47DE-9191-9D592FD130DD"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/audio/SynthDave.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1063"
+            endingLineNumber = "1063"
+            landmarkName = "-loadupToneFromSynth:::"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "77F9E952-3688-49B1-B294-349C6BF5945A"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/audio/SynthDave.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1800"
+            endingLineNumber = "1800"
+            landmarkName = "-fillBuffer:frames:"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "089208A0-44B5-4E80-BCF7-E5F6501FA9DA"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/audio/SynthDave.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1230"
+            endingLineNumber = "1230"
+            landmarkName = "-playNote:::"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "6DE5D113-D896-4ED6-858F-D14FFEEDF9B8"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/audio/SynthDave.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1042"
+            endingLineNumber = "1042"
+            landmarkName = "-OLDplayNoteWithDelay::::"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "B7035448-1E96-4D44-A69F-85EA8EE4A7AF"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/audio/SynthDave.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1155"
+            endingLineNumber = "1155"
+            landmarkName = "-loadupToneFromSynth:::"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "3FEF6225-3221-45AF-8494-7CAC3E1FBAF9"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "355"
+            endingLineNumber = "355"
+            landmarkName = "samplesLoaded(notification:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "724A1F1C-2A8C-411B-9A55-BB3CE6E7C758"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/controlPanel.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "929"
+            endingLineNumber = "929"
+            landmarkName = "-getPickerTitleForTagAndRow::"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "BAEEF174-173B-4F46-8B18-0E694E03F1AF"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/controlPanel.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "934"
+            endingLineNumber = "934"
+            landmarkName = "-getPickerTitleForTagAndRow::"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "E250283B-6AFF-404E-9CC7-204795B8365B"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/controlPanel.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "988"
+            endingLineNumber = "988"
+            landmarkName = "-pickerView:numberOfRowsInComponent:"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "1EAC0EFB-BE89-4E12-836A-19C66FBE8C18"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/controlPanel.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "992"
+            endingLineNumber = "992"
+            landmarkName = "-pickerView:numberOfRowsInComponent:"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "0A33D172-A84E-480C-8866-6E72B20CB0BC"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1161"
+            endingLineNumber = "1161"
+            landmarkName = "playAllPipesMarkers(knobMode:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "B1D9443D-261E-4D8C-8513-8FD4C8F341E0"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1155"
+            endingLineNumber = "1155"
+            landmarkName = "playAllPipesMarkers(knobMode:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "70CCBF4D-6527-4D60-B264-50AFD3D534AA"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1156"
+            endingLineNumber = "1156"
+            landmarkName = "playAllPipesMarkers(knobMode:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "17E22C8D-A2D8-4359-861B-B7153A61B801"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1178"
+            endingLineNumber = "1178"
+            landmarkName = "playAllPipesMarkers(knobMode:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "BCD53BA2-CC3C-44E9-BB35-66C5270DE9F2"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieVoice.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "977"
+            endingLineNumber = "977"
+            landmarkName = "getPercLooxBufferPointerSet()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "5FE656E7-0F70-4689-90EA-2A85296AB50C"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieVoice.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "875"
+            endingLineNumber = "875"
+            landmarkName = "playColors(angle:rr:gg:bb:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "8D0D1820-0A7D-4042-B14A-0C187F43A82F"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieVoice.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "810"
+            endingLineNumber = "810"
+            landmarkName = "playColors(angle:rr:gg:bb:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "85D8F78C-D586-4550-9954-7EE79EC0E195"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/shapePanel.m"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "463"
+            endingLineNumber = "463"
+            landmarkName = "-configureView"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "00F7D68B-E925-49E9-8ADC-9981D41BA378"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "801"
+            endingLineNumber = "801"
+            landmarkName = "handleTouch(touch:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "01EAD29A-A1D8-4210-B1FD-826AB145B177"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "184"
+            endingLineNumber = "184"
+            landmarkName = "viewDidLoad()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "9BA7AEB1-22A5-4C9C-A765-BA9AC42B6D13"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieVoice.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "200"
+            endingLineNumber = "200"
+            landmarkName = "init()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "E43442A6-CEE4-4B3E-BA74-B6FD5F3336F7"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "190"
+            endingLineNumber = "190"
+            landmarkName = "viewDidLoad()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "4A5C1311-ED81-457D-824B-462747A050F4"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1476"
+            endingLineNumber = "1476"
+            landmarkName = "create3DScene(scene:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "6F04BA91-45DA-4B89-9546-EF672F36A2CB"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "96"
+            endingLineNumber = "96"
+            landmarkName = "addVoiceSceneData(nextOVS:key:op:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "DC7DE1F7-347C-486B-9269-834FC9D42077"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "110"
+            endingLineNumber = "110"
+            landmarkName = "addVoiceSceneData(nextOVS:key:op:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "3EBF0F67-295F-4AD0-9A04-BE7B2B9A9592"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1036"
+            endingLineNumber = "1036"
+            landmarkName = "haltLoop()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "0361F285-960B-482C-B18E-DB62FBB9F156"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "2260"
+            endingLineNumber = "2260"
+            landmarkName = "chooserChoseFile(name:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "447F8DE4-385A-4DA4-9B56-B1849260E6AA"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/chooserVC.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "154"
+            endingLineNumber = "154"
+            landmarkName = "saveSelect(_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "346EFAC0-66A5-466C-8015-AD271650516D"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "418"
+            endingLineNumber = "418"
+            landmarkName = "handleLongPress(gestureReconizer:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "D62270C4-FED5-4A0D-804F-3963152CA4D5"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieVoice.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "590"
+            endingLineNumber = "590"
+            landmarkName = "setParam(named:toDouble:toString:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "4520B8BE-5421-4D99-A076-1D820A10E5CD"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "829"
+            endingLineNumber = "829"
+            landmarkName = "setNewParamValue(newEditState:named:toDouble:toString:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "8FAA383F-C446-4315-8281-0DE13B192432"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "609"
+            endingLineNumber = "609"
+            landmarkName = "loadCurrentVoiceParams()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "512ABE81-79CB-4FB0-A926-C37E2E99FC30"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieScene.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1220"
+            endingLineNumber = "1220"
+            landmarkName = "unitToParam(inval:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "3BBBE1FB-1862-4DB5-874E-8F299F3E1DB6"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieVoice.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "632"
+            endingLineNumber = "632"
+            landmarkName = "setParam(named:toDouble:toString:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "0FD121F9-FC29-4342-90EC-677AE52615C4"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieVoice.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "595"
+            endingLineNumber = "595"
+            landmarkName = "setParam(named:toDouble:toString:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/OogieVoice.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "592"
+            endingLineNumber = "592"
+            landmarkName = "setParam(named:toDouble:toString:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "1357">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "1680">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "2009">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "2284">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "2559">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "2888">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "3090">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "3366">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "3642">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "3915">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "4190">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "4465">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "4741">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "5017">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "5293">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "5569">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "5845">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "6121">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "6397">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "6675">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "6948">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "7224">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "7500">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "7776">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "8052">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "8381">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "8657">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "8933">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "9209">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "9485">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "9761">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "10037">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "10313">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "10589">
+               </Location>
+               <Location
+                  uuid = "057CC72C-5D69-417F-8DC4-CE7BB06CD5C1 - b3545860e00bef82"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "oogie2D.OogieVoice.setParam(named: Swift.String, toDouble: Swift.Double, toString: Swift.String) -&gt; ()"
+                  moduleName = "oogie2D"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/davescruton/Desktop/oogie2D/oogie/OogieVoice.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "592"
+                  endingLineNumber = "592"
+                  offsetFromSymbolStart = "10865">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "5A2DED6F-F191-44F4-860F-D134117092AA"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "oogie/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "2474"
+            endingLineNumber = "2474"
+            landmarkName = "didSetControlValue(_:_:_:_:_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

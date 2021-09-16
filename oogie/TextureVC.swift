@@ -57,7 +57,8 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
         //load builtins first
         //10/25 test pattern support
         #if USE_TESTPATTERN
-        let ifname = "tp"
+        let ifname = "spectrumOLD" //"tp" //8/12 test
+
         #else
         let ifname = "oog2-stripey00t"
         #endif

@@ -242,6 +242,7 @@ ToneEvent;
 @property (nonatomic, weak) NSString *recFileFolder;
 @property (nonatomic, assign) float recGain;
 
+-(void) copyBufferOutResampled : (int) bnum : (int)fsize : (float*) fbuf; //7/7/21
 -(void) copyBuffer : (int) from : (int) to : (BOOL) clear;
 -(void) copyEnvelope : (int) from : (int) to;
 
@@ -291,6 +292,8 @@ ToneEvent;
 - (int)clearBuffer:(void*)buffer frames:(int)frames;
 - (int)fillBuffer:(void*)buffer frames:(int)frames;
 - (void)buildEnvelope:(int)which : (BOOL) buildInPlace;
+-(void) dumpEnvelope: (int) which;
+
 - (void)buildaWaveTable: (int) which :(int) type;
 - (void)buildSampleTable:(int) which;
 - (void)buildRampTable: (int) which;
@@ -302,8 +305,8 @@ ToneEvent;
 - (void)cleanupBuffersAbove:(int)index;
 - (void)decrVoiceCount:(int)n;
 - (float)getADSR: (int)which : (int)where ;
+- (int)getBufferChans: (int) index;   //7/7
 - (int)getBufferSize: (int) index;
-- (float)getBufferPlaytime: (int) index;
 - (float)getBufferPlaytime: (int) index;
 - (int)getNoteCount;
 - (int)getEnvDataLen:(int)which  ;

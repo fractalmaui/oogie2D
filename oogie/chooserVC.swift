@@ -103,7 +103,7 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
 //
 //            }
 //        }
-        //print("chooser folder \(chooserFolder)")
+        print("chooser folder \(chooserFolder) mode \(mode)")
         saveButton.isHidden = true //NO NEED? (mode == "load")        
         if mode == "loadAllPatches"
         {
@@ -118,7 +118,7 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         else if mode == "save"
         {
             titleLabel.text = "Save File..."
-            nameText.becomeFirstResponder()
+            //9/13/21 Causing a hang? nameText.becomeFirstResponder()
             nameText.isHidden = false
         }
         nameText.delegate = self

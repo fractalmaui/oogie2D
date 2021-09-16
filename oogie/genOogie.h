@@ -23,6 +23,8 @@
 -(NSArray*) addSliderRow : (UIView*) parent : (int) tag : (NSString*) label :
                 (int) yoff : (int) width : (int) ysize :
                 (float) smin : (float) smax;
+-(NSArray*) addTextRow : (UIView*) parent : (int) tag : (NSString*) label :
+                (int) yoff : (int) width : (int) ysize ;
 @end
 
 

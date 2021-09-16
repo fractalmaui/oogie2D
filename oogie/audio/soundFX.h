@@ -64,6 +64,7 @@
 -(NSArray *) loadSamplesNow : (NSString*)pname : (int) sampleBase;
 -(NSMutableDictionary*) loadGeneralMidiNames;
 -(void) copyBuffer : (int) from : (int) to : (BOOL) clear;
+-(void) copyBufferOutResampled : (int) bnum : (int)fsize : (float*) fbuf;
 -(void) copyEnvelope : (int) from : (int) to;
 - (void)cleanupBuffersAbove:(int)index;
 
@@ -71,6 +72,7 @@
 - (float)getLVolume ;
 - (float)getRVolume ;
 - (int)getBufferSize: (int) index;
+- (int)getBufferChans: (int) index;
 - (float)getBufferPlaytime: (int) index;
 
 -(int) getSampleRate : (NSString*)name : (int) type;
@@ -113,6 +115,8 @@
 
 //DHS 2019: Synth convenience functions, for oogie/swift
 - (void)buildEnvelope:(int)a1 : (BOOL) a2;
+-(void) dumpEnvelope: (int) a1;
+
 -(void) buildaWaveTable : (int) a1 : (int) a2;
 - (NSDictionary*) getSampleHeader:(NSString *)soundFilePath;
 -(int)  getSynthNoteCount;

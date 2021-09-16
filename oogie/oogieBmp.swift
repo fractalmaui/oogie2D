@@ -32,7 +32,9 @@ class oogieBmp: NSObject {
     //-----------(oogieBmp)=============================================
     override init() {
         super.init()
-        if let image = UIImage.init(named: "tp")
+        var iname = "tp" //8/12/21 add new tp : DIDNT change initial sphere texture, WTF?
+        iname = "spectrumOLD"
+        if let image = UIImage.init(named: iname)
         {
             setupImage(i: image)
         }

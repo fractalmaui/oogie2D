@@ -28,7 +28,7 @@ class SphereShape: SCNNode {
     let tc = texCache.sharedInstance //10/21 for loading textures...
     
     #if USE_TESTPATTERN
-    let defaultTexture = "tp"
+    let defaultTexture = "spectrumOLD" //"tp" 8/12 test
     #else
     let defaultTexture = "oog2-stripey00t"
     #endif

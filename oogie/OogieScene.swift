@@ -12,7 +12,8 @@
 //  Copyright © 2020 fractallonomy. All rights reserved.
 //
 //  5/12 add getSceneCentroidAndRadius
-
+//  9/13/21 make sure patch gets loaded in addVoiceSceneData!!
+//          add loop quiet instead of halts/restarts
 
 import Foundation
 import SceneKit
@@ -72,16 +73,24 @@ class OogieScene: NSObject {
     var shapeClockPos  : Int = 1   //0 = noon 1 = 3pm etc
     var sceneLoaded = false  //5/7
     var handlingLoop = false
+    var quietLoop = false //9/13/21 just keep loop quiet instead of halting?
     var needToHaltLoop = false
     var needFreshLoop  = false
 //    var loopTimer = Timer()
-
+    var editing = "" //9/1 move this to property!
     
     //-----------(oogieScene)=============================================
     override init() {
     }
     
     //-----------(oogieScene)=============================================
+    // BUG 9/13: this loads in the voice info from the scene, and
+    //  makes a new voice to add to the working data...
+    //  PROBLEM: playColors is using the OOP struct to get things
+    //    like voice type and buffer number, but it doesnt look like
+    //     OOP is getting copied?
+    // Maybe we should look at the patchName item and get the patch???
+    // this is the only place sceneVoices get loaded
     func addVoiceSceneData(nextOVS : OVStruct , key : String, op : String) -> OogieVoice
     {
         var newOVS    = nextOVS
@@ -90,6 +99,14 @@ class OogieScene: NSObject {
         if op == "load" //Loading? Remember name, keep key!!
         {
             newVoice.OVS = newOVS
+            let pname = newOVS.patchName
+            print(" patch \(pname)")
+            //9/13 go for patch???
+            if let oop = allP.patchesDict[pname]
+            {
+                newVoice.OOP = oop;
+            }
+            //newVoice.OOP = 
             updateMaxVoiceKey(loadedKey: key) //keep up with keycount!
         }
         else if op == "new" //4/30 new?
@@ -375,7 +392,7 @@ class OogieScene: NSObject {
         let cx = Double(X/c) //Get centroid of all our shapes
         let cy = Double(Y/c) //  y isnt used now btw
         let cz = Double(Z/c)
-        var centroid = SCNVector3Make(Float(cx), Float(cy), Float(cz)) // centroid!
+        let centroid = SCNVector3Make(Float(cx), Float(cy), Float(cz)) // centroid!
         X0  = X0 - cx   //get xz distances from centroid to first shape
         Z0  = Z0 - cz
         let r = Float(sqrt(X0*X0 + Z0*Z0-cz))  //This is radius from centroid to all shapes
@@ -411,7 +428,8 @@ class OogieScene: NSObject {
     
     //-----------(oogieScene)=============================================
     // 4/22 redo: move param funcs out to objects
-    func getLastParamValue(editing : String , named name : String)
+    // 9/1 remove editing arg
+    func getLastParamValue(named name : String)
     {
         var paramTuple = (name:"",dParam:0.0,sParam:"") // params get returned here...
         var getNumberedDisplayValue = false // used in pipes only for now...
@@ -587,11 +605,14 @@ class OogieScene: NSObject {
     //   and preps for param editing
     func loadCurrentVoiceParams()
     {
-        if (selectedField < 0) {return}
+       //9/14/21 OLD if (selectedField < 0) {return}
+        if selectedFieldName == ""  {return}
+        
         var vArray = [Any]()
         if selectedField != 3 //All params but patches are canned: CLUGEY use of hardcoded value!
         { //load them here
-            vArray = selectedVoice.getNthParams(n: selectedField)
+//9/14/21 OLD            vArray = selectedVoice.getNthParams(n: selectedField)
+            vArray = selectedVoice.getNamedParams(name:selectedFieldName) //9/14/21 use name now
         }
         else  //Get approp patches
         {
@@ -661,6 +682,7 @@ class OogieScene: NSObject {
     {
         if (selectedField < 0) {return}
         var vArray = [Any]()
+        //9/14/21 NOTE THIS NEEDS TO CHANGE TO USE PARAM NAME!!
         vArray = selectedShape.getNthParams(n: selectedField) //1/21
         breakOutSelectedFields(vArray: vArray)
     } //end loadCurrentShapeParams
@@ -670,6 +692,7 @@ class OogieScene: NSObject {
     func loadCurrentPipeParams()
     {
         if (selectedField < 0) {return}
+        //9/14/21 NOTE THIS NEEDS TO CHANGE TO USE PARAM NAME!!
         var vArray = selectedPipe.getNthParams(n: selectedField)
         if selectedField == 1 //String field: output param name
         {
@@ -774,8 +797,11 @@ class OogieScene: NSObject {
     //-----------(oogieScene)=============================================
     // Handles shape, voice, and pipe param changes.
     //  lots can go wrong here, maybe break this up?
-    func setNewParamValue(editing : String , named : String , toDouble : Double , toString : String ) -> [String]
+    // 9/1 remove editing arg
+
+    func setNewParamValue(newEditState : String , named : String , toDouble : Double , toString : String ) -> [String]
     {
+        editing = newEditState //9/1/21
         var workDouble          = toDouble //we may change incoming double val!
         var workString          = toString
         let intChoiceChanged    = (Int(toDouble) != lastFieldInt)
@@ -792,9 +818,11 @@ class OogieScene: NSObject {
         {
             switch (named)  //4/23 handle preprocessing of param info...
             {
+            // 9/14/21: Note we arent choosing patches by a number now,
+            //  maybe pass in the patch name as toString?
             case "patch":
                 if intChoiceChanged{
-                    workString = getSelectedFieldStringForKnobValue (kv : Float(workDouble))
+                    //9/14/21 TEST workString = getSelectedFieldStringForKnobValue (kv : Float(workDouble))
                     changeVoicePatch(name:workString)
                 }
             case "bottommidi": //midi limits, need to hi/lo range check
@@ -867,7 +895,8 @@ class OogieScene: NSObject {
                 iknob      = min(iknob,menuNames.count-1) //Double check range to avoid crash
                 workString = menuNames[iknob]
             case "lorange","hirange": //4/27 ranges come in as text, convert!
-                workDouble = Double(workString) as! Double
+                if let d = Double(workString) { workDouble = d }
+                //9/13/21 obsolete workDouble = Double(workString) //9/13/21 as! Double
             default: break
             }
             let oldToParam = selectedPipe.PS.toParam
@@ -988,6 +1017,7 @@ class OogieScene: NSObject {
     // 5/8 starts the loop bkgd process
     func startLoop()
     {
+        print(" OVSCENE: startLoop");
         // this is used to keep the background loop from running too fast
 //        loopTimer = Timer.scheduledTimer(timeInterval: 0.02, target: self, selector: #selector(self.loopTick), userInfo:  nil, repeats: true)
         needFreshLoop  = true
@@ -1014,6 +1044,12 @@ class OogieScene: NSObject {
 //    }
 
     var lastSampleTime = Date()
+    
+    //-----------(oogieScene)=============================================
+    @objc func setLoopQuiet(flag:Bool)
+    {
+        quietLoop = flag
+    }
 
     //-----------(oogieScene)=============================================
     // stupidly simple: a timer periodically sets loopOK to true, while
@@ -1026,11 +1062,15 @@ class OogieScene: NSObject {
             if sceneLoaded
             {
                 let sampleTime = Date()
-                if sampleTime.timeIntervalSince(lastSampleTime) > 0.005
+                if sampleTime.timeIntervalSince(lastSampleTime) > 0.1 //just 10 frames / second for now...
+//9/1 old value                if sampleTime.timeIntervalSince(lastSampleTime) > 0.005
                 {
-                    playAllPipesMarkers(editing: "", knobMode: "select")
-                    needFreshLoop = false
-                    lastSampleTime = sampleTime
+                    if !quietLoop
+                    {
+                        playAllPipesMarkers(  knobMode: "select")
+                        needFreshLoop = false
+                        lastSampleTime = sampleTime
+                    }
                 }
                 
             }
@@ -1042,7 +1082,8 @@ class OogieScene: NSObject {
     // Fucking massive... needs to be moved to a background process
     //   which is independent of the UI and any VC!!
     // 5/3 move to scene, now returns list of 3D updates in key:operation format
-    @objc func playAllPipesMarkers(editing:String , knobMode:String) // NOT NEEDED -> [String]
+    // 9/1 make editing class member, set in setParamValue for now
+    @objc func playAllPipesMarkers( knobMode:String) // NOT NEEDED -> [String]
     {
         if (sceneVoices.count == 0) {return } //5/7 bogus errors?
         //let pstartTime = Date()
