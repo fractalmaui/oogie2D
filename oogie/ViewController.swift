@@ -75,6 +75,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //12/2 haptics for wheel controls
     var fbgenerator = UISelectionFeedbackGenerator()
     var cPanel  = controlPanel()
+
     var pPanel  = proPanel()
     var sPanel  = shapePanel()
     var piPanel = pipePanel()
@@ -123,6 +124,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // Overall scene, performs bulk of data workload
     var OVScene           = OogieScene()
     var OVSceneName       = "default"
+    var OVSoundPack       = "Synth/Perc" //9/16 keep track of selected soundpack
     var isPlaying         = false
     var updating3D        = false
     var screenCaptureFlag = false // Used by TIFFIE
@@ -358,7 +360,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         pnames.append("Random")
        // [allp getSoundPackByNameWithName:spName];
             // 9/1 make this the last soundpack used
-        allP.getSoundPackByName(name: "Synth/Perc")
+        allP.getSoundPackByName(name: OVSoundPack)
         let psize = allP.getSoundPackSize()
         if psize > 0
         {
@@ -369,7 +371,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             }
         }
         cPanel.paNames = pnames
-        cPanel.configureView()
+        // NO NEED? cPanel.configureView()
         pPanel.configureView() //9/12
 
     }
@@ -886,6 +888,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                     print("FIXIT: editparams!")
                                     // 8/11 FIXIT editParams(v: "voice") //1/14 switch to edit mode
                                     updatePkeys() //3/30 update kb if needed
+                                    //Pack params, send to VC
+                                    cPanel.paramDict = OVScene.selectedVoice.getParamDictWith(soundPack: OVSoundPack)
+                                    cPanel.configureView()
                                     shiftPanelUp(panel: voiceEditPanels) //9/11 shift controls so they are visible
                                 }
                             }
@@ -2439,7 +2444,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //controlPanel delegate returns...
     func didSetControlValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
     {
-        //print("mainvc: didSetControlValue \(which) \(newVal) \(pname)")
+        print("mainvc: didSetControlValue \(which) \(newVal) \(pname)")
         
        if which == 17 //new patch?
         {
@@ -2455,10 +2460,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         } //end which 19
         else if which == 18 //9/11 handle new soundpack
         {
-            let spName = allP.getSoundPackNameByIndex(index: Int(newVal));
-            allP.getSoundPackByName(name: spName)
+            OVSoundPack = allP.getSoundPackNameByIndex(index: Int(newVal));
+            allP.getSoundPackByName(name: OVSoundPack)
             let patchName = allP.getSoundPackPatchNameByIndex(index: 0) //patches start 1....n
-            print("choose sp \(spName) patch \(patchName)  ... NEED to update patchPicker!!!")
+            print("choose sp \(OVSoundPack) patch \(patchName)  ... NEED to update patchPicker!!!")
             loadPatchByName(pName: patchName)
             var pnames = [String]()
             pnames.append("Random")
@@ -2472,6 +2477,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 }
             }
             cPanel.paNames = pnames
+            //Pack params, send to VC
+            cPanel.paramDict = OVScene.selectedVoice.getParamDictWith(soundPack: OVSoundPack)
             cPanel.configureView()
         }
         else   //Just regular control...
@@ -2487,14 +2494,15 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 OVScene.selectedFieldName = pname
                 OVScene.loadCurrentVoiceParams()
             }
-            pLabel.updateit(value: Double(newVal)) //DHS 9/28 new display
+            //convert from slider unit to proper units...
+            pLabel.updateit(value:OVScene.unitToParam(inval: Double(newVal)))
             //4/26 Dig up last param value and save
             let sceneChanges = OVScene.setNewParamValue(newEditState : whatWeBeEditing,
                                                         named : pname,
                                                         toDouble : Double(newVal),
                                                         toString : pvalue )
-            let sdump = OVScene.selectedVoice.dumpParams()
-            print(sdump)
+//            let sdump = OVScene.selectedVoice.dumpParams()
+//            print(sdump)
             update3DSceneForSceneChanges(sceneChanges)
             OVScene.sceneVoices[OVScene.selectedMarkerKey] = OVScene.selectedVoice //WOW STORE IN SCENE?
         } //end else
@@ -2503,17 +2511,24 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     
     //=====<oogie2D mainVC>====================================================
-    // handles UI interaction from the shapePanel
-    func didSetShapeValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ undoable: Bool)
+    // 9/15 redid to handle  OVScene.loadCurrentShapeParams
+    func didSetShapeValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
     {
-        print("mainvc: didSetShapeValue \(which) \(newVal) \(pname)")
-    
-        var refreshShape = true
-        var vpname       = ""
-        var finalVal = Double(newVal) //fuck we need to mutate it
-        switch which
+        print("mainvc: didSetShapeValue \(which) \(newVal) \(pname) \(pvalue)")
+        let cs = [""]
+        if pname != oldvpname
         {
-        case 0: vpname = "texture"
+            pLabel.setupForParam( pname : pname , ptype : TFLOAT_TTYPE ,
+                                  pmin : 0 , pmax : 100 , choiceStrings: cs)
+            oldvpname = pname; //remember for next time
+            //asdf  set up for new param if control changed!
+            //OVScene.selectedField
+            OVScene.selectedFieldName = pname
+            OVScene.loadCurrentShapeParams()
+        }
+        
+        if which == 0 //texture?
+        {
             //call a delegate return here... asdf
             if pname == "default"
             {
@@ -2524,31 +2539,24 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             {
                 gotTexture(name: pname, tex: ii)
             }
-        case 1: vpname = "rotation"
-              finalVal = max(2.0,finalVal) //crop for now
-                setRotationSpeedForSelectedShape(s : finalVal)
-            refreshShape = false
-        case 2: vpname = "rotationtype"
-              OVScene.selectedShape.OOS.rotation = finalVal
-              setRotationTypeForSelectedShape()
-        case 3:  vpname = "xpos"
-        case 4:  vpname = "ypos"
-        case 5:  vpname = "zpos"
-        case 6:  vpname = "texxoffset"
-        case 7:  vpname = "texyoffset"
-        case 8:  vpname = "texxscale"
-        case 9:  vpname = "texyscale"
-        default: break
-            refreshShape = false
         }
-           
-        OVScene.selectedShape.setParam(named: vpname, toDouble: Double(newVal), toString: "")
+//        else if which == 2 //rotation type special? why doesnt setNewParamValue handle it?
+//        {
+//            OVScene.selectedShape.OOS.rotation = Double(newVal)
+//            setRotationTypeForSelectedShape()
+//        }
+        else{ //normal param??
+            pLabel.updateit(value: Double(newVal)) //DHS 9/28 new display
+            //4/26 Dig up last param value and save
+            // for rotationtype, make sure there is a updaterotationtype in output below!
+            let sceneChanges = OVScene.setNewParamValue(newEditState : whatWeBeEditing,
+                                                        named : pname,
+                                                        toDouble : Double(newVal),
+                                                        toString : pvalue )
+            update3DSceneForSceneChanges(sceneChanges)
+            OVScene.sceneVoices[OVScene.selectedMarkerKey] = OVScene.selectedVoice //WOW STORE IN SCENE?
+        }
 
-        if refreshShape
-        {
-            print(" update shape \(OVScene.selectedShape.OOS.name) param \(vpname)")
-            update3DShapeByKey (key: OVScene.selectedShape.OOS.name);
-        }
     } //end didSetShapeValue
     
     

@@ -34,6 +34,8 @@
 //  5/14  new top/bottom midi defaults
 //  8/11/21 MODIFY OVStruct, add performance controls portamento, etc...
 //  9/1   add loadRandomPercKitPatch, etc
+//  9/15  redid all param ranges to accommodate slider range 0..1
+//  9/16  add FX params to getParam
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -53,8 +55,8 @@ let MAX_CBOX_FRAMES = 20 //11/18 for playColors support
 //Parameter area... this is how the user gets at 3d objects from the UI
 //Parmas: Name,Type,Min,Max,Default,DisplayMult,DisplayOffset?? (string params need a list of items)
 // NOTE: .pi has to have a numeric multiplicator / divisor to compile in this statement!
-let LatParams   : [Any] = ["Latitude" ,      "double", -.pi/2.0   , .pi/2.0   , 0.0, 180.0 / .pi, 0.0 ]
-let LonParams   : [Any] = ["Longitude",      "double", -1.0 * .pi , 1.0 * .pi , 0.0, 180.0 / .pi,0.0 ]
+let LatParams   : [Any] = ["Latitude" ,      "double", -.pi/2.0   , .pi/2.0   , 0.0, 1.0 * .pi, -0.5 * .pi ]
+let LonParams   : [Any] = ["Longitude",      "double", -1.0 * .pi , 1.0 * .pi , 0.0, 2.0 * .pi  ,-1.0 * .pi ]
 // 10/15 NOTE: order here MUST match macro value order in synth!
 let TypeParams  : [Any] = ["Type",           "string" , "Synth", "Percussion", "PercKit", "Sample", "Harmony"]
 let PatchParams : [Any] = ["Patch",          "string","mt"]
@@ -66,7 +68,7 @@ let ScaleParams : [Any] = ["Scale",          "string" ,"major" ,"minor" ,"blues"
                            "hungarian" ,"algerian","japanese" ]
 let LevelParams    : [Any]   = ["Level" ,    "double", 0.0 , 1.0 , 0.5 , 255.0, 0.0 ]
 //5/2 add thresh
-let ThreshParams : [Any]     = ["Threshold", "double" ,1.0, 255.0 , 5.0  , 1.0,  0.0 ]
+let ThreshParams : [Any]     = ["Threshold", "double" ,1.0, 255.0 , 5.0  , 100.0,  0.0 ]
 //  10/4 add nvp chan/fixed / midi params
 let NChanParams : [Any]      = ["NChan",     "string" , "Red", "Green", "Blue", "Hue",
                                 "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow", "Fixed"]
@@ -74,32 +76,41 @@ let VChanParams : [Any]      = ["VChan",     "string" , "Red", "Green", "Blue", 
                                 "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow", "Fixed"]
 let PChanParams : [Any]      = ["PChan",     "string" , "Red", "Green", "Blue", "Hue",
                                 "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow", "Fixed"]
-let NFixedParams : [Any]     = ["NFixed",    "double" ,  16.0, 112.0 , 64.0  , 1.0,  0.0 ] //4/27 redo next 3
-let VFixedParams : [Any]     = ["VFixed",    "double" ,  0.0 , 255.0 , 128.0 , 1.0,  0.0 ]
-let PFixedParams : [Any]     = ["PFixed",    "double" ,  0.0 , 255.0 , 128.0 , 1.0,  0.0 ]
-let RotTriggerParams : [Any] = ["RotTrigger","double" ,  0.0 , 256.0 , 0.0 , 1.0,  0.0 ]
+let NFixedParams : [Any]     = ["NFixed",    "double" ,  16.0, 112.0 , 64.0  , 255.0,  0.0 ] //4/27 redo next 3
+let VFixedParams : [Any]     = ["VFixed",    "double" ,  0.0 , 255.0 , 128.0 , 255.0,  0.0 ]
+let PFixedParams : [Any]     = ["PFixed",    "double" ,  0.0 , 255.0 , 128.0 , 255.0,  0.0 ]
+let RotTriggerParams : [Any] = ["RotTrigger","double" ,  0.0 , 256.0 , 0.0 , 255.0,  0.0 ]
 let DetuneParams : [Any]     = ["Detune",     "string" , "Off", "On"]   //5/9
-// 2/28 are these ranges wrong now???
-let BottomMidiParams : [Any] = ["BottomMidi","int" ,  16.0 , 112.0 , 52.0 , 1.0,  20.0 ] //9/14/21 change last item
-let TopMidiParams : [Any]    = ["TopMidi",   "int" ,  16.0 , 112.0 , 72.0 , 1.0,  20.0 ]
-let MidiChannelParams : [Any] = ["MidiChannel","int" ,  1.0 ,16.0 , 1.0 , 1.0,  0.0 ]
+// 9/17/21 change top/bottom midi from int to double
+let BottomMidiParams : [Any] = ["BottomMidi","double" ,  16.0 , 112.0 , 32.0 , 100.0,  20.0 ] //9/14/21 change last item
+let TopMidiParams : [Any]    = ["TopMidi",   "double" ,  16.0 , 112.0 , 96.0 , 100.0,  20.0 ]
+let MidiChannelParams: [Any] = ["MidiChannel","int" ,  1.0 ,16.0 , 1.0 , 128.0,  0.0 ]
 let VNameParams    : [Any]   = ["Name",      "text", "mt"]
 let VCommParams    : [Any]   = ["Comment",   "text", "mt"]
 
 //9/14/21 for all effects ranging 0..100
-let fx100Params : [Any]    = ["FX",   "int" ,  0.0 , 0.0 , 0.0 , 1.0,  0.0 ]
-
+let fx100Params : [Any]     = ["FX",   "double" ,  0.0 , 0.0 , 0.0 , 100.0,  0.0 ] // for sliders
+let fxWaveParams : [Any]     = ["FXWave",   "int" ,  0.0 , 0.0 , 0.0 , 4.0,  0.0 ] // for wave pickers
 
 // All param names, must match first item above for each param!
 let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch","ChromaticKey",
-                             "Scale","Level","Threshold",
+                             "Scale","Level","Threshold","KeySig",  // 9/16/21 keysig
                              "NChan","VChan","PChan",
                              "NFixed","VFixed","PFixed","RotTrigger","Detune",   // 5/9
-                             "BottomMidi","TopMidi","MidiChannel","Name","Comment"]
+                             "BottomMidi","TopMidi","MidiChannel","Name","Comment",
+                             "Portamento","Viblevel","Vibspeed","VibWave", //9/15/21 add fx
+                             "VibeLevel","VibeSpeed","VibeWave",
+                             "DelayTime" ,"DelaySustain","DelayMix"
+]
 let voiceParamNamesOKForPipe : [String]    = ["Latitude", "Longitude","ChromaticKey",
-                                            "Scale","Level","Threshold","NChan","VChan","PChan",
+                                            "Scale","Level","Threshold","KeySig",   // 9/16/21 keysig
+                                            "NChan","VChan","PChan",
                                             "NFixed","VFixed","PFixed","RotTrigger","Detune",   // 5/9
-                                            "BottomMidi","TopMidi","MidiChannel"]
+                                            "BottomMidi","TopMidi","MidiChannel",
+                                            "Portamento","Viblevel","Vibspeed","vibwave", //9/15/21 add fx
+                                            "VibeLevel","VibeSpeed","VibeWave",
+                                            "DelayTime" ,"DelaySustain","DelayMix"
+]
 
 var voiceParamsDictionary = Dictionary<String, [Any]>()
 var voiceParamsDictionaryOLD = Dictionary<String, [Any]>()
@@ -251,7 +262,17 @@ let MAX_LOOX = 8
         voiceParamsDictionary["midichan"] = MidiChannelParams
         voiceParamsDictionary["name"] = VNameParams
         voiceParamsDictionary["comment"] = VCommParams   //2/4
-        
+        voiceParamsDictionary["portamento"]   = fx100Params //9/15/21 add fx
+        voiceParamsDictionary["viblevel"]     = fx100Params
+        voiceParamsDictionary["vibspeed"]     = fx100Params
+        voiceParamsDictionary["vibwave"]      = fxWaveParams
+        voiceParamsDictionary["vibelevel"]    = fx100Params
+        voiceParamsDictionary["vibespeed"]    = fx100Params
+        voiceParamsDictionary["vibewave"]     = fxWaveParams
+        voiceParamsDictionary["delaytime"]    = fx100Params
+        voiceParamsDictionary["delaysustain"] = fx100Params
+        voiceParamsDictionary["delaymix"]     = fx100Params
+
         // 9/14/21 NOTE: NEed to add performance params, portamento.... delay!!!
         voiceParamsDictionaryOLD["00"] = LatParams
         voiceParamsDictionaryOLD["01"] = LonParams
@@ -514,7 +535,76 @@ let MAX_LOOX = 8
         return paramList
     } //end getParamList
 
+    //-----------(oogieVoice)=============================================
+    // 9/17/21 pack up defaults for UI use
+    func getDefaultsDict() -> Dictionary<String,Any>
+    {
+        var d = Dictionary<String, Any>()
+        for pname in voiceParamNames //look at all params...
+        {
+            let plow = pname.lowercased()
+            var pdefault : NSNumber = 0
+            if let params = voiceParamsDictionary[plow]
+            {
+                let ptype = params[1] as! String
+                if ptype == "double" //sliders have params in their arrays
+                {
+                    let dd = params[4] as! Double
+                    pdefault = NSNumber.init(value:dd)
+                }
+            }
+            d[plow] = pdefault
+        }
+        return d
+    } //end getDefaultsDict
 
+    //-----------(oogieVoice)=============================================
+    // 9/17 redo
+    // how about packing arrays with value: (paramarray contents)??
+    func getParamDictWith(soundPack:String) -> Dictionary<String,Any>
+    {
+        var d = Dictionary<String, Any>()
+        d["soundpack"] = ["soundpack" , soundPack]
+        for pname in voiceParamNames //look at all params...
+        {
+            print("pack param \(pname)")
+            let plow = pname.lowercased()
+            let pTuple = getParam(named : plow)
+            let sv = pTuple.sParam
+            var dv = pTuple.dParam as Double
+            if let paramz = voiceParamsDictionary[plow]  //get param info...
+            {
+                var workArray = paramz  //copy
+                if let ptype = paramz[1] as? String
+                {
+                    if ptype == "double"  //double type? do some conversion
+                    {
+                        let lolim  = paramz[6] as! Double
+                        let lrange = paramz[5] as! Double
+                        if lrange != 0.0 //9/16 DO not apply range shift to int params!
+                        {
+                            dv = (dv - lolim) / lrange
+                        }
+                        workArray.append(NSNumber(value:dv))
+                    } //end double/int type
+                    else if ptype == "int"     //9/16 int type? no conversion
+                    {
+                        workArray.append(NSNumber(value:dv))
+                    }
+                    else //string?
+                    {
+                        workArray.append(sv)
+                    }
+                }  //end let ptype
+                //d[plow] = NSNumber(value:dv)
+                d[plow] = workArray
+
+            } //end let paramz
+        } //end for pname
+        return d
+    } //end getParamList
+    
+    
     //-----------(oogieVoice)=============================================
     // using this voices internal type, get array of appropriate patchnames
     func getPatchNameArray() -> [Any]
@@ -651,6 +741,7 @@ let MAX_LOOX = 8
                             isString = true
         //OUCH! MISSING KEY!!!WTF?
         case "scale":       dp = Double(OVS.keySig)
+        case "keysig":      dp = Double(OVS.keySig) //9/16/21
         case "chromatickey":dp = Double(OVS.pitchShift)  //5/14
         case "level":       dp = OVS.level
         case "threshold":   dp = Double(OVS.thresh)
@@ -669,6 +760,17 @@ let MAX_LOOX = 8
                             isString = true
         case "comment":     sp = OVS.comment //2/4
                             isString = true
+        //9/16/21 performance params
+        case "portamento":   dp = Double(OVS.portamento)
+        case "viblevel":     dp = Double(OVS.vibLevel)
+        case "vibspeed":     dp = Double(OVS.vibSpeed)
+        case "vibwave":      dp = Double(OVS.vibWave)
+        case "vibelevel":    dp = Double(OVS.vibeLevel)
+        case "vibespeed":    dp = Double(OVS.vibeSpeed)
+        case "vibewave":     dp = Double(OVS.vibeWave)
+        case "delaytime":    dp = Double(OVS.delayTime)
+        case "delaysustain": dp = Double(OVS.delaySustain)
+        case "delaymix":     dp = Double(OVS.delayMix)
         default:print("Error:Bad voice param in get:" + name)  //5/9
         }
         if !isString  {sp = String(format: "%4.2f", dp)} //4/25 pack double as string

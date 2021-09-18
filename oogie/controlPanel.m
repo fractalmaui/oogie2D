@@ -39,7 +39,7 @@
 // 7/11  variable cleanup , hook up to undo, add undoable arg to didsetControlValue
 // 8/11 MIGRATE to oogie2D> get rid of cappDelegate for now,
 //         flurryAnalytics,miniHelp,obPopup
-
+// 9/17 redo params to read input / defaults from incoming dictionary
 #import "controlPanel.h"
 //#import "AppDelegate.h" //KEEP this OUT of viewController.h!!
 
@@ -48,25 +48,9 @@
 #define NORMAL_CONTROLS
 #define GOT_DIGITALDELAY
 
+
 double drand(double lo_range,double hi_range );
-//         bing = true
-//        finalVal = (finalVal - 50.0) / 50.0; //move to -1 to 1 range
-//        finalVal = finalVal * Double.pi * 0.5; //now to +/- pi/2 range
-//        print("lat in \(newVal) out \(finalVal)")
-//case 16: vpname = "longitude"
-//         bing = true
-//        finalVal = (finalVal - 50.0) / 50.0; //move to -1 to 1 range
-//        finalVal = finalVal * Double.pi; //now to +/- pi range
-//    print("lon in \(newVal) out \(finalVal)")
-//case 17: vpname = "patch"
-//         print("set new patch"); ///9/1/21
-//         newPatch = true
-//case 18: print("set new soundpack");
-//         newSoundpack = true
-//case 19: print("set new name \(pname)");
-//case 20: print("set new comment \(pname)");
-//         newSoundpack = true
-//default: break
+ 
 
 //AppDelegate *cappDelegate;
 NSString *sliderNames[] = {@"Threshold",@"Bottom Note",@"Top Note",
@@ -78,21 +62,19 @@ NSString *sliderNames[] = {@"Threshold",@"Bottom Note",@"Top Note",
 }; //2/19 note paddings b4 delay for vibwave
 //these must match tags which increment over all controls! asdf
 
-//3 sliders, a picker, 4 sliders, a picker, 2 sliders a picker then 3 sliders
-NSString *sliderParams[] = {@"threshold",@"bottommidi",@"topmidi",@"",
-    @"overdrive",@"portamento",
-    @"viblevel" ,@"vibspeed",@"",
-    @"vibelevel" ,@"vibespeed",@"",
+//3 sliders, a picker, 4 sliders, a picker, 2 sliders a picker then 5 sliders and 2 texts
+NSString *allParams[] = {@"threshold",@"bottommidi",@"topmidi",@"keysig",
+    @"level",@"portamento",   //is level OK here?
+    @"viblevel" ,@"vibspeed",@"vibwave",
+    @"vibelevel" ,@"vibespeed",@"vibewave",
     @"delaytime" ,@"delaysustain",@"delaymix",
-    @"latitude", @"longitude"
+    @"latitude", @"longitude",@"patch",@"soundpack",@"name",@"comment"
 };
+#define C_ALLPARAMCOUNT 21  //should batch allparams above
 
 NSString *pickerNames[] = {@"KeySig",@"FVib Wave",@"AVib Wave",@"Patch",@"SoundPack"};
-NSString *pickerParams[] = {@"keysig",@"vibwave",@"vibewave",@"patch",@"soundpack"};
-
 
 NSString *textFieldNames[] = {@"Name",@"Comments"};
-NSString *textParams[] = {@"name",@"comment"};
 
 //for analytics use: simple 3 letter keys for all controls
 //  first char indicates UI, then 2 letters for control
@@ -125,7 +107,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
         
         [self setDefaults];
         [self setupView:frame];
-        [self configureView]; // final view tweaking
+       // [self configureView]; // final view tweaking
         //8/3 flurry analytics
         //8/11 FIX fanal = [flurryAnalytics sharedInstance];
 
@@ -246,7 +228,6 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     undoLPGesture.cancelsTouchesInView = NO;
     [diceButton addGestureRecognizer:undoLPGesture];
 
-    
     //Add reset button next to dice
     float borderWid = 5.0f;
     UIColor *borderColor = [UIColor whiteColor];
@@ -256,7 +237,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     [resetButton setTitle:@"Reset" forState:UIControlStateNormal];
     [resetButton setFrame:CGRectMake(xi, yi, xs, ys)];
     [resetButton setTitleColor:[UIColor colorWithRed:1 green:0.5 blue:0.5 alpha:1] forState:UIControlStateNormal];
-    resetButton.backgroundColor    = [UIColor blackColor];
+    resetButton.backgroundColor    = [UIColor greenColor];
     resetButton.layer.cornerRadius = 10;
     resetButton.clipsToBounds      = TRUE;
     resetButton.layer.borderWidth  = borderWid;
@@ -296,11 +277,11 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     // add threshold, lo/hi midi sliders
     for (i=0;i<3;i++)
     {
-        [self addSliderRow:cPanel : i : SLIDER_BASE_TAG + i : sliderNames[i] : yi : OOG_SLIDER_HIT:0.0:100.0];
+        [self addSliderRow:cPanel : i : SLIDER_BASE_TAG + i : sliderNames[i] : yi : OOG_SLIDER_HIT:0.0:1.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
     }
     // add keysig picker
-    [self addPickerRow:cPanel : 0 : PICKER_BASE_TAG+0 : pickerNames[0] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:cPanel : 0 : PICKER_BASE_TAG+3 : pickerNames[0] : yi : OOG_PICKER_HIT];
     
     //Add pro mode controls panel-------------------------------------
     xi = OOG_XMARGIN;
@@ -328,37 +309,30 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     // add sliders for overdrive,portamento,viblevel,vibspeed
     for (i=0;i<4;i++) //add 4 fx sliders, overdrive, portamento, FVIB level/speed
     {
-        float smin = 0.0;
-        if (i == 0) smin = 1.0;  //8/6 overdrive is special
-        //NSLog(@" add slider %d %@",i,sliderNames[i+3]);
         NSString *dog = [NSString stringWithFormat:@"rowi %d",i];
-        [self addSliderRow:pPanel : i+4 : SLIDER_BASE_TAG + i+4 : dog : yi : OOG_SLIDER_HIT:smin:100.0];
+        [self addSliderRow:pPanel : i+4 : SLIDER_BASE_TAG + i+4 : dog : yi : OOG_SLIDER_HIT:0.0:1.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
     }
     // add picker for viblevel
-    [self addPickerRow:pPanel : 1 : PICKER_BASE_TAG+1 : pickerNames[1] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:pPanel : 1 : PICKER_BASE_TAG+8 : pickerNames[1] : yi : OOG_PICKER_HIT];
     yi += 2* (OOG_SLIDER_HIT+OOG_YSPACER);
     //4/7/21 add vibe level/spped
     for (i=0;i<2;i++) //add 2 fx sliders,  FVIB wave, AVIB level/speed
     {
-        float smin = 0.0;
-        if (i == 0) smin = 1.0;  //8/6 overdrive is special
-        //NSLog(@" add slider %d %@",i,sliderNames[i+7]);
         NSString *dog = [NSString stringWithFormat:@"rowi %d",i];
-        [self addSliderRow:pPanel : i+9 : SLIDER_BASE_TAG + i+9 : dog : yi : OOG_SLIDER_HIT:smin:100.0];
+        [self addSliderRow:pPanel : i+9 : SLIDER_BASE_TAG + i+9 : dog : yi : OOG_SLIDER_HIT:0.0:1.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
     }
     // add picker for viblevel
-    [self addPickerRow:pPanel : 2 : PICKER_BASE_TAG+2 : pickerNames[2] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:pPanel : 2 : PICKER_BASE_TAG+11 : pickerNames[2] : yi : OOG_PICKER_HIT];
 
 #ifdef GOT_DIGITALDELAY
     yi += (OOG_PICKER_HIT+OOG_YSPACER);
     // 2/19/21 add 3 delay sliders
     for (i=0;i<3;i++)
     {
-        float smin = 0.0;
         NSString *dog = [NSString stringWithFormat:@"rowi %d",i];
-        [self addSliderRow:pPanel : i+12 : SLIDER_BASE_TAG + i+12 : dog : yi : OOG_SLIDER_HIT:smin:100.0];
+        [self addSliderRow:pPanel : i+12 : SLIDER_BASE_TAG + i+12 : dog : yi : OOG_SLIDER_HIT:0.0:1.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
     }
 #endif
@@ -380,10 +354,10 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     // CHECK number, is it 15?? or 14? above were 3 sliders at 12...
     // 9/15 KRASH sending slider tag 15!
     [self addSliderRow:llPanel : 15 : SLIDER_BASE_TAG + 15 : @"Latitude (Y)" : yi :
-        OOG_SLIDER_HIT: -M_PI/2.0 : M_PI/2.0];    //  9/15 was -90.0:90.0];
+        OOG_SLIDER_HIT: 0.0 : 1.0];
     yi+=ys;
     [self addSliderRow:llPanel : 16 : SLIDER_BASE_TAG + 16 : @"Longitude (X)" : yi :
-        OOG_SLIDER_HIT:-M_PI : M_PI]; //9/15 was -180.0:180.0];
+        OOG_SLIDER_HIT:0.0 : 1.0];
     //9/11 text entry fields...
     yi+=ys;
     [self addTextRow:llPanel :0 :TEXT_BASE_TAG+19 : textFieldNames[0] :yi :OOG_TEXT_HIT ];
@@ -413,9 +387,9 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     // add patch / soundpack pickers
     yi += ys;
     ys = OOG_PICKER_HIT;
-    [self addPickerRow:paPanel : 3 : PICKER_BASE_TAG+3 : pickerNames[3] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:paPanel : 3 : PICKER_BASE_TAG+17 : pickerNames[3] : yi : OOG_PICKER_HIT];
     yi += ys;
-    [self addPickerRow:paPanel : 4 : PICKER_BASE_TAG+4 : pickerNames[4] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:paPanel : 4 : PICKER_BASE_TAG+18 : pickerNames[4] : yi : OOG_PICKER_HIT];
     
     //5/23 make pro button only on RH side where controls are
     CGRect pRect = pPanel.frame;
@@ -501,22 +475,22 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 //======(controlPanel)==========================================
 -(void) setDefaults
 {
-    _threshold    = 10;
-    _overdrive    = 1; 
-    _portamento   = 0;
-    _bottomMidi   = 30;
-    _topMidi      = 90;
-    _keySig       = 0; //Major scale
-    _vibWave      = 1; //SineWave?
-    _vibLevel     = 0;
-    _vibSpeed     = 10;
-    _vibeWave      = 1; //4/7/21 SineWave?
-    _vibeLevel     = 0;
-    _vibeSpeed     = 10;
-    // 2/19 no delay by default
-    _delayTime    = 0;
-    _delaySustain = 0;
-    _delayMix     = 0;
+//    _threshold    = 10;
+//    _overdrive    = 1;
+//    _portamento   = 0;
+//    _bottomMidi   = 30;
+//    _topMidi      = 90;
+//    _keySig       = 0; //Major scale
+//    _vibWave      = 1; //SineWave?
+//    _vibLevel     = 0;
+//    _vibSpeed     = 10;
+//    _vibeWave      = 1; //4/7/21 SineWave?
+//    _vibeLevel     = 0;
+//    _vibeSpeed     = 10;
+//    // 2/19 no delay by default
+//    _delayTime    = 0;
+//    _delaySustain = 0;
+//    _delayMix     = 0;
     _vname        = @"empty name";
     _vcomment     = @"empty comment";
 }
@@ -528,7 +502,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 {
     //9/15 new UI element...
    NSArray* A = [goog addSliderRow : parent : tag : sliderNames[index] :
-                           yoff : viewWid: ysize :smin : smax]; //9/15 was 0.0 : 100.0];
+                           yoff : viewWid: ysize :smin : smax];
    if (A.count > 0)
       {
         UISlider* slider = A[0];
@@ -638,73 +612,208 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 } //end addSliderRow
 
 
+//annnd dict is ["longitude": 0.3403361511230469, "threshold": 0.05, "topmidi": "80.00", "pchan": "9.00", "nchan": "3.00", "type": "0.00", "nfixed": 0.2509803921568627, "rottrigger": 0, "bottommidi": "0.00", "comment": "", "vchan": "9.00", "latitude": 0.7079831695556641, "patch": "synthpiano3", "name": "voice_00001", "pfixed": 0.5019607843137255, "vfixed": 0.5019607843137255, "level": 0.00392156862745098]
+
 
 //======(controlPanel)==========================================
-//  Updates our controls...
+//CLUGEY: replace w/ dict?
+-(int) findPatchFromString : (NSString *)s
+{
+    for (int i=0;i<_paNames.count;i++)
+    {
+        NSString *test = _paNames[i];
+        test = [test lowercaseString];
+        if ([test isEqualToString:s]) return i;
+    }
+    return 0;
+}
+
+//======(controlPanel)==========================================
+//CLUGEY: replace w/ dict?
+-(int) findSoundpackFromString : (NSString *)s
+{
+    for (int i=0;i<_spNames.count;i++)
+    {
+        NSString *test = _spNames[i];
+        test = [test lowercaseString];
+        if ([test isEqualToString:s]) return i;
+    }
+    return 0;
+}
+
+//======(controlPanel)==========================================
+//  Updates our controls... LONG AND TEDIOUS,
+//    takes incoming dictionary of name / value pairs, and
+//    tries to find the proper control for each
 //  NOTE: tag 0 cannot be used with buttons, makes bad stuff happen
 -(void) configureView
 {
-    [sliders[0] setValue:_threshold];
-    [sliders[1] setValue:_bottomMidi];
-    [sliders[2] setValue:_topMidi];
-    [pickers[0] selectRow:_keySig inComponent:0 animated:YES];
-    [sliders[4] setValue:_overdrive];
-    [sliders[5] setValue:_portamento];
-    [sliders[6] setValue:_vibLevel];
-    [sliders[7] setValue:_vibSpeed];
-    [sliders[9] setValue:_vibeLevel]; //6/21 wups wrong indices here!
-    [sliders[10] setValue:_vibeSpeed];
-    [sliders[12] setValue:_delayTime];
-    [sliders[13] setValue:_delaySustain];
-    [sliders[14] setValue:_delayMix];
+    [pickers[3] reloadAllComponents];
+    [pickers[4] reloadAllComponents];
+    [self configureViewWithReset : FALSE];
+}
 
-    [pickers[1] selectRow:_vibWave inComponent:0 animated:YES];
-    [pickers[2] selectRow:_vibeWave inComponent:0 animated:YES]; //6/21 wups forgot
+//======(controlPanel)==========================================
+-(void) configureViewWithReset : (BOOL)reset
+{
+    //Now how do I peel this off? it needs a LOT of arguments!!
+    //  but it would be easier to reuse this method across all panels!!!
+    //make some dicts...
+    NSMutableDictionary *tagsByName = [[NSMutableDictionary alloc] init];
+    for (int i=0;i<C_ALLPARAMCOUNT;i++)
+    {
+        NSNumber *nn = [NSNumber numberWithInt:i];
+        [tagsByName setObject:nn forKey:allParams[i]];
+    }
+    NSMutableDictionary *controlsByTag = [[NSMutableDictionary alloc] init];
+    for (int j=0;j<MAX_CONTROL_PICKERS;j++) if (pickers[j] != nil)
+    {
+        NSNumber *nn = [NSNumber numberWithInt:(int)(pickers[j].tag % 1000)]; //only keep lsb of tag
+        [controlsByTag setObject:pickers[j] forKey:nn];
+    }
+    for (int j=0;j<MAX_CONTROL_SLIDERS;j++) if (sliders[j] != nil)
+    {
+        NSNumber *nn = [NSNumber numberWithInt:(int)(sliders[j].tag % 1000)];
+        [controlsByTag setObject:sliders[j] forKey:nn];
+    }
+    for (int j=0;j<MAX_CONTROL_TEXTFIELDS;j++) if (textFields[j] != nil)
+    {
+        NSNumber *nn = [NSNumber numberWithInt:(int)(textFields[j].tag % 1000)];
+        [controlsByTag setObject:textFields[j] forKey:nn];
+    }
+
+    //look at incoming params dict...
+    // Something funny going on with bottomMidi, tries to set slider negative.
+    //  this means there is a bug converting this param from its stored value to
+    //  a value the UI can use... most other double params look OK
+    for (NSString*key in _paramDict.allKeys)
+    {
+        BOOL ok = TRUE;
+        if (reset) //reset? make sure some stuff doesnt reset!
+        {
+            if ([@[@"patch",@"soundpack",@"name"] containsObject: key] ) //bad params!
+                {NSLog(@" bing! bad param %@",key);ok=FALSE;}
+        }
+        if (!ok) continue;
+        NSLog(@"key %@",key);
+        NSNumber *tagnum = tagsByName[key];
+        if (tagnum != nil) //Found it!?
+        {
+            int tag = tagnum.intValue;
+            NSObject* genericControl = controlsByTag[tagnum];
+            //our dict contains arrays, we want the last item
+            NSArray* a = _paramDict[key];
+            if (a.count > 1) //got something?
+            {
+                id<NSObject> value;
+                if (!reset)
+                    value = [a lastObject]; //get current value..
+                else if (a.count > 4)
+                    value = [a objectAtIndex:4]; //get default..
+                NSString *ss = @"";
+                NSNumber *nn = @0;
+                if ([value isKindOfClass:[NSString class]]) ss = (NSString*) value;
+                else                                        nn = (NSNumber*) value;
+                NSLog(@"   match param %@ tag %d : %@ %@",key,tagnum.intValue,nn,ss);
+
+
+                if ([genericControl isKindOfClass:[UISlider class]]) //setup slider
+                {
+                    double dval = nn.doubleValue;
+                    if (reset && a.count >= 6) //convert default to unit basis
+                    {
+                        NSNumber *nmult = [a objectAtIndex:5]; //get conversion base and range
+                        NSNumber *noff = [a objectAtIndex:6];  //this is totally done in oogieScene btw!
+                        double dmult = nmult.doubleValue;
+                        double doff  = noff.doubleValue;
+                        if (dmult != 0.0) dval = (dval - doff) / dmult;
+                    }
+                    UISlider *s = (UISlider*)genericControl;
+                    NSLog(@" ...set slider tag[%d] to %f",tag,dval);
+                    if (reset) //reset? let parent know
+                        [self.delegate didSetControlValue:tag:(float)dval:key:@"":FALSE];
+                    [s setValue:dval];
+                }
+                else if ([genericControl isKindOfClass:[UIPickerView class]]) //setup picker
+                    {
+                        int row = 0;
+                        if (!reset) //default picker val is 0 for now, not default? get value
+                        {
+                            //we may have a number or string...
+                            if (ss != nil)
+                            {
+                                if (tag == 17) // patch needs a string...
+                                    row = [self findPatchFromString:ss];
+                                else if (tag == 18) // soundpack needs a string...
+                                    row = [self findSoundpackFromString:ss];
+                                else row = ss.intValue; //try to get int from string
+                            }
+                            else //numeric? just pull it for picker...
+                            {
+                                row = nn.intValue;
+                            }
+                        } //end !default
+                        
+                        UIPickerView *p = (UIPickerView*)genericControl;
+                        NSLog(@" ...set picker tag[%d] to row %d",tag,row);
+                        if (reset) //reset? let parent know
+                            [self.delegate didSetControlValue:tag:(float)row:key:@"":FALSE];
+                        [p selectRow:row inComponent:0 animated:YES];
+                    }
+                else if ([genericControl isKindOfClass:[UITextField class]]) //setup text
+                {
+                    UITextField *t = (UITextField*)genericControl;
+                    NSLog(  @".... set text tag[%d] to [%@]",tag,ss);
+                    if (reset) //default text?
+                    {
+                        if ([key isEqualToString:@"name"]) ss = @"shape000"; //kinda clugey!
+                    }
+                    t.text = ss;
+                    if (reset) //reset? let parent know
+                        [self.delegate didSetControlValue:tag:0.0:key:ss:FALSE];
+                }
+            }
+        } //end if tagnum
+    } //end for key
     
-    //9/11 add name/comment text fields
-    [textFields[0] setText:_vname];
-    [textFields[1] setText:_vcomment];
-
     resetButton.hidden = !_wasEdited;
     // 4/30 WTF? why wasnt this here earlier?
     //BOOL gotPro = (cappDelegate.proMode || cappDelegate.proModeDemo);
     proButton.hidden = TRUE; // 8/11 FIX gotPro;
-//    for (int i=4;i<11;i++) [sliders[i] setEnabled:TRUE]; //8/11 FIX gotPro];             //5/23 amateurs cannot use bottom sliders
-//    for (int i=1;i<3;i++) pickers[i].userInteractionEnabled = TRUE; //8/11 FIX gotPro; //       nor bottom pickers...
-
-    //NSLog(@" set up patch/soundpack pickers");
-    [pickers[3] reloadAllComponents];
-    [pickers[4] reloadAllComponents];
-    
 }  //end configureView
 
 
 //======(controlPanel)==========================================
-// 8/6 wups, had wrong param order!
-// 9/14/21 NOTE use of paramNames in oogie2D version!
+// OBSOLETE? generated weird errors for some reason
 -(void) sendAllParamsToParent
 {
-    int spnum = 0;
-    int ppnum = 0;
-    [self.delegate didSetControlValue:0  :_threshold: sliderParams[spnum++] : @"" :FALSE]; //7/11 add undoable arg
-    [self.delegate didSetControlValue:1  :_bottomMidi: sliderParams[spnum++] : @"" :FALSE];
-    [self.delegate didSetControlValue:2  :_topMidi: sliderParams[spnum++] :@"":FALSE];
-    [self.delegate didSetControlValue:3  :(float)_keySig: pickerParams[ppnum++] :@"":FALSE];
-    spnum++; //skip picker, point to next slider name
-    [self.delegate didSetControlValue:4  :_overdrive:sliderParams[spnum++] :@"":FALSE];
-    [self.delegate didSetControlValue:5  :_portamento:sliderParams[spnum++] :@"":FALSE];
-    [self.delegate didSetControlValue:6  :_vibLevel:sliderParams[spnum++] :@"":FALSE];
-    [self.delegate didSetControlValue:7  :_vibSpeed:sliderParams[spnum++] :@"":FALSE];
-    [self.delegate didSetControlValue:8  :_vibWave:pickerParams[ppnum++] :@"":FALSE];
-    spnum++;  //skip picker, point to next slider name
-    [self.delegate didSetControlValue:9  :_vibeLevel:sliderParams[spnum++] :@"":FALSE]; //7/4/11 wups, forgot new params!
-    [self.delegate didSetControlValue:10 :_vibeSpeed:sliderParams[spnum++] :@"":FALSE];
-    [self.delegate didSetControlValue:11 :_vibeWave:pickerParams[ppnum++] :@"":FALSE];
-    spnum++;  //skip picker, point to next slider name
-    [self.delegate didSetControlValue:12 :_delayTime:sliderParams[spnum++] :@"":FALSE];
-    [self.delegate didSetControlValue:13 :_delaySustain:sliderParams[spnum++] :@"":FALSE];
-    [self.delegate didSetControlValue:14 :_delayMix:sliderParams[spnum++] :@"":FALSE];
-}
+    for (int i=0;i<C_ALLPARAMCOUNT;i++)
+    {
+        NSString *pname = allParams[i];
+//        NSNumber *nn = _defaultDict[pname];
+        NSArray* a = _paramDict[pname];
+        if (a.count > 3) //got something?
+        {
+            id<NSObject> value = [a lastObject]; //get value..
+            NSString *ss = @"";
+            NSNumber *nn = @0;
+            if ([value isKindOfClass:[NSString class]]) ss = [a lastObject];
+            else                                        nn = [a lastObject];
+            //NSLog(@"   default: param %@ tag %d : %@ %@",pname,tagnum.intValue,nn,ss);
+            double dval = 0.0;
+            if (nn != nil)
+            {
+                dval = nn.doubleValue;
+                [self.delegate didSetControlValue : i : dval: pname : @"" :FALSE];
+            }
+            else //use string?
+            {
+                dval = ss.doubleValue;
+                [self.delegate didSetControlValue : i :dval: pname : ss :FALSE];
+            }
+        }
+    }
+} //end sendAllParamsToParent
 
 //======(controlPanel)==========================================
 // 8/3 update session analytics here..
@@ -726,19 +835,9 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
     UISlider *slider = (UISlider*)sender;
     int tagMinusBase = (int)slider.tag-1000; // 7/11 new name
-    //Get slider, associated param, and pass back to parent!
     float value = slider.value;
-    //NSLog(@" sval %f",value);
-    NSString *name = dice ? @"" : sliderParams[tagMinusBase];
-    //9/15 diagnostic ONLY, delete this ASAP
-    if (name == nil)
-    {
-        NSLog(@"nil name in updateSlider...");
-        return;
-        
-    }
-    [self.delegate didSetControlValue:tagMinusBase:value:sliderParams[tagMinusBase]:name:TRUE];
-
+    NSString *name = dice ? @"" : allParams[tagMinusBase];
+    [self.delegate didSetControlValue:tagMinusBase:value:allParams[tagMinusBase]:name:TRUE];
 } //end updateSliderAndDelegateValue
 
 
@@ -829,16 +928,16 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     //Randomize our 3 pickers...
     int row = (int)drand(0,12);
     [pickers[0] selectRow:row inComponent:0 animated:NO]; //asdf
-    [self.delegate didSetControlValue:3 :(float)row:pickerParams[0]:@"":FALSE]; //messy hard coded tag!
+    [self.delegate didSetControlValue:3 :(float)row:allParams[3]:@"":FALSE]; //messy hard coded tag!
     // what about using OOGIE2D flag here!?!?!
     //if (cappDelegate.proMode || cappDelegate.proModeDemo) // 8/29 Pro Mode? bottom panel ok
     //{
         row = (int)drand(0,4);
         [pickers[1] selectRow:row inComponent:0 animated:NO];
-        [self.delegate didSetControlValue:8 :(float)row:pickerParams[1]:@"":FALSE]; //messy hard coded tag!
+        [self.delegate didSetControlValue:8 :(float)row:allParams[8]:@"":FALSE]; //messy hard coded tag!
         row = (int)drand(0,4); //4/8 randomize ampl wave
         [pickers[2] selectRow:row inComponent:0 animated:NO];
-        [self.delegate didSetControlValue:11 :(float)row:pickerParams[2]:@"":FALSE]; //messy hard coded tag!
+        [self.delegate didSetControlValue:11 :(float)row:allParams[11]:@"":FALSE]; //messy hard coded tag!
     //}
     [self.delegate didSelectControlDice]; //4/29
     diceRolls++; //9/9 for analytics
@@ -872,10 +971,9 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 // 4/3 reset called via button OR end of proMode demo
 -(void) resetControls
 {
+    [self configureViewWithReset: TRUE];
     resettingNow = TRUE; //used w/ undo
-    [self setDefaults];
-    [self configureView];
-    [self sendAllParamsToParent];
+   //NO NEED NOW? [self sendAllParamsToParent];
     _wasEdited         = FALSE;
     resetButton.hidden = TRUE;
     resettingNow       = FALSE;
@@ -916,20 +1014,22 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 {
     //NSLog(@" get picker tag %d",row);
     NSString *title = @"";
-    if (tag == PICKER_BASE_TAG)
+    //tags pickers, 17 / 18  /  3  /  8  / 11
+
+    if (tag == PICKER_BASE_TAG+3)
     {
         title = keySigs[row];
     }
-    else if (tag == PICKER_BASE_TAG+1 || tag == PICKER_BASE_TAG+2)
+    else if (tag == PICKER_BASE_TAG+8 || tag == PICKER_BASE_TAG+11)
     {
         title = vibratoWaves[row];
     }
-    else if (tag == PICKER_BASE_TAG+3) //patch
+    else if (tag == PICKER_BASE_TAG+17) //patch
     {
         if (_paNames != nil) title = _paNames[row];
 
     }
-    else if (tag == PICKER_BASE_TAG+4) //soundpack
+    else if (tag == PICKER_BASE_TAG+18) //soundpack
     {
         if (_spNames != nil) title = _spNames[row];
 
@@ -948,27 +1048,15 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 // 6/18 redo
 - (void)pickerView:(UIPickerView *)pickerView didSelectRow: (NSInteger)row inComponent:(NSInteger)component {
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
-    int which = 0;
-    if (pickerView.tag == PICKER_BASE_TAG)
+    int liltag = pickerView.tag - PICKER_BASE_TAG; //just pass tags to parent now
+
+    NSString *patchName = @"";
+    if (liltag == 17) //patch? pass back our name...
     {
-        which = 3;
+        if (row > 0) patchName = _paNames[row-1];
+        else patchName = @"random";
     }
-    else if (pickerView.tag == PICKER_BASE_TAG+1) //vib wave
-    {
-        which = 8;
-    }
-    else if (pickerView.tag == PICKER_BASE_TAG+3) //patch
-        which = 17;
-    else if (pickerView.tag == PICKER_BASE_TAG+4) //soundpack
-        which = 18;
-    else{ //4/8/21 ampl vibe wave
-        which = 11;
-    }
-    int liltag = (int)pickerView.tag - PICKER_BASE_TAG;
-    NSString *patchName;
-    if (row > 0) patchName = _paNames[row-1];
-    else patchName = @"random";
-    [self.delegate didSetControlValue:which :(float)row : pickerParams[liltag] : patchName : !rollingDiceNow && !resettingNow];   //7/11
+    [self.delegate didSetControlValue:liltag :(float)row : allParams[liltag] : patchName : !rollingDiceNow && !resettingNow];   //7/11
 
     //8/3 update picker activity count
     int pMinusBase = (int)(pickerView.tag-PICKER_BASE_TAG);
@@ -980,14 +1068,15 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 // tell the picker how many rows are available for a given component
 - (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component {
     int tag = (int)pickerView.tag;
-    if ( tag == PICKER_BASE_TAG)  return 12;
-    else if ( tag == PICKER_BASE_TAG+1 || tag == PICKER_BASE_TAG+2 )  //vib ratos
+    //tags pickers, 17 / 18  /  3  /  8  / 11
+    if ( tag == PICKER_BASE_TAG + 3)  return 12;
+    else if ( tag == PICKER_BASE_TAG+8 || tag == PICKER_BASE_TAG+11 )  //vib ratos
         return 4;
-    else if ( tag == PICKER_BASE_TAG+3) //patch
+    else if ( tag == PICKER_BASE_TAG+17) //patch
         {
             if (_paNames != nil) return _paNames.count;
         }
-    else if ( tag == PICKER_BASE_TAG+4) //soundpack
+    else if ( tag == PICKER_BASE_TAG+18) //soundpack
         {
             if (_spNames != nil) return _spNames.count;
         }
@@ -1077,8 +1166,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     [textField resignFirstResponder]; //Close keyboard
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
-    int tf = liltag - 19;
-    [self.delegate didSetControlValue:liltag : 0.0 : textParams[tf] : s: FALSE];
+    [self.delegate didSetControlValue:liltag : 0.0 : allParams[liltag] : s: FALSE];
     return YES;
 }
 

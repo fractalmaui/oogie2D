@@ -19,7 +19,12 @@ double drand(double lo_range,double hi_range );
 NSString *ssliderNames[] = {@"Rotation",@"Shape XPos",@"Shape YPos",@"Shape ZPos",
     @"Tex UPos",@"Tex YPos",@"Tex UScale",@"Tex VScale"
 }; //2/19 note paddings b4 delay for vibwave
+
+NSString *ssliderParams[] = {@"",@"rotation",@"",@"xpos",@"ypos",@"zpos",
+    @"texxoffset",@"texyoffset",@"texxscale",@"texyscale",@"name",@"comment"
+};
 NSString *spickerNames[] = {@"Texture",@"RotType"};
+NSString *spickerParams[] = {@"texture",@"rotationtype"};
 NSString *stextFieldNames[] = {@"Texture",@"Name",@"Comments"};
 
 //9/12 dupe from oogieShape, use swift vars if possible?
@@ -218,7 +223,6 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
     
     xi = OOG_XMARGIN;
     yi = xi; //top of form
-
     // texture picker
     [self addPickerRow:sPanel : 0 : PICKER_BASE_TAG+0 : spickerNames[0] : yi : OOG_PICKER_HIT];
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
@@ -237,18 +241,18 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
         [self addSliderRow:sPanel : i+1 : SLIDER_BASE_TAG + 3 + i : ssliderNames[i+1] : yi : OOG_SLIDER_HIT:-10.0:10.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
     }
-    // U/V offset
-    for (i=0;i<2;i++)
+    // U/V offset , U/V scale
+    for (i=0;i<4;i++)
     {
         [self addSliderRow:sPanel : i+4 : SLIDER_BASE_TAG + 6 + i : ssliderNames[i+4] : yi : OOG_SLIDER_HIT:0.0:100.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
     }
-    // U/V scale
-    for (i=0;i<2;i++)
-    {
-        [self addSliderRow:sPanel : i+7 : SLIDER_BASE_TAG + 8 + i : ssliderNames[i+7] : yi : OOG_SLIDER_HIT:1.0:100.0];
-        yi += (OOG_SLIDER_HIT+OOG_YSPACER);
-    }
+//    // U/V scale
+//    for (i=0;i<2;i++)
+//    {
+//        [self addSliderRow:sPanel : i+7 : SLIDER_BASE_TAG + 8 + i : ssliderNames[i+6] : yi : OOG_SLIDER_HIT:1.0:100.0];
+//        yi += (OOG_SLIDER_HIT+OOG_YSPACER);
+//    }
 
     //9/11 text entry fields...
     yi+=ys;
@@ -490,14 +494,7 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
 // 8/3 update session analytics here..
 -(void)sliderStoppedDragging:(id)sender
 {
-    UISlider *slider = (UISlider*)sender;
-    int tagMinusBase = (int)(slider.tag-SLIDER_BASE_TAG);
-    //8/3 update slider activity count
-    if (tagMinusBase>=0 && tagMinusBase<MAX_CONTROL_SLIDERS) sChanges[tagMinusBase]++;
-    NSString *name = ssliderNames[tagMinusBase]; //7/11 for undo
-    float value    = slider.value;
-    NSLog(@" send shape value: UNCOMMENT! %d %d",tagMinusBase,value);
-    [self.delegate didSetShapeValue:tagMinusBase:value:name:TRUE];
+    [self updateSliderAndDelegateValue : sender : FALSE];
 }
 
 //======(shapePanel)==========================================
@@ -517,8 +514,9 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
     float value = slider.value;
     //NSLog(@" sval %f",value);
     NSString *name = dice ? @"" : ssliderNames[tagMinusBase];
-    NSLog(@" send shape value: UNCOMMENT! %d %d",tagMinusBase,value);
-    [self.delegate didSetShapeValue:tagMinusBase:value:name:TRUE];
+    NSString *pname = ssliderParams[tagMinusBase];
+    //NSLog(@" send shape value: UNCOMMENT! %d %d",tagMinusBase,value);
+    [self.delegate didSetShapeValue:tagMinusBase:value:pname:name:TRUE];
 
 } //end updateSliderAndDelegateValue
 
@@ -691,9 +689,9 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
     //int which = 0;
     int liltag = (int)pickerView.tag - PICKER_BASE_TAG;
     if (liltag == 0)
-        [self.delegate didSetShapeValue:liltag :(float)row:_texNames[row]: !rollingDiceNow && !resettingNow];   //7/11
+        [self.delegate didSetShapeValue:liltag :(float)row:_texNames[row]: @"texture": !rollingDiceNow && !resettingNow];   //7/11
     else
-        [self.delegate didSetShapeValue:liltag :(float)row:spickerNames[liltag]: !rollingDiceNow && !resettingNow];   //7/11
+        [self.delegate didSetShapeValue:liltag :(float)row:spickerNames[liltag]: @"rotationtype": !rollingDiceNow && !resettingNow];   //7/11
 //
 //    //8/3 update picker activity count
 //    int pMinusBase = (int)(pickerView.tag-PICKER_BASE_TAG);
@@ -774,7 +772,7 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
     [textField resignFirstResponder]; //Close keyboard
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
-    [self.delegate didSetShapeValue:liltag :0.0:s:FALSE];
+    [self.delegate didSetShapeValue:liltag :0.0:s:@"": FALSE];
     return YES;
 }
 

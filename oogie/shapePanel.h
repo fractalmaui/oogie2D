@@ -90,7 +90,7 @@
 
 @protocol shapePanelDelegate <NSObject>
 @optional
--(void) didSetShapeValue  : (int) which : (float) newVal : (NSString*) pname : (BOOL)undoable;
+-(void) didSetShapeValue  : (int) which : (float) newVal : (NSString*) pname : (NSString*) pvalue : (BOOL)undoable;
 //-(void) didSelectRight ;
 //-(void) didSelectLeft ;
 //-(void) controlNeedsProMode ;

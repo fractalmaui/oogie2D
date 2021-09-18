@@ -65,30 +65,13 @@
 
 
 @property (nonatomic, unsafe_unretained) id <controlPanelDelegate> delegate; // receiver of completion messages
-
-@property (nonatomic, assign) float threshold;
-@property (nonatomic, assign) float overdrive;
-@property (nonatomic, assign) float portamento;
-@property (nonatomic, assign) int yTop; //9/14 cluge
-@property (nonatomic, assign) int bottomMidi;
-@property (nonatomic, assign) int topMidi;
-@property (nonatomic, assign) int key;
-@property (nonatomic, assign) int keySig;
-@property (nonatomic, assign) int vibLevel;
-@property (nonatomic, assign) int vibSpeed;
-@property (nonatomic, assign) int vibWave;
-@property (nonatomic, assign) int vibeLevel;
-@property (nonatomic, assign) int vibeSpeed;
-@property (nonatomic, assign) int vibeWave;
-@property (nonatomic, assign) int delayTime;
-@property (nonatomic, assign) int delaySustain;
-@property (nonatomic, assign) int delayMix;
 @property(nonatomic,assign)   BOOL wasEdited;
 // 9/1/21 soundpack / patch arrays
 @property (nonatomic, strong) NSArray *spNames;
 @property (nonatomic, strong) NSArray *paNames;
 @property (nonatomic, strong) NSString *vname;
 @property (nonatomic, strong) NSString *vcomment;
+@property (nonatomic, strong) NSDictionary *paramDict;
 
 
 - (id)initWithFrame:(CGRect)frame;

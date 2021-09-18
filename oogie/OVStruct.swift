@@ -149,6 +149,18 @@ struct OVStruct : Codable {
         bottomMidi  = 40   // 5/14 new defaults
         topMidi     = 80
         keySig      = 0
+        //8/11 performance params
+        portamento   = 0
+        vibLevel     = 0
+        vibSpeed     = 0
+        vibWave      = 0
+        vibeLevel    = 0
+        vibeSpeed    = 0
+        vibeWave     = 0
+        delayTime    = 0
+        delaySustain = 0
+        delayMix     = 0
+
 
     }
     

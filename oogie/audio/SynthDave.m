@@ -60,6 +60,7 @@
 // 6/27     add more custom releaseNote... methods
 // 7/7      add getBufferChans, copyBufferOutResampled
 // 9/10     fix deprecations in loadSampleFromPath
+// 9/16     fix potential crash in getVibOffset
 #import <QuartzCore/CABase.h>
 #import "SynthDave.h"
 #include "oogieMidiStubs.h"
@@ -2046,7 +2047,10 @@ short *audioRecBuffer;
 //  CRASH: 10/8/20 can this set phase < 0???
 -(float) getVibOffset : (float) pitch : (int) n
 {
-    int wave = VIBRATO_WAVE_BASE + tones[n].vibWave;
+      //9/16/21 add insurance...
+    int vw = tones[n].vibWave;
+    if (vw < 0 || vw > 3) return 0.0;
+    int wave = VIBRATO_WAVE_BASE + vw;
     float findex = tones[n].vibIndex;
     float sval   = sBufs[wave][(int)findex]; // get raw wave value, range 0 to 1
     sval = (2.0 * sval) - 1.0; //4/30 convert to range -1 to 1...

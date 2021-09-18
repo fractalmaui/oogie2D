@@ -825,7 +825,7 @@ class OogieScene: NSObject {
                     //9/14/21 TEST workString = getSelectedFieldStringForKnobValue (kv : Float(workDouble))
                     changeVoicePatch(name:workString)
                 }
-            case "bottommidi": //midi limits, need to hi/lo range check
+            case "bottommidi": //midi limits, need hi/lo range check
                 workDouble = Double(min(selectedVoice.OVS.topMidi-1,
                                         Int(unitToParam(inval: workDouble))))
             case "topmidi":
@@ -834,7 +834,10 @@ class OogieScene: NSObject {
             case "midichannel": //fields that need pre-conversion before storage
                 workDouble = unitToParam(inval: workDouble) //4/26 convert range!
             
-            default: break
+            case "keysig" , "vibwave", "vibewave": break;//do nothing
+            default:
+                workDouble = unitToParam(inval: workDouble) //9/15/21 Convert to desired range
+                break
             } //end preprocessing switch
             
             //4/25 string? only set val on change...
