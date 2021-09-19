@@ -27,7 +27,7 @@
 #define PICKER_BASE_TAG 2000
 #define TEXT_BASE_TAG 3000
  // obPopupDelegate,
-@interface controlPanel : UIView <UIGestureRecognizerDelegate,UITextFieldDelegate,
+@interface controlPanel : UIView <UIGestureRecognizerDelegate,UITextFieldDelegate,UITextViewDelegate,
                             UIPickerViewDelegate,UIPickerViewDataSource>
 {
     int viewWid,viewHit,buttonWid,buttonHit;
@@ -69,8 +69,6 @@
 // 9/1/21 soundpack / patch arrays
 @property (nonatomic, strong) NSArray *spNames;
 @property (nonatomic, strong) NSArray *paNames;
-@property (nonatomic, strong) NSString *vname;
-@property (nonatomic, strong) NSString *vcomment;
 @property (nonatomic, strong) NSDictionary *paramDict;
 
 

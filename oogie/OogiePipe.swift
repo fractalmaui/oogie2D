@@ -26,8 +26,8 @@ let InputChanParams      : [Any]   = ["InputChannel", "string", "Red", "Green", 
                                   "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow"]
 let OutputParamParams    : [Any] = ["OutputParam",  "string","mt"]
 //Not confusing at all, huh? This is the param where the pipename is entered
-let PipeLoRangeParams    : [Any] = ["LoRange",      "text", "mt"]
-let PipeHiRangeParams    : [Any] = ["HiRange",      "text", "mt"]   //..12.9 wups
+let PipeLoRangeParams    : [Any] = ["LoRange" , "double", 0.0 , 255.0 , 128.0, 255.0, 0.0 ]
+let PipeHiRangeParams    : [Any] = ["HiRange" , "double", 0.0 , 255.0 , 128.0, 255.0, 0.0 ]
 let PipeNameParams       : [Any] = ["Name",         "text", "mt"]
 let PipeCommParams       : [Any] = ["Comment",      "text", "mt"]
 // This is an array of all parameter names...
@@ -67,6 +67,14 @@ struct OogiePipe {
     //-----------(OogiePipe)=============================================
     func setupParams()
     {
+        //9/19/21 also add string keys
+        pipeParamsDictionary["inputchannel"] = InputChanParams
+        pipeParamsDictionary["outputparam"]  = OutputParamParams
+        pipeParamsDictionary["lorange"]      = PipeLoRangeParams
+        pipeParamsDictionary["hirange"]      = PipeHiRangeParams
+        pipeParamsDictionary["name"]         = PipeNameParams
+        pipeParamsDictionary["comment"]      = PipeCommParams
+
         // Load up params dictionary with string / array combos
         pipeParamsDictionary["00"] = InputChanParams
         pipeParamsDictionary["01"] = OutputParamParams
@@ -211,6 +219,50 @@ struct OogiePipe {
          paramListDirty = false
          return paramList
      } //end getParamList
+    
+    
+    //======(OogiePipe)=============================================
+    // 9/18/21 new, returns dict with packed param arrays... asdf
+    func getParamDict() -> Dictionary<String,Any>
+    {
+        var d = Dictionary<String, Any>()
+        for pname in pipeParamNames //look at all params...
+        {
+            print("pack pipe param \(pname)")
+            let plow = pname.lowercased()
+            let pTuple = getParam(named : plow)
+            let sv = pTuple.sParam
+            var dv = pTuple.dParam as Double
+            if let paramz = pipeParamsDictionary[plow]  //get param info...
+            {
+                var workArray = paramz  //copy
+                if let ptype = paramz[1] as? String
+                {
+                    if ptype == "double"  //double type? do some conversion
+                    {
+                        let lolim  = paramz[6] as! Double
+                        let lrange = paramz[5] as! Double
+                        if lrange != 0.0 //9/16 DO not apply range shift to int params!
+                        {
+                            dv = (dv - lolim) / lrange
+                        }
+                        workArray.append(NSNumber(value:dv))
+                    } //end double/int type
+                    else if ptype == "int"     //9/16 int type? no conversion
+                    {
+                        workArray.append(NSNumber(value:dv))
+                    }
+                    else //string?
+                    {
+                        workArray.append(sv)
+                    }
+                }  //end let ptype
+                d[plow] = workArray
+            } //end let paramz
+        } //end for pname
+        return d
+    } //end getParamList
+
 
     //======(OogiePipe)=============================================
     // 4/22/20 gets param named "whatever", returns tuple
@@ -221,9 +273,9 @@ struct OogiePipe {
         switch (name)  //depending on param, set double or string
         {
         case "inputchannel":
-            sp = PS.fromChannel
+            sp = PS.fromChannel.lowercased() //9/19/21
         case "outputparam":
-            sp = PS.toParam
+            sp = PS.toParam.lowercased() //9/19/21
         case "lorange" : // 12/9 add lo/hi range as strings
             dp = PS.loRange
             let lorg = PS.loRange
@@ -250,7 +302,7 @@ struct OogiePipe {
         switch (name)
         {
         case "inputchannel" : PS.fromChannel = sval
-        case "outputparam"  :  PS.toParam    = sval
+        case "outputparam"  : PS.toParam    = sval
         case "lorange"      : PS.loRange     = dval ; setupRange(lo: PS.loRange,hi: PS.hiRange)  //5/2
         case "hirange"      : PS.hiRange     = dval ; setupRange(lo: PS.loRange,hi: PS.hiRange)  //5/2
         case "name"         : PS.name        = sval

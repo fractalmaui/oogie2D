@@ -16,6 +16,14 @@
 double drand(double lo_range,double hi_range );
 
 //let pipeParamNames : [String] = ["InputChannel", "OutputParam","LoRange","HiRange","Name","Comment"]
+NSString *pallParams[] = {@"inputchannel",@"outputparam",@"lorange",@"hirange",@"name",@"comment"
+};
+#define P_ALLPARAMCOUNT 6  //should batch pallParams above
+
+
+NSString *inputChanParams [] = { @"Red", @"Green", @"Blue", @"Hue",
+    @"Luminosity", @"Saturation", @"Cyan", @"Magenta", @"Yellow"};
+#define P_INPUTCHANCOUNT 9  //should batch pallParams above
 
 //pipe has 2 pickers, 2 sliders, and 2 texts
 NSString *pisliderNames[] = {@"LoRange",@"HiRange"};
@@ -44,17 +52,10 @@ NSArray *opParams;
       //  cappDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
         // 9/15 add UI utilities
         goog = [genOogie sharedInstance];
-        
-        [self setDefaults];
         [self setupView:frame];
-        [self configureView]; // final view tweaking
         //8/3 flurry analytics
         //8/11 FIX fanal = [flurryAnalytics sharedInstance];
-
-        // 8/12 add notification for ProMode demo...
-        [[NSNotificationCenter defaultCenter]
-                                addObserver: self selector:@selector(demoNotification:)
-                                       name: @"demoNotification" object:nil];
+        _outputNames = @[]; //start with something!
         _wasEdited = FALSE; //9/8
         sfx   = [soundFX sharedInstance];  //8/27
         diceUndo = FALSE; //7/9
@@ -222,23 +223,23 @@ NSArray *opParams;
     xi = OOG_XMARGIN;
     yi = xi; //top of form
 
-    // Input/Output Pickers
+    // 2 pickers ... Input/Output
     [self addPickerRow:sPanel : 0 : PICKER_BASE_TAG+0 : pipickerNames[0] : yi : OOG_PICKER_HIT];
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
     [self addPickerRow:sPanel : 1 : PICKER_BASE_TAG+1 : pipickerNames[1] : yi : OOG_PICKER_HIT];
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
 
-    // Lo/Hi Sliders
+    // 2 Sliders... lo/hi range
     [self addSliderRow:sPanel : 0 : SLIDER_BASE_TAG + 2 : pisliderNames[0] : yi : OOG_SLIDER_HIT:0.0:255.0];
     yi += (OOG_SLIDER_HIT+OOG_YSPACER);
     [self addSliderRow:sPanel : 1 : SLIDER_BASE_TAG + 3 : pisliderNames[1] : yi : OOG_SLIDER_HIT:0.0:255.0];
     yi += (OOG_SLIDER_HIT+OOG_YSPACER);
 
-    // 2 text entry fields...
+    // 2 text entry fields... name / comment
     yi+=ys;
-    [self addTextRow:sPanel :0 :TEXT_BASE_TAG+9 :@"Name" :yi :OOG_TEXT_HIT ];
+    [self addTextRow:sPanel :0 :TEXT_BASE_TAG+4 : pitextFieldNames[0] :yi :OOG_TEXT_HIT ];
     yi+=ys;
-    [self addTextRow:sPanel :1 :TEXT_BASE_TAG+10 :@"Comment" :yi :OOG_TEXT_HIT ];
+    [self addTextRow:sPanel :1 :TEXT_BASE_TAG+5 : pitextFieldNames[1] :yi :OOG_TEXT_HIT ];
     
     UIView *vLabel = [[UIView alloc] init];
     xi = viewWid;
@@ -251,25 +252,25 @@ NSArray *opParams;
     [self addSubview:vLabel];
 
     //Scrolling area...
-    int scrollHit = 1200; //8/12 760; //640;  //5/20 enlarged again asdf
+    int scrollHit = 400; //8/12 760; //640;  //5/20 enlarged again asdf
     //if (cappDelegate.gotIPad) scrollHit+=120; //3/27 ipad needs a bit more room
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
     [self clearAnalytics];
 
 } //end setupView
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 //9/9 for session analytics
 -(void) clearAnalytics
 {
-    //8/3 for session analytics: count activities
-    diceRolls = 0; //9/9 for analytics
-    resets    = 0; //9/9 for analytics
-    for (int i=0;i<MAX_CONTROL_SLIDERS;i++) sChanges[i] = 0;
-    for (int i=0;i<MAX_CONTROL_PICKERS;i++) pChanges[i] = 0;
+//    //8/3 for session analytics: count activities
+//    diceRolls = 0; //9/9 for analytics
+//    resets    = 0; //9/9 for analytics
+//    for (int i=0;i<MAX_PIPE_SLIDERS;i++) sChanges[i] = 0;
+//    for (int i=0;i<MAX_PIPE_PICKERS;i++) pChanges[i] = 0;
 }
  
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 // 9/7 ignore slider moves!
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
       if ([touch.view isKindOfClass:[UISlider class]]) {
@@ -278,24 +279,14 @@ NSArray *opParams;
       return YES; // handle the touch
 }
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 - (BOOL)prefersStatusBarHidden
 {
     return YES;
 }
 
-//======(shapePanel)==========================================
--(void) setDefaults
-{
-    _inputChannel = @"red";
-    _outputParam  = @"xpos";
-    _loRange      = 0.0;
-    _hiRange      = 255.0;
-    _sname        = @"empty name";
-    _scomment     = @"empty comment";
-}
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 // 9/15 redo w/ genOogie method!
 -(void) addSliderRow : (UIView*) parent : (int) index : (int) tag : (NSString*) label :
                 (int) yoff : (int) ysize : (float) smin : (float) smax
@@ -313,7 +304,7 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
         }
 } //end addSliderRow
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 // 6/8 test slider with button...
 -(NSArray*) addSliderButtonRow : (UIView*) parent : (int) tag : (NSString*) label :
                 (UIImage*) buttonImage :
@@ -378,7 +369,7 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
 //                (float) smin : (float) smax;
 
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 // adds a canned label/picker set...
 -(void) addPickerRow : (UIView*) parent : (int) index : (int) tag : (NSString*) label : (int) yoff : (int) ysize
 {
@@ -396,7 +387,7 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
 } //end addPickerRow
 
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 // 9/11 textField... for oogie2D/AR
 -(void) addTextRow : (UIView*) parent : (int) index : (int) tag : (NSString*) label :
                 (int) yoff : (int) ysize
@@ -412,92 +403,120 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
 } //end addSliderRow
 
 
-
-//======(shapePanel)==========================================
-//  Updates our controls...
-//  NOTE: tag 0 cannot be used with buttons, makes bad stuff happen
+//======(pipePanel)==========================================
 -(void) configureView
 {
-    [pickers[0] selectRow:1 inComponent:0 animated:YES]; //FIX
-    [pickers[1] selectRow:1 inComponent:0 animated:YES]; //FIX
-    [sliders[0] setValue:_loRange];
-    [sliders[1] setValue:_hiRange];
-    [textFields[0] setText:_sname];
-    [textFields[1] setText:_scomment];
-    resetButton.hidden = !_wasEdited;
-
-    NSLog(@" set up piape pickers");
-    [pickers[0] reloadAllComponents];
-    [pickers[1] reloadAllComponents];
-    
-}  //end configureView
-
-
-//======(shapePanel)==========================================
-// 8/6 wups, had wrong param order!
--(void) sendAllParamsToParent
-{
-//    [self.delegate didSetControlValue:0  :_threshold:@"":FALSE]; //7/11 add undoable arg
-//    [self.delegate didSetControlValue:1  :_bottomMidi:@"":FALSE];
-//    [self.delegate didSetControlValue:2  :_topMidi:@"":FALSE];
-//    [self.delegate didSetControlValue:3  :(float)_keySig:@"":FALSE];
-//    [self.delegate didSetControlValue:4  :_overdrive:@"":FALSE];
-//    [self.delegate didSetControlValue:5  :_portamento:@"":FALSE];
-//    [self.delegate didSetControlValue:6  :_vibLevel:@"":FALSE];
-//    [self.delegate didSetControlValue:7  :_vibSpeed:@"":FALSE];
-//    [self.delegate didSetControlValue:8  :_vibWave:@"":FALSE];
-//    [self.delegate didSetControlValue:9  :_vibeLevel:@"":FALSE]; //7/4/11 wups, forgot new params!
-//    [self.delegate didSetControlValue:10 :_vibeSpeed:@"":FALSE];
-//    [self.delegate didSetControlValue:11 :_vibeWave:@"":FALSE];
-//    [self.delegate didSetControlValue:12 :_delayTime:@"":FALSE];
-//    [self.delegate didSetControlValue:13 :_delaySustain:@"":FALSE];
-//    [self.delegate didSetControlValue:14 :_delayMix:@"":FALSE];
+    [pickers[1] reloadAllComponents]; //load pipe outputs, they may change over time
+    [self configureViewWithReset : FALSE];
 }
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
+// This is huge. it should be made to work with any control panel!
+-(void) configureViewWithReset : (BOOL)reset
+{
+    //CLEAN THIS UP: make allpar,allpic,allslid class members instead of arrays!
+    NSMutableArray *allpar = [[NSMutableArray alloc] init];
+    for (int i=0;i<P_ALLPARAMCOUNT;i++) [allpar addObject:pallParams[i]];
+    NSMutableArray *allpick = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_PIPE_PICKERS;i++) if (pickers[i] != nil) [allpick addObject:pickers[i]];
+    NSMutableArray *allslid = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_PIPE_SLIDERS;i++) if (sliders[i] != nil)  [allslid addObject:sliders[i]];
+    NSMutableArray *alltext = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_PIPE_TEXTFIELDS;i++) if (textFields[i] != nil)  [alltext addObject:textFields[i]];
+    NSArray *noresetparams = @[@"texture",@"name",@"comment"];
+    NSMutableDictionary *pickerchoices = [[NSMutableDictionary alloc] init];
+    NSMutableArray * inparams = [[NSMutableArray alloc] init];
+    for (int i=0;i<P_INPUTCHANCOUNT;i++) [inparams addObject:inputChanParams[i]]; //pack to NSARRAY
+    [pickerchoices setObject:inparams forKey:@0]; //output names (variable)
+    [pickerchoices setObject:_outputNames forKey:@1]; //output names (variable)
+    NSDictionary *resetDict = [goog configureViewFromVC:reset : _paramDict : allpar :
+                     allpick : allslid : alltext :
+               noresetparams : pickerchoices];
+    if (reset) //reset? need to inform delegate of param changes...
+    {
+        [self sendUpdatedParamsToParent:resetDict];
+    }
+    
+    resetButton.hidden = !_wasEdited;
+    // 4/30 WTF? why wasnt this here earlier?
+    //BOOL gotPro = (cappDelegate.proMode || cappDelegate.proModeDemo);
+    proButton.hidden = TRUE; // 8/11 FIX gotPro;
+
+} //end configureViewWithReset
+
+//======(pipePanel)==========================================
+// 9/18/21 Sends a limited set of updates to parent
+-(void) sendUpdatedParamsToParent : (NSDictionary*) paramsDict
+{
+    for (NSString*key in paramsDict.allKeys)
+    {
+        NSArray *ra = paramsDict[key];
+        NSNumber *nt = ra[0];
+        NSNumber *nv = ra[1];
+        NSString *ns = ra[2];
+        [self.delegate didSetPipeValue : nt.intValue : nv.floatValue:key:ns:FALSE];
+    }
+} //end sendUpdatedParamsToParent
+
+//======(pipePanel)==========================================
+// 9/18  make this generic too, and return a list of updates for delegate.
+// THEN add a method to go thru the updates dict and pass to parent,
+//    and reuse this method here and in configureView!
+-(void) randomizeParams
+{
+    NSLog(@" RANDOMIZE PIPE");
+    //CLEAN THIS UP: make allpar,allpic,allslid class members instead of arrays!
+    NSMutableArray *allpar = [[NSMutableArray alloc] init];
+    for (int i=0;i<P_ALLPARAMCOUNT;i++) [allpar addObject:pallParams[i]];
+    NSMutableArray *allpick = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_PIPE_PICKERS;i++) if (pickers[i] != nil) [allpick addObject:pickers[i]];
+    NSMutableArray *allslid = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_PIPE_SLIDERS;i++) if (sliders[i] != nil)  [allslid addObject:sliders[i]];
+    NSArray *norandomizeparams = @[@"texture",@"name",@"comment"];
+
+    NSMutableDictionary *resetDict = [goog randomizeFromVC : allpar : allpick : allslid : norandomizeparams];
+    [self sendUpdatedParamsToParent:resetDict];
+
+    [self.delegate didSelectPipeDice]; //4/29
+    diceRolls++; //9/9 for analytics
+    diceUndo = FALSE;
+    rollingDiceNow = FALSE;
+
+} //end randomizeParams
+
+//======(pipePanel)==========================================
 // 8/3 update session analytics here..
 -(void)sliderStoppedDragging:(id)sender
 {
-    UISlider *slider = (UISlider*)sender;
-    int tagMinusBase = (int)(slider.tag-SLIDER_BASE_TAG);
-    //8/3 update slider activity count
-    if (tagMinusBase>=0 && tagMinusBase<MAX_CONTROL_SLIDERS) sChanges[tagMinusBase]++;
-    NSString *name = pisliderNames[tagMinusBase]; //7/11 for undo
-    float value    = slider.value;
-    NSLog(@" send shape value: UNCOMMENT! %d %d",tagMinusBase,value);
-    [self.delegate didSetPipeValue:tagMinusBase:value:name:TRUE];
+    [self updateSliderAndDelegateValue : sender : FALSE]; //9/23
 }
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 -(void)sliderAction:(id)sender
 {
     [self updateSliderAndDelegateValue : sender : FALSE]; //9/23
 }
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 //called when slider is moved and on dice/resets!
 -(void) updateSliderAndDelegateValue :(id)sender : (BOOL) dice
 {
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
     UISlider *slider = (UISlider*)sender;
-    int tagMinusBase = (int)slider.tag-SLIDER_BASE_TAG; // 7/11 new name
-    //Get slider, associated param, and pass back to parent!
+    int tagMinusBase = ((int)slider.tag % 1000); // 7/11 new name
     float value = slider.value;
-    //NSLog(@" sval %f",value);
-    NSString *name = dice ? @"" : pisliderNames[tagMinusBase];
-    NSLog(@" send shape value: UNCOMMENT! %d %d",tagMinusBase,value);
-    [self.delegate didSetPipeValue:tagMinusBase:value:name:TRUE];
-
+    NSString *name = dice ? @"" : pallParams[tagMinusBase];
+    [self.delegate didSetPipeValue:tagMinusBase:value:pallParams[tagMinusBase]:name:TRUE];
 } //end updateSliderAndDelegateValue
 
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 - (IBAction)helpSelect:(id)sender
 {
     [self putUpOBHelpInstructions];
 }
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 // 8/28 redo w/ bullet points
 -(void) putUpOBHelpInstructions
 {
@@ -514,76 +533,22 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
 //    [obp bounceIn];
 }
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 - (void)LPGestureUndo:(UILongPressGestureRecognizer *)recognizer
 {
     diceUndo = TRUE;   //7/9 handitoff to dice...
 }
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 // 8/21 sets sliders directly and they report to parent,
 //   pickers values have to be sent to parent here
 - (IBAction)diceSelect:(id)sender
 {
-//    double smins[15]= {0.0,0.0,0.0,0.0,0.0, //6/27/21 add more min/max delay fields
-//                       0.0,0.0,0.0,0.0,0.0,
-//                       0.0,0.0,0.0,0.0,0.0};
-//    double smaxes[15]= {100.0,100.0,100.0,100.0,100.0,
-//                        100.0,100.0,100.0,100.0,100.0,
-//                        100.0,100.0,100.0,100.0,100.0};
-//    int numSliders = 3; // Assume only top panel accessible...
-//    rollingDiceNow = TRUE;
-//    // 8/29 No pro mode? no bottom panel
-//    // 9/2   ...only 7 sliders with empty space at index 3
-//     //if (cappDelegate.proMode || cappDelegate.proModeDemo) numSliders = 15;   //6/27/21
-//
-//    if (diceUndo)
-//    {
-//        NSLog(@" undo?");
-//        diceUndo = FALSE;
-//        return;
-//    }
-//
-//    BOOL needVibrato    = (drand(0,1) < 0.20);
-//    BOOL needPortamento = (drand(0,1) < 0.20);
-//    BOOL needAmplVibe   = (drand(0,1) < 0.20);
-//    BOOL needDelay      = (drand(0,1) < 0.20);   //6/27/21
-//
-//    for (int i=0;i<numSliders;i++) //randomize sliders based on pro mode
-//    {
-//        if (sliders[i] != nil) //skip empty spaces
-//        {
-//            float f = (float)drand(smins[i],smaxes[i]); // get slider randomized val
-//            if (i == 5  && !needPortamento) f = 0.0; //portamento on/off
-//            if (i == 6  && !needVibrato)    f = 0.0; //vibratoo on/off
-//            if (i == 9  && !needAmplVibe)   f = 0.0; //Ampl vibe on/off
-//            if (i == 12 && !needDelay)      f = 0.0; //Delay on/off //6/27/21
-//            [sliders[i] setValue:f]; //most all others get set!
-//            [self updateSliderAndDelegateValue : sliders[i]: TRUE]; //9/23
-//        }
-//    } //end for int
-//    //Randomize our 3 pickers...
-//    int row = (int)drand(0,12);
-//    [pickers[0] selectRow:row inComponent:0 animated:NO];
-//    [self.delegate didSetControlValue:3 :(float)row:@"":FALSE]; //messy hard coded tag!
-//    //if (cappDelegate.proMode || cappDelegate.proModeDemo) // 8/29 Pro Mode? bottom panel ok
-//    {
-//        row = (int)drand(0,4);
-//        [pickers[1] selectRow:row inComponent:0 animated:NO];
-//        [self.delegate didSetControlValue:8 :(float)row:@"":FALSE]; //messy hard coded tag!
-//        row = (int)drand(0,4); //4/8 randomize ampl wave
-//        [pickers[2] selectRow:row inComponent:0 animated:NO];
-//        [self.delegate didSetControlValue:11 :(float)row:@"":FALSE];
-//    }
-//    [self.delegate didSelectControlDice]; //4/29
-//    diceRolls++; //9/9 for analytics
-//    diceUndo = FALSE;
-//    rollingDiceNow = FALSE;
-
+    [self randomizeParams];
 } //end diceSelect
 
  
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 - (IBAction)resetSelect:(id)sender
 {
     [self resetControls];
@@ -591,61 +556,59 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
     [self.delegate didSelectPipeReset]; //7/11 for undo
 }
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 // 4/3 reset called via button OR end of proMode demo
 -(void) resetControls
 {
+    [self configureViewWithReset: TRUE];
     resettingNow = TRUE; //used w/ undo
-    [self setDefaults];
-    [self configureView];
-    [self sendAllParamsToParent];
     _wasEdited         = FALSE;
     resetButton.hidden = TRUE;
     resettingNow       = FALSE;
 } //end resetControls
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 //8/3
 -(void)updateSessionAnalytics
 {
     //NSLog(@" duh collected analytics for flurry");
-    for (int i=0;i<MAX_CONTROL_SLIDERS;i++)
-    {
-        if (sChanges[i] > 0) //report changes to analytics
-        {
-            //NSLog(@" slider[%d] %d",i,sChanges[i]);
-            //NSString *sname = pisliderKeys[i];
-            //8/11 FIX[fanal updateSliderCount:sname:sChanges[i]];
-        }
-    }
-    for (int i=0;i<MAX_CONTROL_PICKERS;i++)
-    {
-        if (pChanges[i] > 0) //report changes to analytics
-        {
-            //NSLog(@" picker[%d] %d",i,pChanges[i]);
-            //NSString *pname = pipickerKeys[i];
-            //8/11 FIX[fanal updatePickerCount:pname:pChanges[i]];
-        }
-    }
-    //8/11 FIX[fanal updateDiceCount : @"LDI" : diceRolls]; //9/9
-    //8/11 FIX [fanal updateMiscCount : @"LRE" : resets]; //9/9
-    [self clearAnalytics]; //9/9 clear for next session
+//    for (int i=0;i<MAX_CONTROL_SLIDERS;i++)
+//    {
+//        if (sChanges[i] > 0) //report changes to analytics
+//        {
+//            //NSLog(@" slider[%d] %d",i,sChanges[i]);
+//            //NSString *sname = pisliderKeys[i];
+//            //8/11 FIX[fanal updateSliderCount:sname:sChanges[i]];
+//        }
+//    }
+//    for (int i=0;i<MAX_CONTROL_PICKERS;i++)
+//    {
+//        if (pChanges[i] > 0) //report changes to analytics
+//        {
+//            //NSLog(@" picker[%d] %d",i,pChanges[i]);
+//            //NSString *pname = pipickerKeys[i];
+//            //8/11 FIX[fanal updatePickerCount:pname:pChanges[i]];
+//        }
+//    }
+//    //8/11 FIX[fanal updateDiceCount : @"LDI" : diceRolls]; //9/9
+//    //8/11 FIX [fanal updateMiscCount : @"LRE" : resets]; //9/9
+//    [self clearAnalytics]; //9/9 clear for next session
 
 } //end updateSessionAnalytics
 
-//======(shapePanel)==========================================
+//======(pipePanel)==========================================
 - (NSString *)getPickerTitleForTagAndRow : (int)tag : (int)row
 {
     //NSLog(@" get picker tag %d",tag);
     NSString *title = @"";
-//    if (tag == PICKER_BASE_TAG + 0)
-//    {
-//        title = _texNames[row];
-//    }
-//    if (tag == PICKER_BASE_TAG + 2) //rotation type
-//    {
-////        title = rotTypeParams[row];
-//    }
+    if (tag == PICKER_BASE_TAG + 0) //input chans
+    {
+        title = inputChanParams[row];
+    }
+    if (tag == PICKER_BASE_TAG + 1) // output names (variable)
+    {
+        title = _outputNames[row];
+    }
 
     return title;
 }
@@ -656,16 +619,14 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
 // 6/18 redo
 - (void)pickerView:(UIPickerView *)pickerView didSelectRow: (NSInteger)row inComponent:(NSInteger)component {
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
-    //int which = 0;
-    int liltag = (int)pickerView.tag - PICKER_BASE_TAG;
-//    if (liltag == 0)
-//        [self.delegate didSetPipeValue:liltag :(float)row:_texNames[row]: !rollingDiceNow && !resettingNow];   //7/11
-//    else
-//        [self.delegate didSetPipeValue:liltag :(float)row:pipickerNames[liltag]: !rollingDiceNow && !resettingNow];   //7/11
-//
-//    //8/3 update picker activity count
-//    int pMinusBase = (int)(pickerView.tag-PICKER_BASE_TAG);
-//    if (pMinusBase>=0 && pMinusBase<MAX_CONTROL_PICKERS) pChanges[pMinusBase]++;
+    int liltag = (int)pickerView.tag % 1000;
+    if (liltag == 0)
+        [self.delegate didSetPipeValue:liltag :(float)row: pallParams[liltag] : inputChanParams[row]: !rollingDiceNow && !resettingNow];
+    else
+        [self.delegate didSetPipeValue:liltag :(float)row: pallParams[liltag] :_outputNames[row]: !rollingDiceNow && !resettingNow];
+    //8/3 update picker activity count
+    int pMinusBase = (int)(pickerView.tag-PICKER_BASE_TAG);
+    if (pMinusBase>=0 && pMinusBase<MAX_PIPE_PICKERS) pChanges[pMinusBase]++;
 }
 
 
@@ -673,12 +634,9 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
 // tell the picker how many rows are available for a given component
 - (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component {
     int tag = (int)pickerView.tag;
-    NSLog(@" picker#rows for tag %d",tag);
-    
-//    if ( tag == PICKER_BASE_TAG)  return _texNames.count;
-//    else if ( tag == PICKER_BASE_TAG+2)  return numRotTypeParams;
+    if ( tag == PICKER_BASE_TAG)  return 9; //input channels
+    else if ( tag == PICKER_BASE_TAG+1)  return _outputNames.count;
     return 0; //empty (failed above test?)
-    
 }
 
 //-------<UIPickerViewDelegate>-----------------------------
@@ -742,7 +700,7 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
     [textField resignFirstResponder]; //Close keyboard
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
-    [self.delegate didSetPipeValue:liltag :0.0:s:FALSE];
+    [self.delegate didSetPipeValue:liltag :0.0:s:@"": FALSE];
     return YES;
 }
 

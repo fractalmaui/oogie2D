@@ -14,14 +14,14 @@
 #import "soundFX.h"
 @protocol pipePanelDelegate;
 
-#define MAX_CONTROL_SLIDERS 17  //2/19 add delay 3sliders
-#define MAX_CONTROL_PICKERS 5
-#define MAX_CONTROL_TEXTFIELDS 2
+#define MAX_PIPE_SLIDERS 2 
+#define MAX_PIPE_PICKERS 2
+#define MAX_PIPE_TEXTFIELDS 2
 #define SLIDER_BASE_TAG 1000
 #define PICKER_BASE_TAG 2000
 #define TEXT_BASE_TAG 3000
  // obPopupDelegate,
-@interface pipePanel : UIView <UIGestureRecognizerDelegate,UITextFieldDelegate,
+@interface pipePanel : UIView <UIGestureRecognizerDelegate,UITextFieldDelegate,UITextViewDelegate,
                             UIPickerViewDelegate,UIPickerViewDataSource>
 {
     int viewWid,viewHit,buttonWid,buttonHit;
@@ -36,15 +36,15 @@
     UIButton *loNotebutton;
     UIButton *hiNotebutton;
 
-    UISlider *sliders[MAX_CONTROL_SLIDERS];
-    UIPickerView *pickers[MAX_CONTROL_PICKERS];
-    UITextField *textFields[MAX_CONTROL_TEXTFIELDS];
+    UISlider *sliders[MAX_PIPE_SLIDERS];
+    UIPickerView *pickers[MAX_PIPE_PICKERS];
+    UITextField *textFields[MAX_PIPE_TEXTFIELDS];
     UIView *header,*footer;
 
     int diceRolls;  //9/9 for analytics
     int resets;     //9/9 for analytics
-    int sChanges[MAX_CONTROL_SLIDERS]; //count the changes!
-    int pChanges[MAX_CONTROL_PICKERS];
+    int sChanges[MAX_PIPE_SLIDERS]; //count the changes!
+    int pChanges[MAX_PIPE_PICKERS];
     
     //flurryAnalytics *fanal; //8/3
     //obPopup *obp; //onboarding popup panel
@@ -61,12 +61,8 @@
 @property (nonatomic, unsafe_unretained) id <pipePanelDelegate> delegate; // receiver of completion messages
 
 @property (nonatomic, assign) BOOL wasEdited;
-@property (nonatomic, strong) NSString *inputChannel;
-@property (nonatomic, strong) NSString *outputParam;
-@property (nonatomic, assign) double loRange;
-@property (nonatomic, assign) double hiRange;
-@property (nonatomic, strong) NSString *sname;
-@property (nonatomic, strong) NSString *scomment;
+@property (nonatomic, strong) NSDictionary *paramDict;
+@property (nonatomic, strong) NSArray *outputNames;
 
 - (id)initWithFrame:(CGRect)frame;
 - (void) configureView;
@@ -76,7 +72,7 @@
 
 @protocol pipePanelDelegate <NSObject>
 @optional
--(void) didSetPipeValue  : (int) which : (float) newVal : (NSString*) pname : (BOOL)undoable;
+-(void) didSetPipeValue  : (int) which : (float) newVal : (NSString*) pname : (NSString*) pvalue : (BOOL)undoable;
 //-(void) didSelectRight ;
 //-(void) didSelectLeft ;
 //-(void) controlNeedsProMode ;

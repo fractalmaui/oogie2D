@@ -9,37 +9,20 @@
 //  Created by Dave Scruton on 6/19/20.
 //  Copyright © 1990 - 2021 fractallonomy, inc. All Rights Reserved.
 //
-//  9/3  convert to UIView! complete redo!
-//       added swipe gesture and didGoLeft/didGoRight delegate callbacks to switch view
-//  9/7  add shouldReceiveTouch, made this class UIGestureRecognizerDelegate
-//  9/8  add resetButton show/hide, moved factory reset to parent, cleanup dead code
-//        shrink control y spread to match proPanel
-//  9/9  add clearAnalytics, diceRolls
-//  9/16 add genOogie controls for sliders/pickers
-//  9/23 add pname to didSetControlValue ,other HUD support
-//  9/24 add header for top controls
-// 10/8  now updateSessionAnalytics called by parent
-// 10/19 add getPickerTitleForTagAndRow, viewForRow for all pickers
-// 10/24 integrate OB_SILENCE_HELP
-// 10/27 tiny dice!
-// 2/19/21 add delay, 3 params
-// 3/27    fix UI for ipad
-// 4/2   put flag around delay sliders
-// 4/3   clear live controls upon end of demo
-// 4/7   add ampl vibe
-// 4/23  demoNotification was crashing using dispatch, removed
-// 5/19  add updateControlModeInfo for reset
-// 5/20  add footer for shadow effect, header now 50, sliders taller
+// Sept 2021: Complete redo: now we get a dictionary of info for each param.
+//                this is used to set current values, and defaults for reset.
+//            The configure UI and randomize UI functions are now in genOogie...
+//           
 // 5/23  make pro button only on RH side, add enable/disble for bottom 6 sliders
 // 5/24  shrink picker rows more to make neighbors visible
 // 6/19  fix ppanel size bug
 // 6/27  update dice to handle delay sliders
-// 7/4   fix param bug in sendAllParamsToParent
 // 7/9   add oogieStyle
 // 7/11  variable cleanup , hook up to undo, add undoable arg to didsetControlValue
 // 8/11 MIGRATE to oogie2D> get rid of cappDelegate for now,
 //         flurryAnalytics,miniHelp,obPopup
 // 9/17 redo params to read input / defaults from incoming dictionary
+// 9/18 add randomize, remove sendAllParamsToParent, add sendUpdatedParamsToParent
 #import "controlPanel.h"
 //#import "AppDelegate.h" //KEEP this OUT of viewController.h!!
 
@@ -60,7 +43,7 @@ NSString *sliderNames[] = {@"Threshold",@"Bottom Note",@"Top Note",
     @"Delay Time" ,@"Delay Sustain",@"Delay Mix",
     @"Latitude", @"Longitude"  //8/12 for oogie2D / oogieAR
 }; //2/19 note paddings b4 delay for vibwave
-//these must match tags which increment over all controls! asdf
+//these must match tags which increment over all controls!
 
 //3 sliders, a picker, 4 sliders, a picker, 2 sliders a picker then 5 sliders and 2 texts
 NSString *allParams[] = {@"threshold",@"bottommidi",@"topmidi",@"keysig",
@@ -104,10 +87,10 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
       //  cappDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
         // 9/15 add UI utilities
         goog = [genOogie sharedInstance];
-        
-        [self setDefaults];
+        _spNames = @[];
+        _paNames = @[];
+
         [self setupView:frame];
-       // [self configureView]; // final view tweaking
         //8/3 flurry analytics
         //8/11 FIX fanal = [flurryAnalytics sharedInstance];
 
@@ -237,7 +220,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     [resetButton setTitle:@"Reset" forState:UIControlStateNormal];
     [resetButton setFrame:CGRectMake(xi, yi, xs, ys)];
     [resetButton setTitleColor:[UIColor colorWithRed:1 green:0.5 blue:0.5 alpha:1] forState:UIControlStateNormal];
-    resetButton.backgroundColor    = [UIColor greenColor];
+    resetButton.backgroundColor    = [UIColor blackColor];
     resetButton.layer.cornerRadius = 10;
     resetButton.clipsToBounds      = TRUE;
     resetButton.layer.borderWidth  = borderWid;
@@ -425,7 +408,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 
     
     //Scrolling area...
-    int scrollHit = 1200; //8/12 760; //640;  //5/20 enlarged again asdf
+    int scrollHit = 1200; //8/12 760; //640;  //5/20 enlarged again
     //if (cappDelegate.gotIPad) scrollHit+=120; //3/27 ipad needs a bit more room
     
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
@@ -472,28 +455,6 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     return YES;
 }
 
-//======(controlPanel)==========================================
--(void) setDefaults
-{
-//    _threshold    = 10;
-//    _overdrive    = 1;
-//    _portamento   = 0;
-//    _bottomMidi   = 30;
-//    _topMidi      = 90;
-//    _keySig       = 0; //Major scale
-//    _vibWave      = 1; //SineWave?
-//    _vibLevel     = 0;
-//    _vibSpeed     = 10;
-//    _vibeWave      = 1; //4/7/21 SineWave?
-//    _vibeLevel     = 0;
-//    _vibeSpeed     = 10;
-//    // 2/19 no delay by default
-//    _delayTime    = 0;
-//    _delaySustain = 0;
-//    _delayMix     = 0;
-    _vname        = @"empty name";
-    _vcomment     = @"empty comment";
-}
 
 //======(controlPanel)==========================================
 // 9/15 redo w/ genOogie method!
@@ -569,15 +530,6 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     return @[slider,b]; //maybe add more handles later?
 } //end addSliderButtonRow
 
-
-
-
-//-(NSArray*) addSliderButtonRow : (UIView*) parent : (int) tag : (NSString*) label :
-//                (UIImage*) buttonImage : (nullable id)target :
-//                (int) yoff : (int) width : (int) ysize :
-//                (float) smin : (float) smax;
-
-
 //======(controlPanel)==========================================
 // adds a canned label/picker set...
 -(void) addPickerRow : (UIView*) parent : (int) index : (int) tag : (NSString*) label : (int) yoff : (int) ysize
@@ -612,35 +564,6 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 } //end addSliderRow
 
 
-//annnd dict is ["longitude": 0.3403361511230469, "threshold": 0.05, "topmidi": "80.00", "pchan": "9.00", "nchan": "3.00", "type": "0.00", "nfixed": 0.2509803921568627, "rottrigger": 0, "bottommidi": "0.00", "comment": "", "vchan": "9.00", "latitude": 0.7079831695556641, "patch": "synthpiano3", "name": "voice_00001", "pfixed": 0.5019607843137255, "vfixed": 0.5019607843137255, "level": 0.00392156862745098]
-
-
-//======(controlPanel)==========================================
-//CLUGEY: replace w/ dict?
--(int) findPatchFromString : (NSString *)s
-{
-    for (int i=0;i<_paNames.count;i++)
-    {
-        NSString *test = _paNames[i];
-        test = [test lowercaseString];
-        if ([test isEqualToString:s]) return i;
-    }
-    return 0;
-}
-
-//======(controlPanel)==========================================
-//CLUGEY: replace w/ dict?
--(int) findSoundpackFromString : (NSString *)s
-{
-    for (int i=0;i<_spNames.count;i++)
-    {
-        NSString *test = _spNames[i];
-        test = [test lowercaseString];
-        if ([test isEqualToString:s]) return i;
-    }
-    return 0;
-}
-
 //======(controlPanel)==========================================
 //  Updates our controls... LONG AND TEDIOUS,
 //    takes incoming dictionary of name / value pairs, and
@@ -654,166 +577,52 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 }
 
 //======(controlPanel)==========================================
+// This is huge. it should be made to work with any control panel!
 -(void) configureViewWithReset : (BOOL)reset
 {
-    //Now how do I peel this off? it needs a LOT of arguments!!
-    //  but it would be easier to reuse this method across all panels!!!
-    //make some dicts...
-    NSMutableDictionary *tagsByName = [[NSMutableDictionary alloc] init];
-    for (int i=0;i<C_ALLPARAMCOUNT;i++)
+    //CLEAN THIS UP: make allpar,allpic,allslid class members instead of arrays!
+    NSMutableArray *allpar = [[NSMutableArray alloc] init];
+    for (int i=0;i<C_ALLPARAMCOUNT;i++) [allpar addObject:allParams[i]];
+    NSMutableArray *allpick = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_CONTROL_PICKERS;i++) if (pickers[i] != nil) [allpick addObject:pickers[i]];
+    NSMutableArray *allslid = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_CONTROL_SLIDERS;i++) if (sliders[i] != nil)  [allslid addObject:sliders[i]];
+    NSMutableArray *alltext = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_CONTROL_TEXTFIELDS;i++) if (textFields[i] != nil)  [alltext addObject:textFields[i]];
+    NSArray *noresetparams = @[@"patch",@"soundpack",@"name"];
+    NSMutableDictionary *pickerchoices = [[NSMutableDictionary alloc] init];
+    [pickerchoices setObject:_paNames forKey:@17];  //patches are on picker 17
+    [pickerchoices setObject:_spNames forKey:@18];  //soundpacks are on picker 18
+    NSDictionary *resetDict = [goog configureViewFromVC:reset : _paramDict : allpar :
+                     allpick : allslid : alltext :
+               noresetparams : pickerchoices];
+    if (reset) //reset? need to inform delegate of param changes...
     {
-        NSNumber *nn = [NSNumber numberWithInt:i];
-        [tagsByName setObject:nn forKey:allParams[i]];
+        [self sendUpdatedParamsToParent:resetDict];
     }
-    NSMutableDictionary *controlsByTag = [[NSMutableDictionary alloc] init];
-    for (int j=0;j<MAX_CONTROL_PICKERS;j++) if (pickers[j] != nil)
-    {
-        NSNumber *nn = [NSNumber numberWithInt:(int)(pickers[j].tag % 1000)]; //only keep lsb of tag
-        [controlsByTag setObject:pickers[j] forKey:nn];
-    }
-    for (int j=0;j<MAX_CONTROL_SLIDERS;j++) if (sliders[j] != nil)
-    {
-        NSNumber *nn = [NSNumber numberWithInt:(int)(sliders[j].tag % 1000)];
-        [controlsByTag setObject:sliders[j] forKey:nn];
-    }
-    for (int j=0;j<MAX_CONTROL_TEXTFIELDS;j++) if (textFields[j] != nil)
-    {
-        NSNumber *nn = [NSNumber numberWithInt:(int)(textFields[j].tag % 1000)];
-        [controlsByTag setObject:textFields[j] forKey:nn];
-    }
-
-    //look at incoming params dict...
-    // Something funny going on with bottomMidi, tries to set slider negative.
-    //  this means there is a bug converting this param from its stored value to
-    //  a value the UI can use... most other double params look OK
-    for (NSString*key in _paramDict.allKeys)
-    {
-        BOOL ok = TRUE;
-        if (reset) //reset? make sure some stuff doesnt reset!
-        {
-            if ([@[@"patch",@"soundpack",@"name"] containsObject: key] ) //bad params!
-                {NSLog(@" bing! bad param %@",key);ok=FALSE;}
-        }
-        if (!ok) continue;
-        NSLog(@"key %@",key);
-        NSNumber *tagnum = tagsByName[key];
-        if (tagnum != nil) //Found it!?
-        {
-            int tag = tagnum.intValue;
-            NSObject* genericControl = controlsByTag[tagnum];
-            //our dict contains arrays, we want the last item
-            NSArray* a = _paramDict[key];
-            if (a.count > 1) //got something?
-            {
-                id<NSObject> value;
-                if (!reset)
-                    value = [a lastObject]; //get current value..
-                else if (a.count > 4)
-                    value = [a objectAtIndex:4]; //get default..
-                NSString *ss = @"";
-                NSNumber *nn = @0;
-                if ([value isKindOfClass:[NSString class]]) ss = (NSString*) value;
-                else                                        nn = (NSNumber*) value;
-                NSLog(@"   match param %@ tag %d : %@ %@",key,tagnum.intValue,nn,ss);
-
-
-                if ([genericControl isKindOfClass:[UISlider class]]) //setup slider
-                {
-                    double dval = nn.doubleValue;
-                    if (reset && a.count >= 6) //convert default to unit basis
-                    {
-                        NSNumber *nmult = [a objectAtIndex:5]; //get conversion base and range
-                        NSNumber *noff = [a objectAtIndex:6];  //this is totally done in oogieScene btw!
-                        double dmult = nmult.doubleValue;
-                        double doff  = noff.doubleValue;
-                        if (dmult != 0.0) dval = (dval - doff) / dmult;
-                    }
-                    UISlider *s = (UISlider*)genericControl;
-                    NSLog(@" ...set slider tag[%d] to %f",tag,dval);
-                    if (reset) //reset? let parent know
-                        [self.delegate didSetControlValue:tag:(float)dval:key:@"":FALSE];
-                    [s setValue:dval];
-                }
-                else if ([genericControl isKindOfClass:[UIPickerView class]]) //setup picker
-                    {
-                        int row = 0;
-                        if (!reset) //default picker val is 0 for now, not default? get value
-                        {
-                            //we may have a number or string...
-                            if (ss != nil)
-                            {
-                                if (tag == 17) // patch needs a string...
-                                    row = [self findPatchFromString:ss];
-                                else if (tag == 18) // soundpack needs a string...
-                                    row = [self findSoundpackFromString:ss];
-                                else row = ss.intValue; //try to get int from string
-                            }
-                            else //numeric? just pull it for picker...
-                            {
-                                row = nn.intValue;
-                            }
-                        } //end !default
-                        
-                        UIPickerView *p = (UIPickerView*)genericControl;
-                        NSLog(@" ...set picker tag[%d] to row %d",tag,row);
-                        if (reset) //reset? let parent know
-                            [self.delegate didSetControlValue:tag:(float)row:key:@"":FALSE];
-                        [p selectRow:row inComponent:0 animated:YES];
-                    }
-                else if ([genericControl isKindOfClass:[UITextField class]]) //setup text
-                {
-                    UITextField *t = (UITextField*)genericControl;
-                    NSLog(  @".... set text tag[%d] to [%@]",tag,ss);
-                    if (reset) //default text?
-                    {
-                        if ([key isEqualToString:@"name"]) ss = @"shape000"; //kinda clugey!
-                    }
-                    t.text = ss;
-                    if (reset) //reset? let parent know
-                        [self.delegate didSetControlValue:tag:0.0:key:ss:FALSE];
-                }
-            }
-        } //end if tagnum
-    } //end for key
     
     resetButton.hidden = !_wasEdited;
     // 4/30 WTF? why wasnt this here earlier?
     //BOOL gotPro = (cappDelegate.proMode || cappDelegate.proModeDemo);
     proButton.hidden = TRUE; // 8/11 FIX gotPro;
-}  //end configureView
+
+} //end configureViewWithReset
+
 
 
 //======(controlPanel)==========================================
-// OBSOLETE? generated weird errors for some reason
--(void) sendAllParamsToParent
+// 9/18/21 Sends a limited set of updates to parent
+-(void) sendUpdatedParamsToParent : (NSDictionary*) paramsDict
 {
-    for (int i=0;i<C_ALLPARAMCOUNT;i++)
+    for (NSString*key in paramsDict.allKeys)
     {
-        NSString *pname = allParams[i];
-//        NSNumber *nn = _defaultDict[pname];
-        NSArray* a = _paramDict[pname];
-        if (a.count > 3) //got something?
-        {
-            id<NSObject> value = [a lastObject]; //get value..
-            NSString *ss = @"";
-            NSNumber *nn = @0;
-            if ([value isKindOfClass:[NSString class]]) ss = [a lastObject];
-            else                                        nn = [a lastObject];
-            //NSLog(@"   default: param %@ tag %d : %@ %@",pname,tagnum.intValue,nn,ss);
-            double dval = 0.0;
-            if (nn != nil)
-            {
-                dval = nn.doubleValue;
-                [self.delegate didSetControlValue : i : dval: pname : @"" :FALSE];
-            }
-            else //use string?
-            {
-                dval = ss.doubleValue;
-                [self.delegate didSetControlValue : i :dval: pname : ss :FALSE];
-            }
-        }
+        NSArray *ra = paramsDict[key];
+        NSNumber *nt = ra[0];
+        NSNumber *nv = ra[1];
+        NSString *ns = ra[2];
+        [self.delegate didSetControlValue:nt.intValue:nv.floatValue:key:ns:FALSE];
     }
-} //end sendAllParamsToParent
+} //end sendUpdatedParamsToParent
 
 //======(controlPanel)==========================================
 // 8/3 update session analytics here..
@@ -834,7 +643,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 {
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
     UISlider *slider = (UISlider*)sender;
-    int tagMinusBase = (int)slider.tag-1000; // 7/11 new name
+    int tagMinusBase = ((int)slider.tag % 1000); // 7/11 new name
     float value = slider.value;
     NSString *name = dice ? @"" : allParams[tagMinusBase];
     [self.delegate didSetControlValue:tagMinusBase:value:allParams[tagMinusBase]:name:TRUE];
@@ -884,66 +693,42 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 }
 
 //======(controlPanel)==========================================
-// 8/21 sets sliders directly and they report to parent,
-//   pickers values have to be sent to parent here
-- (IBAction)diceSelect:(id)sender
+// 9/18  make this generic too, and return a list of updates for delegate.
+// THEN add a method to go thru the updates dict and pass to parent,
+//    and reuse this method here and in configureView!
+-(void) randomizeParams
 {
-    double smins[15]= {0.0,0.0,0.0,0.0,0.0, //6/27/21 add more min/max delay fields
-                       0.0,0.0,0.0,0.0,0.0,
-                       0.0,0.0,0.0,0.0,0.0};
-    double smaxes[15]= {100.0,100.0,100.0,100.0,100.0,
-                        100.0,100.0,100.0,100.0,100.0,
-                        100.0,100.0,100.0,100.0,100.0};
-    int numSliders = 3; // Assume only top panel accessible...
-    rollingDiceNow = TRUE;
-    // 8/29 No pro mode? no bottom panel
-    // 9/2   ...only 7 sliders with empty space at index 3
-     //if (cappDelegate.proMode || cappDelegate.proModeDemo) numSliders = 15;   //6/27/21
-    
-    if (diceUndo)
-    {
-        NSLog(@" undo?");
-        diceUndo = FALSE;
-        return;
-    }
-    
-    BOOL needVibrato    = (drand(0,1) < 0.20);
-    BOOL needPortamento = (drand(0,1) < 0.20);
-    BOOL needAmplVibe   = (drand(0,1) < 0.20);
-    BOOL needDelay      = (drand(0,1) < 0.20);   //6/27/21
+    //asdf
+    NSLog(@" RANDOMIZE");
+    //CLEAN THIS UP: make allpar,allpic,allslid class members instead of arrays!
+    NSMutableArray *allpar = [[NSMutableArray alloc] init];
+    for (int i=0;i<C_ALLPARAMCOUNT;i++) [allpar addObject:allParams[i]];
+    NSMutableArray *allpick = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_CONTROL_PICKERS;i++) if (pickers[i] != nil) [allpick addObject:pickers[i]];
+    NSMutableArray *allslid = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_CONTROL_SLIDERS;i++) if (sliders[i] != nil)  [allslid addObject:sliders[i]];
+    NSArray *norandomizeparams = @[@"patch",@"soundpack",@"name",@"comment",@"delaysustain"];
 
-    for (int i=0;i<numSliders;i++) //randomize sliders based on pro mode
-    {
-        if (sliders[i] != nil) //skip empty spaces
-        {
-            float f = (float)drand(smins[i],smaxes[i]); // get slider randomized val
-            if (i == 5  && !needPortamento) f = 0.0; //portamento on/off
-            if (i == 6  && !needVibrato)    f = 0.0; //vibratoo on/off
-            if (i == 9  && !needAmplVibe)   f = 0.0; //Ampl vibe on/off
-            if (i == 12 && !needDelay)      f = 0.0; //Delay on/off //6/27/21
-            [sliders[i] setValue:f]; //most all others get set!
-            [self updateSliderAndDelegateValue : sliders[i]: TRUE]; //9/23
-        }
-    } //end for int
-    //Randomize our 3 pickers...
-    int row = (int)drand(0,12);
-    [pickers[0] selectRow:row inComponent:0 animated:NO]; //asdf
-    [self.delegate didSetControlValue:3 :(float)row:allParams[3]:@"":FALSE]; //messy hard coded tag!
-    // what about using OOGIE2D flag here!?!?!
-    //if (cappDelegate.proMode || cappDelegate.proModeDemo) // 8/29 Pro Mode? bottom panel ok
-    //{
-        row = (int)drand(0,4);
-        [pickers[1] selectRow:row inComponent:0 animated:NO];
-        [self.delegate didSetControlValue:8 :(float)row:allParams[8]:@"":FALSE]; //messy hard coded tag!
-        row = (int)drand(0,4); //4/8 randomize ampl wave
-        [pickers[2] selectRow:row inComponent:0 animated:NO];
-        [self.delegate didSetControlValue:11 :(float)row:allParams[11]:@"":FALSE]; //messy hard coded tag!
-    //}
+    NSMutableDictionary *resetDict = [goog randomizeFromVC : allpar : allpick : allslid : norandomizeparams];
+    [self sendUpdatedParamsToParent:resetDict];
+
     [self.delegate didSelectControlDice]; //4/29
     diceRolls++; //9/9 for analytics
     diceUndo = FALSE;
     rollingDiceNow = FALSE;
 
+} //end randomizeParams
+
+
+//======(controlPanel)==========================================
+// 8/21 sets sliders directly and they report to parent,
+//   pickers values have to be sent to parent here
+- (IBAction)diceSelect:(id)sender
+{
+    //NOTE delaySustain if really large can cause problems, dont randomize it
+
+    [self randomizeParams  ];
+    resetButton.hidden = FALSE; //indicate param change
 } //end diceSelect
 
 
@@ -973,7 +758,6 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 {
     [self configureViewWithReset: TRUE];
     resettingNow = TRUE; //used w/ undo
-   //NO NEED NOW? [self sendAllParamsToParent];
     _wasEdited         = FALSE;
     resetButton.hidden = TRUE;
     resettingNow       = FALSE;
@@ -1034,16 +818,11 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
         if (_spNames != nil) title = _spNames[row];
 
     }
-
     return title;
 }
 
-
-
 #pragma UIPickerViewDelegate
 
-
- 
 //-------<UIPickerViewDelegate>-----------------------------
 // 6/18 redo
 - (void)pickerView:(UIPickerView *)pickerView didSelectRow: (NSInteger)row inComponent:(NSInteger)component {
@@ -1069,7 +848,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 - (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component {
     int tag = (int)pickerView.tag;
     //tags pickers, 17 / 18  /  3  /  8  / 11
-    if ( tag == PICKER_BASE_TAG + 3)  return 12;
+    if ( tag == PICKER_BASE_TAG + 3)  return 12; //keysig
     else if ( tag == PICKER_BASE_TAG+8 || tag == PICKER_BASE_TAG+11 )  //vib ratos
         return 4;
     else if ( tag == PICKER_BASE_TAG+17) //patch

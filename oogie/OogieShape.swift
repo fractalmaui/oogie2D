@@ -20,16 +20,17 @@
 //  5/14 add cleanup for bmp data
 import Foundation
 
+//Parmas: Name,Type,Min,Max,Default,DisplayMult,DisplayOffset?? (string params need a list of items)
 let TexParams   : [Any] = ["Texture", "texture", "mt"]
 let RotParams   : [Any] = ["Rotation" , "double", 0.0  , 100.0   , 10.0, 1.0, 0.0 ]
 let RotTypeParams  : [Any] = ["RotationType", "string" , "Manual", "BPMX1", "BPMX2", "BPMX3", "BPMX4", "BPMX5", "BPMX6", "BPMX7", "BPMX8" ]
-let XParams     : [Any] = ["XPos" , "double", -maxMeters , maxMeters , 0.0, 1.0, 0.0 ]
-let YParams     : [Any] = ["YPos" , "double", -maxMeters , maxMeters , 0.0, 1.0, 0.0 ]
-let ZParams     : [Any] = ["ZPos" , "double", -maxMeters , maxMeters , 0.0, 1.0, 0.0 ]
+let XParams     : [Any] = ["XPos" , "double", -maxMeters , maxMeters , 0.0, 4.0, -2.0 ]
+let YParams     : [Any] = ["YPos" , "double", -maxMeters , maxMeters , 0.0, 4.0, -2.0 ]
+let ZParams     : [Any] = ["ZPos" , "double", -maxMeters , maxMeters , 0.0, 4.0, -2.0 ]
 let UParams     : [Any] = ["TexXoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
 let VParams     : [Any] = ["TexYoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
-let USParams    : [Any] = ["TexXscale" , "double", 0.1 , 10.0 , 1.0, 1.0, 0.0 ]
-let VSParams    : [Any] = ["TexYscale" , "double", 0.1 , 10.0 , 1.0, 1.0, 0.0 ]
+let USParams    : [Any] = ["TexXscale" , "double", 0.1 , 10.0 , 1.0, 10.0, 0.0 ]
+let VSParams    : [Any] = ["TexYscale" , "double", 0.1 , 10.0 , 1.0, 10.0, 0.0 ]
 let SNameParams : [Any] = ["Name",      "text", "mt"]
 let SCommParams : [Any] = ["Comment",   "text", "mt"]
 
@@ -80,7 +81,22 @@ class OogieShape: NSObject {
     //-----------(oogieVoice)=============================================
     func setupShapeParams()
     {
-        // Load up params dictionary with string / array combos
+//        let shapeParamNames : [String] = ["Texture", "Rotation","RotationType",
+//        "XPos","YPos","ZPos","TexXoffset","TexYoffset","TexXscale","TexYscale","Name","Comment"]
+
+        // 9/18/21 add named keys too
+        shapeParamsDictionary["texture"] = TexParams
+        shapeParamsDictionary["rotation"] = RotParams
+        shapeParamsDictionary["rotationtype"] = RotTypeParams
+        shapeParamsDictionary["xpos"] = XParams
+        shapeParamsDictionary["ypos"] = YParams
+        shapeParamsDictionary["zpos"] = ZParams
+        shapeParamsDictionary["texxoffset"] = UParams
+        shapeParamsDictionary["texyoffset"] = VParams
+        shapeParamsDictionary["texxscale"] = USParams
+        shapeParamsDictionary["texyscale"] = VSParams
+        shapeParamsDictionary["name"] = SNameParams
+        shapeParamsDictionary["comment"] = SCommParams
         shapeParamsDictionary["00"] = TexParams
         shapeParamsDictionary["01"] = RotParams
         shapeParamsDictionary["02"] = RotTypeParams
@@ -169,6 +185,51 @@ class OogieShape: NSObject {
         paramListDirty = false
         return paramList
     } //end getParamList
+    
+    
+    //-----------(oogieShape)=============================================
+    // 9/18/21 new, returns dict with packed param arrays... asdf
+    func getParamDict() -> Dictionary<String,Any>
+    {
+        var d = Dictionary<String, Any>()
+        for pname in shapeParamNames //look at all params...
+        {
+            print("pack shape param \(pname)")
+            let plow = pname.lowercased()
+            let pTuple = getParam(named : plow)
+            let sv = pTuple.sParam
+            var dv = pTuple.dParam as Double
+            if let paramz = shapeParamsDictionary[plow]  //get param info...
+            {
+                var workArray = paramz  //copy
+                if let ptype = paramz[1] as? String
+                {
+                    if ptype == "double"  //double type? do some conversion
+                    {
+                        let lolim  = paramz[6] as! Double
+                        let lrange = paramz[5] as! Double
+                        if lrange != 0.0 //9/16 DO not apply range shift to int params!
+                        {
+                            dv = (dv - lolim) / lrange
+                        }
+                        workArray.append(NSNumber(value:dv))
+                    } //end double/int type
+                    else if ptype == "int"     //9/16 int type? no conversion
+                    {
+                        workArray.append(NSNumber(value:dv))
+                    }
+                    else //string?
+                    {
+                        workArray.append(sv)
+                    }
+                }  //end let ptype
+                d[plow] = workArray
+            } //end let paramz
+        } //end for pname
+        return d
+    } //end getParamList
+    
+ 
     
     //-----------(oogieShape)=============================================
     func computeCurrentAngle() -> Double

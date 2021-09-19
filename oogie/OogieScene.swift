@@ -612,6 +612,8 @@ class OogieScene: NSObject {
         if selectedField != 3 //All params but patches are canned: CLUGEY use of hardcoded value!
         { //load them here
 //9/14/21 OLD            vArray = selectedVoice.getNthParams(n: selectedField)
+            // 9/18 KRASH HERE???
+            //print(" CRASH HERE??? \(selectedFieldName))");
             vArray = selectedVoice.getNamedParams(name:selectedFieldName) //9/14/21 use name now
         }
         else  //Get approp patches

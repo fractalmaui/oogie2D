@@ -20,12 +20,16 @@ NSString *ssliderNames[] = {@"Rotation",@"Shape XPos",@"Shape YPos",@"Shape ZPos
     @"Tex UPos",@"Tex YPos",@"Tex UScale",@"Tex VScale"
 }; //2/19 note paddings b4 delay for vibwave
 
-NSString *ssliderParams[] = {@"",@"rotation",@"",@"xpos",@"ypos",@"zpos",
+
+//params are: asdfPicker / Slider / Picker / 7 Sliders / 2 Texts
+NSString *sallParams[] = {@"texture",@"rotation",@"rotationtype",@"xpos",@"ypos",@"zpos",
     @"texxoffset",@"texyoffset",@"texxscale",@"texyscale",@"name",@"comment"
 };
+#define S_ALLPARAMCOUNT 12  //should batch sallParams above
+
 NSString *spickerNames[] = {@"Texture",@"RotType"};
 NSString *spickerParams[] = {@"texture",@"rotationtype"};
-NSString *stextFieldNames[] = {@"Texture",@"Name",@"Comments"};
+NSString *stextFieldNames[] = {@"Name",@"Comments"};
 
 //9/12 dupe from oogieShape, use swift vars if possible?
 int numRotTypeParams = 9;
@@ -52,9 +56,7 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
         // 9/15 add UI utilities
         goog = [genOogie sharedInstance];
         
-        [self setDefaults];
         [self setupView:frame];
-        [self configureView]; // final view tweaking
         //8/3 flurry analytics
         //8/11 FIX fanal = [flurryAnalytics sharedInstance];
 
@@ -62,6 +64,7 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
         [[NSNotificationCenter defaultCenter]
                                 addObserver: self selector:@selector(demoNotification:)
                                        name: @"demoNotification" object:nil];
+        _texNames = @[]; //empty array for now
         _wasEdited = FALSE; //9/8
         sfx   = [soundFX sharedInstance];  //8/27
         diceUndo = FALSE; //7/9
@@ -215,7 +218,7 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
     xi = OOG_XMARGIN;
     yi = 60;
     xs = viewWid-2*OOG_XMARGIN;
-    ys = 8*OOG_SLIDER_HIT + 3*OOG_TEXT_HIT + OOG_PICKER_HIT + 2*OOG_YMARGIN;
+    ys = 2*OOG_PICKER_HIT +  8*OOG_SLIDER_HIT + 2*OOG_TEXT_HIT + OOG_PICKER_HIT + 2*OOG_YMARGIN;
     UIView *sPanel = [[UIView alloc] init];
     [sPanel setFrame : CGRectMake(xi,yi,xs,ys)];
     sPanel.backgroundColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1];
@@ -228,52 +231,34 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
 
     // rotation slider
-    [self addSliderRow:sPanel : 0 : SLIDER_BASE_TAG + 1 : ssliderNames[0] : yi : OOG_SLIDER_HIT:0.0:100.0];
+    [self addSliderRow:sPanel : 0 : SLIDER_BASE_TAG + 1 : ssliderNames[0] : yi : OOG_SLIDER_HIT:0.0:1.0];
     yi += (OOG_SLIDER_HIT+OOG_YSPACER);
 
     // rotation type picker
-    [self addPickerRow:sPanel : 1 : PICKER_BASE_TAG+2 : spickerNames[1] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:sPanel : 1 : PICKER_BASE_TAG + 2 : spickerNames[1] : yi : OOG_PICKER_HIT];
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
 
     // XYZ position
     for (i=0;i<3;i++)
     {
-        [self addSliderRow:sPanel : i+1 : SLIDER_BASE_TAG + 3 + i : ssliderNames[i+1] : yi : OOG_SLIDER_HIT:-10.0:10.0];
+        [self addSliderRow:sPanel : i+1 : SLIDER_BASE_TAG + 3 + i : ssliderNames[i+1] : yi : OOG_SLIDER_HIT:0.0:1.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
     }
     // U/V offset , U/V scale
     for (i=0;i<4;i++)
     {
-        [self addSliderRow:sPanel : i+4 : SLIDER_BASE_TAG + 6 + i : ssliderNames[i+4] : yi : OOG_SLIDER_HIT:0.0:100.0];
+        [self addSliderRow:sPanel : i+4 : SLIDER_BASE_TAG + 6 + i : ssliderNames[i+4] : yi : OOG_SLIDER_HIT:0.0:1.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
     }
-//    // U/V scale
-//    for (i=0;i<2;i++)
-//    {
-//        [self addSliderRow:sPanel : i+7 : SLIDER_BASE_TAG + 8 + i : ssliderNames[i+6] : yi : OOG_SLIDER_HIT:1.0:100.0];
-//        yi += (OOG_SLIDER_HIT+OOG_YSPACER);
-//    }
 
     //9/11 text entry fields...
+    [self addTextRow:sPanel :0 :TEXT_BASE_TAG+10 :@"Name" : yi : OOG_TEXT_HIT ];
     yi+=ys;
-    [self addTextRow:sPanel :0 :TEXT_BASE_TAG+9 :@"Name" :yi :OOG_TEXT_HIT ];
-    yi+=ys;
-    [self addTextRow:sPanel :1 :TEXT_BASE_TAG+10 :@"Comment" :yi :OOG_TEXT_HIT ];
+    [self addTextRow:sPanel :1 :TEXT_BASE_TAG+11 :@"Comment" : yi : OOG_TEXT_HIT ];
 
-    
-    UIView *vLabel = [[UIView alloc] init];
-    xi = viewWid;
-    yi = viewHit/2;
-    xs = 30;
-    ys = 120;
-    [vLabel setFrame : CGRectMake(xi,yi,xs,ys)];
-    
-    vLabel.backgroundColor = [UIColor colorWithRed:0.3 green:0.3 blue:0.3 alpha:1];
-    [self addSubview:vLabel];
-
-    
     //Scrolling area...
-    int scrollHit = 1200; //8/12 760; //640;  //5/20 enlarged again asdf
+    CGRect rrr = sPanel.frame;
+    int scrollHit = rrr.size.height + 80; //we only have one panel here...
     //if (cappDelegate.gotIPad) scrollHit+=120; //3/27 ipad needs a bit more room
     
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
@@ -289,8 +274,8 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
     //8/3 for session analytics: count activities
     diceRolls = 0; //9/9 for analytics
     resets    = 0; //9/9 for analytics
-    for (int i=0;i<MAX_CONTROL_SLIDERS;i++) sChanges[i] = 0;
-    for (int i=0;i<MAX_CONTROL_PICKERS;i++) pChanges[i] = 0;
+    for (int i=0;i<MAX_SHAPE_SLIDERS;i++) sChanges[i] = 0;
+    for (int i=0;i<MAX_SHAPE_PICKERS;i++) pChanges[i] = 0;
 }
  
 //======(shapePanel)==========================================
@@ -308,18 +293,7 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
     return YES;
 }
 
-//======(shapePanel)==========================================
--(void) setDefaults
-{
-    _textNum = 0; //Hopefully our default test pattern
-    _xPos = _yPos = _zPos = 0.0;
-    _uCoord = _vCoord = 0.0;
-    _uScale = _vScale = 1.0;
-    _rotation = 1.0;  //TBD
-    _rotSpeed = 1.0;
-    _sname        = @"empty name";
-    _scomment     = @"empty comment";
-}
+
 
 //======(shapePanel)==========================================
 // 9/15 redo w/ genOogie method!
@@ -421,9 +395,8 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
 
 } //end addPickerRow
 
-
+ 
 //======(shapePanel)==========================================
-// 9/11 textField... for oogie2D/AR
 -(void) addTextRow : (UIView*) parent : (int) index : (int) tag : (NSString*) label :
                 (int) yoff : (int) ysize
 {
@@ -437,58 +410,89 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
       }
 } //end addSliderRow
 
-
-
 //======(shapePanel)==========================================
-//  Updates our controls...
-//  NOTE: tag 0 cannot be used with buttons, makes bad stuff happen
 -(void) configureView
 {
-    [pickers[0] selectRow:_textNum inComponent:0 animated:YES];
-    [sliders[0] setValue:_rotation];
-    //Is this right?
-    [pickers[1] selectRow:_rotType inComponent:0 animated:YES];
-    [sliders[1] setValue:_xPos];
-    [sliders[2] setValue:_yPos];
-    [sliders[3] setValue:_zPos];
-    [sliders[4] setValue:_uCoord];
-    [sliders[5] setValue:_vCoord];
-    [sliders[6] setValue:_uScale];
-    [sliders[7] setValue:_vScale];
-    
-    //9/11 add name/comment text fields
-    [textFields[0] setText:_sname];
-    [textFields[1] setText:_scomment];
+    [pickers[0] reloadAllComponents]; //load textures
+    //[pickers[2] reloadAllComponents];
 
-    resetButton.hidden = !_wasEdited;
-
-    NSLog(@" set up shape pickers");
-    [pickers[0] reloadAllComponents];
-    [pickers[1] reloadAllComponents];
-    
-}  //end configureView
-
-
-//======(shapePanel)==========================================
-// 8/6 wups, had wrong param order!
--(void) sendAllParamsToParent
-{
-//    [self.delegate didSetControlValue:0  :_threshold:@"":FALSE]; //7/11 add undoable arg
-//    [self.delegate didSetControlValue:1  :_bottomMidi:@"":FALSE];
-//    [self.delegate didSetControlValue:2  :_topMidi:@"":FALSE];
-//    [self.delegate didSetControlValue:3  :(float)_keySig:@"":FALSE];
-//    [self.delegate didSetControlValue:4  :_overdrive:@"":FALSE];
-//    [self.delegate didSetControlValue:5  :_portamento:@"":FALSE];
-//    [self.delegate didSetControlValue:6  :_vibLevel:@"":FALSE];
-//    [self.delegate didSetControlValue:7  :_vibSpeed:@"":FALSE];
-//    [self.delegate didSetControlValue:8  :_vibWave:@"":FALSE];
-//    [self.delegate didSetControlValue:9  :_vibeLevel:@"":FALSE]; //7/4/11 wups, forgot new params!
-//    [self.delegate didSetControlValue:10 :_vibeSpeed:@"":FALSE];
-//    [self.delegate didSetControlValue:11 :_vibeWave:@"":FALSE];
-//    [self.delegate didSetControlValue:12 :_delayTime:@"":FALSE];
-//    [self.delegate didSetControlValue:13 :_delaySustain:@"":FALSE];
-//    [self.delegate didSetControlValue:14 :_delayMix:@"":FALSE];
+    [self configureViewWithReset : FALSE];
 }
+
+//======(controlPanel)==========================================
+// This is huge. it should be made to work with any control panel!
+-(void) configureViewWithReset : (BOOL)reset
+{
+    //CLEAN THIS UP: make allpar,allpic,allslid class members instead of arrays!
+    NSMutableArray *allpar = [[NSMutableArray alloc] init];
+    for (int i=0;i<S_ALLPARAMCOUNT;i++) [allpar addObject:sallParams[i]];
+    NSMutableArray *allpick = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_SHAPE_PICKERS;i++) if (pickers[i] != nil) [allpick addObject:pickers[i]];
+    NSMutableArray *allslid = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_SHAPE_SLIDERS;i++) if (sliders[i] != nil)  [allslid addObject:sliders[i]];
+    NSMutableArray *alltext = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_SHAPE_TEXTFIELDS;i++) if (textFields[i] != nil)  [alltext addObject:textFields[i]];
+    NSArray *noresetparams = @[@"texture",@"name",@"comment"];
+    NSMutableDictionary *pickerchoices = [[NSMutableDictionary alloc] init];
+    [pickerchoices setObject:_texNames forKey:@0];  //textures are on picker 8
+    NSMutableArray * rottypeps = [[NSMutableArray alloc] init];
+    for (int i=0;i<numRotTypeParams;i++) [rottypeps addObject:rotTypeParams[i]]; //pack to NSARRAY
+    [pickerchoices setObject:rottypeps forKey:@2];  //rotation types are on picker 2
+    NSDictionary *resetDict = [goog configureViewFromVC:reset : _paramDict : allpar :
+                     allpick : allslid : alltext :
+               noresetparams : pickerchoices];
+    if (reset) //reset? need to inform delegate of param changes...
+    {
+        [self sendUpdatedParamsToParent:resetDict];
+    }
+    
+    resetButton.hidden = !_wasEdited;
+    // 4/30 WTF? why wasnt this here earlier?
+    //BOOL gotPro = (cappDelegate.proMode || cappDelegate.proModeDemo);
+    proButton.hidden = TRUE; // 8/11 FIX gotPro;
+
+} //end configureViewWithReset
+
+//======(controlPanel)==========================================
+// 9/18/21 Sends a limited set of updates to parent
+-(void) sendUpdatedParamsToParent : (NSDictionary*) paramsDict
+{
+    for (NSString*key in paramsDict.allKeys)
+    {
+        NSArray *ra = paramsDict[key];
+        NSNumber *nt = ra[0];
+        NSNumber *nv = ra[1];
+        NSString *ns = ra[2];
+        [self.delegate didSetShapeValue : nt.intValue : nv.floatValue:key:ns:FALSE];
+    }
+} //end sendUpdatedParamsToParent
+
+//======(controlPanel)==========================================
+// 9/18  make this generic too, and return a list of updates for delegate.
+// THEN add a method to go thru the updates dict and pass to parent,
+//    and reuse this method here and in configureView!
+-(void) randomizeParams
+{
+    NSLog(@" RANDOMIZE SHAPE");
+    //CLEAN THIS UP: make allpar,allpic,allslid class members instead of arrays!
+    NSMutableArray *allpar = [[NSMutableArray alloc] init];
+    for (int i=0;i<S_ALLPARAMCOUNT;i++) [allpar addObject:sallParams[i]];
+    NSMutableArray *allpick = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_SHAPE_PICKERS;i++) if (pickers[i] != nil) [allpick addObject:pickers[i]];
+    NSMutableArray *allslid = [[NSMutableArray alloc] init];
+    for (int i=0;i<MAX_SHAPE_SLIDERS;i++) if (sliders[i] != nil)  [allslid addObject:sliders[i]];
+    NSArray *norandomizeparams = @[@"texture",@"name",@"comment"];
+
+    NSMutableDictionary *resetDict = [goog randomizeFromVC : allpar : allpick : allslid : norandomizeparams];
+    [self sendUpdatedParamsToParent:resetDict];
+
+    [self.delegate didSelectShapeDice]; //4/29
+    diceRolls++; //9/9 for analytics
+    diceUndo = FALSE;
+    rollingDiceNow = FALSE;
+
+} //end randomizeParams
+
 
 //======(shapePanel)==========================================
 // 8/3 update session analytics here..
@@ -509,15 +513,10 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
 {
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
     UISlider *slider = (UISlider*)sender;
-    int tagMinusBase = (int)slider.tag-SLIDER_BASE_TAG; // 7/11 new name
-    //Get slider, associated param, and pass back to parent!
+    int tagMinusBase = ((int)slider.tag % 1000); // 7/11 new name
     float value = slider.value;
-    //NSLog(@" sval %f",value);
-    NSString *name = dice ? @"" : ssliderNames[tagMinusBase];
-    NSString *pname = ssliderParams[tagMinusBase];
-    //NSLog(@" send shape value: UNCOMMENT! %d %d",tagMinusBase,value);
-    [self.delegate didSetShapeValue:tagMinusBase:value:pname:name:TRUE];
-
+    NSString *name = dice ? @"" : sallParams[tagMinusBase];
+    [self.delegate didSetShapeValue:tagMinusBase:value:sallParams[tagMinusBase]:name:TRUE];
 } //end updateSliderAndDelegateValue
 
 
@@ -555,61 +554,7 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
 //   pickers values have to be sent to parent here
 - (IBAction)diceSelect:(id)sender
 {
-//    double smins[15]= {0.0,0.0,0.0,0.0,0.0, //6/27/21 add more min/max delay fields
-//                       0.0,0.0,0.0,0.0,0.0,
-//                       0.0,0.0,0.0,0.0,0.0};
-//    double smaxes[15]= {100.0,100.0,100.0,100.0,100.0,
-//                        100.0,100.0,100.0,100.0,100.0,
-//                        100.0,100.0,100.0,100.0,100.0};
-//    int numSliders = 3; // Assume only top panel accessible...
-//    rollingDiceNow = TRUE;
-//    // 8/29 No pro mode? no bottom panel
-//    // 9/2   ...only 7 sliders with empty space at index 3
-//     //if (cappDelegate.proMode || cappDelegate.proModeDemo) numSliders = 15;   //6/27/21
-//
-//    if (diceUndo)
-//    {
-//        NSLog(@" undo?");
-//        diceUndo = FALSE;
-//        return;
-//    }
-//
-//    BOOL needVibrato    = (drand(0,1) < 0.20);
-//    BOOL needPortamento = (drand(0,1) < 0.20);
-//    BOOL needAmplVibe   = (drand(0,1) < 0.20);
-//    BOOL needDelay      = (drand(0,1) < 0.20);   //6/27/21
-//
-//    for (int i=0;i<numSliders;i++) //randomize sliders based on pro mode
-//    {
-//        if (sliders[i] != nil) //skip empty spaces
-//        {
-//            float f = (float)drand(smins[i],smaxes[i]); // get slider randomized val
-//            if (i == 5  && !needPortamento) f = 0.0; //portamento on/off
-//            if (i == 6  && !needVibrato)    f = 0.0; //vibratoo on/off
-//            if (i == 9  && !needAmplVibe)   f = 0.0; //Ampl vibe on/off
-//            if (i == 12 && !needDelay)      f = 0.0; //Delay on/off //6/27/21
-//            [sliders[i] setValue:f]; //most all others get set!
-//            [self updateSliderAndDelegateValue : sliders[i]: TRUE]; //9/23
-//        }
-//    } //end for int
-//    //Randomize our 3 pickers...
-//    int row = (int)drand(0,12);
-//    [pickers[0] selectRow:row inComponent:0 animated:NO];
-//    [self.delegate didSetControlValue:3 :(float)row:@"":FALSE]; //messy hard coded tag!
-//    //if (cappDelegate.proMode || cappDelegate.proModeDemo) // 8/29 Pro Mode? bottom panel ok
-//    {
-//        row = (int)drand(0,4);
-//        [pickers[1] selectRow:row inComponent:0 animated:NO];
-//        [self.delegate didSetControlValue:8 :(float)row:@"":FALSE]; //messy hard coded tag!
-//        row = (int)drand(0,4); //4/8 randomize ampl wave
-//        [pickers[2] selectRow:row inComponent:0 animated:NO];
-//        [self.delegate didSetControlValue:11 :(float)row:@"":FALSE];
-//    }
-//    [self.delegate didSelectControlDice]; //4/29
-//    diceRolls++; //9/9 for analytics
-//    diceUndo = FALSE;
-//    rollingDiceNow = FALSE;
-
+    [self randomizeParams];
 } //end diceSelect
 
  
@@ -625,13 +570,12 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
 // 4/3 reset called via button OR end of proMode demo
 -(void) resetControls
 {
+    [self configureViewWithReset: TRUE];
     resettingNow = TRUE; //used w/ undo
-    [self setDefaults];
-    [self configureView];
-    [self sendAllParamsToParent];
     _wasEdited         = FALSE;
     resetButton.hidden = TRUE;
     resettingNow       = FALSE;
+
 } //end resetControls
 
 //======(shapePanel)==========================================
@@ -639,7 +583,7 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
 -(void)updateSessionAnalytics
 {
     //NSLog(@" duh collected analytics for flurry");
-    for (int i=0;i<MAX_CONTROL_SLIDERS;i++)
+    for (int i=0;i<MAX_SHAPE_SLIDERS;i++)
     {
         if (sChanges[i] > 0) //report changes to analytics
         {
@@ -648,7 +592,7 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
             //8/11 FIX[fanal updateSliderCount:sname:sChanges[i]];
         }
     }
-    for (int i=0;i<MAX_CONTROL_PICKERS;i++)
+    for (int i=0;i<MAX_SHAPE_PICKERS;i++)
     {
         if (pChanges[i] > 0) //report changes to analytics
         {
@@ -687,15 +631,11 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
 - (void)pickerView:(UIPickerView *)pickerView didSelectRow: (NSInteger)row inComponent:(NSInteger)component {
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
     //int which = 0;
-    int liltag = (int)pickerView.tag - PICKER_BASE_TAG;
+    int liltag = (int)pickerView.tag % 1000;
     if (liltag == 0)
         [self.delegate didSetShapeValue:liltag :(float)row:_texNames[row]: @"texture": !rollingDiceNow && !resettingNow];   //7/11
     else
         [self.delegate didSetShapeValue:liltag :(float)row:spickerNames[liltag]: @"rotationtype": !rollingDiceNow && !resettingNow];   //7/11
-//
-//    //8/3 update picker activity count
-//    int pMinusBase = (int)(pickerView.tag-PICKER_BASE_TAG);
-//    if (pMinusBase>=0 && pMinusBase<MAX_CONTROL_PICKERS) pChanges[pMinusBase]++;
 }
 
 
@@ -706,8 +646,8 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
     NSLog(@" picker#rows for tag %d",tag);
     
     if ( tag == PICKER_BASE_TAG)  return _texNames.count;
-    else if ( tag == PICKER_BASE_TAG+2)  return numRotTypeParams;
-    return 0; //empty (failed above test?)
+    else                          return numRotTypeParams;
+//    return 0; //empty (failed above test?)
     
 }
 
@@ -750,21 +690,22 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
 
 #pragma mark - UITextFieldDelegate
 
-//==========ActivityVC=================================================================
+//==========<UITextFieldDelegate>=====================================================
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField
 {
     NSLog(@" begin");
     return YES;
 }
 
-//==========ActivityVC=================================================================
+//==========<UITextFieldDelegate>=====================================================
 - (BOOL)textFieldShouldClear:(UITextField *)textField
 {
     NSLog(@" clear");
 
     return YES;
 }
-//==========ActivityVC=================================================================
+
+//==========<UITextFieldDelegate>=====================================================
 // It is important for you to hide the keyboard
 - (BOOL)textFieldShouldReturn:(UITextField *)textField
 {

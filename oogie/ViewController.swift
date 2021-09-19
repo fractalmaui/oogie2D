@@ -371,7 +371,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             }
         }
         cPanel.paNames = pnames
-        // NO NEED? cPanel.configureView()
         pPanel.configureView() //9/12
 
     }
@@ -804,6 +803,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                 // 8/11 FIXIT editParams(v: "shape") //this also update screen
                                 sPanel.texNames = loadTextureNamesToArray() //populates texture chooser
                                 shiftPanelUp(panel: shapeEditPanels) //9/11 shift controls so they are visible
+                                sPanel.paramDict = OVScene.selectedShape.getParamDict()
                                 sPanel.configureView() //9/12 loadup stuff
                             }
                         }
@@ -928,6 +928,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                             print("FIXIT: editparams!")
                             // 8/11 FIXIT editParams(v:"pipe") //this also update screen
                             shiftPanelUp(panel: pipeEditPanels) //9/11 shift controls so they are visible
+                            piPanel.paramDict = OVScene.selectedPipe.getParamDict()
+                            // get correct output parameter names for this pipe
+                            OVScene.selectedField = 1 //Force selection to get possible output pipe values...
+                            OVScene.loadCurrentPipeParams()
+                            var workArray = OVScene.selectedFieldDisplayVals;
+                            workArray.remove(at: 0) //Toss first 2 items
+                            workArray.remove(at: 0)
+                            piPanel.outputNames = workArray //now we should have our outputs
                             piPanel.configureView() //9/12 loadup stuff
                         }
                         else
@@ -2492,6 +2500,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 //asdf  set up for new param if control changed!
                 //OVScene.selectedField
                 OVScene.selectedFieldName = pname
+                // 9/18 SAW KRASH here on rapid dice rolls,
+                // WALKING ON MEMORY?????
                 OVScene.loadCurrentVoiceParams()
             }
             //convert from slider unit to proper units...
@@ -2510,7 +2520,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end didSetControlValue
     
     
-    //=====<oogie2D mainVC>====================================================
+    //=====<shapePanelDelegate>====================================================
     // 9/15 redid to handle  OVScene.loadCurrentShapeParams
     func didSetShapeValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
     {
@@ -2521,7 +2531,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             pLabel.setupForParam( pname : pname , ptype : TFLOAT_TTYPE ,
                                   pmin : 0 , pmax : 100 , choiceStrings: cs)
             oldvpname = pname; //remember for next time
-            //asdf  set up for new param if control changed!
             //OVScene.selectedField
             OVScene.selectedFieldName = pname
             OVScene.loadCurrentShapeParams()
@@ -2554,10 +2563,61 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                                         toDouble : Double(newVal),
                                                         toString : pvalue )
             update3DSceneForSceneChanges(sceneChanges)
-            OVScene.sceneVoices[OVScene.selectedMarkerKey] = OVScene.selectedVoice //WOW STORE IN SCENE?
+            // DO I NEED THIS? OVScene.sceneShapes[OVScene.selectedShapeKey] = OVScene.selectedShape //WOW STORE IN SCENE?
         }
 
     } //end didSetShapeValue
+
+    //=====<shapePanelDelegate>====================================================
+    // 9/18/21
+    func didSelectShapeDice() {
+        print("didSelectShapeDice")
+        pLabel.updateLabelOnly(lStr:"Randomize Shape") //9/18 info for user!
+    }
+    func didSelectShapeReset() {
+        print("didSelectShapeReset")
+        pLabel.updateLabelOnly(lStr:"Reset Shape") //9/18 info for user!
+    }
+
+    
+    //=====<pipePanelDelegate>====================================================
+    // 9/15 redid to handle  OVScene.loadCurrentShapeParams
+    func didSetPipeValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
+    {
+        print("mainvc: didSetPipeValue \(which) \(newVal) \(pname) \(pvalue)")
+        // THIS IS PRETTY COMMON IN all set__Value methods? make it a method?
+        let cs = [""]
+        if pname != oldvpname
+        {
+            pLabel.setupForParam( pname : pname , ptype : TFLOAT_TTYPE ,
+                                  pmin : 0 , pmax : 100 , choiceStrings: cs)
+            oldvpname = pname; //remember for next time
+            OVScene.selectedFieldName = pname
+            OVScene.loadCurrentPipeParams()
+        }
+        pLabel.updateit(value: Double(newVal)) //DHS 9/28 new display
+        //4/26 Dig up last param value and save
+        // for rotationtype, make sure there is a updaterotationtype in output below!
+        let sceneChanges = OVScene.setNewParamValue(newEditState : whatWeBeEditing,
+                                                    named : pname,
+                                                    toDouble : Double(newVal),
+                                                    toString : pvalue )
+        update3DSceneForSceneChanges(sceneChanges)
+        // DO I NEED THIS?  OVScene.scenePipes[OVScene.selectedPipeKey] = OVScene.selectedPipe
+    }
+    
+    //=====<pipePanelDelegate>====================================================
+    // 9/18/21
+    func didSelectPipeDice() {
+        print("didSelectShapeDice")
+        pLabel.updateLabelOnly(lStr:"Randomize Shape") //9/18 info for user!
+    }
+    func didSelectPipeReset() {
+        print("didSelectShapeReset")
+        pLabel.updateLabelOnly(lStr:"Reset Shape") //9/18 info for user!
+    }
+
+
     
     
     //=====<oogie2D mainVC>====================================================
@@ -2644,9 +2704,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }
     func didSelectControlDice() {
         print("didSelectControlDice")
+        pLabel.updateLabelOnly(lStr:"Randomize Voice") //9/18 info for user!
     }
     func didSelectControlReset() {
         print("didSelectControlReset")
+        pLabel.updateLabelOnly(lStr:"Reset Voice") //9/18 info for user!
     }
     func updateControlModeInfo(_ infostr: String!) {
         pLabel.updateLabelOnly(lStr: infostr)

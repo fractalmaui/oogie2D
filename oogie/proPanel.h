@@ -73,6 +73,7 @@
 @property (nonatomic, unsafe_unretained) id <proPanelDelegate> delegate;
 @property (nonatomic, strong) NSString *patchName;
 @property (nonatomic, strong) NSArray *sampleNames;
+@property (nonatomic, strong) NSArray *outputNames;
 @property (nonatomic, assign) int yTop; //9/14 cluge
 @property (nonatomic, strong) NSDictionary *oogieVoiceDict;
 @property (nonatomic, strong) NSMutableDictionary *oogieVoiceResultsDict;
