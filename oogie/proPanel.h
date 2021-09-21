@@ -24,7 +24,7 @@
 @protocol proPanelDelegate;
 
 //8/12/21 WHERE DO I GET THIS FROM
-#define MAX_CONTROL_SLIDERS 32
+#define MAX_PRO_SLIDERS 32
 
 //leaving some room for expansion...
 #define MAX_PRO_SLIDERS 32

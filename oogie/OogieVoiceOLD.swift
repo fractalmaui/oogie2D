@@ -10,11 +10,32 @@
 //
 //  Created by Dave Scruton on 7/22/19.
 //
+//  8/13 added OogiePatch for patch-related properties
+//  8/22 add saveVoice
+//  9/10 add voiceParamsDictionary et al
+//  9/24 add getPatchNameArray to support different types of patches
+//  9/26 add loadDefaultPatchForVoiceType, sfx reference
+//  10/4  add panFixed, etc in setInputColor
+//  10/9  add name field
+//  11/14 new arg to patch:saveItem
+//  11/18 move playColors in ... what about masterPitch and quantTime?
+//  11/25 add getChanValueByName, RRR,GGG,BBB channel standard names
+//  1/27  add getParam
+//  1/29  add getParmLimsForPipe, remove Patch as pipe input
+//  2/5   fix bug in getParamCount!!
+//  2/28  redo top/bottom midi
+//  4/18  add rotTrigger support
+//  4/19  add angle arg to playColors, pull pitchFloat
+//  4/22  add getParam func
+//  4/26  add int param type for midi params
+//  4/27  redo top/bot midi and channel
+//  5/3   move in getShapeColor from mainVC
+//  5/9   add detune as editable param, change detune rules in playColors
+//  5/14  new top/bottom midi defaults
 //  8/11/21 MODIFY OVStruct, add performance controls portamento, etc...
 //  9/1   add loadRandomPercKitPatch, etc
 //  9/15  redid all param ranges to accommodate slider range 0..1
 //  9/16  add FX params to getParam
-//  9/18  add oogieVoiceParams singleton
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -31,8 +52,68 @@ let  SYNTHDUTY_DEFAULT = 50.0
 
 let MAX_CBOX_FRAMES = 20 //11/18 for playColors support 
 
+//Parameter area... this is how the user gets at 3d objects from the UI
+//Parmas: Name,Type,Min,Max,Default,DisplayMult,DisplayOffset?? (string params need a list of items)
+// NOTE: .pi has to have a numeric multiplicator / divisor to compile in this statement!
+let LatParams   : [Any] = ["Latitude" ,      "double", -.pi/2.0   , .pi/2.0   , 0.0, 1.0 * .pi, -0.5 * .pi ]
+let LonParams   : [Any] = ["Longitude",      "double", -1.0 * .pi , 1.0 * .pi , 0.0, 2.0 * .pi  ,-1.0 * .pi ]
+// 10/15 NOTE: order here MUST match macro value order in synth!
+let TypeParams  : [Any] = ["Type",           "string" , "Synth", "Percussion", "PercKit", "Sample", "Harmony"]
+let PatchParams : [Any] = ["Patch",          "string","mt"]
+// 5/14 add pitch shift
+let PitchShiftParams : [Any] = ["ChromaticKey","string" , "C", "C#", "D", "D#", "E", "F",
+                                            "F#", "G", "G#", "A", "A#", "B"]
+let ScaleParams : [Any] = ["Scale",          "string" ,"major" ,"minor" ,"blues" ,"chromatic",
+                           "lydian" ,"phrygin" ,"pixolydian" ,"locrian" ,"egyptian",
+                           "hungarian" ,"algerian","japanese" ]
+let LevelParams    : [Any]   = ["Level" ,    "double", 0.0 , 1.0 , 0.5 , 255.0, 0.0 ]
+//5/2 add thresh
+let ThreshParams : [Any]     = ["Threshold", "double" ,1.0, 255.0 , 5.0  , 100.0,  0.0 ]
+//  10/4 add nvp chan/fixed / midi params
+let NChanParams : [Any]      = ["NChan",     "string" , "Red", "Green", "Blue", "Hue",
+                                "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow", "Fixed"]
+let VChanParams : [Any]      = ["VChan",     "string" , "Red", "Green", "Blue", "Hue",
+                                "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow", "Fixed"]
+let PChanParams : [Any]      = ["PChan",     "string" , "Red", "Green", "Blue", "Hue",
+                                "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow", "Fixed"]
+let NFixedParams : [Any]     = ["NFixed",    "double" ,  16.0, 112.0 , 64.0  , 255.0,  0.0 ] //4/27 redo next 3
+let VFixedParams : [Any]     = ["VFixed",    "double" ,  0.0 , 255.0 , 128.0 , 255.0,  0.0 ]
+let PFixedParams : [Any]     = ["PFixed",    "double" ,  0.0 , 255.0 , 128.0 , 255.0,  0.0 ]
+let RotTriggerParams : [Any] = ["RotTrigger","double" ,  0.0 , 256.0 , 0.0 , 255.0,  0.0 ]
+let DetuneParams : [Any]     = ["Detune",     "string" , "Off", "On"]   //5/9
+// 9/17/21 change top/bottom midi from int to double
+let BottomMidiParams : [Any] = ["BottomMidi","double" ,  16.0 , 112.0 , 32.0 , 100.0,  20.0 ] //9/14/21 change last item
+let TopMidiParams : [Any]    = ["TopMidi",   "double" ,  16.0 , 112.0 , 96.0 , 100.0,  20.0 ]
+let MidiChannelParams: [Any] = ["MidiChannel","int" ,  1.0 ,16.0 , 1.0 , 128.0,  0.0 ]
+let VNameParams    : [Any]   = ["Name",      "text", "mt"]
+let VCommParams    : [Any]   = ["Comment",   "text", "mt"]
 
+//9/14/21 for all effects ranging 0..100
+let fx100Params : [Any]     = ["FX",   "double" ,  0.0 , 0.0 , 0.0 , 100.0,  0.0 ] // for sliders
+let fxWaveParams : [Any]     = ["FXWave",   "int" ,  0.0 , 0.0 , 0.0 , 4.0,  0.0 ] // for wave pickers
 
+// All param names, must match first item above for each param!
+let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch","ChromaticKey",
+                             "Scale","Level","Threshold","KeySig",  // 9/16/21 keysig
+                             "NChan","VChan","PChan",
+                             "NFixed","VFixed","PFixed","RotTrigger","Detune",   // 5/9
+                             "BottomMidi","TopMidi","MidiChannel","Name","Comment",
+                             "Portamento","Viblevel","Vibspeed","VibWave", //9/15/21 add fx
+                             "VibeLevel","VibeSpeed","VibeWave",
+                             "DelayTime" ,"DelaySustain","DelayMix"
+]
+let voiceParamNamesOKForPipe : [String]    = ["Latitude", "Longitude","ChromaticKey",
+                                            "Scale","Level","Threshold","KeySig",   // 9/16/21 keysig
+                                            "NChan","VChan","PChan",
+                                            "NFixed","VFixed","PFixed","RotTrigger","Detune",   // 5/9
+                                            "BottomMidi","TopMidi","MidiChannel",
+                                            "Portamento","Viblevel","Vibspeed","vibwave", //9/15/21 add fx
+                                            "VibeLevel","VibeSpeed","VibeWave",
+                                            "DelayTime" ,"DelaySustain","DelayMix"
+]
+
+var voiceParamsDictionary = Dictionary<String, [Any]>()
+var voiceParamsDictionaryOLD = Dictionary<String, [Any]>()
 // 9/23 canned perc kit defaults
 let percDefaults : [String] = ["Bass_Drum_1","Acoustic_Snare","Low_Tom","Low_Mid_Tom",
                               "High_Tom","Open_Hi_Hat","Closed_Hi_Hat","Ride_Cymbal_1"]
@@ -50,6 +131,22 @@ let MAX_LOOX = 8
     var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
 
 
+    class Person: NSObject, NSCopying {
+    var firstName: String
+    var lastName: String
+    var age: Int
+
+    init(firstName: String, lastName: String, age: Int) {
+        self.firstName = firstName
+        self.lastName = lastName
+        self.age = age
+    }
+
+    func copy(with zone: NSZone? = nil) -> Any {
+        let copy = Person(firstName: firstName, lastName: lastName, age: age)
+        return copy
+    }
+}
 
 // 8/12/21 make accessible in objective C
 @objc class OogieVoice: NSObject, NSCopying {
@@ -57,7 +154,6 @@ let MAX_LOOX = 8
     var OOP  = OogiePatch() //this is a struct
     var OVS  = OVStruct()   //  another struct
     var allP = AllPatches.sharedInstance
-    var OVP  =  OogieVoiceParams.sharedInstance //9/18/21 oogie voice params
     var uid  = "nouid"
 
     var oldNote = 0;
@@ -123,6 +219,7 @@ let MAX_LOOX = 8
         //9/8 unique ID for tab
         uid = ProcessInfo.processInfo.globallyUniqueString
         masterPitch = 0
+        setupVoiceParams()
     }
     
     //-----------(oogieVoice)=============================================
@@ -139,6 +236,66 @@ let MAX_LOOX = 8
         return copy
     }
     
+    //-----------(oogieVoice)=============================================
+    func setupVoiceParams()
+    {
+        // Load up params dictionary with string / array combos
+        voiceParamsDictionary["latitude"] = LatParams
+        voiceParamsDictionary["longitude"] = LonParams
+        voiceParamsDictionary["type"] = TypeParams
+        voiceParamsDictionary["patch"] = PatchParams
+        voiceParamsDictionary["pitch"] = PitchShiftParams //5/14
+        voiceParamsDictionary["keysig"] = ScaleParams
+        voiceParamsDictionary["level"] = LevelParams
+        voiceParamsDictionary["overdrive"] = LevelParams
+        voiceParamsDictionary["threshold"] = ThreshParams  //5/2 add threshold
+        voiceParamsDictionary["nchan"] = NChanParams   //10/4 n/v/p channels
+        voiceParamsDictionary["vchan"] = VChanParams
+        voiceParamsDictionary["pchan"] = PChanParams
+        voiceParamsDictionary["nfixed"] = NFixedParams   //10/4 n/v/p fixed
+        voiceParamsDictionary["vfixed"] = VFixedParams
+        voiceParamsDictionary["pfixed"] = PFixedParams
+        voiceParamsDictionary["rottrigger"] = RotTriggerParams //4/18 add rot trigger
+        voiceParamsDictionary["pkeydetune"] = DetuneParams //5/9 add detune
+        voiceParamsDictionary["bottommidi"] = BottomMidiParams
+        voiceParamsDictionary["topmidi"] = TopMidiParams
+        voiceParamsDictionary["midichan"] = MidiChannelParams
+        voiceParamsDictionary["name"] = VNameParams
+        voiceParamsDictionary["comment"] = VCommParams   //2/4
+        voiceParamsDictionary["portamento"]   = fx100Params //9/15/21 add fx
+        voiceParamsDictionary["viblevel"]     = fx100Params
+        voiceParamsDictionary["vibspeed"]     = fx100Params
+        voiceParamsDictionary["vibwave"]      = fxWaveParams
+        voiceParamsDictionary["vibelevel"]    = fx100Params
+        voiceParamsDictionary["vibespeed"]    = fx100Params
+        voiceParamsDictionary["vibewave"]     = fxWaveParams
+        voiceParamsDictionary["delaytime"]    = fx100Params
+        voiceParamsDictionary["delaysustain"] = fx100Params
+        voiceParamsDictionary["delaymix"]     = fx100Params
+
+        // 9/14/21 NOTE: NEed to add performance params, portamento.... delay!!!
+        voiceParamsDictionaryOLD["00"] = LatParams
+        voiceParamsDictionaryOLD["01"] = LonParams
+        voiceParamsDictionaryOLD["02"] = TypeParams
+        voiceParamsDictionaryOLD["03"] = PatchParams
+        voiceParamsDictionaryOLD["04"] = PitchShiftParams //5/14
+        voiceParamsDictionaryOLD["05"] = ScaleParams
+        voiceParamsDictionaryOLD["06"] = LevelParams
+        voiceParamsDictionaryOLD["07"] = ThreshParams  //5/2 add threshold
+        voiceParamsDictionaryOLD["08"] = NChanParams   //10/4 n/v/p channels
+        voiceParamsDictionaryOLD["09"] = VChanParams
+        voiceParamsDictionaryOLD["10"] = PChanParams
+        voiceParamsDictionaryOLD["11"] = NFixedParams   //10/4 n/v/p fixed
+        voiceParamsDictionaryOLD["12"] = VFixedParams
+        voiceParamsDictionaryOLD["13"] = PFixedParams
+        voiceParamsDictionaryOLD["14"] = RotTriggerParams //4/18 add rot trigger
+        voiceParamsDictionaryOLD["15"] = DetuneParams //5/9 add detune
+        voiceParamsDictionaryOLD["16"] = BottomMidiParams
+        voiceParamsDictionaryOLD["17"] = TopMidiParams
+        voiceParamsDictionaryOLD["18"] = MidiChannelParams
+        voiceParamsDictionaryOLD["19"] = VNameParams
+        voiceParamsDictionaryOLD["20"] = VCommParams   //2/4
+    } //end setupVoiceParams
     
     //-----------(oogieVoice)=============================================
     func addToDebugHistory(n:Int)
@@ -238,9 +395,9 @@ let MAX_LOOX = 8
 //            print("getNthParams ERROR: nil params!")
 //            return [""]
 //        }
-        if n < 0 || n >= OVP.voiceParamsDictionaryOLD.count {return []} //9/18/21
+        if n < 0 || n >= voiceParamsDictionaryOLD.count {return []}
         let key =  String(format: "%02d", n)
-        return OVP.voiceParamsDictionaryOLD[key]!
+        return voiceParamsDictionaryOLD[key]!
     }
 
     //-----------(oogieVoice)=============================================
@@ -248,9 +405,9 @@ let MAX_LOOX = 8
     func getNamedParams(name : String) -> [Any]
     {
         //exists? Great!
-        if let vpd = OVP.voiceParamsDictionary[name]  { return vpd }//9/18/21
+        if let vpd = voiceParamsDictionary[name]  { return vpd }
         //otherwise return generic FX 0..100 params
-        return OVP.fx100Params
+        return fx100Params
     }
 
     
@@ -285,7 +442,7 @@ let MAX_LOOX = 8
         var found  = false
         var iindex = 0
         // 1/29 find our name...maybe make case-independent array search method?
-        for pn in OVP.voiceParamNames     //9/18/21
+        for pn in voiceParamNames
         {
             if pn.lowercased() == name
             { found = true ; break }
@@ -294,7 +451,7 @@ let MAX_LOOX = 8
         if found // find param name
         {
             let sindex = String(format: "%2.2d", iindex)         // convert to string for lookup
-            if let paramz = OVP.voiceParamsDictionary[name]       //  use name to get param lims
+            if let paramz = voiceParamsDictionary[name]       //  use name to get param lims
 //9/14/21 OLD            if let paramz = voiceParamsDictionaryOLD[sindex]       // finally, get params array
             {
                 let pc = paramz.count
@@ -355,7 +512,7 @@ let MAX_LOOX = 8
     func dumpParams() -> String
     {
         var s = String(format: "[key:%@]\n",OVS.key)
-        for pname in OVP.voiceParamNames      //9/18/21
+        for pname in voiceParamNames
         {
             let pTuple = getParam(named : pname.lowercased())
             s = s + String(format: "%@:%@\n",pname,pTuple.sParam)
@@ -369,7 +526,7 @@ let MAX_LOOX = 8
     {
         if !paramListDirty {return paramList} //get old list if no new params
         paramList.removeAll()
-        for pname in OVP.voiceParamNames
+        for pname in voiceParamNames
         {
             let pTuple = getParam(named : pname.lowercased())
             paramList.append(pTuple.sParam)  
@@ -383,11 +540,11 @@ let MAX_LOOX = 8
     func getDefaultsDict() -> Dictionary<String,Any>
     {
         var d = Dictionary<String, Any>()
-        for pname in OVP.voiceParamNames //look at all params... 9/18/21
+        for pname in voiceParamNames //look at all params...
         {
             let plow = pname.lowercased()
             var pdefault : NSNumber = 0
-            if let params = OVP.voiceParamsDictionary[plow]
+            if let params = voiceParamsDictionary[plow]
             {
                 let ptype = params[1] as! String
                 if ptype == "double" //sliders have params in their arrays
@@ -408,14 +565,14 @@ let MAX_LOOX = 8
     {
         var d = Dictionary<String, Any>()
         d["soundpack"] = ["soundpack" , soundPack]
-        for pname in OVP.voiceParamNames //look at all params... 9/18/21
+        for pname in voiceParamNames //look at all params...
         {
             print("pack param \(pname)")
             let plow = pname.lowercased()
             let pTuple = getParam(named : plow)
             let sv = pTuple.sParam
             var dv = pTuple.dParam as Double
-            if let paramz = OVP.voiceParamsDictionary[plow]  //get param info...
+            if let paramz = voiceParamsDictionary[plow]  //get param info...
             {
                 var workArray = paramz  //copy
                 if let ptype = paramz[1] as? String
@@ -910,7 +1067,7 @@ let MAX_LOOX = 8
     //-----------(oogieVoice)=============================================
     func getParamCount() -> Int
     {
-        return OVP.voiceParamNames.count   // 2/5 WTF? BUG!!!  9/18/21
+        return voiceParamNames.count   // 2/5 WTF? BUG!!!
     }
 
     //-----------(oogieVoice)=============================================

@@ -1,3 +1,11 @@
+//
+//         _            ____                  _
+//   _ __ (_)_ __   ___|  _ \ __ _ _ __   ___| |
+//  | '_ \| | '_ \ / _ \ |_) / _` | '_ \ / _ \ |
+//  | |_) | | |_) |  __/  __/ (_| | | | |  __/ |
+//  | .__/|_| .__/ \___|_|   \__,_|_| |_|\___|_|
+//  |_|     |_|
+//
 //  OogieCam pipePanel
 //
 //  Created by Dave Scruton on 9/14/20.
@@ -73,8 +81,10 @@ NSArray *opParams;
 //======(pipePanel)==========================================
 -(void) setupView:(CGRect)frame
 {
-    viewWid    = frame.size.width;
-    viewHit    = frame.size.height;
+    //9/20 Wow. we dont have a frame here!!! get width at least!
+    CGSize screenSize   = [UIScreen mainScreen].bounds.size;
+    viewWid = screenSize.width;
+    viewHit = frame.size.height; //this is probably zero too!!!
 //    buttonWid  = viewHit * 0.07; //9/8 vary by viewhit, not wid
 //    buttonHit  = buttonWid;
     buttonWid = viewWid * 0.12; //10/4 REDO button height,scale w/width
@@ -235,10 +245,10 @@ NSArray *opParams;
     [self addSliderRow:sPanel : 1 : SLIDER_BASE_TAG + 3 : pisliderNames[1] : yi : OOG_SLIDER_HIT:0.0:255.0];
     yi += (OOG_SLIDER_HIT+OOG_YSPACER);
 
-    // 2 text entry fields... name / comment
-    yi+=ys;
+    // 2 text entry fields... name / comment 9/20 fix yoffset bug
+    yi += (OOG_TEXT_HIT+OOG_YSPACER);
     [self addTextRow:sPanel :0 :TEXT_BASE_TAG+4 : pitextFieldNames[0] :yi :OOG_TEXT_HIT ];
-    yi+=ys;
+    yi += (OOG_TEXT_HIT+OOG_YSPACER);
     [self addTextRow:sPanel :1 :TEXT_BASE_TAG+5 : pitextFieldNames[1] :yi :OOG_TEXT_HIT ];
     
     UIView *vLabel = [[UIView alloc] init];
@@ -398,7 +408,7 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
       {
           UITextView * textField = A[0];
           textField.delegate     = self;
-          textFields[index]      = textField;
+          ptextFields[index]     = textField;
       }
 } //end addSliderRow
 
@@ -422,7 +432,7 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
     NSMutableArray *allslid = [[NSMutableArray alloc] init];
     for (int i=0;i<MAX_PIPE_SLIDERS;i++) if (sliders[i] != nil)  [allslid addObject:sliders[i]];
     NSMutableArray *alltext = [[NSMutableArray alloc] init];
-    for (int i=0;i<MAX_PIPE_TEXTFIELDS;i++) if (textFields[i] != nil)  [alltext addObject:textFields[i]];
+    for (int i=0;i<MAX_PIPE_TEXTFIELDS;i++) if (ptextFields[i] != nil)  [alltext addObject:ptextFields[i]];
     NSArray *noresetparams = @[@"texture",@"name",@"comment"];
     NSMutableDictionary *pickerchoices = [[NSMutableDictionary alloc] init];
     NSMutableArray * inparams = [[NSMutableArray alloc] init];
@@ -678,29 +688,30 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
 
 #pragma mark - UITextFieldDelegate
 
-//==========ActivityVC=================================================================
+//==========<UITextFieldDelegate>====================================================
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField
 {
-    NSLog(@" begin");
+    //NSLog(@" begin");
     return YES;
 }
 
-//==========ActivityVC=================================================================
+//==========<UITextFieldDelegate>====================================================
 - (BOOL)textFieldShouldClear:(UITextField *)textField
 {
     NSLog(@" clear");
 
     return YES;
 }
-//==========ActivityVC=================================================================
+
+//==========<UITextFieldDelegate>====================================================
 // It is important for you to hide the keyboard
 - (BOOL)textFieldShouldReturn:(UITextField *)textField
 {
-    NSLog(@" return");
+    //NSLog(@" return");
     [textField resignFirstResponder]; //Close keyboard
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
-    [self.delegate didSetPipeValue:liltag :0.0:s:@"": FALSE];
+    [self.delegate didSetPipeValue:liltag :0.0: pallParams[liltag] : s : FALSE];   //9/20
     return YES;
 }
 

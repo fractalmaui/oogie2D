@@ -9,10 +9,7 @@
 //
 //  Created by Dave Scruton on 10/30/19.
 //  Copyright © 2020 fractallonomy. All rights reserved.
-//  11/13 add GM instrument name to chooser rows
-//  12/27 unhide LH table, wasnt showing up. changed table bkgds, added cellHeight too
-//          fixed scroll for 2nd table
-//  12/28 add check for filez present in viewDidLoad
+//  9/18/21 complete redo
 
 import UIKit
 import Foundation
@@ -35,7 +32,14 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     @IBOutlet weak var saveButton: UIButton!
 
     var delegate: chooserDelegate?
-    var mode = "load"
+    let chooserLoadSceneMode   = "loadScene"
+    let chooserSaveSceneMode   = "saveScene"
+    let chooserSaveSceneAsMode = "saveSceneAs"
+    let chooserLoadPatchMode   = "loadPatch"
+    let chooserSavePatchMode   = "savePatch"
+    let chooserSavePatchAsMode = "savePatchAs"
+
+    var mode = ""
     let cellHeight = 40 //should be large enuf for one line of text
     
     var filez : [String] = []
@@ -69,56 +73,26 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         //get folder contents...
         //        static func getDirectoryContents(whichDir : String) -> [String]
         typez.removeAll()
-        //OUCH! here we should show patch GM instrument name too!
-// 6/29/21 FIX THIS!
-//        if mode == "loadAllPatches"   //show user/sunth/perc/perckit/sample folders
-//        {
-//            filez.removeAll()
-//            if allP.yuserPatchDictionary.count > 0  //do we have any user patches?
-//            {
-//                filez = Array(allP.yuserPatchDictionary.keys).sorted()
-//                for _ in 0...allP.yuserPatchDictionary.count-1 {typez.append(5)}
-//            }
-//            filez = filez + Array(allP.synthPatchDictionary.keys).sorted()
-//            for _ in 0...allP.synthPatchDictionary.count-1 {typez.append(1)}
-//            filez = filez + Array(allP.percussionPatchDictionary.keys).sorted()
-//            for _ in 0...allP.percussionPatchDictionary.count-1 {typez.append(2)}
-//            filez = filez + Array(allP.percKitPatchDictionary.keys).sorted()
-//            for _ in 0...allP.percKitPatchDictionary.count-1 {typez.append(3)}
-//            //Append GM instrument names
-//            var aab : [String] = []
-//            for s in Array(allP.GMPatchDictionary.keys).sorted()
-//              {
-//                aab.append(s + ":" + allP.getInstrumentNameFromGMFilename(fname:s))
-//              }
-//            filez = filez + aab
-//            for _ in 0...allP.GMPatchDictionary.count-1 {typez.append(4)}
-//        }
-//        else // 12/28 add check Sample chooser modes? just get single folder
-//        {
-//            filez = DataManager.getDirectoryContents(whichDir: chooserFolder)
-//            if filez.count > 0
-//            {
-//                for _ in 0...filez.count-1 {typez.append(4)} //11/13 add sample type
-//
-//            }
-//        }
-        print("chooser folder \(chooserFolder) mode \(mode)")
-        saveButton.isHidden = true //NO NEED? (mode == "load")        
-        if mode == "loadAllPatches"
+        print("chooser  mode \(mode)")
+        saveButton.isHidden = true //NO NEED? (mode == "load")
+        if mode == chooserLoadPatchMode
         {
             titleLabel.text = "Load Patch..."
             nameText.isHidden = true
         }
-        else if mode == "load"
+        else if mode == chooserLoadSceneMode
         {
-            titleLabel.text = "Load File..."
+            titleLabel.text = "Load Scene..."
             nameText.isHidden = true
         }
-        else if mode == "save"
+        else if mode == chooserSaveSceneAsMode
         {
-            titleLabel.text = "Save File..."
-            //9/13/21 Causing a hang? nameText.becomeFirstResponder()
+            titleLabel.text = "Save Scene As..."
+            nameText.isHidden = false
+        }
+        else if mode == chooserSavePatchAsMode
+        {
+            titleLabel.text = "Save Patch As..."
             nameText.isHidden = false
         }
         nameText.delegate = self
@@ -141,6 +115,12 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
             table2.scrollToRow(at: ip ,  at: .middle, animated: false)
         }
     } //end viewDidLoad
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        getFolderContents()
+
+    }
 
     //---(chooserVC)--------------------------------------
     @IBAction func cancelSelect(_ sender: Any) {
@@ -160,6 +140,21 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         chosenFile = ""
         delegate?.chooserCancelled()
         dismiss(animated: true, completion: nil)
+    }
+    
+    //---(chooserVC)--------------------------------------
+    func getFolderContents()
+    {
+        if mode == chooserLoadSceneMode || mode == chooserSaveSceneAsMode
+        {
+            filez = DataManager.getDirectoryContents(whichDir: "scenes")
+        }
+        if mode == chooserLoadPatchMode || mode == chooserSavePatchAsMode
+        {
+            filez = DataManager.getDirectoryContents(whichDir: "patches")
+        }
+        print("chooser filez  \(filez)")
+
     }
     
     //---(chooserVC)--------------------------------------
@@ -227,19 +222,19 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     //---<UITableViewDelegate>--------------------------------------
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         chosenFile = filez[indexPath.row]
-        if mode == "loadAllPatches"
+        if mode == chooserLoadPatchMode
         {
             let ss = chosenFile.split(separator: ":")//11/13 Compound strings?
             if ss.count == 2  {chosenFile = String(ss[0])} // found one? Choose first part
             delegate?.chooserChoseFile(name: chosenFile)
             dismiss(animated: true, completion: nil)
         }
-        else if mode == "load"
+        else if mode == chooserLoadSceneMode
         {
             delegate?.chooserChoseFile(name: chosenFile)
             dismiss(animated: true, completion: nil)
         }
-        else if mode == "save"
+        else if mode == chooserSaveSceneAsMode
         {
             handleSave(name: chosenFile) //puts up chooser!
         }

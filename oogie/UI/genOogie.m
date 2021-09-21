@@ -207,7 +207,7 @@ static genOogie *sharedInstance = nil;
     [textRow setFrame : CGRectMake(xi,yi,xs,ys)];
     textRow.backgroundColor = [UIColor clearColor]; //[UIColor colorWithRed:0.3 green:0 blue:0 alpha:1];
     [parent addSubview:textRow];
-
+    // NSLog(@" addTextRow (xi %d yi %d  xs %d ys %d) [%@]", xi,yi,xs,ys,label);
     xi = x1; //4/26
     yi = 0; //back to top left...
     xs = x2-x1-5; //7/9/21 test w/ RH align

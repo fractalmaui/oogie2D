@@ -17,27 +17,15 @@
 //  4/25 add paramList
 //  4/27 add dumpParams
 //  5/2  add calls to setupRange in param lo/hi range change
-
+//  9/19 add oogiePipeParams
 import Foundation
 import SceneKit
 
-//12/1 add params
-let InputChanParams      : [Any]   = ["InputChannel", "string", "Red", "Green", "Blue", "Hue",
-                                  "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow"]
-let OutputParamParams    : [Any] = ["OutputParam",  "string","mt"]
-//Not confusing at all, huh? This is the param where the pipename is entered
-let PipeLoRangeParams    : [Any] = ["LoRange" , "double", 0.0 , 255.0 , 128.0, 255.0, 0.0 ]
-let PipeHiRangeParams    : [Any] = ["HiRange" , "double", 0.0 , 255.0 , 128.0, 255.0, 0.0 ]
-let PipeNameParams       : [Any] = ["Name",         "text", "mt"]
-let PipeCommParams       : [Any] = ["Comment",      "text", "mt"]
-// This is an array of all parameter names...
-let pipeParamNames : [String] = ["InputChannel", "OutputParam","LoRange","HiRange","Name","Comment"]
-
-var pipeParamsDictionary = Dictionary<String, [Any]>()
 
 struct OogiePipe {
     //User Params come from here...
     var PS      : PipeStruct
+    var OPP     =  OogiePipeParams.sharedInstance //9/18/21 oogie voice params
     //Working variables...
     let pbSize  = 256
     var ibuffer : [Float] //input buffer
@@ -60,42 +48,21 @@ struct OogiePipe {
         obuffer      = []
         PS           = PipeStruct()
         uid          = "pipe_" + ProcessInfo.processInfo.globallyUniqueString //1/21 wups no uid!
-        setupParams()
     }
     
     
     //-----------(OogiePipe)=============================================
-    func setupParams()
-    {
-        //9/19/21 also add string keys
-        pipeParamsDictionary["inputchannel"] = InputChanParams
-        pipeParamsDictionary["outputparam"]  = OutputParamParams
-        pipeParamsDictionary["lorange"]      = PipeLoRangeParams
-        pipeParamsDictionary["hirange"]      = PipeHiRangeParams
-        pipeParamsDictionary["name"]         = PipeNameParams
-        pipeParamsDictionary["comment"]      = PipeCommParams
-
-        // Load up params dictionary with string / array combos
-        pipeParamsDictionary["00"] = InputChanParams
-        pipeParamsDictionary["01"] = OutputParamParams
-        pipeParamsDictionary["02"] = PipeLoRangeParams
-        pipeParamsDictionary["03"] = PipeHiRangeParams
-        pipeParamsDictionary["04"] = PipeNameParams
-        pipeParamsDictionary["05"] = PipeCommParams
-    } //end setupParams
-    
-    //-----------(OogiePipe)=============================================
     func getNthParams(n : Int) -> [Any]
     {
-        if n < 0 || n >= pipeParamsDictionary.count {return []}
+        if n < 0 || n >= OPP.pipeParamsDictionary.count {return []}
         let key =  String(format: "%02d", n)
-        return pipeParamsDictionary[key]!
+        return OPP.pipeParamsDictionary[key]!
     }
     
     //-----------(OogiePipe)=============================================
     func getParamCount() -> Int
     {
-        return pipeParamNames.count
+        return OPP.pipeParamNames.count
     }
     
 
@@ -194,7 +161,7 @@ struct OogiePipe {
     func dumpParams() -> String
     {
         var s = String(format: "[key:%@]\n",PS.key)
-        for pname in pipeParamNames
+        for pname in OPP.pipeParamNames //9/19/21
         {
             let pTuple = getParam(named : pname.lowercased())
             s = s + String(format: "%@:%@\n",pname,pTuple.sParam)
@@ -211,7 +178,7 @@ struct OogiePipe {
      {
          if !paramListDirty {return paramList} //get old list if no new params
          paramList.removeAll()
-         for pname in pipeParamNames
+        for pname in OPP.pipeParamNames //9/19/21
          {
              let pTuple = getParam(named : pname.lowercased())
              paramList.append(pTuple.sParam)
@@ -226,14 +193,14 @@ struct OogiePipe {
     func getParamDict() -> Dictionary<String,Any>
     {
         var d = Dictionary<String, Any>()
-        for pname in pipeParamNames //look at all params...
+        for pname in OPP.pipeParamNames //look at all params...
         {
             print("pack pipe param \(pname)")
             let plow = pname.lowercased()
             let pTuple = getParam(named : plow)
             let sv = pTuple.sParam
             var dv = pTuple.dParam as Double
-            if let paramz = pipeParamsDictionary[plow]  //get param info...
+            if let paramz = OPP.pipeParamsDictionary[plow]  //get param info...
             {
                 var workArray = paramz  //copy
                 if let ptype = paramz[1] as? String

@@ -766,7 +766,7 @@ NSString *onOffs[] = {@"Off",@"On"};
     UISlider *slider = (UISlider*)sender;
     int tagMinusBase = (int)(slider.tag-SLIDER_BASE_TAG);
     //8/3 update slider activity count
-    if (tagMinusBase>=0 && tagMinusBase<MAX_CONTROL_SLIDERS) sChanges[tagMinusBase]++;
+    if (tagMinusBase>=0 && tagMinusBase<MAX_PRO_SLIDERS) sChanges[tagMinusBase]++;
     [paramEdits addEdit: _patchName // 9/27 dont forget to add edit!
                        : sliderParamNames[tagMinusBase]
                        : [NSString stringWithFormat:@"%d",(int)sliders[tagMinusBase].value]];

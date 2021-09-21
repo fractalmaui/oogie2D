@@ -15,6 +15,8 @@
 //  10/21 fix typo in types
 //  2/3   add multiple lines / variable font size for comments
 //  9/11  fix possible krash in updateit
+// CLUGE???????
+//  9/19  For now, lets assume integer fields are choosers ALWAYS and require a string output...
 
 import UIKit
 import Foundation
@@ -277,7 +279,8 @@ class infoText: UIView {
         TRlabel.isHidden     = false
         HIImageView.isHidden = false
 
-        if  fieldType == TSTRING_TTYPE
+        //9/19/21 For now, lets assume integer fields are choosers ALWAYS and require a string output...
+        if  fieldType == TSTRING_TTYPE || fieldType == TINT_TTYPE
         {
             //9/11 is there something to display?
             if  items.count > 0
@@ -296,13 +299,17 @@ class infoText: UIView {
                 else {TRlabel.text = ""}
                 titleLabel.text = paramName + " = " + items[intItem]
             }
+            else //9/20 no items? just put up param name
+            {
+                titleLabel.text = "change " + paramName
+            }
         }
-        else if  fieldType == TINT_TTYPE
-        {
-            TLlabel.text = String(Int(minVal))
-            TRlabel.text = String(Int(maxVal))
-            titleLabel.text = paramName + " = "  + String(Int(workVal))
-        }
+//        else if  fieldType == TINT_TTYPE
+//        {
+//            TLlabel.text = String(Int(minVal))
+//            TRlabel.text = String(Int(maxVal))
+//            titleLabel.text = paramName + " = "  + String(Int(workVal))
+//        }
         else if  fieldType == TFLOAT_TTYPE
         {
             TLlabel.text = String(minVal)
@@ -327,13 +334,15 @@ class infoText: UIView {
         fieldType = ptype
         items.removeAll()
         
+        print("setupForParam: pname \(pname) :  ptype \(ptype) :   pmin \(pmin) :  pmax \(pmax) :  choices \(choiceStrings) :")
+        print("     types 1,2,3 = int,float,string")
+        
         if  fieldType == TSTRING_TTYPE
         {
             minVal = 0
             maxVal = Double(choiceStrings.count-1)
             for string in choiceStrings { items.append(string) }
             numTics = choiceStrings.count - 1  //autoset tic count for string choices
-
         }
         else{
             minVal    = pmin

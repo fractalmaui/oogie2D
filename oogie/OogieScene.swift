@@ -14,14 +14,17 @@
 //  5/12 add getSceneCentroidAndRadius
 //  9/13/21 make sure patch gets loaded in addVoiceSceneData!!
 //          add loop quiet instead of halts/restarts
-
+//  9/18    add OogieVoiceParams
 import Foundation
 import SceneKit
 class OogieScene: NSObject {
 
     var uid  = ""
     var OSC  = OSCStruct()  // codable scene struct for i/o, NOT used at runtime!
-    
+    var OVP =  OogieVoiceParams.sharedInstance //9/19/21 oogie voice params
+    var OSP =  OogieShapeParams.sharedInstance //9/19/21 oogie voice params
+    var OPP =  OogiePipeParams.sharedInstance  //9/19/21 oogie pipe params
+
     //All patches: singleton, holds built-in and locally saved patches...
     var allP = AllPatches.sharedInstance
     
@@ -603,13 +606,13 @@ class OogieScene: NSObject {
     // called every time user switches param with the wheel...
     //  loads in an array of param limits, names, whatever,
     //   and preps for param editing
+    // WHY CANT we use breakOutSelectedFields here???
     func loadCurrentVoiceParams()
     {
-       //9/14/21 OLD if (selectedField < 0) {return}
         if selectedFieldName == ""  {return}
-        
+        let sfname = selectedFieldName.lowercased()  //type, patch, etc...
         var vArray = [Any]()
-        if selectedField != 3 //All params but patches are canned: CLUGEY use of hardcoded value!
+        if sfname != "patch"  //All params but patches are canned: CLUGEY use of hardcoded value!
         { //load them here
 //9/14/21 OLD            vArray = selectedVoice.getNthParams(n: selectedField)
             // 9/18 KRASH HERE???
@@ -622,9 +625,8 @@ class OogieScene: NSObject {
         }
         //print("varray \(vArray) count \(vArray.count)")
         if (vArray.count < 3) {return} //avoid krash
-        selectedFieldName = vArray[0] as! String
+//9/20 NO NEED        selectedFieldName = vArray[0] as! String
         selectedFieldType = vArray[1] as! String
-        let sfname = selectedFieldName.lowercased()  //type, patch, etc...
         if (selectedFieldType == "double" || selectedFieldType == "int") && //4/26 int ptype
             vArray.count > 6 //Get double range / default
         {
@@ -682,11 +684,10 @@ class OogieScene: NSObject {
     //  maybe merge later?
     func loadCurrentShapeParams()
     {
-        if (selectedField < 0) {return}
-        var vArray = [Any]()
-        //9/14/21 NOTE THIS NEEDS TO CHANGE TO USE PARAM NAME!!
-        vArray = selectedShape.getNthParams(n: selectedField) //1/21
-        breakOutSelectedFields(vArray: vArray)
+        if let vArray = OSP.shapeParamsDictionary[selectedFieldName]
+        {
+            breakOutSelectedFields(vArray: vArray)
+        }
     } //end loadCurrentShapeParams
 
     //-----------(oogieScene)=============================================
@@ -700,8 +701,8 @@ class OogieScene: NSObject {
         {
             if vArray.count == 3 {vArray.remove(at: 2)} //Get rid of trailer
             //append shape/voice/etc parameters....
-            if selectedPipe.destination == "shape" {vArray = vArray + shapeParamNamesOKForPipe }
-            else                                   {vArray = vArray + voiceParamNamesOKForPipe }
+            if selectedPipe.destination == "shape" {vArray = vArray + OSP.shapeParamNamesOKForPipe }
+            else                                   {vArray = vArray + OVP.voiceParamNamesOKForPipe }   //9/19/21
         }
         breakOutSelectedFields(vArray: vArray)
     } //end loadCurrentPipeParams
@@ -853,6 +854,7 @@ class OogieScene: NSObject {
             case "latitude", "longitude":
                 results.append("movemarker")
                 results.append("updatevoicepipe")
+                //results.append("updateshapepipe") //9/20 what if we have a shape pipe?
             case "type":
                 if intChoiceChanged
                 {
@@ -876,6 +878,8 @@ class OogieScene: NSObject {
             switch (named)  // setup 3D updates back in caller
             {
             case "xpos" ,"ypos" ,"zpos" : results.append("updateshapepipe")
+                                         // results.append("updatevoicepipe") //9/20 what if we have a voice?
+
             case "texture"  : needUpdate = false
             case "rotation" : needUpdate = false ; newSpeed = true
             case "rotationtype" : needUpdate = false ; newType = true
@@ -892,11 +896,11 @@ class OogieScene: NSObject {
             var iknob = Int(workDouble)
             switch (named)
             {
-            case "inputchannel" : iknob = min(iknob,InputChanParams.count-2)
-                workString = InputChanParams[iknob+2] as! String
+            case "inputchannel" : iknob = min(iknob,OPP.InputChanParams.count-2)
+                workString = OPP.InputChanParams[iknob+2] as! String
             case "outputparam" :   //ugggh! this is complex! lots of param resets needed here
-                var menuNames = voiceParamNamesOKForPipe
-                if selectedPipe.destination == "shape" {menuNames = shapeParamNamesOKForPipe}
+                var menuNames = OVP.voiceParamNamesOKForPipe   //9/18/21
+                if selectedPipe.destination == "shape" {menuNames = OSP.shapeParamNamesOKForPipe} //9/19/21
                 iknob      = min(iknob,menuNames.count-1) //Double check range to avoid crash
                 workString = menuNames[iknob]
             case "lorange","hirange": //4/27 ranges come in as text, convert!
@@ -914,8 +918,8 @@ class OogieScene: NSObject {
             switch (named)
             {
             case "outputparam" :   //ugggh! this is complex! lots of param resets needed here
-                var menuNames = voiceParamNamesOKForPipe
-                if selectedPipe.destination == "shape" {menuNames = shapeParamNamesOKForPipe}
+                var menuNames = OVP.voiceParamNamesOKForPipe    //9/18/21
+                if selectedPipe.destination == "shape" {menuNames = OSP.shapeParamNamesOKForPipe} //9/19/21
                 iknob         = min(iknob,menuNames.count-1) //Double check range to avoid crash
                 let opChanged = (menuNames[iknob] != oldToParam) //1/14 changed?
                 selectedPipe.PS.toParam = menuNames[iknob]
@@ -1159,7 +1163,8 @@ class OogieScene: NSObject {
         // 5/7 saw access violation crash here!!! WTF?
         for (key,nextVoice) in sceneVoices //4/28 new dict
         {
-            var workVoice  = OogieVoice()
+            //KRASH HERE when loading fresh scene
+            var workVoice  = OogieVoice() //WOW THIS IS HORRIBLY SHOW!!!
             if editing == "voice" && knobMode != "select" &&
                 selectedFieldName.lowercased() == key //4/28 selected and editing?
             {
@@ -1222,6 +1227,7 @@ class OogieScene: NSObject {
     //-----------(oogieScene)=============================================
     func unitToParam (inval : Double) -> Double
     {
+        print("unitToParam : \(inval) :: mult \(selectedFieldDMult) off \(selectedFieldDOffset)")
         return (inval * selectedFieldDMult) + selectedFieldDOffset
     } //end paramToUnit
     

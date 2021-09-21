@@ -1,3 +1,11 @@
+//
+//       _                      ____                  _
+//   ___| |__   __ _ _ __   ___|  _ \ __ _ _ __   ___| |
+//  / __| '_ \ / _` | '_ \ / _ \ |_) / _` | '_ \ / _ \ |
+//  \__ \ | | | (_| | |_) |  __/  __/ (_| | | | |  __/ |
+//  |___/_| |_|\__,_| .__/ \___|_|   \__,_|_| |_|\___|_|
+//                  |_|
+//
 //  OogieCam shapePanel
 //
 //  Created by Dave Scruton on 9/12/20.
@@ -77,7 +85,9 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
 //======(shapePanel)==========================================
 -(void) setupView:(CGRect)frame
 {
-    viewWid    = frame.size.width;
+    //9/20 Wow. we dont have a frame here!!! get width at least!
+    CGSize screenSize   = [UIScreen mainScreen].bounds.size;
+    viewWid = screenSize.width;
     viewHit    = frame.size.height;
 //    buttonWid  = viewHit * 0.07; //9/8 vary by viewhit, not wid
 //    buttonHit  = buttonWid;
@@ -251,9 +261,9 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
     }
 
-    //9/11 text entry fields...
+    //9/11 text entry fields... 9/20 fix yoffset bug
     [self addTextRow:sPanel :0 :TEXT_BASE_TAG+10 :@"Name" : yi : OOG_TEXT_HIT ];
-    yi+=ys;
+    yi += (OOG_TEXT_HIT+OOG_YSPACER);
     [self addTextRow:sPanel :1 :TEXT_BASE_TAG+11 :@"Comment" : yi : OOG_TEXT_HIT ];
 
     //Scrolling area...
@@ -404,7 +414,7 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
     NSArray* A = [goog addTextRow : parent : tag : stextFieldNames[index] : yoff : viewWid : ysize];
    if (A.count > 0)
       {
-          UITextView * textField = A[0];
+          UITextField * textField = A[0]; //9/20
           textField.delegate     = self;
           textFields[index]      = textField;
       }
@@ -693,7 +703,7 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
 //==========<UITextFieldDelegate>=====================================================
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField
 {
-    NSLog(@" begin");
+    //NSLog(@" begin");
     return YES;
 }
 
@@ -709,11 +719,11 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
 // It is important for you to hide the keyboard
 - (BOOL)textFieldShouldReturn:(UITextField *)textField
 {
-    NSLog(@" return");
+    //NSLog(@" return");
     [textField resignFirstResponder]; //Close keyboard
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
-    [self.delegate didSetShapeValue:liltag :0.0:s:@"": FALSE];
+    [self.delegate didSetShapeValue:liltag :0.0: sallParams[liltag] : s : FALSE];   //9/20
     return YES;
 }
 

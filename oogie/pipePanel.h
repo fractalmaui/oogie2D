@@ -1,3 +1,11 @@
+//
+//         _            ____                  _
+//   _ __ (_)_ __   ___|  _ \ __ _ _ __   ___| |
+//  | '_ \| | '_ \ / _ \ |_) / _` | '_ \ / _ \ |
+//  | |_) | | |_) |  __/  __/ (_| | | | |  __/ |
+//  | .__/|_| .__/ \___|_|   \__,_|_| |_|\___|_|
+//  |_|     |_|
+//
 //  OogieCam pipePanel
 //  
 //  Created by Dave Scruton on 9/12/20.
@@ -38,7 +46,7 @@
 
     UISlider *sliders[MAX_PIPE_SLIDERS];
     UIPickerView *pickers[MAX_PIPE_PICKERS];
-    UITextField *textFields[MAX_PIPE_TEXTFIELDS];
+    UITextField *ptextFields[MAX_PIPE_TEXTFIELDS];
     UIView *header,*footer;
 
     int diceRolls;  //9/9 for analytics

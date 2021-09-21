@@ -63,6 +63,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
     var sfxSoundFiles: [String] = ["dog" , "congaMid" , "clave00" , "bub1",
                                           "clave00" , "congaMid" , "vwhorn44k"]
 
+    var OVP =  OogieVoiceParams.sharedInstance //9/19/21 oogie voice params
+    var OSP =  OogieShapeParams.sharedInstance //9/19/21 oogie shape params
+    var OPP =  OogiePipeParams.sharedInstance  //9/19/21 oogie pipe params
+
     //========AppDelegate==============================================
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.

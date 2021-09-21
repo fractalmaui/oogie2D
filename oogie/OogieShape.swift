@@ -18,31 +18,14 @@
 //  5/6  move spinTimer and shape spin in from SphereShape
 //  5/11 add createMTImage, need in common area w/ sphereShape though
 //  5/14 add cleanup for bmp data
+//  9/19 add oogieShapeParams
 import Foundation
-
-//Parmas: Name,Type,Min,Max,Default,DisplayMult,DisplayOffset?? (string params need a list of items)
-let TexParams   : [Any] = ["Texture", "texture", "mt"]
-let RotParams   : [Any] = ["Rotation" , "double", 0.0  , 100.0   , 10.0, 1.0, 0.0 ]
-let RotTypeParams  : [Any] = ["RotationType", "string" , "Manual", "BPMX1", "BPMX2", "BPMX3", "BPMX4", "BPMX5", "BPMX6", "BPMX7", "BPMX8" ]
-let XParams     : [Any] = ["XPos" , "double", -maxMeters , maxMeters , 0.0, 4.0, -2.0 ]
-let YParams     : [Any] = ["YPos" , "double", -maxMeters , maxMeters , 0.0, 4.0, -2.0 ]
-let ZParams     : [Any] = ["ZPos" , "double", -maxMeters , maxMeters , 0.0, 4.0, -2.0 ]
-let UParams     : [Any] = ["TexXoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
-let VParams     : [Any] = ["TexYoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
-let USParams    : [Any] = ["TexXscale" , "double", 0.1 , 10.0 , 1.0, 10.0, 0.0 ]
-let VSParams    : [Any] = ["TexYscale" , "double", 0.1 , 10.0 , 1.0, 10.0, 0.0 ]
-let SNameParams : [Any] = ["Name",      "text", "mt"]
-let SCommParams : [Any] = ["Comment",   "text", "mt"]
-
-let shapeParamNames : [String] = ["Texture", "Rotation","RotationType",
-"XPos","YPos","ZPos","TexXoffset","TexYoffset","TexXscale","TexYscale","Name","Comment"]
-let shapeParamNamesOKForPipe : [String] = ["Rotation","RotationType","TexXoffset",
-                                           "TexYoffset","TexXscale","TexYscale"]
 
 
 class OogieShape: NSObject {
 
     var OOS  = OSStruct()  // codable struct for i/o
+    var OSP =  OogieShapeParams.sharedInstance //9/19/21 oogie voice params
     var inPipes = Set<String>()   //use insert and remove to manage...
     var paramListDirty = true //4/25 add paramList for display purposes
     var paramList  = [String]()
@@ -51,7 +34,6 @@ class OogieShape: NSObject {
     let tc  = texCache.sharedInstance //10/21 for loading textures...
 
     //5/6 move shape rotation in from SphereShape
-    var shapeParamsDictionary = Dictionary<String, [Any]>()
     var angle  : Double = 0.0 //Rotation angle
     var rotTime : Double = 1.0
     var spinTimer = Timer()
@@ -68,7 +50,6 @@ class OogieShape: NSObject {
     //-----------(oogieShape)=============================================
     override init() {
         super.init()
-        setupShapeParams()
     }
     
     //-----------(oogieShape)=============================================
@@ -77,54 +58,19 @@ class OogieShape: NSObject {
     {
         bmp.cleanup()
     }
-    
-    //-----------(oogieVoice)=============================================
-    func setupShapeParams()
-    {
-//        let shapeParamNames : [String] = ["Texture", "Rotation","RotationType",
-//        "XPos","YPos","ZPos","TexXoffset","TexYoffset","TexXscale","TexYscale","Name","Comment"]
-
-        // 9/18/21 add named keys too
-        shapeParamsDictionary["texture"] = TexParams
-        shapeParamsDictionary["rotation"] = RotParams
-        shapeParamsDictionary["rotationtype"] = RotTypeParams
-        shapeParamsDictionary["xpos"] = XParams
-        shapeParamsDictionary["ypos"] = YParams
-        shapeParamsDictionary["zpos"] = ZParams
-        shapeParamsDictionary["texxoffset"] = UParams
-        shapeParamsDictionary["texyoffset"] = VParams
-        shapeParamsDictionary["texxscale"] = USParams
-        shapeParamsDictionary["texyscale"] = VSParams
-        shapeParamsDictionary["name"] = SNameParams
-        shapeParamsDictionary["comment"] = SCommParams
-        shapeParamsDictionary["00"] = TexParams
-        shapeParamsDictionary["01"] = RotParams
-        shapeParamsDictionary["02"] = RotTypeParams
-        shapeParamsDictionary["03"] = XParams
-        shapeParamsDictionary["04"] = YParams
-        shapeParamsDictionary["05"] = ZParams
-        shapeParamsDictionary["06"] = UParams
-        shapeParamsDictionary["07"] = VParams
-        shapeParamsDictionary["08"] = USParams
-        shapeParamsDictionary["09"] = VSParams
-        shapeParamsDictionary["10"] = SNameParams //2/4
-        shapeParamsDictionary["11"] = SCommParams //2/4
-    } //end setupShapeParams
-        
-    
   
     //-----------(oogieVoice)=============================================
     func getNthParams(n : Int) -> [Any]
     {
-        if n < 0 || n >= shapeParamsDictionary.count {return []}
+        if n < 0 || n >= OSP.shapeParamsDictionary.count {return []} //9/19/21
         let key =  String(format: "%02d", n)
-        return shapeParamsDictionary[key]!
+        return OSP.shapeParamsDictionary[key]!
     }
     
     //======(OSStruct)=============================================
     func getParamCount() -> Int
     {
-        return shapeParamNames.count
+        return OSP.shapeParamNames.count   //9/19/21
     }
 
     
@@ -163,7 +109,7 @@ class OogieShape: NSObject {
     func dumpParams() -> String
     {
         var s = String(format: "[key:%@]\n",OOS.key)
-        for pname in shapeParamNames
+        for pname in OSP.shapeParamNames  //9/19/21
         {
             let pTuple = getParam(named : pname.lowercased())
             s = s + String(format: "%@:%@\n",pname,pTuple.sParam)
@@ -177,7 +123,7 @@ class OogieShape: NSObject {
     {
         if !paramListDirty {return paramList} //get old list if no new params
         paramList.removeAll()
-        for pname in shapeParamNames
+        for pname in OSP.shapeParamNames  //9/19/21
         {
             let pTuple = getParam(named : pname.lowercased())
             paramList.append(pTuple.sParam)
@@ -192,14 +138,14 @@ class OogieShape: NSObject {
     func getParamDict() -> Dictionary<String,Any>
     {
         var d = Dictionary<String, Any>()
-        for pname in shapeParamNames //look at all params...
+        for pname in OSP.shapeParamNames //look at all params...9.19.21
         {
             print("pack shape param \(pname)")
             let plow = pname.lowercased()
             let pTuple = getParam(named : plow)
             let sv = pTuple.sParam
             var dv = pTuple.dParam as Double
-            if let paramz = shapeParamsDictionary[plow]  //get param info...
+            if let paramz = OSP.shapeParamsDictionary[plow]  //get param info...
             {
                 var workArray = paramz  //copy
                 if let ptype = paramz[1] as? String
@@ -363,7 +309,9 @@ class OogieShape: NSObject {
         case "texxoffset"  : OOS.uCoord   = dval
         case "texyoffset"  : OOS.vCoord   = dval
         case "texxscale"   : OOS.uScale   = dval
+            print("set texxscale \(dval)")
         case "texyscale"   : OOS.vScale   = dval
+            print("set texyscale \(dval)")
         case "name"        : OOS.name     = sval
         case "comment"     : OOS.comment  = sval
         default:print("Error:Bad shape param in set")

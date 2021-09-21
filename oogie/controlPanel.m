@@ -110,7 +110,9 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 //======(controlPanel)==========================================
 -(void) setupView:(CGRect)frame
 {
-    viewWid    = frame.size.width;
+    //9/20 Wow. we dont have a frame here!!! get width at least!
+    CGSize screenSize   = [UIScreen mainScreen].bounds.size;
+    viewWid = screenSize.width;
     viewHit    = frame.size.height;
 //    buttonWid  = viewHit * 0.07; //9/8 vary by viewhit, not wid
 //    buttonHit  = buttonWid;
@@ -341,10 +343,10 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     yi+=ys;
     [self addSliderRow:llPanel : 16 : SLIDER_BASE_TAG + 16 : @"Longitude (X)" : yi :
         OOG_SLIDER_HIT:0.0 : 1.0];
-    //9/11 text entry fields...
-    yi+=ys;
+    //9/11 text entry fields...9/20 fix yoffset bug
+    yi += (OOG_SLIDER_HIT+OOG_YSPACER);
     [self addTextRow:llPanel :0 :TEXT_BASE_TAG+19 : textFieldNames[0] :yi :OOG_TEXT_HIT ];
-    yi+=ys;
+    yi += (OOG_TEXT_HIT+OOG_YSPACER);
     [self addTextRow:llPanel :1 :TEXT_BASE_TAG+20 : textFieldNames[1] :yi :OOG_TEXT_HIT ];
     //9/1 new panel for patches at top...
     xi = OOG_XMARGIN;
@@ -923,25 +925,26 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 
 #pragma mark - UITextFieldDelegate
 
-//==========ActivityVC=================================================================
+//==========<UITextFieldDelegate>====================================================
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField
 {
-    NSLog(@" begin");
+    //NSLog(@" begin");
     return YES;
 }
 
-//==========ActivityVC=================================================================
+//==========<UITextFieldDelegate>====================================================
 - (BOOL)textFieldShouldClear:(UITextField *)textField
 {
     NSLog(@" clear");
 
     return YES;
 }
-//==========ActivityVC=================================================================
+
+//==========<UITextFieldDelegate>====================================================
 // It is important for you to hide the keyboard
 - (BOOL)textFieldShouldReturn:(UITextField *)textField
 {
-    NSLog(@" return");
+    //NSLog(@" return");
     [textField resignFirstResponder]; //Close keyboard
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
