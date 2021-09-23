@@ -46,6 +46,7 @@
     UIPickerView *pickers[MAX_CONTROL_PICKERS];
     UITextField *textFields[MAX_CONTROL_TEXTFIELDS];
     UIView *header,*footer;
+    UILabel *titleLabel;
 
     int diceRolls;  //9/9 for analytics
     int resets;     //9/9 for analytics

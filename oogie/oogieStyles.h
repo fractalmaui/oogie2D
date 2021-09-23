@@ -16,3 +16,4 @@
 #define OOG_YSPACER 2
 #define OOG_LABEL_FONT [UIFont fontWithName:@"AvenirNext-Bold" size:15]
 #define OOG_LABEL_ALIGN NSTextAlignmentRight
+#define OOG_MENU_CURVERAD 30

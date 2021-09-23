@@ -68,8 +68,7 @@ import Foundation
     let VNameParams    : [Any]   = ["Name",      "text", "mt"]
     let VCommParams    : [Any]   = ["Comment",   "text", "mt"]
 
-    //9/14/21 for all effects ranging 0..100
-    let fx100Params : [Any]     = ["FX",   "double" ,  0.0 , 0.0 , 0.0 , 100.0,  0.0 ] // for sliders
+    let fx100Params : [Any]     = ["FX",   "double" ,  0.0 , 0.0 , 0.0 , 100.0,  0.0 ] // for f/x sliders
     let fxWaveParamsOLD : [Any]     = ["FXWave",   "int" ,  0.0 , 0.0 , 0.0 , 4.0,  0.0 ] // for wave pickers
     let fxWaveParams : [Any]      = ["FXWave",     "string" , "Sine", "Saw", "Square", "Ramp"]
 

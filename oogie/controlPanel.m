@@ -23,6 +23,7 @@
 //         flurryAnalytics,miniHelp,obPopup
 // 9/17 redo params to read input / defaults from incoming dictionary
 // 9/18 add randomize, remove sendAllParamsToParent, add sendUpdatedParamsToParent
+// 9/21 remove footer, add top edit label
 #import "controlPanel.h"
 //#import "AppDelegate.h" //KEEP this OUT of viewController.h!!
 
@@ -46,14 +47,14 @@ NSString *sliderNames[] = {@"Threshold",@"Bottom Note",@"Top Note",
 //these must match tags which increment over all controls!
 
 //3 sliders, a picker, 4 sliders, a picker, 2 sliders a picker then 5 sliders and 2 texts
-NSString *allParams[] = {@"threshold",@"bottommidi",@"topmidi",@"keysig",
+NSString *callParams[] = {@"threshold",@"bottommidi",@"topmidi",@"keysig",
     @"level",@"portamento",   //is level OK here?
     @"viblevel" ,@"vibspeed",@"vibwave",
     @"vibelevel" ,@"vibespeed",@"vibewave",
     @"delaytime" ,@"delaysustain",@"delaymix",
     @"latitude", @"longitude",@"patch",@"soundpack",@"name",@"comment"
 };
-#define C_ALLPARAMCOUNT 21  //should batch allparams above
+#define C_ALLPARAMCOUNT 21  //should batch callParams above
 
 NSString *pickerNames[] = {@"KeySig",@"FVib Wave",@"AVib Wave",@"Patch",@"SoundPack"};
 
@@ -110,15 +111,16 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 //======(controlPanel)==========================================
 -(void) setupView:(CGRect)frame
 {
+    
+    //Add rounded corners to this view
+    self.layer.cornerRadius = OOG_MENU_CURVERAD;
+    self.clipsToBounds      = TRUE;
+
     //9/20 Wow. we dont have a frame here!!! get width at least!
     CGSize screenSize   = [UIScreen mainScreen].bounds.size;
     viewWid = screenSize.width;
     viewHit    = frame.size.height;
-//    buttonWid  = viewHit * 0.07; //9/8 vary by viewhit, not wid
-//    buttonHit  = buttonWid;
     buttonWid = viewWid * 0.12; //10/4 REDO button height,scale w/width
-   // if (cappDelegate.gotIPad) //12/11 smaller buttons on ipad!
-   //     buttonWid = viewWid * 0.06;  // ...by half?
     buttonHit = OOG_HEADER_HIT; //buttonWid;
     
     self.frame = frame;
@@ -147,10 +149,23 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 
     int panelSkip = 5; //Space between panels
     int i=0; //6/8
+    
+    xi = 0;
+    yi = 0;
+    xs = viewWid;
+    ys = OOG_MENU_CURVERAD;
+    UILabel *editLabel = [[UILabel alloc] initWithFrame:
+                   CGRectMake(xi,yi,xs,ys)];
+    [editLabel setBackgroundColor : [UIColor redColor]];
+    [editLabel setTextColor : [UIColor whiteColor]];
+    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 28.0]];
+    editLabel.text = @"Edit Voice";
+    editLabel.textAlignment = NSTextAlignmentCenter;
+    [self addSubview : editLabel];
 
     // 9/24 HEADER, top buttons and title info
     xi = OOG_XMARGIN;
-    yi = 0;
+    yi = 30;
     xs = viewWid - 2*OOG_XMARGIN;
     ys = OOG_HEADER_HIT;  //7/9
     header = [[UIView alloc] init];
@@ -160,28 +175,16 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     header.layer.shadowOffset  = CGSizeMake(0,10);
     header.layer.shadowOpacity = 0.3;
     [self addSubview:header];
-
-    // 5/20 add footer for shadow at bottom??
-    yi = viewHit;
-    xi = 0;
-    xs = viewWid;
-    footer = [[UIView alloc] init];
-    footer.frame = CGRectMake(xi,yi,xs,ys);
-    footer.backgroundColor = [UIColor blackColor];
-    footer.layer.shadowColor   = [UIColor blackColor].CGColor;
-    footer.layer.shadowOffset  = CGSizeMake(0,-10);
-    footer.layer.shadowOpacity = 0.3;
-    [self addSubview:footer];
     
     // 8/4 add title and help button
     xi = 0;
     yi = 0;
     xs = viewWid;
-    UILabel *titleLabel = [[UILabel alloc] initWithFrame:
+    titleLabel = [[UILabel alloc] initWithFrame:
                    CGRectMake(xi,yi,xs,ys)];
     [titleLabel setTextColor : [UIColor whiteColor]];
     [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 32.0]];
-    titleLabel.text = @"Voice";
+    titleLabel.text = @"...";
     titleLabel.textAlignment = NSTextAlignmentCenter;
     [header addSubview : titleLabel];
     
@@ -575,6 +578,10 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 {
     [pickers[3] reloadAllComponents];
     [pickers[4] reloadAllComponents];
+    NSString *s = @"no name"; //get voice name for title
+    NSArray *a  = [_paramDict objectForKey:@"name"];
+    if (a.count > 0) s = a.lastObject;
+    titleLabel.text = s;
     [self configureViewWithReset : FALSE];
 }
 
@@ -584,7 +591,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 {
     //CLEAN THIS UP: make allpar,allpic,allslid class members instead of arrays!
     NSMutableArray *allpar = [[NSMutableArray alloc] init];
-    for (int i=0;i<C_ALLPARAMCOUNT;i++) [allpar addObject:allParams[i]];
+    for (int i=0;i<C_ALLPARAMCOUNT;i++) [allpar addObject:callParams[i]];
     NSMutableArray *allpick = [[NSMutableArray alloc] init];
     for (int i=0;i<MAX_CONTROL_PICKERS;i++) if (pickers[i] != nil) [allpick addObject:pickers[i]];
     NSMutableArray *allslid = [[NSMutableArray alloc] init];
@@ -647,8 +654,8 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     UISlider *slider = (UISlider*)sender;
     int tagMinusBase = ((int)slider.tag % 1000); // 7/11 new name
     float value = slider.value;
-    NSString *name = dice ? @"" : allParams[tagMinusBase];
-    [self.delegate didSetControlValue:tagMinusBase:value:allParams[tagMinusBase]:name:TRUE];
+    NSString *name = dice ? @"" : callParams[tagMinusBase];
+    [self.delegate didSetControlValue:tagMinusBase:value:callParams[tagMinusBase]:name:TRUE];
 } //end updateSliderAndDelegateValue
 
 
@@ -704,12 +711,12 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     NSLog(@" RANDOMIZE");
     //CLEAN THIS UP: make allpar,allpic,allslid class members instead of arrays!
     NSMutableArray *allpar = [[NSMutableArray alloc] init];
-    for (int i=0;i<C_ALLPARAMCOUNT;i++) [allpar addObject:allParams[i]];
+    for (int i=0;i<C_ALLPARAMCOUNT;i++) [allpar addObject:callParams[i]];
     NSMutableArray *allpick = [[NSMutableArray alloc] init];
     for (int i=0;i<MAX_CONTROL_PICKERS;i++) if (pickers[i] != nil) [allpick addObject:pickers[i]];
     NSMutableArray *allslid = [[NSMutableArray alloc] init];
     for (int i=0;i<MAX_CONTROL_SLIDERS;i++) if (sliders[i] != nil)  [allslid addObject:sliders[i]];
-    NSArray *norandomizeparams = @[@"patch",@"soundpack",@"name",@"comment",@"delaysustain"];
+    NSArray *norandomizeparams = @[@"patch",@"soundpack",@"name",@"comment",@"delaysustain",@"threshold"];
 
     NSMutableDictionary *resetDict = [goog randomizeFromVC : allpar : allpick : allslid : norandomizeparams];
     [self sendUpdatedParamsToParent:resetDict];
@@ -837,7 +844,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
         if (row > 0) patchName = _paNames[row-1];
         else patchName = @"random";
     }
-    [self.delegate didSetControlValue:liltag :(float)row : allParams[liltag] : patchName : !rollingDiceNow && !resettingNow];   //7/11
+    [self.delegate didSetControlValue:liltag :(float)row : callParams[liltag] : patchName : !rollingDiceNow && !resettingNow];   //7/11
 
     //8/3 update picker activity count
     int pMinusBase = (int)(pickerView.tag-PICKER_BASE_TAG);
@@ -948,7 +955,9 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     [textField resignFirstResponder]; //Close keyboard
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
-    [self.delegate didSetControlValue:liltag : 0.0 : allParams[liltag] : s: FALSE];
+    [self.delegate didSetControlValue:liltag : 0.0 : callParams[liltag] : s: FALSE];
+    // 9/21 take care of name update at top of menu
+    if ([callParams[liltag] isEqualToString:@"name"]) titleLabel.text = s;
     return YES;
 }
 

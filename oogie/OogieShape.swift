@@ -309,9 +309,7 @@ class OogieShape: NSObject {
         case "texxoffset"  : OOS.uCoord   = dval
         case "texyoffset"  : OOS.vCoord   = dval
         case "texxscale"   : OOS.uScale   = dval
-            print("set texxscale \(dval)")
         case "texyscale"   : OOS.vScale   = dval
-            print("set texyscale \(dval)")
         case "name"        : OOS.name     = sval
         case "comment"     : OOS.comment  = sval
         default:print("Error:Bad shape param in set")

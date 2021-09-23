@@ -31,7 +31,6 @@
 //  9/11   add L/R/U/D animations for panels, add shapeEditPanel, pull patchEditVC
 //  9/14   add pipeEdit
 //  9/15   didSetControlValue uses setNewParamValue OK now
-//  9/22   fix bug in updatePipeByShape
 import UIKit
 import SceneKit
 import Photos
@@ -86,10 +85,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     // 9/13 texture cache...
     let tc = texCache.sharedInstance
-    // 9/18 oogieVoiceParams....
-    var OVP =  OogieVoiceParams.sharedInstance //9/19/21 oogie voice params
-    var OSP =  OogieShapeParams.sharedInstance //9/19/21 oogie shape params
-    var OPP =  OogiePipeParams.sharedInstance //9/19/21 oogie shape params
 
     //10/27 for finding new marker lat/lons
     let llToler = Double.pi / 10.0
@@ -261,7 +256,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         if let cp = controlPanel.init(frame: CGRect(x: 0 , y: 0, width: Int(viewWid), height: allphit))
         {
             cPanel = cp
-            voiceEditPanels.backgroundColor = .clear
             voiceEditPanels.addSubview(cPanel)
             cPanel.delegate = self
         }
@@ -280,7 +274,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         if let sp = shapePanel.init(frame: CGRect(x: 0 , y: 0, width: Int(viewWid), height: allphit))
         {
             sPanel = sp
-            shapeEditPanels.backgroundColor = .clear
             shapeEditPanels.addSubview(sPanel)
             sPanel.delegate = self
         }
@@ -292,7 +285,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         if let pip = pipePanel.init(frame: CGRect(x: 0 , y: 0, width: Int(viewWid), height: allphit))
         {
             piPanel = pip
-            pipeEditPanels.backgroundColor = .clear
             pipeEditPanels.addSubview(piPanel)
             piPanel.delegate = self
         }
@@ -674,59 +666,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
     } //end setMasterPitchShiftForAllVoices
     
-    //=====<oogie2D mainVC>====================================================
-     // 9/19 generic param edit, workx on shapes,voices, etc
-     func editParam(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
-     {
-         var ptype = ""
-         if      whatWeBeEditing == "voice" {ptype = OVP.getParamType(pname: pname)}
-         else if whatWeBeEditing == "shape" {ptype = OSP.getParamType(pname: pname)}
-         else if whatWeBeEditing == "pipe"  {ptype = OPP.getParamType(pname: pname)}
-         
-         //let ptype = OVP.getParamType(pname: pname)
-         if pname != oldvpname //user changed parameter? load up info to UI
-         {
-             var choiceStrings : [String] = []
-             var pt = TFLOAT_TTYPE
-             if ptype == "int"
-             {
-                 pt = TINT_TTYPE
-                 choiceStrings = OVP.getParamChoices(pname: pname)
-             }
-             else if ptype == "string"
-             {
-                 pt = TSTRING_TTYPE
-                 choiceStrings = OVP.getParamChoices(pname: pname)
-             }
-             else if ptype == "text"
-             {
-                 pt = TSTRING_TTYPE
-             }
-            //9/22 WOW the pmax may be totally wrong here!
-            var pmax : Double = 100.0
-            if whatWeBeEditing == "pipe" {pmax = 255.0} //9/22 more range for pipe params?
-             pLabel.setupForParam( pname : pname , ptype : pt ,
-                                   pmin : 0 , pmax : pmax , choiceStrings: choiceStrings)
-             oldvpname = pname; //remember for next time
-             OVScene.selectedFieldName = pname
-             if      whatWeBeEditing == "voice" {OVScene.loadCurrentVoiceParams()}
-             else if whatWeBeEditing == "shape" {OVScene.loadCurrentShapeParams()}
-             else if whatWeBeEditing == "pipe"  {OVScene.loadCurrentPipeParams()}
-         }
-         //convert from slider unit to proper units...
-         let dval = Double(newVal)
-         // 9/22 wups, only convert unit for LABEL display!
-         pLabel.updateit(value : OVScene.unitToParam(inval: dval));
-         
-         //4/26 Dig up last param value and save
-         let sceneChanges = OVScene.setNewParamValue(newEditState : whatWeBeEditing,
-                                                     named : pname,
-                                                     toDouble : dval,
-                                                     toString : pvalue )
-         update3DSceneForSceneChanges(sceneChanges)
-     } // end editParam
-     
-  
   
     //=======>ARKit MainVC===================================
     //1/22 updates pipes going FROM a voice,
@@ -749,10 +688,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         for (_,v) in OVScene.sceneVoices // loop over voices, match with shape
         {
             if v.OVS.shapeKey == s.OOS.key //match key? update!
-               {
-                updatingPipe = false //9/22 clear flag for 2nd update
-                updatePipeByVoice(v:v)
-               }
+               { updatePipeByVoice(v:v) }
         }
         //Get all incoming pipes to shape, update positions
         for puid in s.inPipes { updatePipeByUID(puid) }
@@ -989,15 +925,16 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         if selectedPipeShape.highlighted  //hilited? Set up edit
                         {
                             self.pLabel.updateLabelOnly(lStr:"Selected " + spo.PS.name)
+                            print("FIXIT: editparams!")
+                            // 8/11 FIXIT editParams(v:"pipe") //this also update screen
                             shiftPanelUp(panel: pipeEditPanels) //9/11 shift controls so they are visible
                             piPanel.paramDict = OVScene.selectedPipe.getParamDict()
-                            //WOW THIS IS HOKEY!
                             // get correct output parameter names for this pipe
-                            OVScene.selectedFieldName = "outputparam" //Force selection to get possible output pipe values...
+                            OVScene.selectedField = 1 //Force selection to get possible output pipe values...
                             OVScene.loadCurrentPipeParams()
                             var workArray = OVScene.selectedFieldDisplayVals;
-//                            workArray.remove(at: 0) //Toss first 2 items  9/22 WHY did i do this?
-//                            workArray.remove(at: 0)
+                            workArray.remove(at: 0) //Toss first 2 items
+                            workArray.remove(at: 0)
                             piPanel.outputNames = workArray //now we should have our outputs
                             piPanel.configureView() //9/12 loadup stuff
                         }
@@ -1388,8 +1325,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //print("step 3 chan \(channel) destination \(destination) shape \(isShape)")
         let alert = UIAlertController(title: "Choose Parameter", message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.view.tintColor = UIColor.black //2/6 black text
-        var menuNames = OSP.shapeParamNamesOKForPipe
-        if !isShape {menuNames = OVP.voiceParamNamesOKForPipe}
+        var menuNames = shapeParamNamesOKForPipe
+        if !isShape {menuNames = voiceParamNamesOKForPipe}
         for pname in menuNames
             {
                 alert.addAction(UIAlertAction(title: pname, style: .default, handler: { action in
@@ -2511,88 +2448,134 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
     } //end loadPatchByName
     
+    //=====<oogie2D mainVC>====================================================
+    //controlPanel delegate returns...
+    func didSetControlValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
+    {
+        print("mainvc: didSetControlValue \(which) \(newVal) \(pname)")
+        
+       if which == 17 //new patch?
+        {
+            if newVal == 0 //RANDOM
+            {
+                loadRandomPatch()
+            }
+            else
+            {
+                let patchName = allP.getSoundPackPatchNameByIndex(index: Int(newVal-1)) //patches start 1....n
+                loadPatchByName(pName: patchName)
+            } //end else not random
+        } //end which 19
+        else if which == 18 //9/11 handle new soundpack
+        {
+            OVSoundPack = allP.getSoundPackNameByIndex(index: Int(newVal));
+            allP.getSoundPackByName(name: OVSoundPack)
+            let patchName = allP.getSoundPackPatchNameByIndex(index: 0) //patches start 1....n
+            print("choose sp \(OVSoundPack) patch \(patchName)  ... NEED to update patchPicker!!!")
+            loadPatchByName(pName: patchName)
+            var pnames = [String]()
+            pnames.append("Random")
+            let psize = allP.getSoundPackSize()
+            if psize > 0
+            {
+                for i in 0...psize-1
+                {
+                    let pname = allP.getSoundPackPatchNameByIndex(index: i)
+                    pnames.append(pname)
+                }
+            }
+            cPanel.paNames = pnames
+            //Pack params, send to VC
+            cPanel.paramDict = OVScene.selectedVoice.getParamDictWith(soundPack: OVSoundPack)
+            cPanel.configureView()
+        }
+        else   //Just regular control...
+        {
+            let cs = [""]
+            if pname != oldvpname
+            {
+                pLabel.setupForParam( pname : pname , ptype : TFLOAT_TTYPE ,
+                                      pmin : 0 , pmax : 100 , choiceStrings: cs)
+                oldvpname = pname; //remember for next time
+                //asdf  set up for new param if control changed!
+                //OVScene.selectedField
+                OVScene.selectedFieldName = pname
+                // 9/18 SAW KRASH here on rapid dice rolls,
+                // WALKING ON MEMORY?????
+                OVScene.loadCurrentVoiceParams()
+            }
+            //convert from slider unit to proper units...
+            pLabel.updateit(value:OVScene.unitToParam(inval: Double(newVal)))
+            //4/26 Dig up last param value and save
+            let sceneChanges = OVScene.setNewParamValue(newEditState : whatWeBeEditing,
+                                                        named : pname,
+                                                        toDouble : Double(newVal),
+                                                        toString : pvalue )
+//            let sdump = OVScene.selectedVoice.dumpParams()
+//            print(sdump)
+            update3DSceneForSceneChanges(sceneChanges)
+            OVScene.sceneVoices[OVScene.selectedMarkerKey] = OVScene.selectedVoice //WOW STORE IN SCENE?
+        } //end else
+        
+    } //end didSetControlValue
     
-     //=====<oogie2D mainVC>====================================================
-     //controlPanel delegate returns...
-     func didSetControlValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
-     {
-         print("mainvc: didSetControlValue \(which) \(newVal) \(pname)")
-         
-         if which == 17 //new patch?
-         {
-             if newVal == 0 //RANDOM
-             {
-                 loadRandomPatch()
-             }
-             else
-             {
-                 let patchName = allP.getSoundPackPatchNameByIndex(index: Int(newVal-1)) //patches start 1....n
-                 loadPatchByName(pName: patchName)
-             } //end else not random
-         } //end which 19
-         else if which == 18 //9/11 handle new soundpack
-         {
-             OVSoundPack = allP.getSoundPackNameByIndex(index: Int(newVal));
-             allP.getSoundPackByName(name: OVSoundPack)
-             let patchName = allP.getSoundPackPatchNameByIndex(index: 0) //patches start 1....n
-             print("choose sp \(OVSoundPack) patch \(patchName)  ... NEED to update patchPicker!!!")
-             loadPatchByName(pName: patchName)
-             var pnames = [String]()
-             pnames.append("Random")
-             let psize = allP.getSoundPackSize()
-             if psize > 0
-             {
-                 for i in 0...psize-1
-                 {
-                     let pname = allP.getSoundPackPatchNameByIndex(index: i)
-                     pnames.append(pname)
-                 }
-             }
-             cPanel.paNames = pnames
-             //Pack params, send to VC
-             cPanel.paramDict = OVScene.selectedVoice.getParamDictWith(soundPack: OVSoundPack)
-             cPanel.configureView()
-         }
-         else   //Just regular control...
-         {
-             editParam(which,newVal,pname,pvalue,undoable)
-             OVScene.sceneVoices[OVScene.selectedMarkerKey] = OVScene.selectedVoice //WOW STORE IN SCENE?
-         } //end else
-         
-     } //end didSetControlValue
-     
-     
-     //=====<shapePanelDelegate>====================================================
-     // 9/15 redid to handle  OVScene.loadCurrentShapeParams
-     func didSetShapeValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
-     {
-         print("mainvc: didSetShapeValue \(which) \(newVal) \(pname) \(pvalue)")
-         if which == 0 //texture?
-         {
-             //call a delegate return here... asdf
-             if pname == "default"
-             {
-                 let ii = UIImage(named: "spectrumOLD")!   //This really should be defined everywhere!
-                 gotTexture(name: pname, tex: ii)
-             }
-             else if let ii = tc.texDict[pname] //try for texture
-             {
-                 gotTexture(name: pname, tex: ii)
-             }
-         }
-         else{ //normal param??
-             editParam(which,newVal,pname,pvalue,undoable)
-         }
-     } //end didSetShapeValue
+    
+    //=====<shapePanelDelegate>====================================================
+    // 9/15 redid to handle  OVScene.loadCurrentShapeParams
+    func didSetShapeValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
+    {
+        print("mainvc: didSetShapeValue \(which) \(newVal) \(pname) \(pvalue)")
+        let cs = [""]
+        if pname != oldvpname
+        {
+            pLabel.setupForParam( pname : pname , ptype : TFLOAT_TTYPE ,
+                                  pmin : 0 , pmax : 100 , choiceStrings: cs)
+            oldvpname = pname; //remember for next time
+            //OVScene.selectedField
+            OVScene.selectedFieldName = pname
+            OVScene.loadCurrentShapeParams()
+        }
+        
+        if which == 0 //texture?
+        {
+            //call a delegate return here... asdf
+            if pname == "default"
+            {
+                let ii = UIImage(named: "spectrumOLD")!   //This really should be defined everywhere!
+                gotTexture(name: pname, tex: ii)
+            }
+            else if let ii = tc.texDict[pname] //try for texture
+            {
+                gotTexture(name: pname, tex: ii)
+            }
+        }
+//        else if which == 2 //rotation type special? why doesnt setNewParamValue handle it?
+//        {
+//            OVScene.selectedShape.OOS.rotation = Double(newVal)
+//            setRotationTypeForSelectedShape()
+//        }
+        else{ //normal param??
+            pLabel.updateit(value: Double(newVal)) //DHS 9/28 new display
+            //4/26 Dig up last param value and save
+            // for rotationtype, make sure there is a updaterotationtype in output below!
+            let sceneChanges = OVScene.setNewParamValue(newEditState : whatWeBeEditing,
+                                                        named : pname,
+                                                        toDouble : Double(newVal),
+                                                        toString : pvalue )
+            update3DSceneForSceneChanges(sceneChanges)
+            // DO I NEED THIS? OVScene.sceneShapes[OVScene.selectedShapeKey] = OVScene.selectedShape //WOW STORE IN SCENE?
+        }
+
+    } //end didSetShapeValue
 
     //=====<shapePanelDelegate>====================================================
     // 9/18/21
     func didSelectShapeDice() {
-        //print("didSelectShapeDice")
+        print("didSelectShapeDice")
         pLabel.updateLabelOnly(lStr:"Randomize Shape") //9/18 info for user!
     }
     func didSelectShapeReset() {
-        //print("didSelectShapeReset")
+        print("didSelectShapeReset")
         pLabel.updateLabelOnly(lStr:"Reset Shape") //9/18 info for user!
     }
 
@@ -2602,15 +2585,35 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func didSetPipeValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
     {
         print("mainvc: didSetPipeValue \(which) \(newVal) \(pname) \(pvalue)")
-        editParam(which,newVal,pname,pvalue,undoable)
+        // THIS IS PRETTY COMMON IN all set__Value methods? make it a method?
+        let cs = [""]
+        if pname != oldvpname
+        {
+            pLabel.setupForParam( pname : pname , ptype : TFLOAT_TTYPE ,
+                                  pmin : 0 , pmax : 100 , choiceStrings: cs)
+            oldvpname = pname; //remember for next time
+            OVScene.selectedFieldName = pname
+            OVScene.loadCurrentPipeParams()
+        }
+        pLabel.updateit(value: Double(newVal)) //DHS 9/28 new display
+        //4/26 Dig up last param value and save
+        // for rotationtype, make sure there is a updaterotationtype in output below!
+        let sceneChanges = OVScene.setNewParamValue(newEditState : whatWeBeEditing,
+                                                    named : pname,
+                                                    toDouble : Double(newVal),
+                                                    toString : pvalue )
+        update3DSceneForSceneChanges(sceneChanges)
+        // DO I NEED THIS?  OVScene.scenePipes[OVScene.selectedPipeKey] = OVScene.selectedPipe
     }
+    
+    //=====<pipePanelDelegate>====================================================
     // 9/18/21
     func didSelectPipeDice() {
-        //print("didSelectPipeDice")
+        print("didSelectShapeDice")
         pLabel.updateLabelOnly(lStr:"Randomize Shape") //9/18 info for user!
     }
     func didSelectPipeReset() {
-        //print("didSelectPipeReset")
+        print("didSelectShapeReset")
         pLabel.updateLabelOnly(lStr:"Reset Shape") //9/18 info for user!
     }
 
@@ -2629,7 +2632,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             UIView.animate(withDuration: 0.5, delay: 0.0, options: [], animations: {
                 panel.frame = rr
             }, completion: { (finished: Bool) in
-                //print("shifted panel UP")
+                print("shifted panel UP")
             })
         }
     } //end shiftvoiceEditPanelsUp
@@ -2646,7 +2649,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             UIView.animate(withDuration: 0.5, delay: 0.0, options: [], animations: {
                 panel.frame = rr
             }, completion: { (finished: Bool) in
-                //print("shifted panel DOWN")
+                print("shifted panel DOWN")
             })
         }
     } //end shiftPanelDown
@@ -2700,11 +2703,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         print("controlNeedsProMode")
     }
     func didSelectControlDice() {
-        //print("didSelectControlDice")
+        print("didSelectControlDice")
         pLabel.updateLabelOnly(lStr:"Randomize Voice") //9/18 info for user!
     }
     func didSelectControlReset() {
-        //print("didSelectControlReset")
+        print("didSelectControlReset")
         pLabel.updateLabelOnly(lStr:"Reset Voice") //9/18 info for user!
     }
     func updateControlModeInfo(_ infostr: String!) {

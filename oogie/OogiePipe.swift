@@ -10,7 +10,7 @@
 //
 //  Created by Dave Scruton on 10/28/19.
 //  Copyright © 2019 fractallonomy. All rights reserved.
-//
+//  NOTE: pipe data in output buffer is in range 0..1 while input buffer is 0..255!!!
 //  12/1 add verbose, why doesnt it work?
 //  4/22 add param func
 //  4/23 add setParam
@@ -95,6 +95,7 @@ struct OogiePipe {
 
     //======(OogiePipe)=============================================
     // should this accept integer input?
+    // 9/22/21 NOTE this converts data to range 0.0 ... 1.0
     func convertData (f : Float) -> Float
     {
         return Float(PS.loRange) + (f * Float(multF))

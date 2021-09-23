@@ -1103,12 +1103,14 @@ short *audioRecBuffer;
     {
         t.vibEnabled = TRUE;
         // 9/2 add exponential range to vib ampl / speed
+        NSLog(@"-----FVIBIN--------------> ampl/speed  %d,%d ",vibAmpl,vibSpeed);
         t.vibAmpl    = (int)powf(1.03,(float)vibAmpl);
         t.vibSpeed   = (int)powf(1.08,(float)vibSpeed);
         t.vibWave    = vibWave;
         t.vibDelay   = vibDelay;
         t.vibIndex   = 0.0;
         t.vibStep    = 0.3*t.vibSpeed;  //9/2
+        //NSLog(@"-----FVIB--------------> ampl/speed/step %d,%d,%f",t.vibAmpl,t.vibSpeed,t.vibStep);
     }
     else //8/14/21 explicitly clear vvib stuff...
     {
@@ -1126,12 +1128,14 @@ short *audioRecBuffer;
     {
         t.vibeEnabled = TRUE;
         // 9/2 add exponential range to vib ampl / speed
+        //NSLog(@"-----AVIBIN--------------> ampl/speed  %d,%d ",vibeAmpl,vibeSpeed);
         t.vibeAmpl    = (int)powf(1.03,(float)vibeAmpl);
         t.vibeSpeed   = (int)powf(1.08,(float)vibeSpeed);
         t.vibeWave    = vibeWave;
         t.vibeDelay   = vibeDelay;
         t.vibeIndex   = 0.0;
         t.vibeStep    = 0.3*t.vibeSpeed;  //9/2
+        //NSLog(@"-----AVIB--------------> ampl/speed/step %d,%d,%f",t.vibAmpl,t.vibSpeed,t.vibStep);
     }
     else //8/14/21 explicitly clear avib stuff...
     {

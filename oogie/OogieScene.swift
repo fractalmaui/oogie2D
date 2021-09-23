@@ -691,20 +691,20 @@ class OogieScene: NSObject {
     } //end loadCurrentShapeParams
 
     //-----------(oogieScene)=============================================
-    // 12/1 add pipe edit
+    // 9/22 redo
     func loadCurrentPipeParams()
     {
-        if (selectedField < 0) {return}
-        //9/14/21 NOTE THIS NEEDS TO CHANGE TO USE PARAM NAME!!
-        var vArray = selectedPipe.getNthParams(n: selectedField)
-        if selectedField == 1 //String field: output param name
+        if var vArray = OPP.pipeParamsDictionary[selectedFieldName] //9/22 wups
         {
-            if vArray.count == 3 {vArray.remove(at: 2)} //Get rid of trailer
-            //append shape/voice/etc parameters....
-            if selectedPipe.destination == "shape" {vArray = vArray + OSP.shapeParamNamesOKForPipe }
-            else                                   {vArray = vArray + OVP.voiceParamNamesOKForPipe }   //9/19/21
+            if selectedFieldName == "outputparam" //9/22 output? params may vary
+            {
+                if vArray.count == 3 {vArray.remove(at: 2)} //Get rid of trailer
+                //append shape/voice/etc parameters....
+                if selectedPipe.destination == "shape" {vArray = vArray + OSP.shapeParamNamesOKForPipe }
+                else                                   {vArray = vArray + OVP.voiceParamNamesOKForPipe }   //9/19/21
+            }
+            breakOutSelectedFields(vArray: vArray)
         }
-        breakOutSelectedFields(vArray: vArray)
     } //end loadCurrentPipeParams
 
     //-----------(oogieScene)=============================================
@@ -869,6 +869,8 @@ class OogieScene: NSObject {
         } //end voice editing
         else if editing == "shape"
         {
+            //9/22 wups, forgot conversion!
+            workDouble = unitToParam(inval: workDouble) //9/15/21 Convert to desired range
             selectedShape.setParam(named : named,
                                    toDouble : workDouble,
                                    toString : workString)
@@ -877,14 +879,13 @@ class OogieScene: NSObject {
             var newType    = false
             switch (named)  // setup 3D updates back in caller
             {
-            case "xpos" ,"ypos" ,"zpos" : results.append("updateshapepipe")
-                                         // results.append("updatevoicepipe") //9/20 what if we have a voice?
-
-            case "texture"  : needUpdate = false
-            case "rotation" : needUpdate = false ; newSpeed = true
-            case "rotationtype" : needUpdate = false ; newType = true
-            case "name" , "comment" : results.append("updateshapename")
-            default: break
+                case "xpos" ,"ypos" ,"zpos" : results.append("updateshapepipe")
+                // results.append("updatevoicepipe") //9/20 what if we have a voice?
+                case "texture"  : needUpdate = false
+                case "rotation" : needUpdate = false ; newSpeed = true
+                case "rotationtype" : needUpdate = false ; newType = true
+                case "name" , "comment" : results.append("updateshapename")
+                default: break
             }
             if needUpdate { results.append("updateshape")}
             if newSpeed   { results.append("updaterotationspeed")}
@@ -906,6 +907,7 @@ class OogieScene: NSObject {
             case "lorange","hirange": //4/27 ranges come in as text, convert!
                 if let d = Double(workString) { workDouble = d }
                 //9/13/21 obsolete workDouble = Double(workString) //9/13/21 as! Double
+                print("pipe range \(named) : \(workDouble)")
             default: break
             }
             let oldToParam = selectedPipe.PS.toParam
@@ -1108,16 +1110,31 @@ class OogieScene: NSObject {
             if pwork.gotData // Got data? Send to shape/voice parameter
             {
                 //1/14 NO conversion needed, already happens in pipe!
+                //9/22 pipeVal comes out in range 0.0 to 1.0
                 let pipeVal = pwork.getFromOBuffer(clearFlags:true)
                 if pwork.destination == "shape" //send out shape param
                 {
+                    let toParamName = pwork.PS.toParam.lowercased()
                     let toKey = pwork.PS.toObject
                     if let shape = sceneShapes[toKey]
                     {
-                        //print("toshape pipeval \(pipeVal)")
-                        shape.setParam(named : pwork.PS.toParam.lowercased() , //4/27 set params from pipe
-                            toDouble : Double(pipeVal) ,
-                            toString : "")
+                        var dval = Double(pipeVal)
+                        //Dig up the param info for pipe target...
+                        if let vArray = OSP.shapeParamsDictionary[toParamName]
+                        {
+                            if vArray.count > 6 //got mult/offset params?
+                            {
+                                let ptype = vArray[1] as! String
+                                if ptype == "double" // adjust doubles as needed
+                                {
+                                    let dmult = vArray[5] as! Double
+                                    let doff  = vArray[6] as! Double
+                                    dval = (dval * dmult) + doff  //same math as unitToParam
+                                }
+                            }
+                        }
+                        //print("...toshape  param \(toParamName)  pipeval \(pipeVal)")
+                        shape.setParam(named : toParamName , toDouble : dval , toString : "")
                         switch(pwork.PS.toParam.lowercased())  //Post processing for certain params...
                         {
                         case "rotationtype"  :   //special processing for rotationtype
@@ -1203,6 +1220,7 @@ class OogieScene: NSObject {
             {
                 //get latest desired channel from the marker / voice
                 let floatVal = Float(vvv.getChanValueByName(n:p.PS.fromChannel.lowercased()))
+                //print("...packpipe from chan \(p.PS.fromChannel) : \(floatVal)")
                 pwork.addToBuffer(f: floatVal) //...and send to pipe
                 scenePipes[n] = pwork //Save pipe back into scene
                 if n == selectedPipeKey  { selectedPipe = pwork } //1/14 editing?
@@ -1227,7 +1245,7 @@ class OogieScene: NSObject {
     //-----------(oogieScene)=============================================
     func unitToParam (inval : Double) -> Double
     {
-        print("unitToParam : \(inval) :: mult \(selectedFieldDMult) off \(selectedFieldDOffset)")
+        //print("unitToParam : \(inval) :: mult \(selectedFieldDMult) off \(selectedFieldDOffset)")
         return (inval * selectedFieldDMult) + selectedFieldDOffset
     } //end paramToUnit
     

@@ -334,8 +334,8 @@ class infoText: UIView {
         fieldType = ptype
         items.removeAll()
         
-        print("setupForParam: pname \(pname) :  ptype \(ptype) :   pmin \(pmin) :  pmax \(pmax) :  choices \(choiceStrings) :")
-        print("     types 1,2,3 = int,float,string")
+//        print("setupForParam: pname \(pname) :  ptype \(ptype) :   pmin \(pmin) :  pmax \(pmax) :  choices \(choiceStrings) :")
+//        print("     types 1,2,3 = int,float,string")
         
         if  fieldType == TSTRING_TTYPE
         {

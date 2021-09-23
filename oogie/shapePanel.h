@@ -40,6 +40,7 @@
     UIButton *diceButton;
     UIButton *goLeftButton;
     UIButton *goRightButton;
+    UILabel *titleLabel;
 
     UISlider *sliders[MAX_SHAPE_SLIDERS];
     UIPickerView *pickers[MAX_SHAPE_PICKERS];

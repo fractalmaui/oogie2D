@@ -10,7 +10,8 @@
 //
 //  Created by Dave Scruton on 9/12/20.
 //  Copyright © 1990 - 2021 fractallonomy, inc. All Rights Reserved.
-
+//
+//  9/21 remove footer, add curved top title
 
 
 #import "shapePanel.h"
@@ -85,19 +86,19 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
 //======(shapePanel)==========================================
 -(void) setupView:(CGRect)frame
 {
+    //Add rounded corners to this view
+    self.layer.cornerRadius = OOG_MENU_CURVERAD;
+    self.clipsToBounds      = TRUE;
+
     //9/20 Wow. we dont have a frame here!!! get width at least!
     CGSize screenSize   = [UIScreen mainScreen].bounds.size;
     viewWid = screenSize.width;
     viewHit    = frame.size.height;
-//    buttonWid  = viewHit * 0.07; //9/8 vary by viewhit, not wid
-//    buttonHit  = buttonWid;
     buttonWid = viewWid * 0.12; //10/4 REDO button height,scale w/width
-   // if (cappDelegate.gotIPad) //12/11 smaller buttons on ipad!
-   //     buttonWid = viewWid * 0.06;  // ...by half?
     buttonHit = OOG_HEADER_HIT; //buttonWid;
     
     self.frame = frame;
-    self.backgroundColor = [UIColor redColor]; // 6/19/21 colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.1];
+    self.backgroundColor = [UIColor greenColor]; // 6/19/21 colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.1];
     int xs,ys,xi,yi;
     
     xi = 0;
@@ -122,10 +123,23 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
 
     int panelSkip = 5; //Space between panels
     int i=0; //6/8
+    
+    xi = 0;
+    yi = 0;
+    xs = viewWid;
+    ys = OOG_MENU_CURVERAD;
+    UILabel *editLabel = [[UILabel alloc] initWithFrame:
+                   CGRectMake(xi,yi,xs,ys)];
+    [editLabel setBackgroundColor : [UIColor greenColor]];
+    [editLabel setTextColor : [UIColor blackColor]];
+    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 28.0]];
+    editLabel.text = @"Edit Shape";
+    editLabel.textAlignment = NSTextAlignmentCenter;
+    [self addSubview : editLabel];
 
     // 9/24 HEADER, top buttons and title info
     xi = OOG_XMARGIN;
-    yi = 0;
+    yi = 30;
     xs = viewWid - 2*OOG_XMARGIN;
     ys = OOG_HEADER_HIT;  //7/9
     header = [[UIView alloc] init];
@@ -136,23 +150,11 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
     header.layer.shadowOpacity = 0.3;
     [self addSubview:header];
 
-    // 5/20 add footer for shadow at bottom??
-    yi = viewHit;
-    xi = 0;
-    xs = viewWid;
-    footer = [[UIView alloc] init];
-    footer.frame = CGRectMake(xi,yi,xs,ys);
-    footer.backgroundColor = [UIColor blackColor];
-    footer.layer.shadowColor   = [UIColor blackColor].CGColor;
-    footer.layer.shadowOffset  = CGSizeMake(0,-10);
-    footer.layer.shadowOpacity = 0.3;
-    [self addSubview:footer];
-    
     // 8/4 add title and help button
     xi = 0;
     yi = 0;
     xs = viewWid;
-    UILabel *titleLabel = [[UILabel alloc] initWithFrame:
+    titleLabel = [[UILabel alloc] initWithFrame:
                    CGRectMake(xi,yi,xs,ys)];
     [titleLabel setTextColor : [UIColor whiteColor]];
     [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 32.0]];
@@ -424,7 +426,10 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
 -(void) configureView
 {
     [pickers[0] reloadAllComponents]; //load textures
-    //[pickers[2] reloadAllComponents];
+    NSString *s = @"no name"; //get voice name for title
+    NSArray *a  = [_paramDict objectForKey:@"name"];
+    if (a.count > 0) s = a.lastObject;
+    titleLabel.text = s;
 
     [self configureViewWithReset : FALSE];
 }
@@ -491,7 +496,8 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
     for (int i=0;i<MAX_SHAPE_PICKERS;i++) if (pickers[i] != nil) [allpick addObject:pickers[i]];
     NSMutableArray *allslid = [[NSMutableArray alloc] init];
     for (int i=0;i<MAX_SHAPE_SLIDERS;i++) if (sliders[i] != nil)  [allslid addObject:sliders[i]];
-    NSArray *norandomizeparams = @[@"texture",@"name",@"comment"];
+    // we have more params to NOT randomize than ones we want TO randomize...
+    NSArray *norandomizeparams = @[@"texture",@"name",@"comment",@"xpos",@"ypos",@"zpos"];
 
     NSMutableDictionary *resetDict = [goog randomizeFromVC : allpar : allpick : allslid : norandomizeparams];
     [self sendUpdatedParamsToParent:resetDict];
@@ -724,6 +730,8 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
     [self.delegate didSetShapeValue:liltag :0.0: sallParams[liltag] : s : FALSE];   //9/20
+    // 9/21 take care of name update at top of menu
+    if ([sallParams[liltag] isEqualToString:@"name"]) titleLabel.text = s;
     return YES;
 }
 

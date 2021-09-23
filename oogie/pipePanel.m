@@ -81,6 +81,10 @@ NSArray *opParams;
 //======(pipePanel)==========================================
 -(void) setupView:(CGRect)frame
 {
+    //Add rounded corners to this view
+    self.layer.cornerRadius = OOG_MENU_CURVERAD;
+    self.clipsToBounds      = TRUE;
+
     //9/20 Wow. we dont have a frame here!!! get width at least!
     CGSize screenSize   = [UIScreen mainScreen].bounds.size;
     viewWid = screenSize.width;
@@ -93,7 +97,7 @@ NSArray *opParams;
     buttonHit = OOG_HEADER_HIT; //buttonWid;
     
     self.frame = frame;
-    self.backgroundColor = [UIColor redColor]; // 6/19/21 colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.1];
+    self.backgroundColor = [UIColor blueColor]; // 6/19/21 colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.1];
     int xs,ys,xi,yi;
     
     xi = 0;
@@ -116,12 +120,25 @@ NSArray *opParams;
     swipeLGesture.delegate  = self; //9/7 for checking gestures
     [scrollView addGestureRecognizer:swipeLGesture];
 
+    xi = 0;
+    yi = 0;
+    xs = viewWid;
+    ys = OOG_MENU_CURVERAD;
+    UILabel *editLabel = [[UILabel alloc] initWithFrame:
+                   CGRectMake(xi,yi,xs,ys)];
+    [editLabel setBackgroundColor : [UIColor blueColor]];
+    [editLabel setTextColor : [UIColor whiteColor]];
+    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 28.0]];
+    editLabel.text = @"Edit Pipe";
+    editLabel.textAlignment = NSTextAlignmentCenter;
+    [self addSubview : editLabel];
+
     int panelSkip = 5; //Space between panels
     int i=0; //6/8
 
     // 9/24 HEADER, top buttons and title info
     xi = OOG_XMARGIN;
-    yi = 0;
+    yi = 30;
     xs = viewWid - 2*OOG_XMARGIN;
     ys = OOG_HEADER_HIT;  //7/9
     header = [[UIView alloc] init];
@@ -148,7 +165,7 @@ NSArray *opParams;
     xi = 0;
     yi = 0;
     xs = viewWid;
-    UILabel *titleLabel = [[UILabel alloc] initWithFrame:
+    titleLabel = [[UILabel alloc] initWithFrame:
                    CGRectMake(xi,yi,xs,ys)];
     [titleLabel setTextColor : [UIColor whiteColor]];
     [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 32.0]];
@@ -239,10 +256,10 @@ NSArray *opParams;
     [self addPickerRow:sPanel : 1 : PICKER_BASE_TAG+1 : pipickerNames[1] : yi : OOG_PICKER_HIT];
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
 
-    // 2 Sliders... lo/hi range
-    [self addSliderRow:sPanel : 0 : SLIDER_BASE_TAG + 2 : pisliderNames[0] : yi : OOG_SLIDER_HIT:0.0:255.0];
+    // 2 Sliders... lo/hi range 9/22 make range 0..1
+    [self addSliderRow:sPanel : 0 : SLIDER_BASE_TAG + 2 : pisliderNames[0] : yi : OOG_SLIDER_HIT:0.0:1.0];
     yi += (OOG_SLIDER_HIT+OOG_YSPACER);
-    [self addSliderRow:sPanel : 1 : SLIDER_BASE_TAG + 3 : pisliderNames[1] : yi : OOG_SLIDER_HIT:0.0:255.0];
+    [self addSliderRow:sPanel : 1 : SLIDER_BASE_TAG + 3 : pisliderNames[1] : yi : OOG_SLIDER_HIT:0.0:1.0];
     yi += (OOG_SLIDER_HIT+OOG_YSPACER);
 
     // 2 text entry fields... name / comment 9/20 fix yoffset bug
@@ -417,6 +434,10 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
 -(void) configureView
 {
     [pickers[1] reloadAllComponents]; //load pipe outputs, they may change over time
+    NSString *s = @"no name"; //get voice name for title
+    NSArray *a  = [_paramDict objectForKey:@"name"];
+    if (a.count > 0) s = a.lastObject;
+    titleLabel.text = s;
     [self configureViewWithReset : FALSE];
 }
 
@@ -712,6 +733,8 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
     [self.delegate didSetPipeValue:liltag :0.0: pallParams[liltag] : s : FALSE];   //9/20
+    // 9/21 take care of name update at top of menu
+    if ([pallParams[liltag] isEqualToString:@"name"]) titleLabel.text = s;
     return YES;
 }
 
