@@ -66,7 +66,6 @@ struct OSStruct : Codable {
         rotXaxis  = 0.0
         rotZaxis  = 0.0
         rotYaxis  = 1.0
-        //5/1 uid
         uid = "shape_" + ProcessInfo.processInfo.globallyUniqueString
     }
     

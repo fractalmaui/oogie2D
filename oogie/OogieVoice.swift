@@ -380,6 +380,7 @@ let MAX_LOOX = 8
 
     //-----------(oogieVoice)=============================================
     // 9/17/21 pack up defaults for UI use
+    // OBSOLETE....
     func getDefaultsDict() -> Dictionary<String,Any>
     {
         var d = Dictionary<String, Any>()
@@ -447,6 +448,42 @@ let MAX_LOOX = 8
         return d
     } //end getParamList
     
+    //-----------(oogieVoice)=============================================
+    //TEMP, improve this!
+    func getPatchDictWithValues() -> Dictionary<String,Any>
+    {
+        var pdict = Dictionary<String, Double>()
+        // make a dictionary of params just like for shapes and pipes here!!!
+        //   add it to voice object?
+        //OUCH! we have to send a swift class to an ObjectiveC UI!
+        pdict["type"] = Double(OOP.type)
+        pdict["wave"] = Double(OOP.wave)
+        pdict["poly"] = Double(OVS.poly)
+        pdict["attack"] = OOP.attack
+        pdict["decay"] = OOP.decay
+        pdict["sustain"] = OOP.sustain
+        pdict["release"] = OOP.release
+        pdict["slevel"] = OOP.sLevel
+        pdict["duty"] = OOP.duty
+        pdict["nchan"] = Double(nchan)
+        pdict["vchan"] = Double(vchan)
+        pdict["pchan"] = Double(pchan)
+        pdict["sampoffset"] = Double(OVS.sampleOffset)
+        pdict["volmode"] = Double(OVS.volMode)
+        pdict["notemode"] = Double(OVS.volMode)
+        pdict["pan"] = Double(OVS.panMode)
+        if OOP.type == PERCKIT_VOICE //pack percKit?
+        {
+            for i in 0...7
+            {
+                var pkey = "percloox" + String(i)
+                pdict[pkey] = Double(OOP.percLoox[i]);
+                pkey = "perclooxpans"
+                pdict[pkey] = Double(OOP.percLooxPans[i]);
+            }
+        }
+        return pdict
+    } //end getPatchDictWithValues
     
     //-----------(oogieVoice)=============================================
     // using this voices internal type, get array of appropriate patchnames

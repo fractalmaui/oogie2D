@@ -34,6 +34,7 @@ class Marker: SCNNode {
     var mainCone     = SCNCone()
     var hitSphere    = SCNSphere()
     var typeCube     = SCNBox()
+    var allShapes    = SCNNode() //9/27
     var cubeNode     = SCNNode()
     var hueIndicator = SCNNode()
     var cubeNodeRot  = 0.0
@@ -86,14 +87,14 @@ class Marker: SCNNode {
         //11/17 first add our rotational handles
         self.addChildNode(lonHandle)
         lonHandle.addChildNode(latHandle)
-        let allShapes = createMarker()
+        allShapes = createMarker()
         let theta = -Double.pi/2.0 //Point bottom of cone marker at earth
         allShapes.rotation = SCNVector4Make(0, 0, 1, Float(theta))
         //1/12/20 marker is at right position, scale whole thing based on platform
         allShapes.position = SCNVector3Make(1.1, 0, 0);
         latHandle.addChildNode(allShapes)
-        uid = "marker_" + ProcessInfo.processInfo.globallyUniqueString
-        allShapes.name = uid
+        uid = ""  //9/27 set up uid later...
+        allShapes.name = ""
         self.scale = SCNVector3(overallScale,overallScale,overallScale) //Shrink down by half
 
     }

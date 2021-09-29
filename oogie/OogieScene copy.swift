@@ -15,11 +15,6 @@
 //  9/13/21 make sure patch gets loaded in addVoiceSceneData!!
 //          add loop quiet instead of halts/restarts
 //  9/18    add OogieVoiceParams
-//  9/25    switch to using UIDs for scenePipes access
-//  9/26    switch to using UIDs for shapes, get rid of getNewShapeKey
-//          pull updateMaxShapeKey
-//  9/27    add saveSelectedVoiceBackToScene... fix bug in addVoiceSceneData
-//  9/28    add saveEditBackToSceneWith
 import Foundation
 import SceneKit
 class OogieScene: NSObject {
@@ -36,8 +31,11 @@ class OogieScene: NSObject {
     //Dictionaries where scenes are operated on at runtime
     var sceneVoices = Dictionary<String, OogieVoice>()
     var sceneShapes = Dictionary<String, OogieShape>()
-    var scenePipes  = Dictionary<String, OogiePipe>()
+    var scenePipes    = Dictionary<String, OogiePipe>()
         
+    var maxVoiceKey = 0 //Used to generate new keys
+    var maxShapeKey = 0
+    var maxPipeKey  = 0
     var masterPitch = 0
 
     //Selected items
@@ -96,24 +94,23 @@ class OogieScene: NSObject {
     //     OOP is getting copied?
     // Maybe we should look at the patchName item and get the patch???
     // this is the only place sceneVoices get loaded
-    // 9/27 use uid as dict key
-    func addVoiceSceneData(nextOVS : OVStruct , op : String) -> OogieVoice
+    func addVoiceSceneData(nextOVS : OVStruct , key : String, op : String) -> OogieVoice
     {
         var newOVS    = nextOVS
-        var uid       = newOVS.uid
+        var newKey    = newOVS.key
         let newVoice  = OogieVoice()
         if op == "load" //Loading? Remember name, keep key!!
         {
             newVoice.OVS = newOVS
             let pname = newOVS.patchName
+            print(" patch \(pname)")
             //9/13 go for patch???
             if let oop = allP.patchesDict[pname]
             {
                 newVoice.OOP = oop;
             }
-            else {
-                print(" addVoice ERR: cant find patch \(pname)") //9/27
-            }
+            //newVoice.OOP = 
+            updateMaxVoiceKey(loadedKey: key) //keep up with keycount!
         }
         else if op == "new" //4/30 new?
         {
@@ -134,8 +131,8 @@ class OogieScene: NSObject {
                                          lat: newOVS.yCoord, lon: newOVS.xCoord)
             newOVS.yCoord = llTuple.lat
             newOVS.xCoord = llTuple.lon
-            uid           = newOVS.getNewUID() // 9/27
-            newOVS.name   = getNewVoiceName()  // 9/27
+            newKey        = getNewVoiceKey()
+            newOVS.name   = newKey // need new key for clones or new voices
         }
         
         newVoice.OVS = newOVS
@@ -144,27 +141,27 @@ class OogieScene: NSObject {
         newVoice.masterPitch = appDelegate.masterPitch  // 5/8 this has to come from app delegate!!!
         if newVoice.OOP.type == PERCKIT_VOICE { newVoice.getPercLooxBufferPointerSet()  }
         setupSynthOrSample(oov: newVoice); //More synth-specific stuff
-        newVoice.OVS.key    = uid      // 9/27
-        sceneVoices[uid] = newVoice   // 9/27 save latest voice to working dictionary
+        newVoice.OVS.key    = newKey      // 4/30 set key
+        sceneVoices[newKey] = newVoice   //save latest voice to working dictionary
         return newVoice //voice is needed by next call to 3d constructor
     } //end addVoiceSceneData
     
     //-----------(oogieScene)=============================================
-    // 9/26 redo for uid keying
-    func addShapeSceneData (shapeOSS:OSStruct , op : String, startPosition : SCNVector3) -> (shape:OogieShape,pos3D:SCNVector3)
+    func addShapeSceneData (shapeOSS:OSStruct , key : String, op : String, startPosition : SCNVector3) -> (shape:OogieShape,pos3D:SCNVector3)
     {
-        var pos3D  = getFreshXYZ()
-        var uid    = shapeOSS.uid   //key / uid are the SAME
+        var pos3D      = getFreshXYZ()
+        var newKey     = key
         //SceneData half------------------------------------------------------------------
         var newOSStruct = shapeOSS //Copy in our shape to be cloned...
         if op != "load" // 10/26 clone / new object? need to get new XYZ
         {
-            uid              = shapeOSS.getNewUID() //9/26
-            newOSStruct.name = getNewShapeName()
-            newOSStruct.uid  = uid
+            newKey = getNewShapeKey()
+            newOSStruct.name = newKey
+            newOSStruct.uid  = shapeOSS.getNewUID()
         }
         else //load, use existing XYZ
         {
+            updateMaxShapeKey(loadedKey: key) //keep up with keycount!
             pos3D = shapeOSS.getPosition() //10/24 / wups, need start pos!
             pos3D.x += startPosition.x
             pos3D.y += startPosition.y
@@ -173,7 +170,7 @@ class OogieScene: NSObject {
         newOSStruct.xPos    = Double(pos3D.x) //break out 3d position
         newOSStruct.yPos    = Double(pos3D.y)
         newOSStruct.zPos    = Double(pos3D.z)
-        newOSStruct.key     = uid  //9/26
+        newOSStruct.key     = newKey
         let newOogieShape   = OogieShape()   // 1/21 new shape struct
         newOogieShape.OOS   = newOSStruct
         //5/3 wups forgot texture!
@@ -181,25 +178,21 @@ class OogieScene: NSObject {
         newOogieShape.bmp.setScaleAndOffsets(  //5/3 bmp now in oogieShape
             sx: shapeOSS.uScale, sy: shapeOSS.vScale,
             ox: shapeOSS.uCoord, oy: shapeOSS.vCoord)
+
         newOogieShape.setupSpinTimer(rs: shapeOSS.rotSpeed) //5/7 start timer..
-        sceneShapes[uid] = newOogieShape  //save latest shap to working dictionary
+
+        sceneShapes[newKey] = newOogieShape  //save latest shap to working dictionary
         return (newOogieShape,pos3D)
     } //end addShapeSceneData
     
     //-----------(oogieScene)=============================================
-    // for load: incoming PipeStruct will have a UID we want to keep
-    // otherwise fresh UID will come from the fresh OogiePipe oop
-    func addPipeSceneData(ps : PipeStruct , name : String, op : String) -> OogiePipe?
+    func addPipeSceneData(ps : PipeStruct , key : String, op : String) -> OogiePipe?
     {
-        var oop = OogiePipe()
-        if op == "load" //loading from scene
-        {
-            oop.uid = ps.uid   //Copy incoming pipe UID
-        }
-        oop.PS    = ps
-        let uid   = ps.uid
+        var oop     = OogiePipe()
+        oop.PS      = ps
+        var newKey  = key
         //OK now for 3d representation. Find centers of two objects:
-        let toObj = oop.PS.toObject
+        let toObj   = oop.PS.toObject
         if let shape = sceneShapes[toObj] //Found a shape as target?
         {
             oop.destination    = "shape"
@@ -219,18 +212,22 @@ class OogieScene: NSObject {
         {
             let loHiRange = getPipeRangeForParamName(pname:ps.toParam.lowercased(),dest:oop.destination)
             oop.setupRange(lo: loHiRange.lo, hi: loHiRange.hi) //1/14 REDO
-            oop.PS.name = getNewPipeName() //9/25
+            newKey = getNewPipeKey() //4/30
         }
         else
         {
+            updateMaxPipeKey(loadedKey: key) //keep up with keycount!
             oop.setupRange(lo: oop.PS.loRange, hi: oop.PS.hiRange) //5/2 wups forgot!
         }
-        scenePipes[uid]    = oop         // 9/25 store pipe object
-        pipeUIDToName[uid] = oop.PS.name // 9/25 pipe management and updates:
-        let from = oop.PS.fromObject          // get matching voice for fromMarker
+        oop.PS.key  = newKey // 4/30 at start name and key are the same
+        oop.PS.name = newKey
+
+        self.scenePipes[newKey] = oop   //store pipe object
+        pipeUIDToName[oop.uid]  = newKey // pipe management and updates:
+        let from = oop.PS.fromObject  // get matching voice for fromMarker
         if let fromVoice = sceneVoices[from]
         {
-            fromVoice.outPipes.insert(uid) //Add our UID to voice object
+            fromVoice.outPipes.insert(oop.uid) //Add our UID to voice object
         }
         return oop
     } //end addPipeSceneData
@@ -263,9 +260,9 @@ class OogieScene: NSObject {
     } // end changeVoiceType
     
     //-----------(oogieScene)=============================================
-    func cleanupPipeInsAndOuts(uid:String)
+    func cleanupPipeInsAndOuts(name:String)
     {
-        if let pipe = scenePipes[uid]
+        if let pipe = scenePipes[name]
         {
             removeVoiceOutputPipe(pipe:pipe)
             if pipe.destination == "shape" //headed to a shape?
@@ -277,13 +274,15 @@ class OogieScene: NSObject {
     //-----------(oogieScene)=============================================
     // 4/30 creates new scene named sname,
     //       with default sphere with one default voice
-    // 9/28 simplified
     func createDefaultScene(named sname:String)
     {
         OSC.name            = sname
         var shape           = OSStruct()
-        shape.key           = shape.getNewUID() //9/26
+        shape.key           = getNewShapeKey()
+        shape.name          = shape.key
         var voice           = OVStruct()
+        voice.key           = getNewVoiceKey()
+        voice.name          = voice.key
         voice.patchName     = "SineWave"
         voice.shapeKey      = shape.key
         //update our dictionaries
@@ -341,30 +340,6 @@ class OogieScene: NSObject {
     } //end foundAMarker
     
     //-----------(oogieScene)=============================================
-    //9/28 a dict would be way better!!!
-    func findSceneShapeUIDByName ( name: String)  -> String
-    {
-        var uid = ""
-        for (_,shape) in sceneShapes
-        {
-            if shape.OOS.name == name {uid = shape.OOS.uid;break}
-        }
-        return uid
-    }
-    
-    //-----------(oogieScene)=============================================
-    //9/28 a dict would be way better!!!
-    func findSceneVoiceUIDByName ( name: String)  -> String
-    {
-        var uid = ""
-        for (_,voice) in sceneVoices
-        {
-            if voice.OVS.name == name {uid = voice.OVS.uid;break}
-        }
-        return uid
-    }
-    
-    //-----------(oogieScene)=============================================
     // used to clone markers, find new lat/lon point on sphere
     func getFreshLatLon(key : String , lat:Double , lon:Double)  -> (lat:Double , lon:Double )
     {
@@ -388,26 +363,6 @@ class OogieScene: NSObject {
         }
         return(0.0 ,0.0) //give up, return zeroes
     } //end getFreshLatLon
-    
-    //=====<oogie2D mainVC>====================================================
-    //9/28 from mainVC for pipe addition
-    func getListOfSceneShapeNames() -> [String]
-    {
-        var list : [String] = []
-        for (_,shape) in sceneShapes { list.append(shape.OOS.name) }
-        list.sort()  //sort alphabetically
-        return list
-    }
-    
-    //=====<oogie2D mainVC>====================================================
-    //9/28 from mainVC for pipe addition
-    func getListOfSceneVoiceNames() -> [String]
-    {
-        var list : [String] = []
-        for (_,voice) in sceneVoices {list.append(voice.OVS.name)}
-        return list
-    }
-
     
     //-----------(oogieScene)=============================================
     // 5/12 new
@@ -588,29 +543,30 @@ class OogieScene: NSObject {
         return selectedFieldStringVals[ik]
     }
     
-        
     //-----------(oogieScene)=============================================
-    // 9/25 always increment voice key for each new/cloned shape
-    func getNewPipeName() -> String
+    // 4/30 always increment voice key for each new/cloned voice
+    func getNewVoiceKey() -> String
     {
-        return "pipe_" + String(format: "%05d", scenePipes.count+1)
+        maxVoiceKey+=1
+        return "voice_" + String(format: "%05d", maxVoiceKey)
     }
     
     //-----------(oogieScene)=============================================
-    // 9/25 always increment voice key for each new/cloned shape
-    func getNewShapeName() -> String
+    // 4/30 always increment voice key for each new/cloned shape
+    func getNewShapeKey() -> String
     {
-        return "shape_" + String(format: "%05d", sceneShapes.count+1)
+        maxShapeKey+=1
+        return "shape_" + String(format: "%05d", maxShapeKey)
     }
     
     //-----------(oogieScene)=============================================
-    // 9/25 always increment voice key for each new/cloned shape
-    func getNewVoiceName() -> String
+    // 4/30 always increment voice key for each new/cloned shape
+    func getNewPipeKey() -> String
     {
-        return "voice_" + String(format: "%05d", sceneVoices.count+1)
+        maxPipeKey+=1
+        return "pipe_" + String(format: "%05d", maxPipeKey)
     }
     
-
     //-----------(oogieScene)=============================================
     func getKeyNumericPart (key : String) -> Int
     {
@@ -625,6 +581,27 @@ class OogieScene: NSObject {
         return 1
     }
     
+    //-----------(oogieScene)=============================================
+    // Bookeeping, makes sure maxVoiceKey keeps up with any loaded keys
+    func updateMaxVoiceKey(loadedKey : String)
+    {
+        maxVoiceKey = max(maxVoiceKey,getKeyNumericPart(key:loadedKey))
+    }
+    
+    //-----------(oogieScene)=============================================
+    // Bookeeping, makes sure maxVoiceKey keeps up with any loaded keys
+    func updateMaxShapeKey(loadedKey : String)
+    {
+        maxShapeKey = max(maxShapeKey,getKeyNumericPart(key:loadedKey))
+    }
+    
+    //-----------(oogieScene)=============================================
+    // Bookeeping, makes sure maxVoiceKey keeps up with any loaded keys
+    func updateMaxPipeKey(loadedKey : String)
+    {
+        maxPipeKey = max(maxPipeKey,getKeyNumericPart(key:loadedKey))
+    }
+
     //-----------(oogieScene)=============================================
     // called every time user switches param with the wheel...
     //  loads in an array of param limits, names, whatever,
@@ -1156,7 +1133,7 @@ class OogieScene: NSObject {
                                 }
                             }
                         }
-                        //print("--------> pipe toshape  param \(toParamName)  pipeval \(pipeVal)")
+                        //print("...toshape  param \(toParamName)  pipeval \(pipeVal)")
                         shape.setParam(named : toParamName , toDouble : dval , toString : "")
                         switch(pwork.PS.toParam.lowercased())  //Post processing for certain params...
                         {
@@ -1243,7 +1220,7 @@ class OogieScene: NSObject {
             {
                 //get latest desired channel from the marker / voice
                 let floatVal = Float(vvv.getChanValueByName(n:p.PS.fromChannel.lowercased()))
-                //print("------>packpipe from chan \(p.PS.fromChannel) : \(floatVal)")
+                //print("...packpipe from chan \(p.PS.fromChannel) : \(floatVal)")
                 pwork.addToBuffer(f: floatVal) //...and send to pipe
                 scenePipes[n] = pwork //Save pipe back into scene
                 if n == selectedPipeKey  { selectedPipe = pwork } //1/14 editing?
@@ -1272,30 +1249,7 @@ class OogieScene: NSObject {
         return (inval * selectedFieldDMult) + selectedFieldDOffset
     } //end paramToUnit
     
-    //-----------(oogieScene)=============================================
-    // 9/28 new
-    func saveEditBackToSceneWith(objType:String)
-    {
-        if      objType == "voice" {saveSelectedVoiceBackToScene()}
-        else if objType == "shape" {saveSelectedShapeBackToScene()}
-        else if objType == "pipe"  {saveSelectedPipeBackToScene()}
-    }
     
-    //-----------(oogieScene)=============================================
-    // 9/27 saves back to working scene
-    func saveSelectedVoiceBackToScene()
-    {
-        sceneVoices[selectedVoice.uid] = selectedVoice
-    }
-    func saveSelectedShapeBackToScene()
-    {  //why is shape so different???
-        sceneShapes[selectedShape.OOS.uid] = selectedShape
-    }
-    func saveSelectedPipeBackToScene()
-    {
-        scenePipes[selectedPipe.uid] = selectedPipe
-    }
-
     //-----------(oogieScene)=============================================
      //DIAGNOSTIC: Write out empty synth patches by name, still need to fill
      //  in voice details!

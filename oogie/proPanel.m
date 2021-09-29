@@ -13,6 +13,7 @@
 //      Looks like we cant support oogieVoice here, so we need to bring in params
 //      in a dict...
 // 9/11/21 NOTE: no dj mode handling here!
+// 9/24 remove swipe gesture
 #define ARC4RANDOM_MAX      0x100000000
 #define PERCKIT_VOICE 2
 
@@ -141,14 +142,15 @@ NSString *onOffs[] = {@"Off",@"On"};
 //    pkHit = 650;  //percKit panel  7/9/21 adjust
     [self addSubview:scrollView];
     // Add L/R swipe detect...
-    UISwipeGestureRecognizer *swipeRGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeGestureDetected:)];
-    swipeRGesture.direction = 1; //RIGHT
-    swipeRGesture.delegate  = self; //9/7 for checking gestures
-    [scrollView addGestureRecognizer:swipeRGesture];
-    UISwipeGestureRecognizer *swipeLGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeGestureDetected:)];
-    swipeLGesture.direction = 2; //LEFT
-    swipeLGesture.delegate  = self; //9/7 for checking gestures
-    [scrollView addGestureRecognizer:swipeLGesture];
+//  9/24 no swipey
+//    UISwipeGestureRecognizer *swipeRGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeGestureDetected:)];
+//    swipeRGesture.direction = 1; //RIGHT
+//    swipeRGesture.delegate  = self; //9/7 for checking gestures
+//    [scrollView addGestureRecognizer:swipeRGesture];
+//    UISwipeGestureRecognizer *swipeLGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeGestureDetected:)];
+//    swipeLGesture.direction = 2; //LEFT
+//    swipeLGesture.delegate  = self; //9/7 for checking gestures
+//    [scrollView addGestureRecognizer:swipeLGesture];
     
     // 9/24 HEADER, top buttons and title info 
     xi = OOG_XMARGIN;

@@ -137,6 +137,20 @@ class texCache {
             }
         } //end for...
     } //end loadCache
+    
+    //=====(texCache)=============================================
+    // 9/28 moved from mainVC
+    func loadNamesToArray() -> [String]
+    {
+        var a : [String] = []
+        a.append("default")
+        for (name, _) in texDict
+            {
+             a.append(name)
+            }
+        return a
+    }
+
         
     //=====(texCache)=============================================
     // boilerplate from stackoverflow,

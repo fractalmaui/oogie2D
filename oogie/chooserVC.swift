@@ -10,6 +10,7 @@
 //  Created by Dave Scruton on 10/30/19.
 //  Copyright © 2020 fractallonomy. All rights reserved.
 //  9/18/21 complete redo
+//  9/28    fix saveas file display
 
 import UIKit
 import Foundation
@@ -33,6 +34,7 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
 
     var delegate: chooserDelegate?
     let chooserLoadSceneMode   = "loadScene"
+    // 9/28 NOTE saveScene is unneeded, chooser never comes up in that mode
     let chooserSaveSceneMode   = "saveScene"
     let chooserSaveSceneAsMode = "saveSceneAs"
     let chooserLoadPatchMode   = "loadPatch"
@@ -62,7 +64,7 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     var carray : [UIColor] = [];
     var iarray : [UIImage] = [];
 
-    
+ 
     //---(chooserVC)--------------------------------------
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -70,10 +72,8 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         table.dataSource  = self
         table2.delegate   = self
         table2.dataSource = self
-        //get folder contents...
-        //        static func getDirectoryContents(whichDir : String) -> [String]
         typez.removeAll()
-        print("chooser  mode \(mode)")
+        //print("viewDidLoad: chooser  mode \(mode)")
         saveButton.isHidden = true //NO NEED? (mode == "load")
         if mode == chooserLoadPatchMode
         {
@@ -116,10 +116,12 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         }
     } //end viewDidLoad
     
+    //---(chooserVC)--------------------------------------
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        //print("chooserwillappear, mode \(mode)")
         getFolderContents()
-
+        configureView()
     }
 
     //---(chooserVC)--------------------------------------
@@ -133,6 +135,35 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     @IBAction func saveSelect(_ sender: Any) {
         //Not used?
     }
+
+    //---(chooserVC)--------------------------------------
+    // 9/28 update for whatever mode we are in
+    func configureView()
+    {
+        saveButton.isHidden = true //NO NEED? (mode == "load")
+        if mode == chooserLoadPatchMode
+        {
+            titleLabel.text = "Load Patch..."
+            nameText.isHidden = true
+        }
+        else if mode == chooserLoadSceneMode
+        {
+            titleLabel.text = "Load Scene..."
+            nameText.isHidden = true
+        }
+        else if mode == chooserSaveSceneAsMode
+        {
+            titleLabel.text = "Save Scene As..."
+            nameText.isHidden = false
+        }
+        else if mode == chooserSavePatchAsMode
+        {
+            titleLabel.text = "Save Patch As..."
+            nameText.isHidden = false
+        }
+
+    }
+    
 
     //---(chooserVC)--------------------------------------
     func cancelAndDismiss()
@@ -153,7 +184,7 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         {
             filez = DataManager.getDirectoryContents(whichDir: "patches")
         }
-        print("chooser filez  \(filez)")
+        //print("chooser filez  \(filez)")
 
     }
     

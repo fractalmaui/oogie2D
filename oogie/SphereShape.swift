@@ -76,8 +76,8 @@ class SphereShape: SCNNode {
 
         shapeNode = SCNNode(geometry:sphere)
         //10/11 add name for touch ID
-        uid = "shape_" + ProcessInfo.processInfo.globallyUniqueString
-        shapeNode.name = uid
+        uid = getNewShapeKey()
+        shapeNode.name = ""  //9/27 reset name as object gets added...
         self.addChildNode(shapeNode)
         rotDate = Date() //reset start date
         
@@ -110,6 +110,13 @@ class SphereShape: SCNNode {
             panelNodes.append(boxNode)
         }
     } //end init
+    
+    //-----------(SphereShape)=============================================
+    // 9/26 new
+    func getNewShapeKey() -> String
+    {
+       return "shape_" + ProcessInfo.processInfo.globallyUniqueString
+    }
 
     //-----------(SphereShape)=============================================
     // sets angle of 3D shape to follow rotation from oogieShape

@@ -192,7 +192,8 @@ class PipeShape: SCNNode {
     // 1/28 add isShape arg
     //-----------(oogiePipe)=============================================
      //-----------(oogiePipe)=============================================
-     func create3DPipe(flat : Double , flon : Double , sPos00  : SCNVector3 ,
+    func create3DPipe(uid: String ,  //9/25
+                        flat : Double , flon : Double , sPos00  : SCNVector3 ,
                        tlat : Double , tlon : Double , sPos01  : SCNVector3 ,
                        isShape: Bool, newNode : Bool
      ) -> SCNNode
@@ -205,7 +206,7 @@ class PipeShape: SCNNode {
          if newNode
          {
              //11/27 good a place as any for uid
-             uid = "pipe_" + ProcessInfo.processInfo.globallyUniqueString
+//9/25             uid = "pipe_" + ProcessInfo.processInfo.globallyUniqueString
              //print("create 3d pipe uid \(uid)")
              //Our master node...
              mainParent = SCNNode()

@@ -18,6 +18,7 @@
 //  4/27 add dumpParams
 //  5/2  add calls to setupRange in param lo/hi range change
 //  9/19 add oogiePipeParams
+//  9/28 add delay to set/get param
 import Foundation
 import SceneKit
 
@@ -252,6 +253,8 @@ struct OogiePipe {
             dp = PS.hiRange
             let horg = PS.hiRange
             sp = String(horg)
+        case "delay"    :
+            dp = Double(PS.delay)
         case "name"    :
             sp = PS.name
         case "comment"    :
@@ -270,9 +273,10 @@ struct OogiePipe {
         switch (name)
         {
         case "inputchannel" : PS.fromChannel = sval
-        case "outputparam"  : PS.toParam    = sval
+        case "outputparam"  : PS.toParam     = sval
         case "lorange"      : PS.loRange     = dval ; setupRange(lo: PS.loRange,hi: PS.hiRange)  //5/2
         case "hirange"      : PS.hiRange     = dval ; setupRange(lo: PS.loRange,hi: PS.hiRange)  //5/2
+        case "delay"        : PS.delay       = Int(dval) //9/28 add delay
         case "name"         : PS.name        = sval
         case "comment"      : PS.comment     = sval
         default:print("Error:Bad pipe param in set")

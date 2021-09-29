@@ -41,6 +41,7 @@
     
     UIButton *loNotebutton;
     UIButton *hiNotebutton;
+    UIButton *dismissButton;
 
     UISlider *sliders[MAX_CONTROL_SLIDERS];
     UIPickerView *pickers[MAX_CONTROL_PICKERS];
@@ -88,6 +89,7 @@
 -(void) controlNeedsProMode ;
 -(void) didSelectControlDice ; //4/28
 -(void) didSelectControlReset ; //7/11
+-(void) didSelectControlDismiss ; //9/24
 -(void) updateControlModeInfo : (NSString*) infostr ; //5/19
 
 @end

@@ -136,6 +136,12 @@ NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
     editLabel.text = @"Edit Shape";
     editLabel.textAlignment = NSTextAlignmentCenter;
     [self addSubview : editLabel];
+    // 9/24 add dismiss button for oogieAR only
+    dismissButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [dismissButton setFrame:CGRectMake(xi,yi,xs,ys)];
+    dismissButton.backgroundColor = [UIColor clearColor];
+    [dismissButton addTarget:self action:@selector(dismissSelect:) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:dismissButton];
 
     // 9/24 HEADER, top buttons and title info
     xi = OOG_XMARGIN;
@@ -535,6 +541,12 @@ NSArray* A = [goog addSliderRow : parent : tag : ssliderNames[index] :
     [self.delegate didSetShapeValue:tagMinusBase:value:sallParams[tagMinusBase]:name:TRUE];
 } //end updateSliderAndDelegateValue
 
+
+//======(controlPanel)==========================================
+- (IBAction)dismissSelect:(id)sender
+{
+    [self.delegate didSelectShapeDismiss];
+}
 
 //======(shapePanel)==========================================
 - (IBAction)helpSelect:(id)sender

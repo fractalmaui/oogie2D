@@ -41,6 +41,7 @@
     UIButton *goLeftButton;
     UIButton *goRightButton;
     UILabel *titleLabel;
+    UIButton *dismissButton;
 
     UISlider *sliders[MAX_SHAPE_SLIDERS];
     UIPickerView *pickers[MAX_SHAPE_PICKERS];
@@ -84,7 +85,7 @@
 //-(void) controlNeedsProMode ;
 -(void) didSelectShapeDice ;
 -(void) didSelectShapeReset ;
-//-(void) updateControlModeInfo : (NSString*) infostr ; //5/19
+-(void) didSelectShapeDismiss ; //9/24
 
 @end
 

@@ -10,11 +10,12 @@
 //
 //  Created by Dave Scruton on 9/14/20.
 //  Copyright © 1990 - 2021 fractallonomy, inc. All Rights Reserved.
+//
+// 9/24 remove swipe gesture,add dismiss button
 
 
 
 #import "pipePanel.h"
-//#import "AppDelegate.h" //KEEP this OUT of viewController.h!!
 
 @implementation pipePanel
 
@@ -111,14 +112,15 @@ NSArray *opParams;
     [self addSubview:scrollView];
     
     // Add L/R swipe detect...
-    UISwipeGestureRecognizer *swipeRGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeGestureDetected:)];
-    swipeRGesture.direction = 1; //RIGHT
-    swipeRGesture.delegate  = self; //9/7 for checking gestures
-    [scrollView addGestureRecognizer:swipeRGesture];
-    UISwipeGestureRecognizer *swipeLGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeGestureDetected:)];
-    swipeLGesture.direction = 2; //LEFT
-    swipeLGesture.delegate  = self; //9/7 for checking gestures
-    [scrollView addGestureRecognizer:swipeLGesture];
+//  9/24 no swipey
+//    UISwipeGestureRecognizer *swipeRGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeGestureDetected:)];
+//    swipeRGesture.direction = 1; //RIGHT
+//    swipeRGesture.delegate  = self; //9/7 for checking gestures
+//    [scrollView addGestureRecognizer:swipeRGesture];
+//    UISwipeGestureRecognizer *swipeLGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeGestureDetected:)];
+//    swipeLGesture.direction = 2; //LEFT
+//    swipeLGesture.delegate  = self; //9/7 for checking gestures
+//    [scrollView addGestureRecognizer:swipeLGesture];
 
     xi = 0;
     yi = 0;
@@ -132,6 +134,12 @@ NSArray *opParams;
     editLabel.text = @"Edit Pipe";
     editLabel.textAlignment = NSTextAlignmentCenter;
     [self addSubview : editLabel];
+    // 9/24 add dismiss button for oogieAR only
+    dismissButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [dismissButton setFrame:CGRectMake(xi,yi,xs,ys)];
+    dismissButton.backgroundColor = [UIColor clearColor];
+    [dismissButton addTarget:self action:@selector(dismissSelect:) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:dismissButton];
 
     int panelSkip = 5; //Space between panels
     int i=0; //6/8
@@ -539,6 +547,13 @@ NSArray* A = [goog addSliderRow : parent : tag : pisliderNames[index] :
     NSString *name = dice ? @"" : pallParams[tagMinusBase];
     [self.delegate didSetPipeValue:tagMinusBase:value:pallParams[tagMinusBase]:name:TRUE];
 } //end updateSliderAndDelegateValue
+
+
+//======(pipePanel)==========================================
+- (IBAction)dismissSelect:(id)sender
+{
+    [self.delegate didSelectPipeDismiss];
+}
 
 
 //======(pipePanel)==========================================

@@ -43,6 +43,7 @@
     
     UIButton *loNotebutton;
     UIButton *hiNotebutton;
+    UIButton *dismissButton;
 
     UISlider *sliders[MAX_PIPE_SLIDERS];
     UIPickerView *pickers[MAX_PIPE_PICKERS];
@@ -87,6 +88,7 @@
 //-(void) controlNeedsProMode ;
 -(void) didSelectPipeDice ;
 -(void) didSelectPipeReset ;
+-(void) didSelectPipeDismiss ; //9/24
 //-(void) updateControlModeInfo : (NSString*) infostr ; //5/19
 
 @end

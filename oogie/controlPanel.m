@@ -24,6 +24,7 @@
 // 9/17 redo params to read input / defaults from incoming dictionary
 // 9/18 add randomize, remove sendAllParamsToParent, add sendUpdatedParamsToParent
 // 9/21 remove footer, add top edit label
+// 9/24 add dismiss button
 #import "controlPanel.h"
 //#import "AppDelegate.h" //KEEP this OUT of viewController.h!!
 
@@ -162,6 +163,13 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     editLabel.text = @"Edit Voice";
     editLabel.textAlignment = NSTextAlignmentCenter;
     [self addSubview : editLabel];
+    // 9/24 add dismiss button for oogieAR only
+    dismissButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [dismissButton setFrame:CGRectMake(xi,yi,xs,ys)];
+    dismissButton.backgroundColor = [UIColor clearColor];
+    [dismissButton addTarget:self action:@selector(dismissSelect:) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:dismissButton];
+
 
     // 9/24 HEADER, top buttons and title info
     xi = OOG_XMARGIN;
@@ -660,6 +668,12 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 
 
 //======(controlPanel)==========================================
+- (IBAction)dismissSelect:(id)sender
+{
+    [self.delegate didSelectControlDismiss];
+}
+
+//======(controlPanel)==========================================
 - (IBAction)helpSelect:(id)sender
 {
     [self putUpOBHelpInstructions];
@@ -707,7 +721,6 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 //    and reuse this method here and in configureView!
 -(void) randomizeParams
 {
-    //asdf
     NSLog(@" RANDOMIZE");
     //CLEAN THIS UP: make allpar,allpic,allslid class members instead of arrays!
     NSMutableArray *allpar = [[NSMutableArray alloc] init];

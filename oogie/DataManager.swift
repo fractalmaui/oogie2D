@@ -494,6 +494,7 @@ public class DataManager {
     }
      
     //======(DataManager)=============================================
+    // Not used by oogie2D / oogieAR???
     static func loadBuiltinGMPercussionPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
     {
         return loadUpDictWithPatchesFromSubfolder(type, subFolder: "GMPercussionPatches", fromFactory:     fromFactory)
