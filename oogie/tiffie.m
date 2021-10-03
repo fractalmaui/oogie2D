@@ -64,7 +64,7 @@ void embedLabelInBmp(int x,int y,int twidth,NSString *label,void *imageData)
     
     int slen,loop;
     int aptr,optr,ooptr,loop3,loop4;
-    char rgba[4];
+    unsigned char rgba[4]; //10/1/21 OK now? was seeing warnings
     
     NSString *tlab =[NSString stringWithFormat:@".%@",label];
     slen = (int)[tlab length];
@@ -236,7 +236,7 @@ void packString(NSString *pstr)
 //---------(packpixels)----------------(packpixels)--------
 void packPixels(void)
 {
-    char workc[4];
+    unsigned char workc[4]; //10/1/21 was getting warning
     if (packPtr > packSize -4) return;//out of space!
     if (packMod %3 == 0)
     { 

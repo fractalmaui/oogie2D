@@ -9,7 +9,7 @@
 //
 //  Created by Dave Scruton on 9/19/21.
 //  Params for oogieVoice objects. singleton, created once
-//
+//  9/28 pulled numeric param dict entries
 import Foundation
 
 // 8/12/21 make accessible in objective C
@@ -176,28 +176,6 @@ import Foundation
         voiceParamsDictionary["delaysustain"] = fx100Params
         voiceParamsDictionary["delaymix"]     = fx100Params
 
-        // 9/14/21 NOTE: NEed to add performance params, portamento.... delay!!!
-        voiceParamsDictionaryOLD["00"] = LatParams
-        voiceParamsDictionaryOLD["01"] = LonParams
-        voiceParamsDictionaryOLD["02"] = TypeParams
-        voiceParamsDictionaryOLD["03"] = PatchParams
-        voiceParamsDictionaryOLD["04"] = PitchShiftParams //5/14
-        voiceParamsDictionaryOLD["05"] = ScaleParams
-        voiceParamsDictionaryOLD["06"] = LevelParams
-        voiceParamsDictionaryOLD["07"] = ThreshParams  //5/2 add threshold
-        voiceParamsDictionaryOLD["08"] = NChanParams   //10/4 n/v/p channels
-        voiceParamsDictionaryOLD["09"] = VChanParams
-        voiceParamsDictionaryOLD["10"] = PChanParams
-        voiceParamsDictionaryOLD["11"] = NFixedParams   //10/4 n/v/p fixed
-        voiceParamsDictionaryOLD["12"] = VFixedParams
-        voiceParamsDictionaryOLD["13"] = PFixedParams
-        voiceParamsDictionaryOLD["14"] = RotTriggerParams //4/18 add rot trigger
-        voiceParamsDictionaryOLD["15"] = DetuneParams //5/9 add detune
-        voiceParamsDictionaryOLD["16"] = BottomMidiParams
-        voiceParamsDictionaryOLD["17"] = TopMidiParams
-        voiceParamsDictionaryOLD["18"] = MidiChannelParams
-        voiceParamsDictionaryOLD["19"] = VNameParams
-        voiceParamsDictionaryOLD["20"] = VCommParams   //2/4
     } //end setupVoiceParams
     
   

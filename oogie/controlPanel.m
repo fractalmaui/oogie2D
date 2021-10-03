@@ -37,53 +37,26 @@
 double drand(double lo_range,double hi_range );
  
 
-//AppDelegate *cappDelegate;
-NSString *sliderNames[] = {@"Threshold",@"Bottom Note",@"Top Note",
-    @"padding",@"Overdrive",@"Portamento",
-    @"FVib Level" ,@"FVib Speed" ,@"",
-    @"AVib Level" ,@"AVib Speed",@"",   //4/7 add vibe
-    @"Delay Time" ,@"Delay Sustain",@"Delay Mix",
-    @"Latitude", @"Longitude"  //8/12 for oogie2D / oogieAR
-}; //2/19 note paddings b4 delay for vibwave
-//these must match tags which increment over all controls!
-
-//3 sliders, a picker, 4 sliders, a picker, 2 sliders a picker then 5 sliders and 2 texts
-NSString *callParams[] = {@"threshold",@"bottommidi",@"topmidi",@"keysig",
-    @"level",@"portamento",   //is level OK here?
-    @"viblevel" ,@"vibspeed",@"vibwave",
-    @"vibelevel" ,@"vibespeed",@"vibewave",
-    @"delaytime" ,@"delaysustain",@"delaymix",
-    @"latitude", @"longitude",@"patch",@"soundpack",@"name",@"comment"
-};
-#define C_ALLPARAMCOUNT 21  //should batch callParams above
-
-NSString *pickerNames[] = {@"KeySig",@"FVib Wave",@"AVib Wave",@"Patch",@"SoundPack"};
-
-NSString *textFieldNames[] = {@"Name",@"Comments"};
 
 //for analytics use: simple 3 letter keys for all controls
 //  first char indicates UI, then 2 letters for control
 // sliders are grouped: 3 at top, then a picker, then four more.
-NSString *sliderKeys[] = {@"LTH",@"LBN",@"LTN",@"---",
-                @"LOV",@"LPO",
-                @"LVL",@"LVS",@"",
-                @"LAL",@"LAS",@"",
-                @"DET",@"DEF",@"DEM"}; //2/19 note padding b4 delay
-NSString *pickerKeys[] = {@"LKS",@"LVW",@"LAW"};
+//NSString *sliderKeys[] = {@"LTH",@"LBN",@"LTN",@"---",
+//                @"LOV",@"LPO",
+//                @"LVL",@"LVS",@"",
+//                @"LAL",@"LAS",@"",
+//                @"DET",@"DEF",@"DEM"}; //2/19 note padding b4 delay
+//NSString *pickerKeys[] = {@"LKS",@"LVW",@"LAW"};
 
-// Strings used in pickers...
-NSString *keys[] = {@"C",@"C#",@"D",@"D#",@"E",@"F",@"F#",@"G",@"G#",@"A",@"A#",@"B"};
-NSString *keySigs[] = {@"Major",@"Minor",@"Lydian",@"Phrygian",
-                       @"Mixolydian",@"Locrian",@"Egyptian",@"Hungarian",
-                       @"Algerian",@"Japanese",@"Chinese",@"Chromatic"};
+
 NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it matches order in SYNTH 
 
 
 
 //======(controlPanel)==========================================
-- (id)initWithFrame:(CGRect)frame
+- (id)init
 {
-    self = [super initWithFrame:frame];
+    self = [super initWithFrame:CGRectZero];
     if (self) {
 
       //  cappDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
@@ -92,9 +65,15 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
         _spNames = @[];
         _paNames = @[];
 
-        [self setupView:frame];
         //8/3 flurry analytics
         //8/11 FIX fanal = [flurryAnalytics sharedInstance];
+        allParams      = nil; // 10/1 new data structs
+        sliderNames    = nil;
+        pickerNames    = nil;
+        textFieldNames = nil;
+        allSliders     = [[NSMutableArray alloc] init];
+        allPickers     = [[NSMutableArray alloc] init];
+        allTextFields  = [[NSMutableArray alloc] init];
 
         // 8/12 add notification for ProMode demo...
         [[NSNotificationCenter defaultCenter]
@@ -108,11 +87,39 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     return self;
 }
 
+//======(controlPanel)==========================================
+//10/1 new storage
+-(void) setupCannedData
+{
+    if (allParams != nil) return; //only go thru once!
+    NSLog(@" setup canned voice Param data...");
+    allParams      = @[@"threshold",@"bottommidi",@"topmidi",@"keysig",
+                       @"level",@"portamento",
+                       @"viblevel" ,@"vibspeed",@"vibwave",
+                       @"vibelevel" ,@"vibespeed",@"vibewave",
+                       @"delaytime" ,@"delaysustain",@"delaymix",
+                       @"latitude", @"longitude",@"patch",@"soundpack",@"name",@"comment"];
+    sliderNames    = @[@"Threshold",@"Bottom Note",@"Top Note",
+                       @"padding",@"Overdrive",@"Portamento",
+                       @"FVib Level" ,@"FVib Speed" ,@"",
+                       @"AVib Level" ,@"AVib Speed",@"",   //4/7 add vibe
+                       @"Delay Time" ,@"Delay Sustain",@"Delay Mix",
+                       @"Latitude", @"Longitude"];
+    pickerNames    = @[@"KeySig",@"FVib Wave",@"AVib Wave",@"Patch",@"SoundPack"];
+    textFieldNames = @[@"Name",@"Comments"];
+    
+    musicalKeys = @[@"C",@"C#",@"D",@"D#",@"E",@"F",@"F#",@"G",@"G#",@"A",@"A#",@"B"];
+    keySigs = @[@"Major",@"Minor",@"Lydian",@"Phrygian",
+                @"Mixolydian",@"Locrian",@"Egyptian",@"Hungarian",
+                @"Algerian",@"Japanese",@"Chinese",@"Chromatic"];
+    vibratoWaves = @[ @"Sine",@"Saw",@"Square",@"Ramp"];
+} //end setupCannedData
+
 
 //======(controlPanel)==========================================
 -(void) setupView:(CGRect)frame
 {
-    
+    [self setupCannedData];
     //Add rounded corners to this view
     self.layer.cornerRadius = OOG_MENU_CURVERAD;
     self.clipsToBounds      = TRUE;
@@ -437,8 +444,8 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     //8/3 for session analytics: count activities
     diceRolls = 0; //9/9 for analytics
     resets    = 0; //9/9 for analytics
-    for (int i=0;i<MAX_CONTROL_SLIDERS;i++) sChanges[i] = 0;
-    for (int i=0;i<MAX_CONTROL_PICKERS;i++) pChanges[i] = 0;
+//    for (int i=0;i<MAX_CONTROL_SLIDERS;i++) sChanges[i] = 0;
+//    for (int i=0;i<MAX_CONTROL_PICKERS;i++) pChanges[i] = 0;
 }
 
 //======(controlPanel)==========================================
@@ -472,19 +479,19 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 //======(controlPanel)==========================================
 // 9/15 redo w/ genOogie method!
 -(void) addSliderRow : (UIView*) parent : (int) index : (int) tag : (NSString*) label :
-                (int) yoff : (int) ysize : (float) smin : (float) smax
+(int) yoff : (int) ysize : (float) smin : (float) smax
 {
     //9/15 new UI element...
-   NSArray* A = [goog addSliderRow : parent : tag : sliderNames[index] :
-                           yoff : viewWid: ysize :smin : smax];
-   if (A.count > 0)
-      {
+    NSArray* A = [goog addSliderRow : parent : tag : sliderNames[index] :
+                               yoff : viewWid: ysize :smin : smax];
+    if (A.count > 0)
+    {
         UISlider* slider = A[0];
         // hook it up to callbacks
         [slider addTarget:self action:@selector(sliderAction:) forControlEvents:UIControlEventValueChanged];
         [slider addTarget:self action:@selector(sliderStoppedDragging:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside];
-        sliders[index] = slider;
-        }
+        [allSliders addObject:slider];
+    }
 } //end addSliderRow
 
 //======(controlPanel)==========================================
@@ -555,7 +562,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
         UIPickerView * picker = A[0];
         picker.delegate   = self;
         picker.dataSource = self;
-        pickers[index] = picker;
+        [allPickers addObject:picker];
     }
 
 } //end addPickerRow
@@ -572,9 +579,9 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
       {
           UITextView * textField = A[0];
           textField.delegate     = self;
-          textFields[index]      = textField;
+          [allTextFields addObject:textField];
       }
-} //end addSliderRow
+} //end addTextRow
 
 
 //======(controlPanel)==========================================
@@ -584,8 +591,8 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 //  NOTE: tag 0 cannot be used with buttons, makes bad stuff happen
 -(void) configureView
 {
-    [pickers[3] reloadAllComponents];
-    [pickers[4] reloadAllComponents];
+    [allPickers[3] reloadAllComponents];
+    [allPickers[4] reloadAllComponents];
     NSString *s = @"no name"; //get voice name for title
     NSArray *a  = [_paramDict objectForKey:@"name"];
     if (a.count > 0) s = a.lastObject;
@@ -597,21 +604,12 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 // This is huge. it should be made to work with any control panel!
 -(void) configureViewWithReset : (BOOL)reset
 {
-    //CLEAN THIS UP: make allpar,allpic,allslid class members instead of arrays!
-    NSMutableArray *allpar = [[NSMutableArray alloc] init];
-    for (int i=0;i<C_ALLPARAMCOUNT;i++) [allpar addObject:callParams[i]];
-    NSMutableArray *allpick = [[NSMutableArray alloc] init];
-    for (int i=0;i<MAX_CONTROL_PICKERS;i++) if (pickers[i] != nil) [allpick addObject:pickers[i]];
-    NSMutableArray *allslid = [[NSMutableArray alloc] init];
-    for (int i=0;i<MAX_CONTROL_SLIDERS;i++) if (sliders[i] != nil)  [allslid addObject:sliders[i]];
-    NSMutableArray *alltext = [[NSMutableArray alloc] init];
-    for (int i=0;i<MAX_CONTROL_TEXTFIELDS;i++) if (textFields[i] != nil)  [alltext addObject:textFields[i]];
     NSArray *noresetparams = @[@"patch",@"soundpack",@"name"];
     NSMutableDictionary *pickerchoices = [[NSMutableDictionary alloc] init];
     [pickerchoices setObject:_paNames forKey:@17];  //patches are on picker 17
     [pickerchoices setObject:_spNames forKey:@18];  //soundpacks are on picker 18
-    NSDictionary *resetDict = [goog configureViewFromVC:reset : _paramDict : allpar :
-                     allpick : allslid : alltext :
+    NSDictionary *resetDict = [goog configureViewFromVC:reset : _paramDict : allParams :
+                     allPickers : allSliders : allTextFields :
                noresetparams : pickerchoices];
     if (reset) //reset? need to inform delegate of param changes...
     {
@@ -662,8 +660,8 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     UISlider *slider = (UISlider*)sender;
     int tagMinusBase = ((int)slider.tag % 1000); // 7/11 new name
     float value = slider.value;
-    NSString *name = dice ? @"" : callParams[tagMinusBase];
-    [self.delegate didSetControlValue:tagMinusBase:value:callParams[tagMinusBase]:name:TRUE];
+    NSString *name = dice ? @"" : allParams[tagMinusBase];
+    [self.delegate didSetControlValue:tagMinusBase:value:allParams[tagMinusBase]:name:TRUE];
 } //end updateSliderAndDelegateValue
 
 
@@ -722,16 +720,9 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 -(void) randomizeParams
 {
     NSLog(@" RANDOMIZE");
-    //CLEAN THIS UP: make allpar,allpic,allslid class members instead of arrays!
-    NSMutableArray *allpar = [[NSMutableArray alloc] init];
-    for (int i=0;i<C_ALLPARAMCOUNT;i++) [allpar addObject:callParams[i]];
-    NSMutableArray *allpick = [[NSMutableArray alloc] init];
-    for (int i=0;i<MAX_CONTROL_PICKERS;i++) if (pickers[i] != nil) [allpick addObject:pickers[i]];
-    NSMutableArray *allslid = [[NSMutableArray alloc] init];
-    for (int i=0;i<MAX_CONTROL_SLIDERS;i++) if (sliders[i] != nil)  [allslid addObject:sliders[i]];
     NSArray *norandomizeparams = @[@"patch",@"soundpack",@"name",@"comment",@"delaysustain",@"threshold"];
 
-    NSMutableDictionary *resetDict = [goog randomizeFromVC : allpar : allpick : allslid : norandomizeparams];
+    NSMutableDictionary *resetDict = [goog randomizeFromVC : allParams : allPickers : allSliders : norandomizeparams];
     [self sendUpdatedParamsToParent:resetDict];
 
     [self.delegate didSelectControlDice]; //4/29
@@ -790,27 +781,27 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 -(void)updateSessionAnalytics
 {
     //NSLog(@" duh collected analytics for flurry");
-    for (int i=0;i<MAX_CONTROL_SLIDERS;i++)
-    {
-        if (sChanges[i] > 0) //report changes to analytics
-        {
-            //NSLog(@" slider[%d] %d",i,sChanges[i]);
-            //NSString *sname = sliderKeys[i];
-            //8/11 FIX[fanal updateSliderCount:sname:sChanges[i]];
-        }
-    }
-    for (int i=0;i<MAX_CONTROL_PICKERS;i++)
-    {
-        if (pChanges[i] > 0) //report changes to analytics
-        {
-            //NSLog(@" picker[%d] %d",i,pChanges[i]);
-            //NSString *pname = pickerKeys[i];
-            //8/11 FIX[fanal updatePickerCount:pname:pChanges[i]];
-        }
-    }
-    //8/11 FIX[fanal updateDiceCount : @"LDI" : diceRolls]; //9/9
-    //8/11 FIX [fanal updateMiscCount : @"LRE" : resets]; //9/9
-    [self clearAnalytics]; //9/9 clear for next session
+//    for (int i=0;i<MAX_CONTROL_SLIDERS;i++)
+//    {
+//        if (sChanges[i] > 0) //report changes to analytics
+//        {
+//            //NSLog(@" slider[%d] %d",i,sChanges[i]);
+//            //NSString *sname = sliderKeys[i];
+//            //8/11 FIX[fanal updateSliderCount:sname:sChanges[i]];
+//        }
+//    }
+//    for (int i=0;i<MAX_CONTROL_PICKERS;i++)
+//    {
+//        if (pChanges[i] > 0) //report changes to analytics
+//        {
+//            //NSLog(@" picker[%d] %d",i,pChanges[i]);
+//            //NSString *pname = pickerKeys[i];
+//            //8/11 FIX[fanal updatePickerCount:pname:pChanges[i]];
+//        }
+//    }
+//    //8/11 FIX[fanal updateDiceCount : @"LDI" : diceRolls]; //9/9
+//    //8/11 FIX [fanal updateMiscCount : @"LRE" : resets]; //9/9
+//    [self clearAnalytics]; //9/9 clear for next session
 
 } //end updateSessionAnalytics
 
@@ -849,19 +840,21 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 // 6/18 redo
 - (void)pickerView:(UIPickerView *)pickerView didSelectRow: (NSInteger)row inComponent:(NSInteger)component {
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
-    int liltag = pickerView.tag - PICKER_BASE_TAG; //just pass tags to parent now
-
+    int liltag = (int)pickerView.tag - PICKER_BASE_TAG; //just pass tags to parent now
     NSString *patchName = @"";
     if (liltag == 17) //patch? pass back our name...
     {
-        if (row > 0) patchName = _paNames[row-1];
+        if (row > 0)
+        {
+            patchName = _paNames[row];
+        }
         else patchName = @"random";
     }
-    [self.delegate didSetControlValue:liltag :(float)row : callParams[liltag] : patchName : !rollingDiceNow && !resettingNow];   //7/11
-
+    [self.delegate didSetControlValue:liltag :(float)row : allParams[liltag] : patchName :
+                                    !rollingDiceNow && !resettingNow];   //7/11
     //8/3 update picker activity count
-    int pMinusBase = (int)(pickerView.tag-PICKER_BASE_TAG);
-    if (pMinusBase>=0 && pMinusBase<MAX_CONTROL_PICKERS) pChanges[pMinusBase]++;
+//    int pMinusBase = (int)(pickerView.tag-PICKER_BASE_TAG);
+//    if (pMinusBase>=0 && pMinusBase<MAX_CONTROL_PICKERS) pChanges[pMinusBase]++;
 }
 
  
@@ -968,12 +961,42 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     [textField resignFirstResponder]; //Close keyboard
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
-    [self.delegate didSetControlValue:liltag : 0.0 : callParams[liltag] : s: FALSE];
+    [self.delegate didSetControlValue:liltag : 0.0 : allParams[liltag] : s: FALSE];
     // 9/21 take care of name update at top of menu
-    if ([callParams[liltag] isEqualToString:@"name"]) titleLabel.text = s;
+    if ([allParams[liltag] isEqualToString:@"name"]) titleLabel.text = s;
     return YES;
 }
 
+//need to add this to controls!!!
+// it was in the patch editor but that was the wrong place
+#ifdef NEED_COLOR_CHANELPANEL
+    panelY += (eHit+panelSkip);
+    //Color Channels panel next... 3 groups of picker/slider pairs and one slider below that
+    xi = OOG_XMARGIN; //6/19/21
+    xs = viewWid - 2*OOG_XMARGIN;
+    // 7/9 calculate height based on controls
+    cHit = OOG_SLIDER_HIT + 3*OOG_PICKER_HIT + 3*OOG_YSPACER + 2*OOG_YMARGIN;
+    cPanel = [[UIView alloc] init];
+    [cPanel setFrame : CGRectMake(xi,panelY,xs,cHit)];
+    cPanel.backgroundColor = [UIColor colorWithRed:0.3 green:0.3 blue:0.5 alpha:1];
+    [scrollView addSubview:cPanel];
+    yi = panelTopMargin;
+    xs = viewWid;
+    ys = OOG_SLIDER_HIT;
+    UILabel *l2 = [[UILabel alloc] initWithFrame: //label goes from col 1 to 2
+                   CGRectMake(xi,yi,xs,ys)];
+    [l2 setTextColor : [UIColor whiteColor]];
+    l2.text = @"Color Channels";
+    [cPanel addSubview : l2];
+    yi+=ys;
+    ys = OOG_PICKER_HIT + 5; // 50; //Need more spacing between pickers!
+    // WHY is picker font so HUGE? Shrink it and we can reduce ysize!
+    for (int i=0;i<3;i++)
+    {     //args: parent, pickerTag, sliderTag, ypos , ysize
+        [self addPickerSliderRow : cPanel : i+2 : i+6 : yi :ys]; //i/j = picker / slider # 10/16
+        yi+=ys-18; //5/24 test squnch
+    }
+#endif
 
 
 @end

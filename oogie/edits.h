@@ -33,6 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 -(void) removeEdit : (NSString *) patchName :(NSString *) paramName;
 -(NSArray *) getEditKeys : (NSString *) patchName;
 -(NSString*) getValueForKey : (NSString *)patchName : (NSString *) key;
+-(NSDictionary*) getEditsForPatch: (NSString *) patchName;
 -(void) pushEditForPatch : (NSString *)pname;
 -(void) popEditForPatch : (NSString *)pname;
 -(BOOL) wasEdited : (NSString*) patchName;

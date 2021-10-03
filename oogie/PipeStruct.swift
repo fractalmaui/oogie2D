@@ -13,6 +13,7 @@
 //
 // 2/3 add name,comment field
 // 4/22 add getParam func
+// 9/28 add invert / op
 import Foundation
 struct PipeStruct : Codable {
     //These are all user-settable params for a pipe...
@@ -26,6 +27,8 @@ struct PipeStruct : Codable {
     var loRange      : Double    //hi/lo ranges convert incoming
     var hiRange      : Double    // channel data to desired output range
     var delay        : Int       //delay is in frames (30fps default)
+    var invert       : Int       //9/28/21 add invert / op items
+    var op           : String
     var uid          : String
 
     //======(OogiePipe)=============================================
@@ -41,7 +44,8 @@ struct PipeStruct : Codable {
         loRange     = 0.0
         hiRange     = 1.0
         delay       = 0
-        //5/1 uid
+        invert      = 0
+        op          = ""
         uid         = "pipe_" + ProcessInfo.processInfo.globallyUniqueString
     }
     
@@ -59,6 +63,8 @@ struct PipeStruct : Codable {
         loRange          = 0.1
         hiRange          = 1.0
         delay            = 0
+        invert           = 0
+        op               = ""
         uid              = "pipe_" + ProcessInfo.processInfo.globallyUniqueString
     }
     

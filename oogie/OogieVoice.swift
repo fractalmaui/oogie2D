@@ -58,6 +58,7 @@ let MAX_LOOX = 8
     var OVS  = OVStruct()   //  another struct
     var allP = AllPatches.sharedInstance
     var OVP  =  OogieVoiceParams.sharedInstance //9/18/21 oogie voice params
+    var OPaP =  OogiePatchParams.sharedInstance //9/28
     var uid  = "nouid"
 
     var oldNote = 0;
@@ -446,7 +447,75 @@ let MAX_LOOX = 8
             } //end let paramz
         } //end for pname
         return d
-    } //end getParamList
+    } //end getParamDictWith
+    
+    //-----------(oogieVoice)=============================================
+    // 9/28 new: this is sloppy. patches may want to be independent from voices??
+    // 10/2 HOKEY: this does param conversion CUSTOM for perclooxpans!!!
+    func getPatchParamDict() -> Dictionary<String,Any>
+    {
+        var d = Dictionary<String, Any>()
+        for pname in OPaP.patchParamNames //look at all params...
+        {
+            let plow = pname.lowercased()
+            if plow == "percloox" || plow == "perclooxpans" {continue} //bail on percloox for now...
+            print("pack patch param \(pname)")
+            let pTuple = getPatchParam(named : plow , pIndex:0)
+            let sv = pTuple.sParam
+            var dv = pTuple.dParam as Double
+            if let paramz = OPaP.patchParamsDictionary[plow]  //get param info...
+            {
+                var workArray = paramz  //copy
+                if let ptype = paramz[1] as? String
+                {
+                    if ptype == "double"  //double type? do some conversion
+                    {
+                        let lolim  = paramz[6] as! Double
+                        let lrange = paramz[5] as! Double
+                        if lrange != 0.0 //9/16 DO not apply range shift to int params!
+                        {
+                            dv = (dv - lolim) / lrange
+                        }
+                        workArray.append(NSNumber(value:dv))
+                    } //end double/int type
+                    else if ptype == "int"     //9/16 int type? no conversion
+                    {
+                        workArray.append(NSNumber(value:dv))
+                    }
+                    else //string?
+                    {
+                        workArray.append(sv)
+                    }
+                }  //end let ptype
+                d[plow] = workArray
+            } //end let paramz
+        } //end for pname
+        ///Now append percloox / perclooxpans
+        var pass = 0
+        for pplow in [ "percloox" , "perclooxpans" ]
+        {
+            for i in 0...7
+            {
+                if var workArray = OPaP.patchParamsDictionary[pplow]  //get param info...
+                {
+                    let pTuple = getPatchParam(named : pplow , pIndex:i)
+                    let dv = pTuple.dParam //double param
+                    let sv = pTuple.sParam //string param
+                    ///print("pass \(pass) loop \(i)")
+                    /// pass 0:percloox is a string, pass 1:pans is a number
+                    if pass == 0  { workArray.append(sv) }
+                    else          { workArray.append(NSNumber(value:dv/255.0)) } //10/2 pan needs conversion...
+                   // print("..........dv \(dv) sv \(sv)")
+                    // name = percloox_3   or  perclooxpans_2, etc
+                    d[pplow + "_" + String(i)]  = workArray //append digit to param name
+                }
+            }
+            pass = pass + 1
+        }
+        return d
+    } //end getPatchParamDict
+ 
+
     
     //-----------(oogieVoice)=============================================
     //TEMP, improve this!
@@ -604,7 +673,47 @@ let MAX_LOOX = 8
         paramListDirty = true
     } //end setParam
 
-    
+    //-----------(oogieVoice)=============================================
+    // 10/1 new: note pIndex param for accessing percLoox
+    func setPatchParam(named name : String , toDouble dval: Double , toString sval: String)
+    {
+        let ival = Int(dval) //some params are stored as integers!
+        print("setPatchParam \(name) -> \(dval)  \(sval)")
+        switch (name)  //depending on param, set double or string
+        {
+        case "name":        OOP.name = sval
+        case "wave":        OOP.wave = ival
+        case "type":        OOP.type = ival
+        case "attack":      OOP.attack = dval
+        case "decay":       OOP.decay = dval
+        case "sustain":     OOP.sustain = dval
+        case "slevel":      OOP.sLevel = dval
+        case "release":     OOP.release = dval
+        case "duty":        OOP.duty = dval
+        case "sampleoffset":OOP.sampleOffset = ival
+        case "pkeydetune":  OOP.pKeyDetune = ival
+        case "pkeyoffset":  OOP.pKeyOffset = ival
+        case "plevel":      OOP.pLevel = ival
+        case "percloox_0":  OOP.percLoox[0] = sval
+        case "percloox_1":  OOP.percLoox[1] = sval
+        case "percloox_2":  OOP.percLoox[2] = sval
+        case "percloox_3":  OOP.percLoox[3] = sval
+        case "percloox_4":  OOP.percLoox[4] = sval
+        case "percloox_5":  OOP.percLoox[5] = sval
+        case "percloox_6":  OOP.percLoox[6] = sval
+        case "percloox_7":  OOP.percLoox[7] = sval
+        case "perclooxpans_0":  OOP.percLooxPans[0] = ival
+        case "perclooxpans_1":  OOP.percLooxPans[1] = ival
+        case "perclooxpans_2":  OOP.percLooxPans[2] = ival
+        case "perclooxpans_3":  OOP.percLooxPans[3] = ival
+        case "perclooxpans_4":  OOP.percLooxPans[4] = ival
+        case "perclooxpans_5":  OOP.percLooxPans[5] = ival
+        case "perclooxpans_6":  OOP.percLooxPans[6] = ival
+        case "perclooxpans_7":  OOP.percLooxPans[7] = ival
+        default:print("Error:Bad patch param in set:" + name)
+        }
+    } //end setPatchParam
+
     //-----------(oogieVoice)=============================================
     // 4/22/20 gets param by name, returns tuple
     func getParam(named name : String) -> (name:String , dParam:Double , sParam:String )
@@ -656,6 +765,38 @@ let MAX_LOOX = 8
         if !isString  {sp = String(format: "%4.2f", dp)} //4/25 pack double as string
         return(name , dp , sp) //pack up name,double,string
     } //end getParam
+
+    //-----------(oogieVoice)=============================================
+    // 9/28 new: note pIndex param for accessing percLoox
+    func getPatchParam(named name : String, pIndex: Int) -> (name:String , dParam:Double , sParam:String )
+    {
+        var dp = 0.0
+        var sp = ""
+        var isString = false  //do i need this??
+        let pptr = min(7,max(0,pIndex)) //legalize perc index...
+        switch (name)  //depending on param, set double or string
+        {
+        case "name":        sp = OOP.name;isString = true
+        case "type":        dp = Double(OOP.type)
+        case "wave":        dp = Double(OOP.wave)
+        case "attack":      dp = Double(OOP.attack)
+        case "decay":       dp = Double(OOP.decay)
+        case "sustain":     dp = Double(OOP.sustain)
+        case "slevel":      dp = Double(OOP.sLevel)
+        case "release":     dp = Double(OOP.release)
+        case "duty":        dp = Double(OOP.duty)
+        case "sampleoffset":dp = Double(OOP.sampleOffset)
+        case "pkeydetune":  dp = Double(OOP.pKeyDetune)
+        case "pkeyoffset":  dp = Double(OOP.pKeyOffset)
+        case "plevel":      dp = Double(OOP.pLevel)
+        case "percloox":    sp = OOP.percLoox[pptr];isString = true
+        case "perclooxpans":dp = Double(OOP.percLooxPans[pptr])
+        default:print("Error:Bad patch param in get:" + name)
+        }
+        if !isString  {sp = String(format: "%4.2f", dp)} // pack double as string
+        return(name , dp , sp) //pack up name,double,string
+    } //end getPatchParam
+
     
     //-----------(oogieVoice)=============================================
     // 11/18 move in from mainvC. heavy lifter, lots of crap brought together
@@ -724,12 +865,11 @@ let MAX_LOOX = 8
 
                 }
                 (sfx() as! soundFX).setSynthAttack(Int32(OOP.attack))
-               // print("....playColors:attack \(OOP.attack)")
+                //print("....playColors:attack \(OOP.attack)")
                 (sfx() as! soundFX).setSynthDecay(Int32(OOP.decay))
                 (sfx() as! soundFX).setSynthSustain(Int32(OOP.sustain))
                 (sfx() as! soundFX).setSynthSustainL(Int32(OOP.sLevel))
                 (sfx() as! soundFX).setSynthRelease(Int32(OOP.release))
-//                (sfx() as! soundFX).setSynthRelease(Int32(OOP.releaseTime))
                 (sfx() as! soundFX).buildEnvelope(0,true)
                 (sfx() as! soundFX).setSynthPortamento(Int32(OVS.portamento))
                 (sfx() as! soundFX).setSynthVibAmpl(Int32(OVS.vibLevel))
@@ -855,6 +995,7 @@ let MAX_LOOX = 8
                     lasttype = PERCKIT_VOICE
                  
                     let pkPan = OOP.percLooxPans[octave]
+                    print("pkpan[\(octave)] = \(pkPan)")
                     (sfx() as! soundFX).setSynthPan(Int32(pkPan))
                     noteToPlay = 32
                     if quantTime == 0 //No Quant, play now
@@ -905,6 +1046,52 @@ let MAX_LOOX = 8
         } // end while
 
     } //end applyDelayIfAny
+
+    //=====<oogie2D mainVC>====================================================
+    // 10/1 new, for applying patch edits to this voice
+    func applyEditsWith(dict : Dictionary< AnyHashable, Any> )
+    {
+        for (key,value) in dict
+        {
+            if let pname = key as? String
+            {
+                var ppname = pname //work var...
+                print("pname \(pname) ") //look for percloox_0... etc
+                let a = pname.split(separator: "_")
+                if a.count > 1
+                {
+                    ppname = String(a[0]) //keep first part
+                }
+                if let ssn = value as? String //wow lots of crap just to unpack 2 items!
+                {
+                    if let vArray = OPaP.patchParamsDictionary[ppname] //get param info array
+                    {
+                        var dd : Double = 0.0
+                        let ptype = vArray[1] as! String
+                        if ptype == "double" && vArray.count > 6
+                        {
+                            if let dtemp = Double(ssn)
+                            {
+                                let dmult = vArray[5] as! Double
+                                let doff  = vArray[6] as! Double
+                                dd = (dtemp * dmult) + doff //convert to full parameter value
+                            }
+                        }
+                        else if ptype == "string"    //try to get an integer value just in case...
+                        {
+                            if let dtemp = Double(ssn)
+                            {
+                                dd = dtemp
+                            }
+                        }
+                        //Finally! now set the patch param to reflect edit...
+                        print(" apply edit to \(pname) value \(dd)")
+                        setPatchParam(named: pname, toDouble: dd, toString: ssn)
+                    }
+                } //end let ssn
+           } //end let pname
+        } //end for key
+    } //end applyEditsWith
 
     
     //-----------(oogieVoice)=============================================

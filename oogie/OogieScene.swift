@@ -20,15 +20,17 @@
 //          pull updateMaxShapeKey
 //  9/27    add saveSelectedVoiceBackToScene... fix bug in addVoiceSceneData
 //  9/28    add saveEditBackToSceneWith
+//  10/2    add applyEdits to addVoiceSceneData
 import Foundation
 import SceneKit
 class OogieScene: NSObject {
 
     var uid  = ""
     var OSC  = OSCStruct()  // codable scene struct for i/o, NOT used at runtime!
-    var OVP =  OogieVoiceParams.sharedInstance //9/19/21 oogie voice params
-    var OSP =  OogieShapeParams.sharedInstance //9/19/21 oogie voice params
-    var OPP =  OogiePipeParams.sharedInstance  //9/19/21 oogie pipe params
+    var OVP  =  OogieVoiceParams.sharedInstance //9/19/21 oogie voice params
+    var OSP  =  OogieShapeParams.sharedInstance //9/19/21 oogie voice params
+    var OPP  =  OogiePipeParams.sharedInstance  //9/19/21 oogie pipe params
+    var OPaP =  OogiePatchParams.sharedInstance //9/28
 
     //All patches: singleton, holds built-in and locally saved patches...
     var allP = AllPatches.sharedInstance
@@ -102,6 +104,7 @@ class OogieScene: NSObject {
         var newOVS    = nextOVS
         var uid       = newOVS.uid
         let newVoice  = OogieVoice()
+        let paramEdits = edits.sharedInstance //10/2 NOTE objective C struct!
         if op == "load" //Loading? Remember name, keep key!!
         {
             newVoice.OVS = newOVS
@@ -110,6 +113,9 @@ class OogieScene: NSObject {
             if let oop = allP.patchesDict[pname]
             {
                 newVoice.OOP = oop;
+                //10/2 apply any edits at load time!
+                let editDict = (paramEdits() as! edits).getForPatch(pname)
+                newVoice.applyEditsWith(dict: editDict)
             }
             else {
                 print(" addVoice ERR: cant find patch \(pname)") //9/27
@@ -196,8 +202,8 @@ class OogieScene: NSObject {
         {
             oop.uid = ps.uid   //Copy incoming pipe UID
         }
-        oop.PS    = ps
         let uid   = ps.uid
+        oop.PS    = ps
         //OK now for 3d representation. Find centers of two objects:
         let toObj = oop.PS.toObject
         if let shape = sceneShapes[toObj] //Found a shape as target?
@@ -234,8 +240,7 @@ class OogieScene: NSObject {
         }
         return oop
     } //end addPipeSceneData
-    
-    
+
     //-----------(oogieScene)=============================================
     // Looks up a synth patch, changes current voice
     func changeVoicePatch(name:String)
@@ -648,7 +653,6 @@ class OogieScene: NSObject {
         }
         //print("varray \(vArray) count \(vArray.count)")
         if (vArray.count < 3) {return} //avoid krash
-//9/20 NO NEED        selectedFieldName = vArray[0] as! String
         selectedFieldType = vArray[1] as! String
         if (selectedFieldType == "double" || selectedFieldType == "int") && //4/26 int ptype
             vArray.count > 6 //Get double range / default
@@ -729,6 +733,23 @@ class OogieScene: NSObject {
             breakOutSelectedFields(vArray: vArray)
         }
     } //end loadCurrentPipeParams
+
+    //-----------(oogieScene)=============================================
+    // 9/30 new for patch edit
+    func loadCurrentPatchParams()
+    {
+        var pname = selectedFieldName
+        //10/2 split up any fields that have underbar, keep first part only
+        let a = pname.split(separator: "_")
+        if a.count > 1
+        {
+            pname = String(a[0]) //keep first part
+        }
+        if let vArray = OPaP.patchParamsDictionary[pname] //9/22 wups
+        {
+            breakOutSelectedFields(vArray: vArray)
+        }
+    } //end loadCurrentPatchParams
 
     //-----------(oogieScene)=============================================
     // 12/1 why cant this work for voices?
@@ -968,8 +989,19 @@ class OogieScene: NSObject {
                 
             default: results.append("updatepipe")
 
-            }
+            } //end case
         } //end pipe editing
+        else if editing == "patch" //10/1 new
+        {
+            switch (named)  // setup 3D updates back in caller
+            {
+                //integer types: no conversion?
+                case "wave" ,"type": break
+                default:
+                    workDouble = unitToParam(inval: workDouble) //9/15/21 Convert to desired range
+            }
+            selectedVoice.setPatchParam(named: named, toDouble: workDouble, toString: toString)
+        }
         //print("results \(results)")
         return results
     } //end setNewParamValue

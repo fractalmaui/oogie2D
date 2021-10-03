@@ -12,6 +12,7 @@
 //  Created by Dave Scruton on 9/19/21
 //  Copyright © 2019 fractallonomy. All rights reserved.
 //  Params for oogiePipe objects. singleton, created once
+//  9/28 pulled numeric param dict entries
 
 import Foundation
 import SceneKit
@@ -53,14 +54,6 @@ import SceneKit
         pipeParamsDictionary["hirange"]      = PipeHiRangeParams
         pipeParamsDictionary["name"]         = PipeNameParams
         pipeParamsDictionary["comment"]      = PipeCommParams
-
-        // Load up params dictionary with string / array combos
-        pipeParamsDictionary["00"] = InputChanParams
-        pipeParamsDictionary["01"] = OutputParamParams
-        pipeParamsDictionary["02"] = PipeLoRangeParams
-        pipeParamsDictionary["03"] = PipeHiRangeParams
-        pipeParamsDictionary["04"] = PipeNameParams
-        pipeParamsDictionary["05"] = PipeCommParams
     } //end setupParams
     
     //-----------(oogiePipeParams)=============================================

@@ -20,13 +20,6 @@
 #import "soundFX.h"
 @protocol controlPanelDelegate;
 
-#define MAX_CONTROL_SLIDERS 17  //2/19 add delay 3sliders
-#define MAX_CONTROL_PICKERS 5
-#define MAX_CONTROL_TEXTFIELDS 2
-#define SLIDER_BASE_TAG 1000
-#define PICKER_BASE_TAG 2000
-#define TEXT_BASE_TAG 3000
- // obPopupDelegate,
 @interface controlPanel : UIView <UIGestureRecognizerDelegate,UITextFieldDelegate,UITextViewDelegate,
                             UIPickerViewDelegate,UIPickerViewDataSource>
 {
@@ -43,16 +36,26 @@
     UIButton *hiNotebutton;
     UIButton *dismissButton;
 
-    UISlider *sliders[MAX_CONTROL_SLIDERS];
-    UIPickerView *pickers[MAX_CONTROL_PICKERS];
-    UITextField *textFields[MAX_CONTROL_TEXTFIELDS];
+    // 10/1 new data structs
+    NSArray *allParams;
+    NSArray *sliderNames;
+    NSArray *pickerNames;
+    NSArray *textFieldNames;
+    NSMutableArray *allSliders;
+    NSMutableArray *allPickers;
+    NSMutableArray *allTextFields;
+    
+    NSArray *keySigs;
+    NSArray *musicalKeys;
+    NSArray *vibratoWaves;
+
     UIView *header,*footer;
     UILabel *titleLabel;
 
     int diceRolls;  //9/9 for analytics
     int resets;     //9/9 for analytics
-    int sChanges[MAX_CONTROL_SLIDERS]; //count the changes!
-    int pChanges[MAX_CONTROL_PICKERS];
+//    int sChanges[MAX_CONTROL_SLIDERS]; //count the changes!
+//    int pChanges[MAX_CONTROL_PICKERS];
     
     //flurryAnalytics *fanal; //8/3
     //obPopup *obp; //onboarding popup panel
@@ -74,7 +77,7 @@
 @property (nonatomic, strong) NSDictionary *paramDict;
 
 
-- (id)initWithFrame:(CGRect)frame;
+-(void) setupView:(CGRect)frame;
 - (void) configureView;
 - (void)updateSessionAnalytics;
 

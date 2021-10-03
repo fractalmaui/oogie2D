@@ -47,7 +47,7 @@ var OVtempo = 135 //Move to params ASAP
 var camXform = SCNMatrix4()
 
 class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate,SCNSceneRendererDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate,
-                      controlPanelDelegate,proPanelDelegate,shapePanelDelegate,pipePanelDelegate{
+                      controlPanelDelegate,patchPanelDelegate,shapePanelDelegate,pipePanelDelegate{
 
     @IBOutlet weak var skView: SCNView!
     @IBOutlet weak var spnl: synthPanel!
@@ -80,7 +80,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var fbgenerator = UISelectionFeedbackGenerator()
     var cPanel  = controlPanel()
 
-    var pPanel  = proPanel()
+    var paPanel = patchPanel()
     var sPanel  = shapePanel()
     var piPanel = pipePanel()
     
@@ -92,9 +92,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // 9/13 texture cache...
     let tc = texCache.sharedInstance
     // 9/18 oogieVoiceParams....
-    var OVP =  OogieVoiceParams.sharedInstance //9/19/21 oogie voice params
-    var OSP =  OogieShapeParams.sharedInstance //9/19/21 oogie shape params
-    var OPP =  OogiePipeParams.sharedInstance //9/19/21 oogie shape params
+    var OVP  =  OogieVoiceParams.sharedInstance //9/19/21 oogie voice params
+    var OSP  =  OogieShapeParams.sharedInstance //9/19/21 oogie shape params
+    var OPP  =  OogiePipeParams.sharedInstance //9/19/21 oogie shape params
+    var OPaP =  OogiePatchParams.sharedInstance //9/28
 
     //10/27 for finding new marker lat/lons
     let llToler = Double.pi / 10.0
@@ -110,7 +111,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     //Audio Sound Effects...
     var sfx = soundFX.sharedInstance
-    
+    var paramEdits = edits.sharedInstance
     //All patches: singleton, holds built-in and locally saved patches...
     var allP = AllPatches.sharedInstance
     var recentlyEditedPatches : [String] = []
@@ -189,7 +190,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         camXform = SCNMatrix4Identity //11/24 add camera matrix from scene file
         camXform.m43 = 6.0   //5/1 back off camera on z axis
         //Get our default scene, move to appdelegate?
-        //asdf OK we are getting path name, but WHY not loaded??
+        // OK we are getting path name, but WHY not loaded??
         // PROBLEM: a lot of patches may get loaded into voices, but
         //  NONE of the buffer pointers are OK.  THIS NEEDS TO BE RECTIFIED!
         if DataManager.sceneExists(fileName : "default")
@@ -263,20 +264,17 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         voiceEditPanels.frame = CGRect(x: 0 , y: Int(viewHit) , width: Int(2*viewWid), height: allphit)
 //        voiceEditPanels.frame = CGRect(x: 0 , y: Int(viewHit) - allphit, width: Int(2*viewWid), height: allphit)
         //Live controls / patch or colorpack select
-        if let cp = controlPanel.init(frame: CGRect(x: 0 , y: 0, width: Int(viewWid), height: allphit))
-        {
-            cPanel = cp
-            voiceEditPanels.backgroundColor = .clear
-            voiceEditPanels.addSubview(cPanel)
-            cPanel.delegate = self
-        }
-        // 9/1/21 pro panel, add to RIGHT of control panel in allpanhels
-        if let pp = proPanel.init(frame: CGRect(x: Int(viewWid) , y: 0, width: Int(viewWid), height: allphit))
-        {
-            pPanel = pp
-            voiceEditPanels.addSubview(pPanel)
-            pPanel.delegate = self
-        }
+        //10/1 REDO: just set view rect here, then add to view hierarchy
+        cPanel.setupView(CGRect(x: 0 , y: 0, width: Int(viewWid), height: allphit))
+        voiceEditPanels.backgroundColor = .clear
+        voiceEditPanels.addSubview(cPanel)
+        cPanel.delegate = self
+        
+        //10/1 REDO: just set view rect here, then add to view hierarchy
+        paPanel.setupView(CGRect(x: Int(viewWid) , y: 0, width: Int(viewWid), height: allphit))
+        voiceEditPanels.addSubview(paPanel)
+        paPanel.delegate = self
+        
         voiceEditPanels.isHidden = false //true
         //9/28 make chooser class member
         chooser.delegate = self
@@ -284,25 +282,20 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         // 9/11 shape editing panel(s)
         shapeEditPanels.frame = CGRect(x: 0 , y: Int(viewHit) , width: Int(viewWid), height: allphit)
         // 9/1/21 pro panel, add to RIGHT of control panel in allpanhels
-        if let sp = shapePanel.init(frame: CGRect(x: 0 , y: 0, width: Int(viewWid), height: allphit))
-        {
-            sPanel = sp
-            shapeEditPanels.backgroundColor = .clear
-            shapeEditPanels.addSubview(sPanel)
-            sPanel.delegate = self
-        }
+        //10/1 REDO: just set view rect here, then add to view hierarchy
+        sPanel.setupView(CGRect(x: 0 , y: 0, width: Int(viewWid), height: allphit))
+        shapeEditPanels.backgroundColor = .clear
+        shapeEditPanels.addSubview(sPanel)
+        sPanel.delegate = self
         shapeEditPanels.isHidden = false
-
+        
         // 9/14 pipe editing panel(s)
         pipeEditPanels.frame = CGRect(x: 0 , y: Int(viewHit) , width: Int(viewWid), height: allphit)
-        // 9/1/21 pro panel, add to RIGHT of control panel in allpanhels
-        if let pip = pipePanel.init(frame: CGRect(x: 0 , y: 0, width: Int(viewWid), height: allphit))
-        {
-            piPanel = pip
-            pipeEditPanels.backgroundColor = .clear
-            pipeEditPanels.addSubview(piPanel)
-            piPanel.delegate = self
-        }
+        //10/1 REDO: just set view rect here, then add to view hierarchy
+        piPanel.setupView(CGRect(x: 0 , y: 0, width: Int(viewWid), height: allphit))
+        pipeEditPanels.backgroundColor = .clear
+        pipeEditPanels.addSubview(piPanel)
+        piPanel.delegate = self
         pipeEditPanels.isHidden = false
 
         
@@ -370,6 +363,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //CAN this be done earlier???
         print("...samples loaded, hopefully we can set up soundpack/patch stuff...")
         cPanel.spNames = allP.allSoundPackNames
+        paPanel.sampleNames = allP.getGMPercussionNames()
+
         //9/1 get patch names...
         var pnames = [String]()
         pnames.append("Random")
@@ -386,8 +381,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             }
         }
         cPanel.paNames = pnames
-        pPanel.configureView() //9/12
-
     }
     
 
@@ -438,7 +431,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             if ((abs(pp.x - touchLocation.x) < 40) &&
                 (abs(pp.y - touchLocation.y) < 40))
             {
-                if whatWeBeEditing == "voice" { voiceMenu() }
+                if whatWeBeEditing == "voice"      { voiceMenu() }
                 else if whatWeBeEditing == "shape" { shapeMenu() }
                 else if whatWeBeEditing == "pipe"  { pipeMenu() }
                 else //9/13 halt voices ?
@@ -659,11 +652,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
      // 9/19 generic param edit, workx on shapes,voices, etc
      func editParam(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
      {
+         var dval = Double(newVal) //10/2 need to convert in some cases..
          var ptype = ""
          if      whatWeBeEditing == "voice" {ptype = OVP.getParamType(pname: pname)}
          else if whatWeBeEditing == "shape" {ptype = OSP.getParamType(pname: pname)}
          else if whatWeBeEditing == "pipe"  {ptype = OPP.getParamType(pname: pname)}
-         
+         else if whatWeBeEditing == "patch" {ptype = OPaP.getParamType(pname: pname)} // 9/30
+
          //let ptype = OVP.getParamType(pname: pname)
          if pname != oldvpname //user changed parameter? load up info to UI
          {
@@ -676,12 +671,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
              }
              else if ptype == "string"
              {
-                 pt = TSTRING_TTYPE
-                 choiceStrings = OVP.getParamChoices(pname: pname)
+                pt = TSTRING_TTYPE
+                choiceStrings = OVP.getParamChoices(pname: pname)
              }
              else if ptype == "text"
              {
-                 pt = TSTRING_TTYPE
+                pt = TSTRING_TTYPE
              }
             //9/22 WOW the pmax may be totally wrong here!
             var pmax : Double = 100.0
@@ -693,21 +688,24 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
              if      whatWeBeEditing == "voice" {OVScene.loadCurrentVoiceParams()}
              else if whatWeBeEditing == "shape" {OVScene.loadCurrentShapeParams()}
              else if whatWeBeEditing == "pipe"  {OVScene.loadCurrentPipeParams()}
+             else if whatWeBeEditing == "patch" {OVScene.loadCurrentPatchParams()} //9/30 new
          }
          //convert from slider unit to proper units...
-         let dval = Double(newVal)
-         // 9/22 wups, only convert unit for LABEL display!
-         pLabel.updateit(value : OVScene.unitToParam(inval: dval));
-         
+         // 9/30 there is a problem here for some param types???
+        if OVScene.selectedFieldType == "double" //10/2 check for double type param
+        {
+           dval = OVScene.unitToParam (inval : dval)  //oknconvertit
+        }
+         pLabel.updateit(value : Double(dval))
          //4/26 Dig up last param value and save
          let sceneChanges = OVScene.setNewParamValue(newEditState : whatWeBeEditing,
                                                      named : pname,
-                                                     toDouble : dval,
+                                                     toDouble : Double(newVal),
                                                      toString : pvalue )
         // 9/27 wups, save back to scene!!!asdf
         OVScene.saveEditBackToSceneWith(objType:whatWeBeEditing)
 
-         update3DSceneForSceneChanges(sceneChanges)
+        update3DSceneForSceneChanges(sceneChanges)
      } // end editParam
      
   
@@ -867,23 +865,24 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     {
                         whatWeBeEditing = "voice"
                         //9/1/21 TEST CLUGE???
+                        //If OVSCene needs to know this then whatWeBeEditing is moot!
                         OVScene.editing = whatWeBeEditing;
                         if let smname = selectedMarker.name  //update param label w/ name
                         { self.pLabel.updateLabelOnly(lStr:"Selected " + smname) }
                         OVScene.selectedVoice     = testVoice //Get associated voice for this marker
                         OVScene.selectedMarkerKey = uid      //points to OVS struct in scene
                         selectedMarker.updatePanels(nameStr: OVScene.selectedMarkerKey) //10/11 add name panels
-                        //1/14 was redundantly pulling OVS struct from OVScene.voices!
-                        print("FIXIT: editparams!")
-                        // 8/11 FIXIT editParams(v: "voice") //1/14 switch to edit mode
                         updatePkeys() //3/30 update kb if needed
                         //Pack params, send to VC
                         cPanel.paramDict = OVScene.selectedVoice.getParamDictWith(soundPack: OVSoundPack)
                         cPanel.configureView()
-                        //9/25 redo this! make it match other dicts for panels
-                        pPanel.oogieVoiceDict = OVScene.selectedVoice.getPatchDictWithValues()
-                        pPanel.configureView()
+                        //Need to hand a lot of stuff to patch panel...
+                        paPanel.paramDict = OVScene.selectedVoice.getPatchParamDict()
+                        paPanel.whichSamp = Int32(OVScene.selectedVoice.OVS.whichSamp)
+                        paPanel.patchName = OVScene.selectedVoice.OVS.patchName  //9/30
+                        paPanel.configureView()
                         shiftPanelUp(panel: voiceEditPanels) //9/11 shift controls so they are visible
+                        shiftPanelRight(panel:voiceEditPanels) //10/1 make sure we start on control panel
                     }
                     selected = true
                 }
@@ -898,7 +897,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end selectOrDeselectMarkerBy
     
     //=====<oogie2D mainVC>====================================================
-    // 9/25 Toggle select for desired shape, returns selected status asdf
+    // 9/25 Toggle select for desired shape, returns selected status
     func selectOrDeselectShapeBy(uid:String) -> Bool
     {
 //        let key = findShapeByUID(uid: name)
@@ -925,8 +924,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         //2/3 add name/comment to 3d shape info box
                         selectedSphere.updatePanels(nameStr: OVScene.selectedShape.OOS.name,
                                                     comm: OVScene.selectedShape.OOS.comment)
-                        print("FIXIT: editparams!")
-                        // 8/11 FIXIT editParams(v: "shape") //this also update screen
                         sPanel.texNames = tc.loadNamesToArray() //populates texture chooser
                         shiftPanelUp(panel: shapeEditPanels) //9/11 shift controls so they are visible
                         sPanel.paramDict = OVScene.selectedShape.getParamDict()
@@ -948,7 +945,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //  NOTE: right now we are finding pipes by name. it should be by UID!
     //    however this requires changing the way pipes3D is used, and
     //    that has lots of repercussions
-    // 9/25 Toggle select for desired pipe, returns selected status asdf
+    // 9/25 Toggle select for desired pipe, returns selected status
     func selectOrDeselectPipeBy(uid:String) -> Bool
     {
         var selected = false
@@ -969,7 +966,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 whatWeBeEditing      = "pipe"  //2/6 WTF?
                 OVScene.selectedPipe = spo // get 3d scene object...
                 //Beam pipe name and output buffer to a texture in the pipe...
-                // ideally this should be updaged on a timer! asdf
+                // ideally this should be updaged on a timer!
                 let name = OVScene.selectedPipe.PS.name //9/25
                 selectedPipeShape.updateInfo(nameStr: name, vals: spo.ibuffer)
                 selected = true
@@ -982,8 +979,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     // get correct output parameter names for this pipe
                     OVScene.selectedFieldName = "outputparam" //Force selection to get possible output pipe values...
                     OVScene.loadCurrentPipeParams()
-                    var workArray = OVScene.selectedFieldDisplayVals;
-                    piPanel.outputNames = workArray //now we should have our outputs
+                    piPanel.outputNames = OVScene.selectedFieldDisplayVals //now we should have our outputs
                     piPanel.configureView() //9/12 loadup stuff
                     selected = true
                 }
@@ -997,41 +993,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         return selected
     } //end selectOrDeselectPipeBy
     
-    //=====<oogie2D mainVC>====================================================
-    // called when user selects something, unhighlights old crap
-    //9/27 obsolete, pull
-//    func unselectAnyOldStuff(key:String)
-//    {
-//        if whatWeBeEditing == "voice"
-//        {
-//            //selectedMarker.unHighlight()
-//            // is a different marker selected? deselect!
-//            if  selectedMarker.highlighted &&
-//                 OVScene.selectedMarkerKey != key
-//                { selectedMarker.unHighlight() }
-//            OVScene.selectedMarkerKey = ""
-//        }
-//        else if whatWeBeEditing == "shape"
-//        {
-//            //selectedSphere.unHighlight()
-//            if selectedSphere.highlighted &&
-//                OVScene.selectedShapeKey != key
-//                { selectedSphere.unHighlight() }
-//            OVScene.selectedShapeKey = ""
-//        }
-//        else if whatWeBeEditing == "pipe"
-//        {
-//            //selectedPipeShape.unHighlight()
-//            if selectedPipeShape.highlighted &&
-//                OVScene.selectedPipeKey != key
-//                { selectedPipeShape.unHighlight() }
-//            OVScene.selectedPipeKey = ""
-//        }
-//
-//       // if selectedSphere.highlighted && selectedShapeKey != testName
-//
-//    } //end unselectAnyOldStuff
-    
+
     //=====<oogie2D mainVC>====================================================
     // called when user selects something, unhighlights old crap
     // 9/25 redo for uid not name
@@ -1787,8 +1749,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     //=====<oogie2D mainVC>====================================================
     // 4/20 cleanup, peel off 3d part to separate method, data to OVScene
+    //  10/2 NOTE patch edits are applied in addVoiceSceneData
     func addVoiceToScene(nextOVS : OVStruct ,  op : String)
     {
+        print("ADDVOICE: \(nextOVS)  op: \(op)")
         //First, set up scene structures, get fresh voice back...
         let newVoice = OVScene.addVoiceSceneData(nextOVS : nextOVS , op:op)
         // use this voice and create the 3D marker
@@ -2339,7 +2303,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     
     
-    //proPanel delegate returns...
+    //patchPanel delegate returns...
     func didSetProValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ undoable: Bool) {
         print("mainvc: didSetProValue \(which) \(newVal) \(pname)")
 
@@ -2467,10 +2431,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         if let oop = allP.patchesDict[pName]
         {
-            print(oop)
+            print("loadPatchByName: \(oop)")
             self.OVScene.selectedVoice.OOP = oop
+            let editDict = (paramEdits() as! edits).getForPatch(pName) //10/1 apply any edits
+            OVScene.selectedVoice.applyEditsWith(dict: editDict) //modify voices patch to suit edits
             let nn = allP.getSampleNumberByName(ss: oop.name)
-            self.OVScene.selectedVoice.OVS.whichSamp = Int(nn)
+            self.OVScene.selectedVoice.OVS.whichSamp = nn.intValue //10/1
             if self.OVScene.selectedVoice.OOP.type == PERCKIT_VOICE
             {
                 self.OVScene.selectedVoice.getPercLooxBufferPointerSet() //go get buff ptrs...
@@ -2479,14 +2445,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }
     } //end loadPatchByName
     
-    
     //=====<controlPanelDelegate>====================================================
-     //controlPanel delegate returns...
+     //controlPanel delegate returns...  9/28 BUG: pvalue for patch param is wrong, points to prev item from selection
+    //                                               ALSO pvalue is discarded, why pass it anyway???
      func didSetControlValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
      {
          print("mainvc: didSetControlValue \(which) \(newVal) \(pname)")
          
-         if which == 17 //new patch?
+         if which == 17 //new patch? 9/28 try a load. note editParam also gets called
          {
              if newVal == 0 //RANDOM
              {
@@ -2496,9 +2462,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
              {
                  let patchName = allP.getSoundPackPatchNameByIndex(index: Int(newVal-1)) //patches start 1....n
                  loadPatchByName(pName: patchName)
+                 OVScene.selectedVoice.OVS.patchName = patchName  //9/30 wups forgot to save...
+
              } //end else not random
-         } //end which 19
-         else if which == 18 //9/11 handle new soundpack
+         } //end which 17
+         if which == 18 //9/11 handle new soundpack
          {
              OVSoundPack = allP.getSoundPackNameByIndex(index: Int(newVal));
              allP.getSoundPackByName(name: OVSoundPack)
@@ -2528,7 +2496,18 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
          } //end else
          
      } //end didSetControlValue
-     
+
+
+    //=====<patchPanelDelegate>====================================================
+    // this needs to loop over all voices with current patch and perform edit
+    func didSetPatchValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
+    {
+        print("mainvc: didSetPatchValue \(which) \(newVal) \(pname) \(pvalue)")
+        // for now just edit selected voice..
+        editParam(which,newVal,pname,pvalue,undoable)
+        OVScene.sceneVoices[OVScene.selectedMarkerKey] = OVScene.selectedVoice //WOW STORE IN SCENE?
+    }
+
      
      //=====<shapePanelDelegate>====================================================
      // 9/15 redid to handle  OVScene.loadCurrentShapeParams
@@ -2681,6 +2660,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // Subpanel Right Button, slide voiceEditPanels LEFT
     func didSelectRight() {
         shiftPanelLeft(panel:voiceEditPanels)
+        if whatWeBeEditing == "voice" { whatWeBeEditing = "patch" } //9/30 switch editing object...
         print("right")
     }
 
@@ -2688,6 +2668,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // Subpanel Left Button, slide voiceEditPanels RIGHT
     func didSelectLeft() {
         shiftPanelRight(panel:voiceEditPanels)
+        if whatWeBeEditing == "patch" { whatWeBeEditing = "voice" }  //9/30 switch editing object...
         print("left")
     }
 
@@ -2709,6 +2690,21 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func didSelectControlDismiss() {   //9/24 new for touch on editlabel in UI
         //print("didSelectDismissReset")
         deselectAndCloseEditPanel()
+    }
+
+    //=====patchPanelDelegate>====================================================
+    // 10/1 
+    func didSelectPatchDice() {
+        //print("didSelectPatchDice")
+        pLabel.updateLabelOnly(lStr:"Randomize Patch") //9/18 info for user!
+    }
+    func didSelectPatchReset() {
+        //print("didSelectPatchReset")
+        pLabel.updateLabelOnly(lStr:"Reset Patch") //9/18 info for user!
+    }
+    func didSelectPatchDismiss() {   //9/24 new for touch on editlabel in UI
+        //print("didSelectPatchReset")
+        deselectAndCloseEditPanel() //same as control dismiss, hide panel
     }
 
 } //end vc class, line 1413 as of 10/10

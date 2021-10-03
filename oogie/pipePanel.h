@@ -22,12 +22,9 @@
 #import "soundFX.h"
 @protocol pipePanelDelegate;
 
-#define MAX_PIPE_SLIDERS 2 
-#define MAX_PIPE_PICKERS 2
+//#define MAX_PIPE_SLIDERS 2 
+//#define MAX_PIPE_PICKERS 2
 #define MAX_PIPE_TEXTFIELDS 2
-#define SLIDER_BASE_TAG 1000
-#define PICKER_BASE_TAG 2000
-#define TEXT_BASE_TAG 3000
  // obPopupDelegate,
 @interface pipePanel : UIView <UIGestureRecognizerDelegate,UITextFieldDelegate,UITextViewDelegate,
                             UIPickerViewDelegate,UIPickerViewDataSource>
@@ -45,16 +42,28 @@
     UIButton *hiNotebutton;
     UIButton *dismissButton;
 
-    UISlider *sliders[MAX_PIPE_SLIDERS];
-    UIPickerView *pickers[MAX_PIPE_PICKERS];
+//    UISlider *sliders[MAX_PIPE_SLIDERS];
+//    UIPickerView *pickers[MAX_PIPE_PICKERS];
     UITextField *ptextFields[MAX_PIPE_TEXTFIELDS];
     UIView *header,*footer;
     UILabel *titleLabel;
+    // 10/1 new data structs
+    NSArray *allParams;
+    NSArray *sliderNames;
+    NSArray *pickerNames;
+    NSArray *textFieldNames;
+    NSMutableArray *allSliders;
+    NSMutableArray *allPickers;
+    NSMutableArray *allTextFields;
+
+    NSArray *icParams;
+    NSArray *opParams;
+    NSArray*inputChanParams;
 
     int diceRolls;  //9/9 for analytics
     int resets;     //9/9 for analytics
-    int sChanges[MAX_PIPE_SLIDERS]; //count the changes!
-    int pChanges[MAX_PIPE_PICKERS];
+// ANALYTICS   int sChanges[MAX_PIPE_SLIDERS]; //count the changes!
+//    int pChanges[MAX_PIPE_PICKERS];
     
     //flurryAnalytics *fanal; //8/3
     //obPopup *obp; //onboarding popup panel
@@ -74,7 +83,8 @@
 @property (nonatomic, strong) NSDictionary *paramDict;
 @property (nonatomic, strong) NSArray *outputNames;
 
-- (id)initWithFrame:(CGRect)frame;
+- (void) setupView:(CGRect)frame;
+
 - (void) configureView;
 - (void)updateSessionAnalytics;
 

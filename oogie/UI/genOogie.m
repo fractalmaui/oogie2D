@@ -310,14 +310,17 @@ static genOogie *sharedInstance = nil;
                 if ([genericControl isKindOfClass:[UISlider class]]) //setup slider
                 {
                     double dval = nn.doubleValue;
-                    if (reset && a.count >= 6) //convert default to unit basis
-                    {
-                        NSNumber *nmult = [a objectAtIndex:5]; //get conversion base and range
-                        NSNumber *noff  = [a objectAtIndex:6];  //this is totally done in oogieScene btw!
-                        double dmult = nmult.doubleValue;
-                        double doff  = noff.doubleValue;
-                        if (dmult != 0.0) dval = (dval - doff) / dmult;
-                    }
+
+                    // 9/29 WTF? why reset??                    if (reset && a.count >= 6) //convert default to unit basis
+// 9/30  vals coming in are ALREADY CONVERTED!!!
+//                    if ( a.count >= 6) //convert default to unit basis
+//                    {
+//                        NSNumber *nmult = [a objectAtIndex:5]; //get conversion base and range
+//                        NSNumber *noff  = [a objectAtIndex:6];  //this is totally done in oogieScene btw!
+//                        double dmult = nmult.doubleValue;
+//                        double doff  = noff.doubleValue;
+//                        if (dmult != 0.0) dval = (dval - doff) / dmult;
+//                    }
                     UISlider *s = (UISlider*)genericControl;
                     NSLog(@" ...set slider tag[%d] to %f",tag,dval);
                     if (reset) //reset? add to reset list

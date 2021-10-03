@@ -9,7 +9,7 @@
 #import "audio/oogieMidiStubs.h"
 #import "controlPanel.h"
 #import "pipePanel.h"
-#import "proPanel.h"
+#import "patchPanel.h"
 #import "shapePanel.h"
 #import "edits.h"
 #import "genOogie.h"

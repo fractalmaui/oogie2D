@@ -143,6 +143,26 @@ import UIKit
     {
         patLookups[ss] = nil;
     }
+    
+    //----(AllPatches)==============================================
+    //9/29 look thru patLookups, find all GM perc names..
+    func getGMPercussionNames() -> [String]
+    {
+        var names : [String] = []
+        for (key,_) in patLookups
+        {  //god this is sloppy! why is string access so cumbersome??
+            if key.count > 4
+            {
+                let a0 = key.index(key.startIndex, offsetBy: 0)
+                let a4 = key.index(key.startIndex, offsetBy: 4)
+                if key[a0] == "M" && key[a4] == "_"
+                {
+                    names.append(key)
+                }
+            }
+        }
+        return names.sorted()
+    } //end getGMPercussionNames
 
     //----(AllPatches)==============================================
     // 10/16

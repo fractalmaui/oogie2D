@@ -22,13 +22,6 @@
 #import "soundFX.h"
 @protocol shapePanelDelegate;
 
-#define MAX_SHAPE_SLIDERS 17  //2/19 add delay 3sliders
-#define MAX_SHAPE_PICKERS 5
-#define MAX_SHAPE_TEXTFIELDS 2
-#define SLIDER_BASE_TAG 1000
-#define PICKER_BASE_TAG 2000
-#define TEXT_BASE_TAG 3000
- // obPopupDelegate,
 @interface shapePanel : UIView <UIGestureRecognizerDelegate,UITextFieldDelegate,UITextViewDelegate,
                             UIPickerViewDelegate,UIPickerViewDataSource>
 {
@@ -43,15 +36,22 @@
     UILabel *titleLabel;
     UIButton *dismissButton;
 
-    UISlider *sliders[MAX_SHAPE_SLIDERS];
-    UIPickerView *pickers[MAX_SHAPE_PICKERS];
-    UITextField *textFields[MAX_SHAPE_TEXTFIELDS];
     UIView *header,*footer;
+    
+    // 10/1 new data structs
+    NSArray *allParams;
+    NSArray *sliderNames;
+    NSArray *pickerNames;
+    NSArray *textFieldNames;
+    NSMutableArray *allSliders;
+    NSMutableArray *allPickers;
+    NSMutableArray *allTextFields;
+    NSArray *rotTypeParams;
 
     int diceRolls;  //9/9 for analytics
     int resets;     //9/9 for analytics
-    int sChanges[MAX_SHAPE_SLIDERS]; //count the changes!
-    int pChanges[MAX_SHAPE_PICKERS];
+//    int sChanges[MAX_SHAPE_SLIDERS]; //count the changes!
+//    int pChanges[MAX_SHAPE_PICKERS];
     
     //flurryAnalytics *fanal; //8/3
     //obPopup *obp; //onboarding popup panel
@@ -71,7 +71,7 @@
 @property (nonatomic, strong) NSDictionary *paramDict;
 @property (nonatomic, strong) NSArray *texNames;
 
-- (id)initWithFrame:(CGRect)frame;
+-(void) setupView:(CGRect)frame;
 - (void) configureView;
 - (void)updateSessionAnalytics;
 

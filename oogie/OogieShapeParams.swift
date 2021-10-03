@@ -12,6 +12,7 @@
 //  Created by Dave Scruton on 9/19/21
 //  Copyright © 2020 fractallonomy. All rights reserved.
 //  Params for oogieShape objects. singleton, created once
+//  9/28 pulled numeric param dict entries
 
 import Foundation
 
@@ -62,18 +63,6 @@ class OogieShapeParams: NSObject {
         shapeParamsDictionary["texyscale"] = VSParams
         shapeParamsDictionary["name"] = SNameParams
         shapeParamsDictionary["comment"] = SCommParams
-        shapeParamsDictionary["00"] = TexParams
-        shapeParamsDictionary["01"] = RotParams
-        shapeParamsDictionary["02"] = RotTypeParams
-        shapeParamsDictionary["03"] = XParams
-        shapeParamsDictionary["04"] = YParams
-        shapeParamsDictionary["05"] = ZParams
-        shapeParamsDictionary["06"] = UParams
-        shapeParamsDictionary["07"] = VParams
-        shapeParamsDictionary["08"] = USParams
-        shapeParamsDictionary["09"] = VSParams
-        shapeParamsDictionary["10"] = SNameParams //2/4
-        shapeParamsDictionary["11"] = SCommParams //2/4
     } //end setupShapeParams
         
     //-----------(oogieShapeParams)=============================================

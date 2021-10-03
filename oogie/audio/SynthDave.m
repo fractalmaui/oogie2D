@@ -824,7 +824,7 @@ short *audioRecBuffer;
 {
     //DHS 10/17 avoid redundant calls:
     if (!buildInPlace && envDataLength[which] > 0) return;
-   // NSLog(@"  buildEnvelope %d...",which);
+    //NSLog(@"  buildEnvelope %d...",which);
 
 	// All envelopes are same length, with data from 0.0 to 1.0. 
 	//  Each synth voice will have a corresponding envelope? 
@@ -867,8 +867,8 @@ short *audioRecBuffer;
     }
     //NSLog(@"  build env %d len %d...",which,envLength[which]);
 	
-	//NSLog(@" TOP ADSR============= %d %d %d %d %f",
-    //		  attackLength,decayLength,sustainLength,releaseLength ,sampleRate);
+//	NSLog(@" TOP ADSR============= %d %d %d %d %f",
+//    		  attackLength,decayLength,sustainLength,releaseLength ,sampleRate);
 
 	if (attackLength < 1)
 	{		
@@ -1094,7 +1094,6 @@ short *audioRecBuffer;
     t.mono       = _mono;
     t.lpan     = glpan;     //see setPan!
     t.rpan     = grpan;     //see setPan!
-
     t.portamentoTime  = portamentoTime;
     t.timetrax = timetrax;
     t.infinite = 0;
@@ -1184,10 +1183,11 @@ short *audioRecBuffer;
     int n,foundit=0;
     newUnique++;
 //    if (infinite)
-//        NSLog(@"...play note %d, duration %4.2f type %d, buf %d , srate %d, blen %d dt %d  mono %d mlevel %f",
-//              midiNote,
-//              (float)(sBufLens[wnum]/2)/(float)sRates[wnum],
-//              type,wnum,sRates[wnum],sBufLens[wnum],detune,_mono,masterLevel);
+        NSLog(@"...play note %d, duration %4.2f type %d, buf %d , srate %d, blen %d dt %d  mono %d mlevel %f pans %f/%f",
+              midiNote,
+              (float)(sBufLens[wnum]/2)/(float)sRates[wnum],
+              type,wnum,sRates[wnum],sBufLens[wnum],detune,_mono,masterLevel,
+              glpan,grpan);
     if (sBufLens[wnum] <= 0)
     {
         NSLog(@" ERROR: buffer[%d] empty",wnum); //DHS 9/18 diagnostic, delete later

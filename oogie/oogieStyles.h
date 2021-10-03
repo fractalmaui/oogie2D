@@ -17,3 +17,9 @@
 #define OOG_LABEL_FONT [UIFont fontWithName:@"AvenirNext-Bold" size:15]
 #define OOG_LABEL_ALIGN NSTextAlignmentRight
 #define OOG_MENU_CURVERAD 30
+
+
+#define SLIDER_BASE_TAG 1000
+#define PICKER_BASE_TAG 2000
+#define TEXT_BASE_TAG   3000
+

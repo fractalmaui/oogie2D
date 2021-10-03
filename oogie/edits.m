@@ -16,6 +16,8 @@
 //  9/8 added removeAllEdits
 //  4/26 cleanup
 //  5/15 add nil key check in loadFromDocs
+//  10/1 add getEditsForPatch 
+
 #import "edits.h"
 
 @implementation edits
@@ -120,7 +122,7 @@ static edits *sharedInstance = nil;
         }
         output = [output stringByAppendingFormat:@"%@\n",line];
     }
-    //NSLog(@" write to %@",docPath);
+    //NSLog(@" write edits to %@",docPath);
     [output writeToFile: docPath atomically: NO];
 } //end saveToDocs
 
@@ -204,6 +206,12 @@ static edits *sharedInstance = nil;
     return d[key];
 }
 
+//======<edits>========================================================
+// 10/1 new
+-(NSDictionary*) getEditsForPatch: (NSString *) patchName
+{
+    return [editDict objectForKey:patchName];
+}
 
 //======<edits>========================================================
 // 7/8

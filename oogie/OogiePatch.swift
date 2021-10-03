@@ -103,6 +103,7 @@ struct OogiePatch : Codable {
         result = result && (self.percLooxPans != s.percLooxPans)
         return result
     }
+    
 
     //======(OogiePatch)=============================================
     // Hmm not sure here!

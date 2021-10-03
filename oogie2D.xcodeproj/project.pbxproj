@@ -47,9 +47,10 @@
 		727F08DF23680A8E0054C517 /* PipeStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727F08DE23680A8E0054C517 /* PipeStruct.swift */; };
 		7280B826237B60640055EB77 /* FactorySettings in Resources */ = {isa = PBXBuildFile; fileRef = 7280B825237B60630055EB77 /* FactorySettings */; };
 		7283A65D234085400088560D /* infoText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7283A65C234085400088560D /* infoText.swift */; };
-		729599A326C61C44000A1C5F /* proPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 729599A226C61C44000A1C5F /* proPanel.m */; };
+		729599A326C61C44000A1C5F /* patchPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 729599A226C61C44000A1C5F /* patchPanel.m */; };
 		729599A826C61CC1000A1C5F /* edits.m in Sources */ = {isa = PBXBuildFile; fileRef = 729599A726C61CC1000A1C5F /* edits.m */; };
 		729905A726EDAC0900CFF5EE /* weirdness in Resources */ = {isa = PBXBuildFile; fileRef = 729905A626EDABE700CFF5EE /* weirdness */; };
+		72A0800E2704D09E006486F3 /* OogiePatchParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72A0800D2704D09E006486F3 /* OogiePatchParams.swift */; };
 		72A8D80726F7E89300A4FA47 /* OogieVoiceParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72A8D80626F7E89300A4FA47 /* OogieVoiceParams.swift */; };
 		72A8D80A26F7F1E900A4FA47 /* OogieShapeParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72A8D80926F7F1E900A4FA47 /* OogieShapeParams.swift */; };
 		72A8D80D26F7F50400A4FA47 /* OogiePipeParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72A8D80C26F7F50400A4FA47 /* OogiePipeParams.swift */; };
@@ -163,11 +164,12 @@
 		727F08DE23680A8E0054C517 /* PipeStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipeStruct.swift; sourceTree = "<group>"; };
 		7280B825237B60630055EB77 /* FactorySettings */ = {isa = PBXFileReference; lastKnownFileType = folder; path = FactorySettings; sourceTree = "<group>"; };
 		7283A65C234085400088560D /* infoText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = infoText.swift; sourceTree = "<group>"; };
-		729599A126C61C44000A1C5F /* proPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = proPanel.h; sourceTree = "<group>"; };
-		729599A226C61C44000A1C5F /* proPanel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = proPanel.m; sourceTree = "<group>"; };
+		729599A126C61C44000A1C5F /* patchPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = patchPanel.h; sourceTree = "<group>"; };
+		729599A226C61C44000A1C5F /* patchPanel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = patchPanel.m; sourceTree = "<group>"; };
 		729599A626C61CC1000A1C5F /* edits.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = edits.h; sourceTree = "<group>"; };
 		729599A726C61CC1000A1C5F /* edits.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = edits.m; sourceTree = "<group>"; };
 		729905A626EDABE700CFF5EE /* weirdness */ = {isa = PBXFileReference; lastKnownFileType = folder; path = weirdness; sourceTree = "<group>"; };
+		72A0800D2704D09E006486F3 /* OogiePatchParams.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OogiePatchParams.swift; sourceTree = "<group>"; };
 		72A11254268C5EBC00B25E95 /* vwhorn44k.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = vwhorn44k.wav; sourceTree = "<group>"; };
 		72A11258268C5EF800B25E95 /* bub1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = bub1.wav; sourceTree = "<group>"; };
 		72A8D80626F7E89300A4FA47 /* OogieVoiceParams.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OogieVoiceParams.swift; sourceTree = "<group>"; };
@@ -267,12 +269,13 @@
 				7237D6B0230FC49F00A38D63 /* AllPatches.swift */,
 				72E20BCF245A18630097A590 /* OogieScene.swift */,
 				72D3D69722F69C61001EACA7 /* OogiePatch.swift */,
+				72A0800D2704D09E006486F3 /* OogiePatchParams.swift */,
 				724886AF26C4C89F00249263 /* controlPanel.h */,
 				724886B026C4C89F00249263 /* controlPanel.m */,
 				721857B726F1A08800D21B62 /* pipePanel.h */,
 				721857B826F1A08800D21B62 /* pipePanel.m */,
-				729599A126C61C44000A1C5F /* proPanel.h */,
-				729599A226C61C44000A1C5F /* proPanel.m */,
+				729599A126C61C44000A1C5F /* patchPanel.h */,
+				729599A226C61C44000A1C5F /* patchPanel.m */,
 				7236B51526EEBEDB000B6306 /* shapePanel.h */,
 				7236B51626EEBEDB000B6306 /* shapePanel.m */,
 				729599A626C61CC1000A1C5F /* edits.h */,
@@ -535,6 +538,7 @@
 				724F3D1D24687A0500A9A3E7 /* OogieTiffie.m in Sources */,
 				725F034A22E304E700A6A5FD /* SynthDave.m in Sources */,
 				7259B7CA22F3D553004774CC /* synthPanel.swift in Sources */,
+				72A0800E2704D09E006486F3 /* OogiePatchParams.swift in Sources */,
 				7257DFB623D7864600CC2CE0 /* OogieShape.swift in Sources */,
 				727F08DF23680A8E0054C517 /* PipeStruct.swift in Sources */,
 				72DB6EAA2329C4CA005406DC /* Knob.swift in Sources */,
@@ -552,7 +556,7 @@
 				7255495E232365A70054A522 /* TextureVC.swift in Sources */,
 				724886B126C4C89F00249263 /* controlPanel.m in Sources */,
 				727F08DD2367B5B80054C517 /* OogiePipe.swift in Sources */,
-				729599A326C61C44000A1C5F /* proPanel.m in Sources */,
+				729599A326C61C44000A1C5F /* patchPanel.m in Sources */,
 				72AFB97E23070B640009A577 /* OSStruct.swift in Sources */,
 				72D3D69822F69C61001EACA7 /* OogiePatch.swift in Sources */,
 				5262740E1FD44F3400790D87 /* SphereShape.swift in Sources */,
@@ -711,7 +715,7 @@
 				DEVELOPMENT_TEAM = HV8UXF4ZBD;
 				INFOPLIST_FILE = oogie/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.1.010;
+				MARKETING_VERSION = 1.1.011;
 				PRODUCT_BUNDLE_IDENTIFIER = com.frak.oogie2d;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG VERSION_2D USE_TESTPATTERN";
@@ -730,7 +734,7 @@
 				DEVELOPMENT_TEAM = HV8UXF4ZBD;
 				INFOPLIST_FILE = oogie/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.1.010;
+				MARKETING_VERSION = 1.1.011;
 				PRODUCT_BUNDLE_IDENTIFIER = com.frak.oogie2d;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[arch=*]" = VERSION_2D;

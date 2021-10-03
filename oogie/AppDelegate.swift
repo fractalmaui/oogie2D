@@ -63,10 +63,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
     var sfxSoundFiles: [String] = ["dog" , "congaMid" , "clave00" , "bub1",
                                           "clave00" , "congaMid" , "vwhorn44k"]
 
-    var OVP =  OogieVoiceParams.sharedInstance //9/19/21 oogie voice params
-    var OSP =  OogieShapeParams.sharedInstance //9/19/21 oogie shape params
-    var OPP =  OogiePipeParams.sharedInstance  //9/19/21 oogie pipe params
-
+    var OVP  =  OogieVoiceParams.sharedInstance //9/19/21 oogie voice params
+    var OSP  =  OogieShapeParams.sharedInstance //9/19/21 oogie shape params
+    var OPP  =  OogiePipeParams.sharedInstance  //9/19/21 oogie pipe params
+    var OPaP =  OogiePatchParams.sharedInstance //9/28
     //========AppDelegate==============================================
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -201,7 +201,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
                         (sfx() as! soundFX).setNoteOffset(Int32(sampnum), nameOnly)
                         (sfx() as! soundFX).setSoundFileName(Int32(sampnum),fullPath)
                         allP.linkBufferToPatch(nn: NSNumber(value: sampnum), ss: nameOnly)
-                        print("load sample \(fullPath)")
+                        //print("load sample \(fullPath)")
                         sampnum+=1
                     }
                 }
