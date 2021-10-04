@@ -32,7 +32,7 @@ import Foundation
     let MAX_CBOX_FRAMES = 20 //11/18 for playColors support
 
     //Parameter area... this is how the user gets at 3d objects from the UI
-    //Parmas: Name,Type,Min,Max,Default,DisplayMult,DisplayOffset?? (string params need a list of items)
+    //Params: Name,Type,Min,Max,Default,DisplayMult,DisplayOffset?? (string params need a list of items)
     // NOTE: .pi has to have a numeric multiplicator / divisor to compile in this statement!
     let LatParams   : [Any] = ["Latitude" ,      "double", -.pi/2.0   , .pi/2.0   , 0.0, 1.0 * .pi, -0.5 * .pi ]
     let LonParams   : [Any] = ["Longitude",      "double", -1.0 * .pi , 1.0 * .pi , 0.0, 2.0 * .pi  ,-1.0 * .pi ]

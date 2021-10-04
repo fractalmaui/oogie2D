@@ -600,6 +600,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         if let sshape3d = shapes3D[uid] //get named SphereShape
         {
             var shapeStruct = OVScene.selectedShape  //Get current shape object
+            //print("update3DShapeBy:\(uid)  xyscale \(shapeStruct.OOS.uScale),\(shapeStruct.OOS.vScale)")
             if uid != OVScene.selectedShapeKey
             {
                 shapeStruct = OVScene.sceneShapes[uid]!
@@ -900,44 +901,40 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // 9/25 Toggle select for desired shape, returns selected status
     func selectOrDeselectShapeBy(uid:String) -> Bool
     {
-//        let key = findShapeByUID(uid: name)
-//        if (key != "")
-//        {
         var selected = false
-            unselectAnyOldStuffBy(uid: uid) //9/26
-            shiftPanelDown(panel: voiceEditPanels)  //put away voice editor
-            shiftPanelDown(panel: pipeEditPanels)   //put away pipe editor
-            if let testShape = shapes3D[uid] //1/26
+        unselectAnyOldStuffBy(uid: uid) //9/26
+        shiftPanelDown(panel: voiceEditPanels)  //put away voice editor
+        shiftPanelDown(panel: pipeEditPanels)   //put away pipe editor
+        if let testShape = shapes3D[uid] //1/26
+        {
+            OVScene.selectedShapeKey = uid
+            selectedSphere    = testShape
+            selectedSphere.toggleHighlight()
+            //Wow is this redundant?
+            if selectedSphere.highlighted  //hilited? Set up edit
             {
-                OVScene.selectedShapeKey = uid
-                selectedSphere    = testShape
-                selectedSphere.toggleHighlight()
-                //Wow is this redundant?
-                if selectedSphere.highlighted  //hilited? Set up edit
+                whatWeBeEditing = "shape"   //2/6 WTF?
+                self.pLabel.updateLabelOnly(lStr:"Selected " + self.selectedSphere.name!)
+                if let testShape = OVScene.sceneShapes[uid] //got legit voice?
                 {
-                    whatWeBeEditing = "shape"   //2/6 WTF?
-                    self.pLabel.updateLabelOnly(lStr:"Selected " + self.selectedSphere.name!)
-                    if let testShape = OVScene.sceneShapes[uid] //got legit voice?
-                    {
-                        OVScene.selectedShape     = testShape
-                        OVScene.selectedShapeKey  = uid //10/21
-                        //2/3 add name/comment to 3d shape info box
-                        selectedSphere.updatePanels(nameStr: OVScene.selectedShape.OOS.name,
-                                                    comm: OVScene.selectedShape.OOS.comment)
-                        sPanel.texNames = tc.loadNamesToArray() //populates texture chooser
-                        shiftPanelUp(panel: shapeEditPanels) //9/11 shift controls so they are visible
-                        sPanel.paramDict = OVScene.selectedShape.getParamDict()
-                        sPanel.configureView() //9/12 loadup stuff
-                    }
-                    selected = true
+                    OVScene.selectedShape     = testShape
+                    OVScene.selectedShapeKey  = uid //10/21
+                    //2/3 add name/comment to 3d shape info box
+                    selectedSphere.updatePanels(nameStr: OVScene.selectedShape.OOS.name,
+                                                comm: OVScene.selectedShape.OOS.comment)
+                    sPanel.texNames = tc.loadNamesToArray() //populates texture chooser
+                    shiftPanelUp(panel: shapeEditPanels) //9/11 shift controls so they are visible
+                    sPanel.paramDict = OVScene.selectedShape.getParamDict()
+                    sPanel.configureView() //9/12 loadup stuff
                 }
-                else //unhighlighted?
-                {
-                    shiftPanelDown(panel: shapeEditPanels) //9/11 shift controls so they are visible
-                    selected = false
-                }
+                selected = true
             }
-//        } //end selectedobjectindex...
+            else //unhighlighted?
+            {
+                shiftPanelDown(panel: shapeEditPanels) //9/11 shift controls so they are visible
+                selected = false
+            }
+        }
         return selected
     } //end selectOrDeselectShapeBy
 
@@ -1087,8 +1084,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         }))
 
         alert.addAction(UIAlertAction(title: "Dump Scene", style: .default, handler: { action in
-            let d = self.allP.getBufferReport() 
-
+            let d = self.allP.getBufferReport()
+            print ("scene dump: \(d)")
             self.OVScene.OSC.dump()
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
@@ -2152,10 +2149,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //=====<oogie2D mainVC>====================================================
     // Menu / etc button bottom left
     @IBAction func buttonSelect(_ sender: Any) {
-        print(" button select, sender \(sender)",sender)
         if (knobMode == "select") //5/3 User not editing a parameter? this is a menu button
         {
-            print("BUTTON SELECT......")
             menu()
         }
         else //editing? cancel! restore old value to field!
@@ -2166,34 +2161,36 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
 
     //=====<oogie2D mainVC>====================================================
+    // 10/3 comment out for now, maybe add later??
     func cancelEdit()
     {
-        pLabel.updateLabelOnly(lStr:"Cancel Edit")
-        //4/26 Dig up last param value and save
-        let sceneChanges = OVScene.setNewParamValue(newEditState : whatWeBeEditing,
-                                   named : OVScene.selectedFieldName.lowercased(),
-                                toDouble : OVScene.lastFieldDouble,
-                                toString : OVScene.lastFieldString )
-        update3DSceneForSceneChanges(sceneChanges)
-
-        if OVScene.selectedFieldType == "double"  //update marker as needed...
-        {
-            if whatWeBeEditing == "voice"      {
-                selectedMarker.updateLatLon(llat: OVScene.selectedVoice.OVS.yCoord, llon: OVScene.selectedVoice.OVS.xCoord)
-            }
-            else if whatWeBeEditing == "shape" {
-                update3DShapeBy (uid:OVScene.selectedShapeKey)
-                if let sshape = shapes3D[OVScene.selectedShapeKey] //1/26 also set 3d node spin rate to last value
-                {
-                    //5/7 NEED to set timer speed in OogieShape!!
-                    //5/7 pulledsshape.setTimerSpeed(rs: OVScene.selectedShape.OOS.rotSpeed) //1/14 invalidate/reset timer
-                }
-            } //end else
-            //1/26 missing pipe?
-        }
-        knobMode = "select" //back to select mode
-        //8/11/21 updateWheelAndParamButtons()
-        whatWeBeEditing = "" //9/24 clear edit indicator
+        print("cancel edit stubbed out!")
+//        pLabel.updateLabelOnly(lStr:"Cancel Edit")
+//        //4/26 Dig up last param value and save
+//        let sceneChanges = OVScene.setNewParamValue(newEditState : whatWeBeEditing,
+//                                   named : OVScene.selectedFieldName.lowercased(),
+//                                toDouble : OVScene.lastFieldDouble,
+//                                toString : OVScene.lastFieldString )
+//        update3DSceneForSceneChanges(sceneChanges)
+//
+//        if OVScene.selectedFieldType == "double"  //update marker as needed...
+//        {
+//            if whatWeBeEditing == "voice"      {
+//                selectedMarker.updateLatLon(llat: OVScene.selectedVoice.OVS.yCoord, llon: OVScene.selectedVoice.OVS.xCoord)
+//            }
+//            else if whatWeBeEditing == "shape" {
+//                update3DShapeBy (uid:OVScene.selectedShapeKey)
+//                if let sshape = shapes3D[OVScene.selectedShapeKey] //1/26 also set 3d node spin rate to last value
+//                {
+//                    //5/7 NEED to set timer speed in OogieShape!!
+//                    //5/7 pulledsshape.setTimerSpeed(rs: OVScene.selectedShape.OOS.rotSpeed) //1/14 invalidate/reset timer
+//                }
+//            } //end else
+//            //1/26 missing pipe?
+//        }
+//        knobMode = "select" //back to select mode
+//        //8/11/21 updateWheelAndParamButtons()
+//        whatWeBeEditing = "" //9/24 clear edit indicator
     } //end cancelEdit
     
     //=====<oogie2D mainVC>====================================================
@@ -2302,76 +2299,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }
 
     
-    
-    //patchPanel delegate returns...
-    func didSetProValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ undoable: Bool) {
-        print("mainvc: didSetProValue \(which) \(newVal) \(pname)")
-
-        let vvv = OVScene.selectedVoice
-//        pdict["type"] = Double(vvv.OOP.type)
-        //            @"nchan",@"vchan",@"pchan",@"sampoffset",
-        //            @"plevel", @"pkeyoffset" , @"pkeydetune", //2/12/21
-        //            @"channel", //MIDI chan, not used
-        //            @"pkpan1",@"pkpan2",@"pkpan3",@"pkpan4",@"pkpan5",@"pkpan6",@"pkpan7",@"pkpan8"
-        //        };
-
-        let newd = Double(newVal)
-        let newi = Int(newVal)
-        //break up into which ranges 1000...  and 2000...
-        if which > 2000 //user chose a picker
-        {
-            switch which - 2000
-            {
-            case 0: vvv.OOP.wave = newi
-            case 1: vvv.OVS.poly = newi
-//            case 2:vvv.OOP.sustain = newd
-//            case 3:vvv.OOP.sLevel = newd
-//            case 4: vvv.OOP.release = newd
-    //        case 5:  vpname = "portamento"
-    //        case 6:  vpname = "viblevel"
-    //        case 7:  vpname = "vibspeed"
-    //        case 8:  vpname = "vibwave"
-    //        case 9:  vpname = "vibelevel"
-    //        case 10: vpname = "vibespeed"
-    //        case 11: vpname = "vibewave"
-    //        case 12: vpname = "delaytime"
-    //        case 13: vpname = "delaysustain"
-    //        case 14: vpname = "delaymix"
-     
-            default: break
-            }
-
-        }
-        else
-        {
-            switch which
-            {
-            case 0: vvv.OOP.attack = newd
-            case 1: vvv.OOP.decay = newd
-            case 2:vvv.OOP.sustain = newd
-            case 3:vvv.OOP.sLevel = newd
-            case 4: vvv.OOP.release = newd
-    //        case 5:  vpname = "portamento"
-    //        case 6:  vpname = "viblevel"
-    //        case 7:  vpname = "vibspeed"
-    //        case 8:  vpname = "vibwave"
-    //        case 9:  vpname = "vibelevel"
-    //        case 10: vpname = "vibespeed"
-    //        case 11: vpname = "vibewave"
-    //        case 12: vpname = "delaytime"
-    //        case 13: vpname = "delaysustain"
-    //        case 14: vpname = "delaymix"
-     
-            default: break
-            }
-
-        }
-        OVScene.selectedVoice = vvv; //Copy back to selected voice?
-        print("selected attack \(OVScene.selectedVoice.OOP.attack)")
-        OVScene.sceneVoices[OVScene.selectedMarkerKey] = vvv //WOW STORE IN SCENE?
-
-  }
-    
     //=====<oogie2D mainVC>====================================================
     // 9/1/21, go for random patch...
     // BUG: doesnt seem to change patch BUT patch then gets stuck and cant load anything else??
@@ -2452,7 +2379,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
      {
          print("mainvc: didSetControlValue \(which) \(newVal) \(pname)")
          
-         if which == 17 //new patch? 9/28 try a load. note editParam also gets called
+         if pname == "patch" //new patch? 10/3 change toi string
          {
              if newVal == 0 //RANDOM
              {
@@ -2460,13 +2387,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
              }
              else
              {
-                 let patchName = allP.getSoundPackPatchNameByIndex(index: Int(newVal-1)) //patches start 1....n
-                 loadPatchByName(pName: patchName)
-                 OVScene.selectedVoice.OVS.patchName = patchName  //9/30 wups forgot to save...
-
+                 // 10/3 NO NEED? let patchName = allP.getSoundPackPatchNameByIndex(index: Int(newVal-1)) //patches start 1....n
+                 print("load patch \(pvalue)")
+                 loadPatchByName(pName: pvalue) //10/3
+                 OVScene.selectedVoice.OVS.patchName = pvalue  //9/30 wups forgot to save...
              } //end else not random
          } //end which 17
-         if which == 18 //9/11 handle new soundpack
+         if pname == "soundpack" //9/11 handle new soundpack
          {
              OVSoundPack = allP.getSoundPackNameByIndex(index: Int(newVal));
              allP.getSoundPackByName(name: OVSoundPack)
@@ -2583,12 +2510,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             selectedPipeShape.toggleHighlight()   //handle 3D update
             shiftPanelDown(panel: pipeEditPanels)  //9/24  put away voice editor
         }
-        else if whatWeBeEditing == "voice"
+        else if whatWeBeEditing == "voice" || whatWeBeEditing == "patch"  //10/3
         {
             selectedMarker.toggleHighlight()   //handle 3D update
             shiftPanelDown(panel: voiceEditPanels)  //9/24  put away voice editor
         }
-        cancelEdit()  // clears edit state from scene
+        //OBSOLETE   ??? cancelEdit()  // clears edit state from scene
+        whatWeBeEditing = "" //10/3
     } //end deselectAndCloseEditPanel
 
     //=====<oogie2D mainVC>====================================================
@@ -2701,6 +2629,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func didSelectPatchReset() {
         //print("didSelectPatchReset")
         pLabel.updateLabelOnly(lStr:"Reset Patch") //9/18 info for user!
+        loadPatchByName (pName:OVScene.selectedVoice.OVS.patchName)
+//        paPanel.patchName = OVScene.selectedVoice.OVS.patchName  //10/3
+        paPanel.configureView()
     }
     func didSelectPatchDismiss() {   //9/24 new for touch on editlabel in UI
         //print("didSelectPatchReset")

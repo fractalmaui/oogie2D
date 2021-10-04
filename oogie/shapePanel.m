@@ -13,6 +13,7 @@
 //
 //  9/21 remove footer, add curved top title
 //  10/1 redo with NSArrays instead of C-arrays
+//  10/3 add indices to sliders/pickers
 
 #import "shapePanel.h"
 
@@ -202,6 +203,11 @@ double drand(double lo_range,double hi_range );
     [resetButton addTarget:self action:@selector(resetSelect:) forControlEvents:UIControlEventTouchUpInside];
     [header addSubview:resetButton];
    
+    int iSlider = 0; //10/3 keep slider / picker count
+    int iPicker = 0;
+    int iParam  = 0;
+    int iText   = 0;
+
     //Add shape controls panel-------------------------------------
     xi = OOG_XMARGIN;
     yi = 60;
@@ -215,34 +221,48 @@ double drand(double lo_range,double hi_range );
     xi = OOG_XMARGIN;
     yi = xi; //top of form
     // texture picker
-    [self addPickerRow:sPanel : 0 : PICKER_BASE_TAG+0 : pickerNames[0] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:sPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
+    iPicker++;
+    iParam++;
 
     // rotation slider
-    [self addSliderRow:sPanel : 0 : SLIDER_BASE_TAG + 1 : sliderNames[0] : yi : OOG_SLIDER_HIT:0.0:1.0];
+    [self addSliderRow:sPanel : iSlider : SLIDER_BASE_TAG + iParam : sliderNames[iSlider] : yi : OOG_SLIDER_HIT:0.0:1.0];
     yi += (OOG_SLIDER_HIT+OOG_YSPACER);
+    iSlider++;
+    iParam++;
 
     // rotation type picker
-    [self addPickerRow:sPanel : 1 : PICKER_BASE_TAG + 2 : pickerNames[1] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:sPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
+    iPicker++;
+    iParam++;
 
     // XYZ position
     for (i=0;i<3;i++)
     {
-        [self addSliderRow:sPanel : i+1 : SLIDER_BASE_TAG + 3 + i : sliderNames[i+1] : yi : OOG_SLIDER_HIT:0.0:1.0];
+        [self addSliderRow:sPanel : iSlider : SLIDER_BASE_TAG + iParam : sliderNames[iSlider] : yi : OOG_SLIDER_HIT:0.0:1.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
+        iSlider++;
+        iParam++;
     }
     // U/V offset , U/V scale
     for (i=0;i<4;i++)
     {
-        [self addSliderRow:sPanel : i+4 : SLIDER_BASE_TAG + 6 + i : sliderNames[i+4] : yi : OOG_SLIDER_HIT:0.0:1.0];
+        [self addSliderRow:sPanel : iSlider : SLIDER_BASE_TAG + iParam : sliderNames[iSlider] : yi : OOG_SLIDER_HIT:0.0:1.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
+        iSlider++;
+        iParam++;
     }
 
     //9/11 text entry fields... 9/20 fix yoffset bug
-    [self addTextRow:sPanel :0 :TEXT_BASE_TAG+10 :@"Name" : yi : OOG_TEXT_HIT ];
+    [self addTextRow:sPanel :iText :TEXT_BASE_TAG + iParam : textFieldNames[iText] : yi : OOG_TEXT_HIT ];
     yi += (OOG_TEXT_HIT+OOG_YSPACER);
-    [self addTextRow:sPanel :1 :TEXT_BASE_TAG+11 :@"Comment" : yi : OOG_TEXT_HIT ];
+    iText++;
+    iParam++;
+    [self addTextRow:sPanel :iText :TEXT_BASE_TAG + iParam : textFieldNames[iText] : yi : OOG_TEXT_HIT ];
+    iText++;
+    iParam++;
 
     //Scrolling area...
     CGRect rrr = sPanel.frame;
@@ -537,8 +557,8 @@ double drand(double lo_range,double hi_range );
 // 4/3 reset called via button OR end of proMode demo
 -(void) resetControls
 {
-    [self configureViewWithReset: TRUE];
     resettingNow = TRUE; //used w/ undo
+    [self configureViewWithReset: TRUE];
     _wasEdited         = FALSE;
     resetButton.hidden = TRUE;
     resettingNow       = FALSE;
@@ -600,9 +620,9 @@ double drand(double lo_range,double hi_range );
     //int which = 0;
     int liltag = (int)pickerView.tag % 1000;
     if (liltag == 0)
-        [self.delegate didSetShapeValue:liltag :(float)row:_texNames[row]: @"texture": !rollingDiceNow && !resettingNow];   //7/11
+        [self.delegate didSetShapeValue:liltag :(float)row: allParams[liltag] : _texNames[row] :  !rollingDiceNow && !resettingNow];
     else
-        [self.delegate didSetShapeValue:liltag :(float)row:pickerNames[liltag]: @"rotationtype": !rollingDiceNow && !resettingNow];   //7/11
+        [self.delegate didSetShapeValue:liltag :(float)row:allParams[liltag]: rotTypeParams[row] : !rollingDiceNow && !resettingNow];    
 }
 
 

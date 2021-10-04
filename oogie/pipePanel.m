@@ -13,6 +13,7 @@
 //
 // 9/24 remove swipe gesture,add dismiss button
 // 10/1 redo with NSArrays instead of C-arrays
+//  10/3 add indices to sliders/pickers
 
 #import "pipePanel.h"
 
@@ -97,6 +98,11 @@ double drand(double lo_range,double hi_range );
     self.backgroundColor = [UIColor blueColor]; // 6/19/21 colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.1];
     int xs,ys,xi,yi;
     
+    int iSlider = 0; //10/3 keep slider / picker count
+    int iPicker = 0;
+    int iParam  = 0;
+    int iText   = 0;
+
     xi = 0;
     yi = 0;
     xs = viewWid;
@@ -215,23 +221,35 @@ double drand(double lo_range,double hi_range );
     yi = xi; //top of form
 
     // 2 pickers ... Input/Output
-    [self addPickerRow:sPanel : 0 : PICKER_BASE_TAG+0 : pickerNames[0] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:sPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
-    [self addPickerRow:sPanel : 1 : PICKER_BASE_TAG+1 : pickerNames[1] : yi : OOG_PICKER_HIT];
+    iPicker++;
+    iParam++;
+    [self addPickerRow:sPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
+    iPicker++;
+    iParam++;
 
     // 2 Sliders... lo/hi range 9/22 make range 0..1
-    [self addSliderRow:sPanel : 0 : SLIDER_BASE_TAG + 2 : sliderNames[0] : yi : OOG_SLIDER_HIT:0.0:1.0];
+    [self addSliderRow:sPanel : iSlider : SLIDER_BASE_TAG + iParam : sliderNames[iSlider] : yi : OOG_SLIDER_HIT:0.0:1.0];
     yi += (OOG_SLIDER_HIT+OOG_YSPACER);
-    [self addSliderRow:sPanel : 1 : SLIDER_BASE_TAG + 3 : sliderNames[1] : yi : OOG_SLIDER_HIT:0.0:1.0];
+    iSlider++;
+    iParam++;
+    [self addSliderRow:sPanel : iSlider : SLIDER_BASE_TAG + iParam : sliderNames[iSlider] : yi : OOG_SLIDER_HIT:0.0:1.0];
     yi += (OOG_SLIDER_HIT+OOG_YSPACER);
+    iSlider++;
+    iParam++;
 
     // 2 text entry fields... name / comment 9/20 fix yoffset bug
     yi += (OOG_TEXT_HIT+OOG_YSPACER);
-    [self addTextRow:sPanel :0 :TEXT_BASE_TAG+4 : textFieldNames[0] :yi :OOG_TEXT_HIT ];
+    [self addTextRow:sPanel :iText :TEXT_BASE_TAG + iParam : textFieldNames[iText] :yi :OOG_TEXT_HIT ];
     yi += (OOG_TEXT_HIT+OOG_YSPACER);
-    [self addTextRow:sPanel :1 :TEXT_BASE_TAG+5 : textFieldNames[1] :yi :OOG_TEXT_HIT ];
-    
+    iText++;
+    iParam++;
+    [self addTextRow:sPanel :iText :TEXT_BASE_TAG + iParam : textFieldNames[iText] :yi :OOG_TEXT_HIT ];
+    iText++;
+    iParam++;
+
     UIView *vLabel = [[UIView alloc] init];
     xi = viewWid;
     yi = viewHit/2;

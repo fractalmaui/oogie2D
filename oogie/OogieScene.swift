@@ -21,6 +21,7 @@
 //  9/27    add saveSelectedVoiceBackToScene... fix bug in addVoiceSceneData
 //  9/28    add saveEditBackToSceneWith
 //  10/2    add applyEdits to addVoiceSceneData
+//  10/3    change uid use in saveSelectedVoiceBackToScene
 import Foundation
 import SceneKit
 class OogieScene: NSObject {
@@ -104,6 +105,7 @@ class OogieScene: NSObject {
         var newOVS    = nextOVS
         var uid       = newOVS.uid
         let newVoice  = OogieVoice()
+        newVoice.uid  = uid //10/3 wups forgot one!
         let paramEdits = edits.sharedInstance //10/2 NOTE objective C struct!
         if op == "load" //Loading? Remember name, keep key!!
         {
@@ -913,8 +915,10 @@ class OogieScene: NSObject {
         } //end voice editing
         else if editing == "shape"
         {
-            //9/22 wups, forgot conversion!
-            workDouble = unitToParam(inval: workDouble) //9/15/21 Convert to desired range
+            if named != "rotationtype" //10/3 rotation type? no convert please!
+            {
+                workDouble = unitToParam(inval: workDouble) //9/15/21 Convert to desired range
+            }
             selectedShape.setParam(named : named,
                                    toDouble : workDouble,
                                    toString : workString)
@@ -1317,7 +1321,7 @@ class OogieScene: NSObject {
     // 9/27 saves back to working scene
     func saveSelectedVoiceBackToScene()
     {
-        sceneVoices[selectedVoice.uid] = selectedVoice
+        sceneVoices[selectedVoice.OVS.uid] = selectedVoice
     }
     func saveSelectedShapeBackToScene()
     {  //why is shape so different???

@@ -14,6 +14,9 @@
 //  9/30  ADSR display still needs fixing!
 //        New for oogieAR: edits are stored as raw slider / control values,
 //          let OogiePatchParams figure out display values
+//  10/3 add indices to sliders/pickers
+//         pull factoryReset, add resetControls
+
 #define ARC4RANDOM_MAX      0x100000000
 #define PERCKIT_VOICE 2
 
@@ -124,6 +127,10 @@ NSString *onOffs[] = {@"Off",@"On"};
     self.backgroundColor = [UIColor blueColor]; // 6/19/21 colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.1];
     int xs,ys,xi,yi;
     
+    int iSlider = 0; //10/3 keep slider / picker count
+    int iPicker = 0;
+    int iParam  = 0;
+
     xi = 0;
     yi = 0;
     xs = viewWid;
@@ -260,8 +267,10 @@ NSString *onOffs[] = {@"Off",@"On"};
     yi = 5*panelTopMargin;
     // args: parent, tag, label, yoff, ysize
     //Add Pickers for Wave / Poly
-    [self addPickerRow:uPanel : 0 : PICKER_BASE_TAG + 0 : paPickerNames[0] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:uPanel : iPicker : PICKER_BASE_TAG + iParam : paPickerNames[iPicker] : yi : OOG_PICKER_HIT];
     yi += (OOG_PICKER_HIT - 15); //5/24 test squnch pickers together
+    iPicker++;
+    iParam++;
 
     //envelope panel next... series of 6 sliders
     panelY += (uHit+panelSkip);
@@ -297,7 +306,9 @@ NSString *onOffs[] = {@"Off",@"On"};
     for (int i = 0;i<7;i++) //first slider is in ADSR now 9/8
     {
         yi += (OOG_SLIDER_HIT+2);
-        [self addSliderRow:ePanel : i : SLIDER_BASE_TAG + i + 1 : paSliderNames[i] : yi : OOG_SLIDER_HIT:0.0:1.0];
+        [self addSliderRow:ePanel : iSlider : SLIDER_BASE_TAG + iParam : paSliderNames[iSlider] : yi : OOG_SLIDER_HIT:0.0:1.0];
+        iSlider++;
+        iParam++;
     }
 
     panelY += (eHit+panelSkip);
@@ -319,10 +330,12 @@ NSString *onOffs[] = {@"Off",@"On"};
     l4.text = @"Fine Tuning";
     [ftPanel addSubview : l4];
 
-    for (int i = 0;i<3;i++)   //3 items...
+    for (int i = 0;i<3;i++)   //3 finetune items...
     {
         yi += (OOG_SLIDER_HIT+2);
-        [self addSliderRow:ftPanel : 7 + i: SLIDER_BASE_TAG + 8 + i : paSliderNames[10+i] : yi : OOG_SLIDER_HIT:1.0:1.0];
+        [self addSliderRow:ftPanel : iSlider : SLIDER_BASE_TAG + iParam : paSliderNames[iSlider] : yi : OOG_SLIDER_HIT:0.0:1.0]; //10/3 typo
+        iSlider++;
+        iParam++;
     }
     
     //PercKit Panel (optional depending on patch type)
@@ -342,18 +355,19 @@ NSString *onOffs[] = {@"Off",@"On"};
     [l5 setTextColor : [UIColor whiteColor]];
     l5.text = @"Percussion Kit";
     [pkPanel addSubview : l5];
-    int tagoff = 11; //9/29 this should be our tag thru here??
     for (int i = 0;i<8;i++)   //add 8 sets of pickers and sliders
     {
         yi += (OOG_SLIDER_HIT+4);
         NSString *pname = [NSString stringWithFormat:@"Sample %d",i+1];
-        [self addPickerRow:pkPanel : i+1 : PICKER_BASE_TAG + tagoff : pname : yi : OOG_PICKER_HIT];
-        tagoff++;
+        [self addPickerRow:pkPanel : iPicker : PICKER_BASE_TAG + iParam : pname : yi : OOG_PICKER_HIT];
+        iPicker++;
+        iParam++;
         yi += OOG_PICKER_HIT; // - 20; //5/24 test squnch
         NSString *sname = [NSString stringWithFormat:@"Pan %d",i+1];
         // 7/18/21 fix bad 3rd arg...
-        [self addSliderRow:pkPanel : i+10 : SLIDER_BASE_TAG + tagoff : sname : yi : OOG_SLIDER_HIT:0.0:1.0];
-        tagoff++;
+        [self addSliderRow:pkPanel : iSlider : SLIDER_BASE_TAG + iParam : sname : yi : OOG_SLIDER_HIT:0.0:1.0];
+        iSlider++;
+        iParam++;
     }
     
     // 8/6 add help
@@ -402,25 +416,6 @@ NSString *onOffs[] = {@"Off",@"On"};
     return YES;
 }
 
-//======(patchPanel)==========================================
-// 9/16 redo adds a canned label/picker/slider set...
-//-(void) addPickerSliderRow : (UIView*) parent : (int)pindex : (int) sindex : (int) yoff : (int) ysize
-//{
-//    NSArray* A = [goog addPickerSliderRow:parent :PICKER_BASE_TAG+pindex :SLIDER_BASE_TAG+sindex :papickerNames[pindex] :yoff :viewWid :ysize];
-//
-//    if (A.count > 1)
-//    {
-//        UIPickerView * picker = A[0];
-//        picker.delegate       = self;
-//        picker.dataSource     = self;
-//        pickers[pindex]       = picker;
-//
-//        UISlider     *slider  = A[1];
-//        [slider addTarget:self action:@selector(sliderAction:) forControlEvents:UIControlEventValueChanged];
-//        [slider addTarget:self action:@selector(sliderStoppedDragging:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside];
-//        sliders[sindex] = slider; //retain for setting below
-//    }
-//} //end addPickerSliderRow
 
 
 //======(controlPanel)==========================================
@@ -494,6 +489,7 @@ NSString *onOffs[] = {@"Off",@"On"};
     {
         _wasEdited = TRUE;
         //9/29 only allow reset on factory patches!!!
+        NSLog(@" set reset button hidden %d",(!_wasEdited || _randomized));
         resetButton.hidden = (!_wasEdited || _randomized);  //NOT on randomized ones
     }
 } //end setEdited
@@ -540,9 +536,8 @@ NSString *onOffs[] = {@"Off",@"On"};
         [self enableADSRControls : TRUE];
         [self updateADSRDisplay];
     }
-
-
-    
+    NSArray *edits = [paramEdits getEditKeys:_patchName]; //10/3 check for edits
+    if (edits && edits.count > 0) [self setEdited];
 }
 
 //======(patchPanel)==========================================
@@ -557,17 +552,19 @@ NSString *onOffs[] = {@"Off",@"On"};
     NSDictionary *resetDict = [goog configureViewFromVC:reset : _paramDict : paAllParams :
                      allPickers : allSliders : alltext :
                noresetparams : pickerchoices];
-    if (reset) //reset? need to inform delegate of param changes...
-    {
-        [self sendUpdatedParamsToParent:resetDict];
-    }
-    
+//10/3 NO NEED?
+//    if (reset) //reset? need to inform delegate of param changes...
+//    {
+//        [self sendUpdatedParamsToParent:resetDict];
+//    }
+    NSLog(@" set reset button hidden %d",!_wasEdited );
     resetButton.hidden = !_wasEdited;
 
 } //end configureViewWithReset
 
 //======(patchPanel)==========================================
 // 9/18/21 Sends a limited set of updates to parent
+//        only called on randomize now!
 -(void) sendUpdatedParamsToParent : (NSDictionary*) paramsDict
 {
     for (NSString*key in paramsDict.allKeys)
@@ -577,7 +574,12 @@ NSString *onOffs[] = {@"Off",@"On"};
         NSNumber *nv = ra[1];
         NSString *ns = ra[2];
         [self.delegate didSetPatchValue:nt.intValue:nv.floatValue:key:ns:FALSE];
+        // 10/3 add edits for each randomized param...
+        [paramEdits addEdit: _patchName // 10/3 dont forget to add edit!
+                           : key
+                           : [NSString stringWithFormat:@"%f", nv.floatValue]];
     }
+    [paramEdits saveToDocs]; // 10/3
 } //end sendUpdatedParamsToParent
 
 //======(patchPanel)==========================================
@@ -609,12 +611,13 @@ NSString *onOffs[] = {@"Off",@"On"};
 }
 
 //======(patchPanel)==========================================
--(void) resetAllEdits
-{
-    for (int i=0;i<paAllParams.count;i++)
-        [paramEdits removeEdit : _patchName : paAllParams[i]];
-    [paramEdits saveToDocs]; //Update edits file on disk
-}  //end resetAllEdits
+// 10/3 obsolete
+//-(void) resetAllEdits
+//{
+//    for (int i=0;i<paAllParams.count;i++)
+//        [paramEdits removeEdit : _patchName : paAllParams[i]];
+//    [paramEdits saveToDocs]; //Update edits file on disk
+//}  //end resetAllEdits
 
 //======(patchPanel)==========================================
 // 8/3 update session analytics here..
@@ -646,7 +649,6 @@ NSString *onOffs[] = {@"Off",@"On"};
     NSString *name = dice ? @"" : paAllParams[tagMinusBase];
     [self.delegate didSetPatchValue:tagMinusBase:value:paAllParams[tagMinusBase]:name:TRUE];
 } //end updateSliderAndDelegateValue
-
 
 //======(controlPanel)==========================================
 - (IBAction)dismissSelect:(id)sender
@@ -689,12 +691,10 @@ NSString *onOffs[] = {@"Off",@"On"};
 
     NSMutableDictionary *resetDict = [goog randomizeFromVC : paAllParams : allPickers : allSliders : norandomizeparams];
     [self sendUpdatedParamsToParent:resetDict];
-
     [self.delegate didSelectPatchDice]; //4/29
     diceRolls++; //9/9 for analytics
     diceUndo = FALSE;
     rollingDiceNow = FALSE;
-
 } //end randomizeParams
 
 //======(patchPanel)==========================================
@@ -708,7 +708,6 @@ NSString *onOffs[] = {@"Off",@"On"};
     resetButton.hidden = FALSE; //indicate param change
 } //end diceSelect
 
-
 //======(controlPanel)==========================================
 - (IBAction)leftSelect:(id)sender
 {
@@ -721,30 +720,15 @@ NSString *onOffs[] = {@"Off",@"On"};
     [self.delegate didSelectRight];
 }
 
-
-
 //======(patchPanel)==========================================
 - (IBAction)resetSelect:(id)sender
 {
-    resets++; //9/9 for analytics
-    [self.delegate selectedFactoryReset];  //9/8 parent handles this now
+    [paramEdits removeAllEdits : _patchName]; // 10/3
+    //10/3 tell parent to reset
+    [self.delegate didSelectPatchReset];  //10/3
+    resetButton.hidden = TRUE;
+    _wasEdited = FALSE;
 }
-
-////======(patchPanel)==========================================
-//-(void) factoryReset
-//{
-//    //NOTE: this needs to access AllPatches!!!
-//    [self sendAllParamsToParent];
-//    [self resetAllEdits];
-//    [self.delegate didFactoryReset];          //9/1 force patch reload
-//    //9/1 this is weird: need to reset shit!
-//    [self setDefaults];
-//    NSLog(@"asdf ok setup sliders etc");
-//    [self configureView];
-//    _wasEdited = FALSE;
-//    resetButton.hidden = !_wasEdited;
-//
-//}
 
 //======(patchPanel)==========================================
 // envelope display...

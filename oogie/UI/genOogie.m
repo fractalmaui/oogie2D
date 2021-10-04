@@ -9,6 +9,7 @@
 //  6/19/21 change label font, bolder
 //  7/9  add oogieStyles
 //  9/18 add configureViewFromVC, huge but effective, works on all control panels
+//  10/3 addpickerSlider: unit sliders please!, also changed picker width
 #import "genOogie.h"
 
 @implementation genOogie
@@ -94,7 +95,7 @@ static genOogie *sharedInstance = nil;
     //9/15 everything lives in an UIView...
     UIView *psRow = [[UIView alloc] init];
     [psRow setFrame : CGRectMake(xi,yi,xs,ys)];
-    psRow.backgroundColor = [UIColor clearColor]; //[UIColor colorWithRed:0.3 green:0 blue:0 alpha:1];
+    psRow.backgroundColor = [UIColor blueColor]; //was clear
     [parent addSubview:psRow];
 
     //get 4 columns...
@@ -117,7 +118,7 @@ static genOogie *sharedInstance = nil;
     [psRow addSubview : l];
     
     xi = x2;
-    xs = x3 - x2;
+    xs = x3 - x2 + 140; //10/3 stretch to accomodate bug where labels get chopped of LH side
     UIPickerView * picker = [[UIPickerView alloc] initWithFrame:CGRectMake(xi,yi,xs,ys)];
     picker.tag = ptag;
     picker.showsSelectionIndicator = YES;
@@ -127,7 +128,7 @@ static genOogie *sharedInstance = nil;
     UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(x3,yi,x4-x3,ys)];
     [slider setBackgroundColor:[UIColor colorWithRed:0.95 green:0.95 blue:0.95 alpha:1]];
     slider.minimumValue = 0.0;
-    slider.maximumValue = 100.0;
+    slider.maximumValue = 1.0; //10/3 unit sliders please!
     slider.continuous   = YES;
     slider.value        = 0;
     slider.tag          = stag;
@@ -310,21 +311,23 @@ static genOogie *sharedInstance = nil;
                 if ([genericControl isKindOfClass:[UISlider class]]) //setup slider
                 {
                     double dval = nn.doubleValue;
-
-                    // 9/29 WTF? why reset??                    if (reset && a.count >= 6) //convert default to unit basis
-// 9/30  vals coming in are ALREADY CONVERTED!!!
-//                    if ( a.count >= 6) //convert default to unit basis
-//                    {
-//                        NSNumber *nmult = [a objectAtIndex:5]; //get conversion base and range
-//                        NSNumber *noff  = [a objectAtIndex:6];  //this is totally done in oogieScene btw!
-//                        double dmult = nmult.doubleValue;
-//                        double doff  = noff.doubleValue;
-//                        if (dmult != 0.0) dval = (dval - doff) / dmult;
-//                    }
                     UISlider *s = (UISlider*)genericControl;
-                    NSLog(@" ...set slider tag[%d] to %f",tag,dval);
                     if (reset) //reset? add to reset list
+                    {
+                        //10/3 convert from param to unit...
+                        value = [a objectAtIndex:5]; // mult
+                        nn = (NSNumber*) value;
+                        double dmult = nn.doubleValue;
+                        value = [a objectAtIndex:6]; // offset
+                        nn = (NSNumber*) value;
+                        double doff = nn.doubleValue;
+                        if (dmult != 0.0)
+                        {
+                            dval = (dval - doff) / dmult;
+                        }
                         [resetDict setObject:@[tagnum,[NSNumber numberWithDouble:dval],@""] forKey:key];
+                    }
+                    NSLog(@" ...set slider tag[%d] to %f",tag,dval);
                     [s setValue:dval];
                 }
                 else if ([genericControl isKindOfClass:[UIPickerView class]]) //setup picker
@@ -341,7 +344,8 @@ static genOogie *sharedInstance = nil;
                                     for (int i=0;i<pchoices.count;i++)
                                     {
                                         NSString *test = pchoices[i];
-                                        if ([[test lowercaseString] isEqualToString:ss])
+                                        // 10/3 case-insensitive check
+                                        if ([[test lowercaseString] isEqualToString:[ss lowercaseString]])
                                             {row = i;break;}  //found our string choice? set row
                                     }
                                 }
@@ -351,12 +355,12 @@ static genOogie *sharedInstance = nil;
                             {
                                 row = nn.intValue;
                             }
-                        } //end !default
+                        } //end !reset
                         
                         UIPickerView *p = (UIPickerView*)genericControl;
-                        NSLog(@" ...set picker tag[%d] to row %d",tag,row);
                         if (reset) //reset? add to reset list
                             [resetDict setObject:@[tagnum,[NSNumber numberWithInt:row],@""] forKey:key];
+                        NSLog(@" ...set picker tag[%d] to row %d",tag,row);
                         [p selectRow:row inComponent:0 animated:YES];
                     }
                 else if ([genericControl isKindOfClass:[UITextField class]]) //setup text

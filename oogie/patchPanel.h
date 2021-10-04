@@ -101,7 +101,6 @@
 -(void) didSelectPatchDice ;
 -(void) didSelectPatchReset ;
 -(void) didSelectPatchDismiss ; 
--(void) selectedFactoryReset;
 -(void) updateProModeInfo : (NSString*) infostr ;  //5/19
 @end
 

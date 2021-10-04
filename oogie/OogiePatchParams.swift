@@ -19,6 +19,7 @@ import Foundation
     static let sharedInstance = OogiePatchParams()
 
     //Parameter area...
+    //Params: Name,Type,Min,Max,Default,DisplayMult,DisplayOffset?? (string params need a list of items)
     let PNameParams     : [Any]   = ["Name",      "text", "mt"]
     // No plan to change type right now...
     let PTypeParams     : [Any] = ["Type","string" , "Synth", "Sample", "Percussion", "PercKit", "Harmony", "Combo"]

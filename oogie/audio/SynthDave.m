@@ -630,7 +630,7 @@ short *audioRecBuffer;
 //4/29    if (lastSampleRate == 48000)   properRate = DEFAULT_SAMPLE_RATE;
     sRates[which]   = properRate;
     if (err) sBufLens[which] = 8192; //STOOPID SIZE!
-    NSLog(@"  sample[%d] rate %d blen %d",which,properRate,sBufLens[which]);
+    //NSLog(@"  sample[%d] rate %d blen %d",which,properRate,sBufLens[which]);
 	sBufChans[which] = 2; //always stereo
 //     NSLog(@" dump buf every 256th......");
 //     for (int i=0;i<sBufLens[which]-1;i+=256)
@@ -1102,7 +1102,7 @@ short *audioRecBuffer;
     {
         t.vibEnabled = TRUE;
         // 9/2 add exponential range to vib ampl / speed
-        NSLog(@"-----FVIBIN--------------> ampl/speed  %d,%d ",vibAmpl,vibSpeed);
+        //NSLog(@"-----FVIBIN--------------> ampl/speed  %d,%d ",vibAmpl,vibSpeed);
         t.vibAmpl    = (int)powf(1.03,(float)vibAmpl);
         t.vibSpeed   = (int)powf(1.08,(float)vibSpeed);
         t.vibWave    = vibWave;
@@ -1183,11 +1183,11 @@ short *audioRecBuffer;
     int n,foundit=0;
     newUnique++;
 //    if (infinite)
-        NSLog(@"...play note %d, duration %4.2f type %d, buf %d , srate %d, blen %d dt %d  mono %d mlevel %f pans %f/%f",
-              midiNote,
-              (float)(sBufLens[wnum]/2)/(float)sRates[wnum],
-              type,wnum,sRates[wnum],sBufLens[wnum],detune,_mono,masterLevel,
-              glpan,grpan);
+//        NSLog(@"...play note %d, duration %4.2f type %d, buf %d , srate %d, blen %d dt %d  mono %d mlevel %f pans %f/%f",
+//              midiNote,
+//              (float)(sBufLens[wnum]/2)/(float)sRates[wnum],
+//              type,wnum,sRates[wnum],sBufLens[wnum],detune,_mono,masterLevel,
+//              glpan,grpan);
     if (sBufLens[wnum] <= 0)
     {
         NSLog(@" ERROR: buffer[%d] empty",wnum); //DHS 9/18 diagnostic, delete later

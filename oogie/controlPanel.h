@@ -46,8 +46,10 @@
     NSMutableArray *allTextFields;
     
     NSArray *keySigs;
+    NSArray *monoPoly;
     NSArray *musicalKeys;
     NSArray *vibratoWaves;
+    NSArray *colorChannels;
 
     UIView *header,*footer;
     UILabel *titleLabel;

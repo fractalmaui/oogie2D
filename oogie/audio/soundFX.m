@@ -729,8 +729,8 @@ int HH,LL,SS;  //Used in rgb -> HLS
                                        [self->synth loadSample:sname:@"wav"];
                                        [self->synth buildSampleTable:ssampnum];
                                        self->soundFileLoaded[ssampnum] = true;
-                                       NSLog(@" ...loaded sample[%d][%@] into buffer %d",
-                                             loop,sname,ssampnum);
+                                       //NSLog(@" ...loaded sample[%d][%@] into buffer %d",
+                                       //      loop,sname,ssampnum);
                                    }
                                }
                                ssampnum++;

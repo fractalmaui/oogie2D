@@ -93,26 +93,37 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 {
     if (allParams != nil) return; //only go thru once!
     NSLog(@" setup canned voice Param data...");
-    allParams      = @[@"threshold",@"bottommidi",@"topmidi",@"keysig",
+    allParams      = @[@"patch",@"soundpack",
+                       @"threshold",@"bottommidi",@"topmidi",@"keysig",@"poly",
+                       @"nchan",@"nfixed",@"vchan",@"vfixed",@"pchan",@"pfixed", //10/3
                        @"level",@"portamento",
                        @"viblevel" ,@"vibspeed",@"vibwave",
                        @"vibelevel" ,@"vibespeed",@"vibewave",
                        @"delaytime" ,@"delaysustain",@"delaymix",
-                       @"latitude", @"longitude",@"patch",@"soundpack",@"name",@"comment"];
+                       @"latitude", @"longitude",@"name",@"comment"];
     sliderNames    = @[@"Threshold",@"Bottom Note",@"Top Note",
-                       @"padding",@"Overdrive",@"Portamento",
-                       @"FVib Level" ,@"FVib Speed" ,@"",
-                       @"AVib Level" ,@"AVib Speed",@"",   //4/7 add vibe
+                       @"NChannel", @"VChannel", @"PChannel",
+                       @"Overdrive",@"Portamento",
+                       @"FVib Level" ,@"FVib Speed" ,
+                       @"AVib Level" ,@"AVib Speed",
                        @"Delay Time" ,@"Delay Sustain",@"Delay Mix",
                        @"Latitude", @"Longitude"];
-    pickerNames    = @[@"KeySig",@"FVib Wave",@"AVib Wave",@"Patch",@"SoundPack"];
+    // note some picker names arent used...
+    pickerNames    = @[@"Patch",@"SoundPack",@"KeySig",@"Mono/Poly",@"mt",@"mt",@"mt",@"FVib Wave",@"AVib Wave"];
     textFieldNames = @[@"Name",@"Comments"];
     
     musicalKeys = @[@"C",@"C#",@"D",@"D#",@"E",@"F",@"F#",@"G",@"G#",@"A",@"A#",@"B"];
     keySigs = @[@"Major",@"Minor",@"Lydian",@"Phrygian",
                 @"Mixolydian",@"Locrian",@"Egyptian",@"Hungarian",
                 @"Algerian",@"Japanese",@"Chinese",@"Chromatic"];
+    monoPoly = @[@"Mono",@"Poly"];
     vibratoWaves = @[ @"Sine",@"Saw",@"Square",@"Ramp"];
+    //WTF? these pickers  fUCk up the text align, crop off first 4 chars
+    colorChannels  = @[@"Red",@"Green",@"Blue",   //10 / 3Color channel choices...
+                       @"Hue",@"Lum",@"Sat",
+                       @"Cyan",@"Mag",@"Yel",
+                       @"Slider"   ];
+
 } //end setupCannedData
 
 
@@ -139,6 +150,10 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     yi = 0;
     xs = viewWid;
     ys = viewHit;
+    
+    int iSlider = 0; //10/3 keep slider / picker count
+    int iPicker = 0;
+    int iParam  = 0;
     scrollView = [[UIScrollView alloc] init];
     scrollView.frame = CGRectMake(xi,yi,xs,ys);
     scrollView.backgroundColor = [UIColor clearColor];
@@ -265,34 +280,120 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     [header addSubview:goRightButton];
     //9/24 END header controls
     
-    //Add live controls panel-------------------------------------
+    //Patch / Soundpack Panel...
+    int panelY = 60; //10/3
+    int pahit = 180;
+    yi = panelY;
+    ys = pahit;
     xi = OOG_XMARGIN;
-    yi = 240; //9/10 account for new papanel... 60;
     xs = viewWid-2*OOG_XMARGIN;
-    // 7/9 calculate height based on controls
-    ys = 3*OOG_SLIDER_HIT + 2*OOG_TEXT_HIT + OOG_PICKER_HIT + 3*OOG_YSPACER + 2*OOG_YMARGIN;
+    UIView *paPanel = [[UIView alloc] init];
+    [paPanel setFrame : CGRectMake(xi,yi,xs,ys)];
+    paPanel.backgroundColor = [UIColor colorWithRed:0.41 green:0.41 blue:0.41 alpha:1];
+    [scrollView addSubview : paPanel];
+     yi = 10;
+     //int ypro = yi;
+     ys = OOG_SLIDER_HIT;
+     xs = viewWid*0.9;
+     UILabel *l4 = [[UILabel alloc] initWithFrame:
+                    CGRectMake(xi,yi,xs,ys)];
+     [l4 setTextColor : [UIColor whiteColor]];
+     l4.text = @"Patch / SoundPack";
+     [paPanel addSubview : l4];
+    // add patch / soundpack pickers
+    yi += ys;
+    ys = OOG_PICKER_HIT;
+    [self addPickerRow:paPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
+    iPicker++;
+    iParam++;
+    yi += ys;
+    [self addPickerRow:paPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
+    iPicker++;
+    iParam++;
+
+    //Add color panel-------------------------------------
+    panelY += pahit;
+    pahit = 3*OOG_SLIDER_HIT + 2*OOG_TEXT_HIT + 2*OOG_PICKER_HIT + 3*OOG_YSPACER + 2*OOG_YMARGIN;
+    yi = panelY;
+    ys = pahit;
+    xi = OOG_XMARGIN;
+    xs = viewWid-2*OOG_XMARGIN;
     UIView *cPanel = [[UIView alloc] init];
     [cPanel setFrame : CGRectMake(xi,yi,xs,ys)];
     cPanel.backgroundColor = [UIColor colorWithRed:0.3 green:0.3 blue:0.3 alpha:1];
     [scrollView addSubview:cPanel];
     xi = OOG_XMARGIN;
-    yi = xi; //top of form
+    yi = OOG_XMARGIN;
+    ys = OOG_SLIDER_HIT;
+    xs = viewWid*0.9;
+    UILabel *l5 = [[UILabel alloc] initWithFrame: CGRectMake(xi,yi,xs,ys)];
+    [l5 setTextColor : [UIColor whiteColor]];
+    l5.text = @"Basic Params";
+    [cPanel addSubview : l5];
+
+    xi = OOG_XMARGIN;
+    yi+=ys;  //skip down below prev item
     // add threshold, lo/hi midi sliders
     for (i=0;i<3;i++)
     {
-        [self addSliderRow:cPanel : i : SLIDER_BASE_TAG + i : sliderNames[i] : yi : OOG_SLIDER_HIT:0.0:1.0];
+        [self addSliderRow:cPanel : iSlider : SLIDER_BASE_TAG + iParam : sliderNames[iSlider] : yi : OOG_SLIDER_HIT:0.0:1.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
+        iSlider++;
+        iParam++;
     }
     // add keysig picker
-    [self addPickerRow:cPanel : 0 : PICKER_BASE_TAG+3 : pickerNames[0] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:cPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
+    iPicker++;
+    iParam++;
+    yi += (OOG_PICKER_HIT+OOG_YSPACER);
+    // add mono/poly picker
+    [self addPickerRow:cPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
+    iPicker++;
+    iParam++;
+    yi += (OOG_PICKER_HIT+OOG_YSPACER);
+
+    // it was in the patch editor but that was the wrong place
+    //Color Channels panel next... 3 groups of picker/slider pairs and one slider below that
+    panelY += pahit;
+    pahit = OOG_SLIDER_HIT + 3*OOG_PICKER_HIT + 3*OOG_YSPACER + 2*OOG_YMARGIN;
+    yi = panelY;
+    ys = pahit;
+    xi = OOG_XMARGIN; //6/19/21
+    xs = viewWid - 2*OOG_XMARGIN;
+    // 7/9 calculate height based on controls
+    cPanel = [[UIView alloc] init];
+    [cPanel setFrame : CGRectMake(xi,yi,xs,ys)];
+    cPanel.backgroundColor = [UIColor colorWithRed:0.3 green:0.3 blue:0.5 alpha:1];
+    [scrollView addSubview:cPanel];
+    yi = OOG_XMARGIN;
+    xs = viewWid;
+    ys = OOG_SLIDER_HIT;
+    UILabel *l2 = [[UILabel alloc] initWithFrame: //label goes from col 1 to 2
+                   CGRectMake(xi,yi,xs,ys)];
+    [l2 setTextColor : [UIColor whiteColor]];
+    l2.text = @"Color Channels";
+    [cPanel addSubview : l2];
+    yi+=ys;
+    ys = OOG_PICKER_HIT + 5; // 50; //Need more spacing between pickers!
+    // WHY is picker font so HUGE? Shrink it and we can reduce ysize!
+    for (int i=0;i<3;i++)
+    {     //args: parent, pickerTag, sliderTag, ypos , ysize asdf
+        [self addPickerSliderRow : cPanel : iParam : iParam+1 : sliderNames[iSlider] : yi :ys]; //i/j = picker / slider # 10/16
+        iParam+=2; //skip down 2
+        yi+=ys-18; //5/24 test squnch
+        iSlider++;
+        iPicker++;
+    }
     
-    //Add pro mode controls panel-------------------------------------
+    //Add live controls panel-------------------------------------
+    panelY += pahit;
+    pahit = 11*OOG_SLIDER_HIT + 2*OOG_PICKER_HIT + 10*OOG_YSPACER + 2*OOG_YMARGIN;
+    ys = pahit;
+    yi = panelY;
     xi = OOG_XMARGIN;
-    yi = cPanel.frame.origin.y + cPanel.frame.size.height + panelSkip; //6/27
     xs = viewWid - 2*OOG_XMARGIN;
     // 7/9 calculate height based on controls
     //  wouldnt it be nice to do this AFTER controls are created??
-    ys = 11*OOG_SLIDER_HIT + 2*OOG_PICKER_HIT + 10*OOG_YSPACER + 2*OOG_YMARGIN;
     UIView *pPanel = [[UIView alloc] init];
     [pPanel setFrame : CGRectMake(xi,yi,xs,ys)];
     pPanel.backgroundColor = [UIColor colorWithRed:0.3 green:0.0 blue:0.0 alpha:1];
@@ -313,33 +414,40 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     for (i=0;i<4;i++) //add 4 fx sliders, overdrive, portamento, FVIB level/speed
     {
         NSString *dog = [NSString stringWithFormat:@"rowi %d",i];
-        [self addSliderRow:pPanel : i+4 : SLIDER_BASE_TAG + i+4 : dog : yi : OOG_SLIDER_HIT:0.0:1.0];
+        [self addSliderRow:pPanel : iSlider : SLIDER_BASE_TAG + iParam : dog : yi : OOG_SLIDER_HIT:0.0:1.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
+        iSlider++;
+        iParam++;
     }
     // add picker for viblevel
-    [self addPickerRow:pPanel : 1 : PICKER_BASE_TAG+8 : pickerNames[1] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:pPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
+    iPicker++;
+    iParam++;
     yi += 2* (OOG_SLIDER_HIT+OOG_YSPACER);
     //4/7/21 add vibe level/spped
     for (i=0;i<2;i++) //add 2 fx sliders,  FVIB wave, AVIB level/speed
     {
         NSString *dog = [NSString stringWithFormat:@"rowi %d",i];
-        [self addSliderRow:pPanel : i+9 : SLIDER_BASE_TAG + i+9 : dog : yi : OOG_SLIDER_HIT:0.0:1.0];
+        [self addSliderRow:pPanel : iSlider : SLIDER_BASE_TAG + iParam : dog : yi : OOG_SLIDER_HIT:0.0:1.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
+        iSlider++;
+        iParam++;
     }
     // add picker for viblevel
-    [self addPickerRow:pPanel : 2 : PICKER_BASE_TAG+11 : pickerNames[2] : yi : OOG_PICKER_HIT];
+    [self addPickerRow:pPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
+    iPicker++;
+    iParam++;
 
-#ifdef GOT_DIGITALDELAY
     yi += (OOG_PICKER_HIT+OOG_YSPACER);
     // 2/19/21 add 3 delay sliders
     for (i=0;i<3;i++)
     {
         NSString *dog = [NSString stringWithFormat:@"rowi %d",i];
-        [self addSliderRow:pPanel : i+12 : SLIDER_BASE_TAG + i+12 : dog : yi : OOG_SLIDER_HIT:0.0:1.0];
+        [self addSliderRow:pPanel : iSlider : SLIDER_BASE_TAG + iParam : dog : yi : OOG_SLIDER_HIT:0.0:1.0];
         yi += (OOG_SLIDER_HIT+OOG_YSPACER);
+        iSlider++;
+        iParam++;
     }
-#endif
-
     
     xi = OOG_XMARGIN;
     //assume right below pPanel...
@@ -356,44 +464,23 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     ys = OOG_SLIDER_HIT;
     // CHECK number, is it 15?? or 14? above were 3 sliders at 12...
     // 9/15 KRASH sending slider tag 15!
-    [self addSliderRow:llPanel : 15 : SLIDER_BASE_TAG + 15 : @"Latitude (Y)" : yi :
+    [self addSliderRow:llPanel : iSlider : SLIDER_BASE_TAG + iParam : @"Latitude (Y)" : yi :
         OOG_SLIDER_HIT: 0.0 : 1.0];
+    iSlider++;
+    iParam++;
     yi+=ys;
-    [self addSliderRow:llPanel : 16 : SLIDER_BASE_TAG + 16 : @"Longitude (X)" : yi :
+    [self addSliderRow:llPanel : iSlider : SLIDER_BASE_TAG + iParam : @"Longitude (X)" : yi :
         OOG_SLIDER_HIT:0.0 : 1.0];
+    iSlider++;
+    iParam++;
     //9/11 text entry fields...9/20 fix yoffset bug
     yi += (OOG_SLIDER_HIT+OOG_YSPACER);
-    [self addTextRow:llPanel :0 :TEXT_BASE_TAG+19 : textFieldNames[0] :yi :OOG_TEXT_HIT ];
+    [self addTextRow:llPanel :0 :TEXT_BASE_TAG + iParam : textFieldNames[0] :yi :OOG_TEXT_HIT ];
+    iParam++;
     yi += (OOG_TEXT_HIT+OOG_YSPACER);
-    [self addTextRow:llPanel :1 :TEXT_BASE_TAG+20 : textFieldNames[1] :yi :OOG_TEXT_HIT ];
-    //9/1 new panel for patches at top...
-    xi = OOG_XMARGIN;
-    yi = 60;   // llPanel.frame.origin.y + llPanel.frame.size.height + panelSkip;
-    xs = viewWid - 2*OOG_XMARGIN;
-    ys = 180;
-    UIView *paPanel = [[UIView alloc] init];
-    
-    [paPanel setFrame : CGRectMake(xi,yi,xs,ys)];
-    paPanel.backgroundColor = [UIColor colorWithRed:0.41 green:0.41 blue:0.41 alpha:1];
-    [scrollView addSubview : paPanel];
-     
-     
-     yi = 10;
-     //int ypro = yi;
-     ys = OOG_SLIDER_HIT;
-     xs = viewWid*0.9;
-     UILabel *l4 = [[UILabel alloc] initWithFrame:
-                    CGRectMake(xi,yi,xs,ys)];
-     [l4 setTextColor : [UIColor whiteColor]];
-     l4.text = @"Patch / SoundPack";
-     [paPanel addSubview : l4];
-    // add patch / soundpack pickers
-    yi += ys;
-    ys = OOG_PICKER_HIT;
-    [self addPickerRow:paPanel : 3 : PICKER_BASE_TAG+17 : pickerNames[3] : yi : OOG_PICKER_HIT];
-    yi += ys;
-    [self addPickerRow:paPanel : 4 : PICKER_BASE_TAG+18 : pickerNames[4] : yi : OOG_PICKER_HIT];
-    
+    [self addTextRow:llPanel :1 :TEXT_BASE_TAG + iParam : textFieldNames[1] :yi :OOG_TEXT_HIT ];
+    iParam++;
+
     //5/23 make pro button only on RH side where controls are
     CGRect pRect = pPanel.frame;
     pRect.origin.x = pRect.size.width * 0.2; // 8/4 enlarge button to left , was 0.4
@@ -428,7 +515,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 
     
     //Scrolling area...
-    int scrollHit = 1200; //8/12 760; //640;  //5/20 enlarged again
+    int scrollHit = 1400; //10/3 added new stuff
     //if (cappDelegate.gotIPad) scrollHit+=120; //3/27 ipad needs a bit more room
     
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
@@ -591,8 +678,8 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 //  NOTE: tag 0 cannot be used with buttons, makes bad stuff happen
 -(void) configureView
 {
-    [allPickers[3] reloadAllComponents];
-    [allPickers[4] reloadAllComponents];
+    [allPickers[0] reloadAllComponents]; //patch/soundpack
+    [allPickers[1] reloadAllComponents];
     NSString *s = @"no name"; //get voice name for title
     NSArray *a  = [_paramDict objectForKey:@"name"];
     if (a.count > 0) s = a.lastObject;
@@ -606,8 +693,8 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 {
     NSArray *noresetparams = @[@"patch",@"soundpack",@"name"];
     NSMutableDictionary *pickerchoices = [[NSMutableDictionary alloc] init];
-    [pickerchoices setObject:_paNames forKey:@17];  //patches are on picker 17
-    [pickerchoices setObject:_spNames forKey:@18];  //soundpacks are on picker 18
+    [pickerchoices setObject:_paNames forKey:@0];  //patches are on picker 0
+    [pickerchoices setObject:_spNames forKey:@1];  //soundpacks are on picker 1
     NSDictionary *resetDict = [goog configureViewFromVC:reset : _paramDict : allParams :
                      allPickers : allSliders : allTextFields :
                noresetparams : pickerchoices];
@@ -769,8 +856,8 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 // 4/3 reset called via button OR end of proMode demo
 -(void) resetControls
 {
-    [self configureViewWithReset: TRUE];
     resettingNow = TRUE; //used w/ undo
+    [self configureViewWithReset: TRUE];
     _wasEdited         = FALSE;
     resetButton.hidden = TRUE;
     resettingNow       = FALSE;
@@ -809,28 +896,34 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 //======(controlPanel)==========================================
 - (NSString *)getPickerTitleForTagAndRow : (int)tag : (int)row
 {
-    //NSLog(@" get picker tag %d",row);
+    NSLog(@" get picker tag %d",row);
     NSString *title = @"";
-    //tags pickers, 17 / 18  /  3  /  8  / 11
-
-    if (tag == PICKER_BASE_TAG+3)
+    //tags pickers, 0 / 1  / 5,6  / 6,8,10 / 16  / 19
+    if (tag == PICKER_BASE_TAG) //patch
+    {
+        if (_paNames != nil) title = _paNames[row];
+    }
+    else if (tag == PICKER_BASE_TAG+1) //soundpack
+    {
+        if (_spNames != nil) title = _spNames[row];
+    }
+    if (tag == PICKER_BASE_TAG+5)
     {
         title = keySigs[row];
     }
-    else if (tag == PICKER_BASE_TAG+8 || tag == PICKER_BASE_TAG+11)
+    if (tag == PICKER_BASE_TAG+6)
+    {
+        title = monoPoly[row];
+    }
+    else if ( tag == PICKER_BASE_TAG+7 || tag == PICKER_BASE_TAG+9 || tag == PICKER_BASE_TAG+11)
+    {
+        title = colorChannels[row];
+    }
+    else if (tag == PICKER_BASE_TAG+17 || tag == PICKER_BASE_TAG+20)
     {
         title = vibratoWaves[row];
     }
-    else if (tag == PICKER_BASE_TAG+17) //patch
-    {
-        if (_paNames != nil) title = _paNames[row];
-
-    }
-    else if (tag == PICKER_BASE_TAG+18) //soundpack
-    {
-        if (_spNames != nil) title = _spNames[row];
-
-    }
+    NSLog(@" picker %d row %d title %@",tag,row,title);
     return title;
 }
 
@@ -842,7 +935,8 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
     int liltag = (int)pickerView.tag - PICKER_BASE_TAG; //just pass tags to parent now
     NSString *patchName = @"";
-    if (liltag == 17) //patch? pass back our name...
+    NSLog(@" chose t %d r %d",liltag,row);
+    if (liltag == 0) //patch? pass back our name...
     {
         if (row > 0)
         {
@@ -862,19 +956,24 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 // tell the picker how many rows are available for a given component
 - (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component {
     int tag = (int)pickerView.tag;
-    //tags pickers, 17 / 18  /  3  /  8  / 11
-    if ( tag == PICKER_BASE_TAG + 3)  return 12; //keysig
-    else if ( tag == PICKER_BASE_TAG+8 || tag == PICKER_BASE_TAG+11 )  //vib ratos
-        return 4;
-    else if ( tag == PICKER_BASE_TAG+17) //patch
+    //tags pickers, 0 / 1  / 5,6  / 6,8,10 / 16  / 19
+    if ( tag == PICKER_BASE_TAG) //patch
         {
             if (_paNames != nil) return _paNames.count;
         }
-    else if ( tag == PICKER_BASE_TAG+18) //soundpack
+    else if ( tag == PICKER_BASE_TAG+1) //soundpack
         {
             if (_spNames != nil) return _spNames.count;
         }
-    
+    else if ( tag == PICKER_BASE_TAG + 5)
+        return keySigs.count; //keysig
+    else if ( tag == PICKER_BASE_TAG + 6)
+        return monoPoly.count; //10/3 mono/poly
+    // 10/3 color channels
+    else if ( tag == PICKER_BASE_TAG+7 || tag == PICKER_BASE_TAG+9 || tag == PICKER_BASE_TAG+11)
+        return colorChannels.count; //keysig
+    else if ( tag == PICKER_BASE_TAG+17 || tag == PICKER_BASE_TAG+20 )  //vib ratos
+        return vibratoWaves.count;
     return 0; //empty (failed above test?)
     
 }
@@ -967,36 +1066,29 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     return YES;
 }
 
-//need to add this to controls!!!
-// it was in the patch editor but that was the wrong place
-#ifdef NEED_COLOR_CHANELPANEL
-    panelY += (eHit+panelSkip);
-    //Color Channels panel next... 3 groups of picker/slider pairs and one slider below that
-    xi = OOG_XMARGIN; //6/19/21
-    xs = viewWid - 2*OOG_XMARGIN;
-    // 7/9 calculate height based on controls
-    cHit = OOG_SLIDER_HIT + 3*OOG_PICKER_HIT + 3*OOG_YSPACER + 2*OOG_YMARGIN;
-    cPanel = [[UIView alloc] init];
-    [cPanel setFrame : CGRectMake(xi,panelY,xs,cHit)];
-    cPanel.backgroundColor = [UIColor colorWithRed:0.3 green:0.3 blue:0.5 alpha:1];
-    [scrollView addSubview:cPanel];
-    yi = panelTopMargin;
-    xs = viewWid;
-    ys = OOG_SLIDER_HIT;
-    UILabel *l2 = [[UILabel alloc] initWithFrame: //label goes from col 1 to 2
-                   CGRectMake(xi,yi,xs,ys)];
-    [l2 setTextColor : [UIColor whiteColor]];
-    l2.text = @"Color Channels";
-    [cPanel addSubview : l2];
-    yi+=ys;
-    ys = OOG_PICKER_HIT + 5; // 50; //Need more spacing between pickers!
-    // WHY is picker font so HUGE? Shrink it and we can reduce ysize!
-    for (int i=0;i<3;i++)
-    {     //args: parent, pickerTag, sliderTag, ypos , ysize
-        [self addPickerSliderRow : cPanel : i+2 : i+6 : yi :ys]; //i/j = picker / slider # 10/16
-        yi+=ys-18; //5/24 test squnch
+
+//======(patchPanel)==========================================
+// 9/16 redo adds a canned label/picker/slider set...
+-(void) addPickerSliderRow : (UIView*) parent : (int)pindex : (int) sindex : (NSString*) label : (int) yoff : (int) ysize
+{
+    NSArray* A = [goog addPickerSliderRow:parent :
+                  PICKER_BASE_TAG+pindex :
+                  SLIDER_BASE_TAG+sindex :
+                  label :yoff :viewWid :ysize];
+    if (A.count > 1)
+    {
+        UIPickerView * picker = A[0];
+        picker.delegate       = self;
+        picker.dataSource     = self;
+        [allPickers addObject: picker];  //10/3
+
+        UISlider     *slider  = A[1];
+        [slider addTarget:self action:@selector(sliderAction:) forControlEvents:UIControlEventValueChanged];
+        [slider addTarget:self action:@selector(sliderStoppedDragging:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside];
+        [allSliders addObject: slider]; //10/3
     }
-#endif
+} //end addPickerSliderRow
+
 
 
 @end
