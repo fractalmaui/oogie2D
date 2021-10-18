@@ -247,7 +247,7 @@ public class DataManager {
 
     //======(DataManager)=============================================
     static func saveScene <T:Encodable> (_ object:T, with fileName:String) {
-        print("saveScene \(getSceneDirectory())/\(fileName))")
+        print("saveScene \(getSceneDirectory())/\(fileName))") //10/8
         save(object , with: getSceneDirectory(), with: fileName)
     }
 
@@ -367,6 +367,7 @@ public class DataManager {
     
     //======(DataManager)=============================================
     static func loadScene <T:Decodable> (_ fileName:String, with type:T.Type) -> T{
+        print("loadScene \(getSceneDirectory())\(fileName))") // 10/4 debug
         return load( getSceneDirectory(),  with: fileName,  with: type)
     }
     

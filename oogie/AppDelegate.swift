@@ -52,7 +52,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
     let externalSampleBase   = 256;
     //All patches: singleton, holds built-in and locally saved patches...
     var allP = AllPatches.sharedInstance
-
     var masterPitch = 0 //4/19 master pitch shift in notes
 
     //Audio Sound Effects...
@@ -67,6 +66,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
     var OSP  =  OogieShapeParams.sharedInstance //9/19/21 oogie shape params
     var OPP  =  OogiePipeParams.sharedInstance  //9/19/21 oogie pipe params
     var OPaP =  OogiePatchParams.sharedInstance //9/28
+    var OScP =  OogieScalarParams.sharedInstance  //10/13 new scalar type
+    
+    var verbose = false //10/12 for debug output
+
     //========AppDelegate==============================================
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -81,6 +84,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
         print("2D Version...")
         #endif
         
+        
         //Get version string
         if let nsObject: AnyObject? = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as AnyObject?
         {
@@ -93,7 +97,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
 //        NSArray* A = [self getPurchasedSoundPacksKeys];
 //        [allP setPSPNWithA:A]; //cryptic, huh!
         allP.loadAllSoundPacksAndPatches();
-//        [allP loadAllSoundPacksAndPatches]; //10/23 move sample/patch load down here!
+        allP.createSubfolders() //10/8 WTF? why wasnt this here?
 
         loadSettings()
         loadSamples()  //7/1/21
@@ -143,11 +147,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
             defaults.setValue(0.1, forKey: "colorTimerPeriod")
             defaults.setValue(0.1, forKey: "spinTimerPeriod")
             defaults.setValue(0.1, forKey: "blinkTimerPeriod")
-            print("reset defaults ...")
+            //print("reset defaults ...")
         }
-        print("spintimer  is \(defaults.double(forKey: "spinTimerPeriod"))")
-        print("colortimer is \(defaults.double(forKey: "colorTimerPeriod"))")
-        print("blinktimer is \(defaults.double(forKey: "blinkTimerPeriod"))")
+        //print("spintimer  is \(defaults.double(forKey: "spinTimerPeriod"))")
+        //print("colortimer is \(defaults.double(forKey: "colorTimerPeriod"))")
+        //print("blinktimer is \(defaults.double(forKey: "blinkTimerPeriod"))")
         appSettings["colorTimerPeriod"] = defaults.double(forKey: "colorTimerPeriod")
         appSettings["spinTimerPeriod"]  = defaults.string(forKey: "spinTimerPeriod")
         appSettings["blinkTimerPeriod"] = defaults.double(forKey: "blinkTimerPeriod")

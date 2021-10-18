@@ -186,12 +186,7 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
         }
         self.dismiss(animated: true, completion: nil)
         
-    }
-    
-    
-    
-    
-    
-}
+   } // end of didFinishPickingMediaWithInfo?? 10/7/21
+} //end of TextureVC class
 
 

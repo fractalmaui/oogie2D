@@ -17,6 +17,9 @@
 // 2/3   add shapeYoff to ceiling calc
 // 4/23  increase pipe radius : should this be in DB settings?
 // 5/4   add uid name to sphere nodes
+// 10/5  add dataImage access
+// 10/6  add wraparound support to pipeDataImage, pull image from pipe 3d label
+//        redo createPipeDataImage
 import Foundation
 import UIKit
 import SceneKit
@@ -106,6 +109,7 @@ class PipeShape: SCNNode {
     let pipeRad : CGFloat = 0.008 //1/20
     #endif
     var pipeColor = UIColor(hue: 0.1, saturation: 1.0, brightness: 1.0, alpha: 1.0)
+    var dataImage = UIImage() //10/5
     var ballGeomz : [SCNSphere] = []
     var ballz : [SCNNode] = []
     var cylz  : [SCNNode] = []
@@ -127,7 +131,6 @@ class PipeShape: SCNNode {
     var tlon    = 0.0
     var sPos00  = SCNVector3()
     var sPos01  = SCNVector3()
-
     /**
      * Divides the x, y and z fields of a SCNVector3 by the same scalar value and
      * returns the result as a new SCNVector3.
@@ -201,13 +204,8 @@ class PipeShape: SCNNode {
          var cIndex = 0 //local pointer to cylinder nodes during update
          var bIndex = 0 //local pointer to ball nodes during update
          if !newNode && ballz.count == 0 {return SCNNode()} //wups! no pipe to update yet!
-
-         //print("c3dp ll0 \(flat),\(flon) ll1 \(tlat),\(tlon) nn \(newNode)")
          if newNode
          {
-             //11/27 good a place as any for uid
-//9/25             uid = "pipe_" + ProcessInfo.processInfo.globallyUniqueString
-             //print("create 3d pipe uid \(uid)")
              //Our master node...
              mainParent = SCNNode()
              
@@ -457,61 +455,141 @@ class PipeShape: SCNNode {
 
 
  //-----------(oogiePipe)=============================================
- public func createPipeLabel(label: String , frame:CGRect ,vals : [Float]) -> UIImage {
+    public func createPipeLabel(label: String , frame:CGRect)  -> UIImage
+    {
         UIGraphicsBeginImageContextWithOptions(frame.size, false, 1)
         let context = UIGraphicsGetCurrentContext()!
         context.setFillColor(UIColor.black.cgColor);
-    var vmin :Float = 999.0
-    var vmax :Float = -999.0
-    if vals.count == 0 //1/13/20 handle empty vals
-    {
-        vmin = 0
-        vmax = 0
-    }
-   else
-    {
-        for i in 0...vals.count-1
-        {
-            vmin = min(vmin,vals[i])
-            vmax = max(vmin,vals[i])
-        }
-    }
-    let vconv : Float = 1.0 / 255.0
-    //print("vminmax \(vmin),\(vmax)")
+        
+        //print("vminmax \(vmin),\(vmax)")
         context.fill(frame);
         //First draw pipe label...
-        var xi = CGFloat(0.0)
-        var yi = CGFloat(0.0)
-        var xs = frame.size.width
-        var ys = CGFloat(20.0)
-        let textFont = UIFont(name: "Helvetica Bold", size: CGFloat(ys-3))!
+        let xi = CGFloat(0.0)
+        let yi = CGFloat(0.0)
+        let xs = frame.size.width
+        let ys = CGFloat(30.0)
+        let textFont = UIFont(name: "Helvetica Bold", size: CGFloat(ys*0.6))!
         let text_style=NSMutableParagraphStyle()
         text_style.alignment=NSTextAlignment.center
-            let textFontAttributes = [
-                    NSAttributedString.Key.font: textFont,
-                    NSAttributedString.Key.foregroundColor: UIColor.white,
-                    NSAttributedString.Key.paragraphStyle: text_style
-                    ] as [NSAttributedString.Key : Any]
+        let textFontAttributes = [
+            NSAttributedString.Key.font: textFont,
+            NSAttributedString.Key.foregroundColor: UIColor.white,
+            NSAttributedString.Key.paragraphStyle: text_style
+        ] as [NSAttributedString.Key : Any]
         let trect =  CGRect(x: xi, y: yi, width: xs, height: ys)
         label.draw(in: trect, withAttributes: textFontAttributes)
-        //Now time to add some graphics below...
-        xi = 0
-        yi = frame.size.height
-        let cc = UIColor.white
-        context.setFillColor(cc.cgColor);
-        xs = 1
-        for val in vals
-        {
-            ys = CGFloat(20.0 * vconv*val) //11/30 convert 0..255 -> 0..1
-            context.fill(CGRect(x: xi, y: yi-ys, width: xs, height: ys))
-            xi = xi + xs
-        }
         let resultImage = UIGraphicsGetImageFromCurrentImageContext()!
         UIGraphicsEndImageContext()
         return resultImage
     } //end createPipeLabel
+    
+    //-----------(oogiePipe)=============================================
+    public func OLDcreatePipeLabel(label: String , frame:CGRect ,vals : [Float]) -> UIImage {
+           UIGraphicsBeginImageContextWithOptions(frame.size, false, 1)
+           let context = UIGraphicsGetCurrentContext()!
+           context.setFillColor(UIColor.black.cgColor);
+       var vmin :Float = 999.0
+       var vmax :Float = -999.0
+       if vals.count == 0 //1/13/20 handle empty vals
+       {
+           vmin = 0
+           vmax = 0
+       }
+      else
+       {
+           for i in 0...vals.count-1
+           {
+               vmin = min(vmin,vals[i])
+               vmax = max(vmin,vals[i])
+           }
+       }
+       let vconv : Float = 1.0 / 255.0
+       //print("vminmax \(vmin),\(vmax)")
+           context.fill(frame);
+           //First draw pipe label...
+           var xi = CGFloat(0.0)
+           var yi = CGFloat(0.0)
+           var xs = frame.size.width
+           var ys = CGFloat(20.0)
+           let textFont = UIFont(name: "Helvetica Bold", size: CGFloat(ys-3))!
+           let text_style=NSMutableParagraphStyle()
+           text_style.alignment=NSTextAlignment.center
+               let textFontAttributes = [
+                       NSAttributedString.Key.font: textFont,
+                       NSAttributedString.Key.foregroundColor: UIColor.white,
+                       NSAttributedString.Key.paragraphStyle: text_style
+                       ] as [NSAttributedString.Key : Any]
+           let trect =  CGRect(x: xi, y: yi, width: xs, height: ys)
+           label.draw(in: trect, withAttributes: textFontAttributes)
+           //Now time to add some graphics below...
+           xi = 0
+           yi = frame.size.height
+   //        let cc = UIColor.white
+           let cc =  UIColor.init(red: 1,    green: 0.94, blue: 0.14, alpha: 1) //10/5 try yellow!
 
+           context.setFillColor(cc.cgColor);
+           xs = 1
+           for val in vals
+           {
+               ys = CGFloat(20.0 * vconv*val) //11/30 convert 0..255 -> 0..1
+               context.fill(CGRect(x: xi, y: yi-ys, width: xs, height: ys))
+               xi = xi + xs
+           }
+           let resultImage = UIGraphicsGetImageFromCurrentImageContext()!
+           UIGraphicsEndImageContext()
+           return resultImage
+       } //end createPipeLabel
 
+    //-----------(oogiePipe)=============================================
+    // 10/5 just store graph internally
+    public func createPipeDataImage( frame:CGRect , pinfo : pipeInfo)
+    {
+        let maxSize = pinfo.pbSize
+        let bptr    = pinfo.bptr
+        let wrapped = pinfo.wrapped
+        let vals    = pinfo.buffer
+
+        UIGraphicsBeginImageContextWithOptions(frame.size, false, 1)
+        let context = UIGraphicsGetCurrentContext()!
+        context.setFillColor(UIColor.black.cgColor);
+        //print("cpdi max \(maxSize) bptr \(bptr) wrap \(wrapped)")
+        var istart = 0;
+        var iend   = Int(vals.count) - 1
+        if vals.count == 0 //1/13/20 handle empty vals
+        {
+            context.fill(frame);
+        }
+        else //got data? graph it
+        {
+            if wrapped   //10/6 handle wraparound...
+              {
+                istart = bptr
+                iend   = bptr + maxSize - 1
+               }
+            context.fill(frame);
+            //Add our graph...
+            let yhit = frame.size.height
+            var xi = CGFloat(0.0)
+            let yi = frame.size.height
+            let xs = CGFloat(frame.size.width) / 256.0
+            var ys = CGFloat(0.0)
+            context.setFillColor(UIColor.white.cgColor);
+            for i in istart...iend
+            {
+                let iptr = i % maxSize  //note we may wrap around our buffer!
+                if (iptr >= 0 && iptr < vals.count) //just in case of weird iptr val...
+                {
+                    let val = vals[iptr]
+                    ys = CGFloat(Float(yhit) * val) //11/30 convert 0..255 -> 0..1
+                    context.fill(CGRect(x: xi, y: yi-ys, width: xs, height: ys))
+                }
+                xi = xi + xs
+            }
+        } //end else
+        let resultImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        dataImage = resultImage //10/5 for outside inspection
+    } //end createPipeDataImage
     
     //-----------(oogiePipe)=============================================
     // 11/27 produces texture for pipe, assuming buffer vals has data and
@@ -725,9 +803,12 @@ class PipeShape: SCNNode {
 
     
     //-----------(PipeShape)=============================================
-    func updateInfo(nameStr : String , vals : [Float])
+//    func updateInfo(nameStr : String ,maxSize: Int , bptr: Int , wrapped : Bool , vals : [Float])
+    func updateInfo(nameStr : String , pinfo : pipeInfo)
     {
-        let ii = createPipeLabel(label: nameStr, frame: CGRect(x: 0, y: 0, width: 128, height: 32), vals: vals)
+        let ff = CGRect(x: 0, y: 0, width: 128, height: 32)
+        let ii = createPipeLabel(label: nameStr, frame: ff )
+        createPipeDataImage(frame: ff, pinfo : pinfo)
         infobox.firstMaterial?.diffuse.contents  = ii
         infobox.firstMaterial?.emission.contents = ii
     } //end updateInfo

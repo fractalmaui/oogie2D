@@ -37,16 +37,17 @@
     UIButton *diceButton;
     UIButton *goLeftButton;
     UIButton *goRightButton;
-    
+
+    UIImageView *dataImageView;
+
     UIButton *loNotebutton;
     UIButton *hiNotebutton;
     UIButton *dismissButton;
 
-//    UISlider *sliders[MAX_PIPE_SLIDERS];
-//    UIPickerView *pickers[MAX_PIPE_PICKERS];
     UITextField *ptextFields[MAX_PIPE_TEXTFIELDS];
     UIView *header,*footer;
     UILabel *titleLabel;
+
     // 10/1 new data structs
     NSArray *allParams;
     NSArray *sliderNames;
@@ -58,7 +59,8 @@
 
     NSArray *icParams;
     NSArray *opParams;
-    NSArray*inputChanParams;
+    NSArray *inputChanParams;
+    NSArray *invertParams;
 
     int diceRolls;  //9/9 for analytics
     int resets;     //9/9 for analytics
@@ -74,6 +76,8 @@
     BOOL diceUndo;
     BOOL rollingDiceNow,resettingNow;
     genOogie *goog;  //9/15
+    NSTimer *animTimer;
+    
 }
 
 
@@ -86,7 +90,10 @@
 - (void) setupView:(CGRect)frame;
 
 - (void) configureView;
-- (void)updateSessionAnalytics;
+- (void) updateSessionAnalytics;
+- (void) startAnimation;
+- (void) stopAnimation;
+- (void) setDataImage:(UIImage*) i;
 
 @end
 
@@ -99,6 +106,7 @@
 -(void) didSelectPipeDice ;
 -(void) didSelectPipeReset ;
 -(void) didSelectPipeDismiss ; //9/24
+-(void) needPipeDataImage ; //10/24
 //-(void) updateControlModeInfo : (NSString*) infostr ; //5/19
 
 @end

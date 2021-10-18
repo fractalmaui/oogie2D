@@ -14,7 +14,9 @@
 //  9/21 remove footer, add curved top title
 //  10/1 redo with NSArrays instead of C-arrays
 //  10/3 add indices to sliders/pickers
-
+//  10/13 CLUGE for now, call sendUpdatedParamsToParent 2X in reset, otherwise
+//          some pipes dont get placed correctly, it has to do with a race condition
+//            between marker update and pipe update.!?!?!?!?
 #import "shapePanel.h"
 
 @implementation shapePanel
@@ -67,7 +69,7 @@ double drand(double lo_range,double hi_range );
 -(void) setupCannedData
 {
     if (allParams != nil) return; //only go thru once!
-    NSLog(@" setup canned shape Param data...");
+    //NSLog(@" setup canned shape Param data...");
     allParams      = @[@"texture",@"rotation",@"rotationtype",@"xpos",@"ypos",@"zpos",
                        @"texxoffset",@"texyoffset",@"texxscale",@"texyscale",@"name",@"comment"];
     sliderNames    = @[@"Rotation",@"Shape XPos",@"Shape YPos",@"Shape ZPos",
@@ -433,6 +435,9 @@ double drand(double lo_range,double hi_range );
     if (reset) //reset? need to inform delegate of param changes...
     {
         [self sendUpdatedParamsToParent:resetDict];
+        //10/13 WTF???  TEST 2x to fix pipe weirdness
+        NSLog(@" NOTE: sending second shape param update to parent: KLUGE!");
+        [self sendUpdatedParamsToParent:resetDict];
     }
     
     resetButton.hidden = !_wasEdited;
@@ -548,8 +553,8 @@ double drand(double lo_range,double hi_range );
 //======(shapePanel)==========================================
 - (IBAction)resetSelect:(id)sender
 {
+    NSLog(@"ResET");
     [self resetControls];
-    //[self.delegate updateControlModeInfo : @"Reset F/X"]; //5/19
     [self.delegate didSelectShapeReset]; //7/11 for undo
 }
 
@@ -630,7 +635,7 @@ double drand(double lo_range,double hi_range );
 // tell the picker how many rows are available for a given component
 - (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component {
     int tag = (int)pickerView.tag;
-    NSLog(@" picker#rows for tag %d",tag);
+    //NSLog(@" picker#rows for tag %d",tag);
     
     if ( tag == PICKER_BASE_TAG)  return _texNames.count;
     else                          return rotTypeParams.count; //10/1

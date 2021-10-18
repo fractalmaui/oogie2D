@@ -80,7 +80,7 @@ NSString *onOffs[] = {@"Off",@"On"};
 -(void) setupCannedData
 {
     if (paAllParams != nil) return; //only go thru once!
-    NSLog(@" setup canned patch Param data...");
+    //NSLog(@" setup canned patch Param data...");
     paAllParams = @[@"wave",
                     @"attack",@"decay",@"sustain",@"slevel",@"release",
                     @"duty",@"sampleoffset", @"plevel", @"pkeyoffset" ,@"pkeydetune",
@@ -422,7 +422,7 @@ NSString *onOffs[] = {@"Off",@"On"};
 // 9/16 redo adds a canned label/picker set...
 -(void) addPickerRow : (UIView*) parent : (int) index : (int) tag : (NSString*) label : (int) yoff : (int) ysize
 {
-    NSLog(@" add picker[%d] %@ to picker[%d]",tag,label,index);
+    //NSLog(@" add picker[%d] %@ to picker[%d]",tag,label,index);
     NSArray* A = [goog addPickerRow : parent : tag : label : yoff : viewWid : ysize];
     if (A.count > 0)
     {
@@ -440,7 +440,7 @@ NSString *onOffs[] = {@"Off",@"On"};
 -(void) addSliderRow : (UIView*) parent : (int) index : (int) tag : (NSString*) label :
                 (int) yoff : (int) ysize : (float) smin : (float) smax
 {
-    NSLog(@" add slider[%d] %@",tag,label);
+    //NSLog(@" add slider[%d] %@",tag,label);
     //9/15 new UI element...
    NSArray* A = [goog addSliderRow : parent : tag : paSliderNames[index] :
                            yoff : viewWid: ysize :smin : smax];

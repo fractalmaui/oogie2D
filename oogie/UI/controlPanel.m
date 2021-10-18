@@ -92,7 +92,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 -(void) setupCannedData
 {
     if (allParams != nil) return; //only go thru once!
-    NSLog(@" setup canned voice Param data...");
+    //NSLog(@" setup canned voice Param data...");
     allParams      = @[@"patch",@"soundpack",
                        @"threshold",@"bottommidi",@"topmidi",@"keysig",@"poly",
                        @"nchan",@"nfixed",@"vchan",@"vfixed",@"pchan",@"pfixed", //10/3
@@ -896,7 +896,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 //======(controlPanel)==========================================
 - (NSString *)getPickerTitleForTagAndRow : (int)tag : (int)row
 {
-    NSLog(@" get picker tag %d",row);
+   // NSLog(@" get picker tag %d",row);
     NSString *title = @"";
     //tags pickers, 0 / 1  / 5,6  / 6,8,10 / 16  / 19
     if (tag == PICKER_BASE_TAG) //patch
@@ -923,7 +923,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     {
         title = vibratoWaves[row];
     }
-    NSLog(@" picker %d row %d title %@",tag,row,title);
+    //NSLog(@" picker %d row %d title %@",tag,row,title);
     return title;
 }
 

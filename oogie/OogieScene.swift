@@ -22,6 +22,14 @@
 //  9/28    add saveEditBackToSceneWith
 //  10/2    add applyEdits to addVoiceSceneData
 //  10/3    change uid use in saveSelectedVoiceBackToScene
+//  10/4    add nchan,etc to do nothing in setNewParamValue
+//  10/5    add invert
+//  10/7    fix bug in createDefaultScene, add getNameUIDDict
+//  10/8    synth waves now stored in buffers 0..4
+//  10/9    fix bug in addPipeSceneData
+//  10/12   in playAllPipesMarkers double check pipe exists, also
+//            pull buildaWaveTable call in setupSynthOrSample
+//            fix bug in addVoiceSceneData
 import Foundation
 import SceneKit
 class OogieScene: NSObject {
@@ -32,15 +40,17 @@ class OogieScene: NSObject {
     var OSP  =  OogieShapeParams.sharedInstance //9/19/21 oogie voice params
     var OPP  =  OogiePipeParams.sharedInstance  //9/19/21 oogie pipe params
     var OPaP =  OogiePatchParams.sharedInstance //9/28
+    var OScP =  OogieScalarParams.sharedInstance  //10/13 new scalar type
 
     //All patches: singleton, holds built-in and locally saved patches...
     var allP = AllPatches.sharedInstance
     
     //Dictionaries where scenes are operated on at runtime
-    var sceneVoices = Dictionary<String, OogieVoice>()
-    var sceneShapes = Dictionary<String, OogieShape>()
-    var scenePipes  = Dictionary<String, OogiePipe>()
-        
+    var sceneVoices  = Dictionary<String, OogieVoice>()
+    var sceneShapes  = Dictionary<String, OogieShape>()
+    var scenePipes   = Dictionary<String, OogiePipe>()
+    var sceneScalars = Dictionary<String, OogieScalar>() // 10/14 add scalars
+
     var masterPitch = 0
 
     //Selected items
@@ -56,6 +66,7 @@ class OogieScene: NSObject {
     var selectedFieldDefaultString = ""
     //Can these 3 names be collapsed into selectedItemName?
     var selectedMarkerKey   = ""
+    var selectedScalarKey   = ""
     var selectedShapeKey    = ""
     var selectedPipeKey     = ""
     var selectedObjectIndex  = 0 //Points to marker/shape/latlon handles, etc
@@ -63,7 +74,8 @@ class OogieScene: NSObject {
     var selectedShape   = OogieShape()  //1/21
     var selectedVoice   = OogieVoice()
     var selectedPipe    = OogiePipe()   //11/30
-    
+    var selectedScalar  = OogieScalar()  //1/21
+
     //For Remembering last param values...
     var lastFieldSelectionNumber : Int = 0
     var lastFieldDouble : Double = 0.0
@@ -86,7 +98,7 @@ class OogieScene: NSObject {
     var needFreshLoop  = false
 //    var loopTimer = Timer()
     var editing = "" //9/1 move this to property!
-    
+    var verbose = false // 10/12 for devbug
     //-----------(oogieScene)=============================================
     override init() {
     }
@@ -103,7 +115,7 @@ class OogieScene: NSObject {
     func addVoiceSceneData(nextOVS : OVStruct , op : String) -> OogieVoice
     {
         var newOVS    = nextOVS
-        var uid       = newOVS.uid
+        let uid       = newOVS.uid
         let newVoice  = OogieVoice()
         newVoice.uid  = uid //10/3 wups forgot one!
         let paramEdits = edits.sharedInstance //10/2 NOTE objective C struct!
@@ -128,7 +140,9 @@ class OogieScene: NSObject {
             newOVS           = OVStruct() //get new ovs
             newOVS.patchName = "SineWave" //1/27 need to default to something!
             newOVS.shapeKey  = selectedShapeKey //4/29 use dict lookup name!
+            newOVS.uid       = uid //10/12 pass in new uid to our voice
         }
+    //10/12 IS THIS NEEDED??? we alreayd have new UID coming in for clones!
         else if op == "clone"
         {
             newOVS.uid = newOVS.getNewUID()
@@ -142,7 +156,7 @@ class OogieScene: NSObject {
                                          lat: newOVS.yCoord, lon: newOVS.xCoord)
             newOVS.yCoord = llTuple.lat
             newOVS.xCoord = llTuple.lon
-            uid           = newOVS.getNewUID() // 9/27
+            //10/12 OUCH WOW THIS WAS SAVING TO THE WRONG PLACE!!! !  uid           = newOVS.getNewUID() // 9/27
             newOVS.name   = getNewVoiceName()  // 9/27
         }
         
@@ -158,7 +172,52 @@ class OogieScene: NSObject {
     } //end addVoiceSceneData
     
     //-----------(oogieScene)=============================================
-    // 9/26 redo for uid keying
+    //10/13/21 new scalar control,
+    //          note on create a UID comes in via scalarSS!!
+    func addScalarSceneData (scalarSS:ScalarStruct, op:String , startPosition : SCNVector3)  -> (shape:OogieScalar,pos3D:SCNVector3)
+    {
+        var pos3D          = getFreshXYZ()
+        let uid            = scalarSS.uid   //10/14 assume UID is always valid!!!
+        var newSStruct     = scalarSS //Copy in our scalar to be cloned...
+        newSStruct.uid     = uid     //  and uid too!
+        if op != "load" // 10/26 clone / new object? need to get new name
+        {
+            newSStruct.name = getNewScalarName()
+        }
+        else //load, use existing XYZ
+        {
+            pos3D = scalarSS.getPosition()  // update incoming position w/ scene pos...
+            pos3D.x += startPosition.x
+            pos3D.y += startPosition.y
+            pos3D.z += startPosition.z
+        }
+        var newOogieScalar   = OogieScalar()   // 1/21 new shape struct
+        newOogieScalar.uid   = uid
+        newOogieScalar.SS    = newSStruct //pack up new scalar data
+        
+        //here is object we are pointing to...
+        newOogieScalar.SS.toObject = scalarSS.toObject
+        
+        //OK now for 3d representation. Find centers of two objects:
+        let toObj = scalarSS.toObject
+        if let shape = sceneShapes[toObj] //Found a shape as target?
+        {
+            newOogieScalar.destination = "shape"
+        }
+        else if let voice = sceneVoices[toObj] //Assume voice instead...
+        {
+            newOogieScalar.destination    = "voice"
+        }
+        else  //4/28
+        {
+            print("ERROR: scalar target not found!")
+        }
+        sceneScalars[uid]    = newOogieScalar  //save latest shap to working dictionary
+        return (newOogieScalar,pos3D)
+    } //end addScalarSceneData
+
+    //-----------(oogieScene)=============================================
+    // 9/26 redo for uid keying  asdf
     func addShapeSceneData (shapeOSS:OSStruct , op : String, startPosition : SCNVector3) -> (shape:OogieShape,pos3D:SCNVector3)
     {
         var pos3D  = getFreshXYZ()
@@ -197,18 +256,16 @@ class OogieScene: NSObject {
     //-----------(oogieScene)=============================================
     // for load: incoming PipeStruct will have a UID we want to keep
     // otherwise fresh UID will come from the fresh OogiePipe oop
-    func addPipeSceneData(ps : PipeStruct , name : String, op : String) -> OogiePipe?
+    // 10/4 pull name arg
+    func addPipeSceneData(ps : PipeStruct , op : String) -> OogiePipe?
     {
         var oop = OogiePipe()
-        if op == "load" //loading from scene
-        {
-            oop.uid = ps.uid   //Copy incoming pipe UID
-        }
+        oop.uid = ps.uid   //Copy incoming pipe UID 10/9 use incoming ps UID no matter what
         let uid   = ps.uid
         oop.PS    = ps
         //OK now for 3d representation. Find centers of two objects:
         let toObj = oop.PS.toObject
-        if let shape = sceneShapes[toObj] //Found a shape as target?
+        if let shape = sceneShapes[toObj] //Found a shape as target?  asdf
         {
             oop.destination    = "shape"
             shape.inPipes.insert(oop.uid) //Add our UID to shape object
@@ -289,7 +346,7 @@ class OogieScene: NSObject {
     {
         OSC.name            = sname
         var shape           = OSStruct()
-        shape.key           = shape.getNewUID() //9/26
+        shape.key           = shape.uid //10/7 shape comes w/ uid already
         var voice           = OVStruct()
         voice.patchName     = "SineWave"
         voice.shapeKey      = shape.key
@@ -415,7 +472,26 @@ class OogieScene: NSObject {
         return list
     }
 
-    
+    //-----------(oogieScene)=============================================
+    // convenience func, gets dict of name -> UID pairs
+    func getNameUIDDict(forEvery:String) -> Dictionary<String, String>
+    {
+        var d = Dictionary<String, String>()
+        if forEvery == "voice"
+        {
+            for (_,v) in sceneVoices { d[v.OVS.name] = v.OVS.uid }
+        }
+        else if forEvery == "shape"
+        {
+            for (_,s) in sceneShapes {d[s.OOS.name] = s.OOS.uid}
+        }
+        else if forEvery == "pipe"
+        {
+            for (_,p) in scenePipes {d[p.PS.name] = p.PS.uid}
+        }
+        return d
+    } //end getNameUIDDict
+
     //-----------(oogieScene)=============================================
     // 5/12 new
     func getSceneCentroidAndRadius() ->(c:SCNVector3,r:Float)
@@ -604,6 +680,13 @@ class OogieScene: NSObject {
     }
     
     //-----------(oogieScene)=============================================
+    // 10/!5 new
+    func getNewScalarName() -> String
+    {
+        return "scalar_" + String(format: "%05d", sceneScalars.count+1)
+    }
+    
+    //-----------(oogieScene)=============================================
     // 9/25 always increment voice key for each new/cloned shape
     func getNewShapeName() -> String
     {
@@ -718,6 +801,17 @@ class OogieScene: NSObject {
             breakOutSelectedFields(vArray: vArray)
         }
     } //end loadCurrentShapeParams
+
+    //-----------(oogieScene)=============================================
+    // 10/16 new
+    func loadCurrentScalarParams()
+    {
+        if let vArray = OScP.scalarParamsDictionary[selectedFieldName]
+        {
+            breakOutSelectedFields(vArray: vArray)
+        }
+    } //end loadCurrentScalarParams
+
 
     //-----------(oogieScene)=============================================
     // 9/22 redo
@@ -883,7 +977,7 @@ class OogieScene: NSObject {
             case "midichannel": //fields that need pre-conversion before storage
                 workDouble = unitToParam(inval: workDouble) //4/26 convert range!
             
-            case "keysig" , "vibwave", "vibewave": break;//do nothing
+            case "keysig" , "vibwave", "vibewave", "nchan", "vchan", "pchan": break;//do nothing
             default:
                 workDouble = unitToParam(inval: workDouble) //9/15/21 Convert to desired range
                 break
@@ -913,6 +1007,18 @@ class OogieScene: NSObject {
             default: break; //needRefresh = false
             } //end switch
         } //end voice editing
+        else if editing == "scalar" //10/17/21 new: edit scalar
+        {
+            if named != "rotationtype" //10/3 rotation type? no convert please!
+            {
+                workDouble = unitToParam(inval: workDouble) //9/15/21 Convert to desired range
+            }
+            selectedScalar.setParam(named : named,
+                                   toDouble : workDouble,
+                                   toString : workString)
+            //Hmm what could be changed by resetting a scalar params?
+            //  maybe just resend info to scalar and let it figure it out?
+        } //end shape editing
         else if editing == "shape"
         {
             if named != "rotationtype" //10/3 rotation type? no convert please!
@@ -955,7 +1061,7 @@ class OogieScene: NSObject {
             case "lorange","hirange": //4/27 ranges come in as text, convert!
                 if let d = Double(workString) { workDouble = d }
                 //9/13/21 obsolete workDouble = Double(workString) //9/13/21 as! Double
-                print("pipe range \(named) : \(workDouble)")
+                //print("pipe range \(named) : \(workDouble)")
             default: break
             }
             let oldToParam = selectedPipe.PS.toParam
@@ -1011,7 +1117,7 @@ class OogieScene: NSObject {
     } //end setNewParamValue
     
     //-----------(oogieScene)=============================================
-    // canned for synth 0
+    // canned for synth 0 , used for keyboard in oogie2D
     func setupSynthOrSample(oov : OogieVoice)
     {
         //print("setupSynthOrSample \(oov.OOP.attack)")
@@ -1023,9 +1129,7 @@ class OogieScene: NSObject {
             (sfx() as! soundFX).setSynthSustainL(Int32(oov.OOP.sLevel));
             (sfx() as! soundFX).setSynthRelease(Int32(oov.OOP.release));
             (sfx() as! soundFX).setSynthDuty(Int32(oov.OOP.duty));
-            //print("SYNTH: build wave/env ADSR \(oov.OOP.attack) :  \(oov.OOP.decay) :  \(oov.OOP.sustain) :  \(oov.OOP.release)")
-            (sfx() as! soundFX).buildaWaveTable(0,Int32(oov.OOP.wave));  //args whichvoice,whichsynth
-            (sfx() as! soundFX).buildEnvelope(0,false); //arg whichvoice?
+            (sfx() as! soundFX).buildEnvelope(Int32(oov.OOP.wave),false); // 10/8 synth waves 0..4
         }
         else if (oov.OOP.type == PERCUSSION_VOICE)
         {
@@ -1159,7 +1263,7 @@ class OogieScene: NSObject {
         //let pstartTime = Date()
         var updates3D = [String]()
         //First thing we get all the data from pipes...
- 
+
         for (key,p) in scenePipes //handle pipes, update pipe....
         {
             //print("n \(n) spm \(selectedPipeKey)")
@@ -1170,7 +1274,13 @@ class OogieScene: NSObject {
             {
                 //1/14 NO conversion needed, already happens in pipe!
                 //9/22 pipeVal comes out in range 0.0 to 1.0
-                let pipeVal = pwork.getFromOBuffer(clearFlags:true)
+                var pipeVal = pwork.getFromOBuffer(clearFlags:true)
+                if pwork.PS.invert == 1 //10/5 INVERT , just flip over range 0.0 to 1.0
+                {
+                    //let oldie = pipeVal   CLOOBER THIS
+                    pipeVal = 1.0 - pipeVal
+                    //print("pipe invert \(oldie) -> \(pipeVal)")   CLOOBER THIS
+                }  //10/5 invert pipe data
                 if pwork.destination == "shape" //send out shape param
                 {
                     let toParamName = pwork.PS.toParam.lowercased()
@@ -1261,9 +1371,7 @@ class OogieScene: NSObject {
                     updates3D.append(String(format: "updateMarkerRGB:%@:%d:%d:%d", key,rgbaTuple.R,rgbaTuple.G,rgbaTuple.B))
                     setupSynthOrSample(oov: workVoice) //load synth ADSR, send note out
                     //DHS try and get current angle computed from shape
-                    let gotPlayed = workVoice.playColors(angle: shape.computeCurrentAngle(),                                                            rr: rgbaTuple.R,
-                                                         gg: rgbaTuple.G,
-                                                         bb: rgbaTuple.B)
+                    let gotPlayed = workVoice.playColors(angle: shape.computeCurrentAngle(),                                                            rr: rgbaTuple.R,  gg: rgbaTuple.G, bb: rgbaTuple.B,verbose:verbose) //10/12 add verbose
                     updates3D.append(String(format: "updateMarkerPlayed:%@:%d",key,gotPlayed))
                 }
             }
@@ -1281,7 +1389,10 @@ class OogieScene: NSObject {
                 let floatVal = Float(vvv.getChanValueByName(n:p.PS.fromChannel.lowercased()))
                 //print("------>packpipe from chan \(p.PS.fromChannel) : \(floatVal)")
                 pwork.addToBuffer(f: floatVal) //...and send to pipe
-                scenePipes[n] = pwork //Save pipe back into scene
+                if let _ = scenePipes[n] //10/12 double check pipe exists!
+                {
+                    scenePipes[n] = pwork //Save pipe back into scene
+                }
                 if n == selectedPipeKey  { selectedPipe = pwork } //1/14 editing?
             }
         } //end for n,p
@@ -1441,9 +1552,73 @@ class OogieScene: NSObject {
          }catch{
              fatalError("error: no percussion!")
          }
-         
-      
      }
-     
 
+    
+    //-----------(oogieScene)=============================================
+    //10/10 dump currently edited scene
+    func getCurrentSceneDumpString() -> String
+    {
+        let delimiter = "-------------------------------"
+        var s = "Scene Dump:" + OSC.name + "\nVoices" + delimiter
+        for (_,voice) in sceneVoices
+        {
+            s = s + voice.dumpParams() + "\n"
+        }
+        s = s + "Shapes:" + delimiter + "\n"
+        for (_,shape) in sceneShapes
+        {
+            s = s + shape.dumpParams() + "\n"
+        }
+        s = s + "Pipes:" + delimiter + "\n"
+        for (_,shape) in scenePipes
+        {
+            s = s + shape.dumpParams() + "\n"
+        }
+        s = s + "\nEnd Scene Dump\n"
+        return s
+    }
+
+    //-----------(oogieScene)=============================================
+    //10/10 simple scene OK / not OK
+    //  first all uids must match keys
+    //  voices should point to valid shapes
+    //  pipe from/to connections should be valid
+    func validate() -> String
+    {
+        var err = false
+        var s = "Scene Validation:"
+        var suids = [String]() //keep track of shape uids...
+        var vuids = [String]() //keep track of voice uids...
+        for (key,shape) in sceneShapes
+        {
+            let uid = shape.OOS.uid
+            suids.append(uid)
+            if key != uid {s = s + "\nshape uid err \(key) vs \(uid)";err=true}
+        }
+        for (key,voice) in sceneVoices
+        {
+            let uid = voice.uid
+            vuids.append(uid)
+            if key != uid {s = s + "\nvoice uid err \(key) vs \(uid)";err=true}
+            let skey = voice.OVS.shapeKey
+            if !suids.contains(skey)   //Next, look for voices w/o shapes...
+                {s = s + "\nvoice shapekey err \(key) : \(skey)";err=true}
+        }
+        for (key,pipe) in scenePipes
+        {
+            let uid = pipe.PS.uid
+            if key != uid {s = s + "\npipe uid err \(key) vs \(uid)"}
+            if !vuids.contains(pipe.PS.fromObject)   //Pipe w/o valid fromobject?
+                {s = s + "\npipe fromObject err \(key) : \(pipe.PS.fromObject)";err=true}
+            if !vuids.contains(pipe.PS.toObject) &&   //Pipe w/o valid toobject?
+               !suids.contains(pipe.PS.toObject)
+                {s = s + "\npipe toObject err \(key) : \(pipe.PS.toObject)";err=true}
+        }
+        if !err {s = "OK"}
+        return s
+    } //end validate
+
+
+    
 }

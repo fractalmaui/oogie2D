@@ -8,8 +8,9 @@
 #import "audio/SynthDave.h"
 #import "audio/oogieMidiStubs.h"
 #import "controlPanel.h"
-#import "pipePanel.h"
 #import "patchPanel.h"
+#import "pipePanel.h"
+#import "scalarPanel.h" //10/15
 #import "shapePanel.h"
 #import "edits.h"
 #import "genOogie.h"

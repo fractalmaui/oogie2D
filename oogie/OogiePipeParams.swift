@@ -13,6 +13,7 @@
 //  Copyright © 2019 fractallonomy. All rights reserved.
 //  Params for oogiePipe objects. singleton, created once
 //  9/28 pulled numeric param dict entries
+//  10/5 add invert params
 
 import Foundation
 import SceneKit
@@ -21,8 +22,6 @@ import SceneKit
 @objc class OogiePipeParams: NSObject {
 
     static let sharedInstance = OogiePipeParams()
-
-
     //12/1 add params
     let InputChanParams      : [Any]   = ["InputChannel", "string", "Red", "Green", "Blue", "Hue",
                                       "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow"]
@@ -30,6 +29,7 @@ import SceneKit
     //Not confusing at all, huh? This is the param where the pipename is entered
     let PipeLoRangeParams    : [Any] = ["LoRange" , "double", 0.0 , 255.0 , 128.0, 255.0, 0.0 ]
     let PipeHiRangeParams    : [Any] = ["HiRange" , "double", 0.0 , 255.0 , 128.0, 255.0, 0.0 ]
+    let InvertParams    : [Any] = ["Invert",  "string","off","on"]
     let PipeNameParams       : [Any] = ["Name",         "text", "mt"]
     let PipeCommParams       : [Any] = ["Comment",      "text", "mt"]
     // This is an array of all parameter names...
@@ -52,6 +52,7 @@ import SceneKit
         pipeParamsDictionary["outputparam"]  = OutputParamParams
         pipeParamsDictionary["lorange"]      = PipeLoRangeParams
         pipeParamsDictionary["hirange"]      = PipeHiRangeParams
+        pipeParamsDictionary["invert"]       = InvertParams
         pipeParamsDictionary["name"]         = PipeNameParams
         pipeParamsDictionary["comment"]      = PipeCommParams
     } //end setupParams

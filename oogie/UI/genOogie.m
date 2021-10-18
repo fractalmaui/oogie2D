@@ -384,9 +384,10 @@ static genOogie *sharedInstance = nil;
 
 //======(oogieCamGeneric)==========================================
 // 9/18 generic randomize, should work on all panels
+// 10/12 cleanup
 -(NSMutableDictionary*) randomizeFromVC  : (NSArray*) allP :
                     (NSArray*) allPick : (NSArray*) allSlid :
-                    (NSArray*)noRandomizeParams
+                    (NSArray*) noRandomizeParams
 {
     NSMutableDictionary *resetDict = [[NSMutableDictionary alloc] init];
     //ok randomize sliders...
@@ -395,21 +396,18 @@ static genOogie *sharedInstance = nil;
         UISlider *s = allSlid[i];
         if (s != nil)  //valid control?
         {
-            int tag         = (int)s.tag % 1000;
+            int tag          = (int)s.tag % 1000;
             NSNumber *tagnum = [NSNumber numberWithInt:tag];
-            NSString *pname = allP[tag];    //param name ...
-            if ([noRandomizeParams containsObject:pname] )  //no randomize?
+            NSString *pname  = allP[tag];    //param name ...
+            // 10/12 ignore anything in noRandomizeParams
+            if (![noRandomizeParams containsObject:pname] )   //ok to randomize?
             {
-                NSLog(@" bing! bad slider randomize  %d / %@ ",tag,pname);
-            }
-            else
-            { //OK! diceit!
                 double dval = drand(0.0,1.0);
                 [s setValue: dval];   //set value, let parent know...
                 [resetDict setObject:@[tagnum,[NSNumber numberWithDouble:dval],@""] forKey:pname];
             }
         }
-    }
+    } //end for i
    for (int i=0;i<allPick.count;i++)  //ok randomize all pickers
     {
         UIPickerView *p = allPick[i];
@@ -418,20 +416,18 @@ static genOogie *sharedInstance = nil;
             int tag          = (int)p.tag % 1000;
             NSNumber *tagnum = [NSNumber numberWithInt:tag];
             NSString *pname  = allP[tag];        //param name ...
-            if ([noRandomizeParams containsObject:pname] )  //no randomize?
+            // 10/12 ignore anything in noRandomizeParams
+            if (![noRandomizeParams containsObject:pname] )   //ok to randomize?
             {
-                NSLog(@" bing! bad picker randomize  %d / %@ ",tag,pname);
-            }
-            else{ //OK! diceit!
-                int numrows     = (int)[p numberOfRowsInComponent:0];
-                int row         = ((int)(drand(0.0,(double)numrows)));
+                int numrows = (int)[p numberOfRowsInComponent:0];
+                int row     = ((int)(drand(0.0,(double)numrows)));
                 // keep it clean
                 row = MAX(0,MIN(numrows-1,row));
                 [p selectRow:row inComponent:0 animated:YES];
                 [resetDict setObject:@[tagnum,[NSNumber numberWithDouble:row],@""] forKey:pname];
             }
         }
-    }
+    } //end for i
     return resetDict;
 } //end RandomizeFromVC
 

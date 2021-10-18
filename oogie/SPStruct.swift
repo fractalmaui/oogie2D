@@ -9,6 +9,7 @@
 //
 //  Created by Dave Scruton on 6/15/20
 //  Copyright © 1990 - 2021 fractallonomy, inc. All Rights Reserved.
+//  this loads up an array of patches
 import Foundation
 
 

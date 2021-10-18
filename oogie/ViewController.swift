@@ -35,6 +35,13 @@
 //  9/25   pull selects / deselects from handleToucch, shapes uid indexed now
 //  9/27   convert markers to uid-indexed, pull removeVoice
 //  9/28   finish voice/pipe/shape conversion to UID keyibg, make chooser class member
+//  10/4   update marker3D icon in loadPatch
+//  10/7   add selectObjectMenu
+//  10/8   synth waves now stored in buffers 0..4
+//  10/11  add sceneStatus error info on bad scene loads
+//  10/12  pull xtra calls to startLoop, add loadSynthBuffersWithCannedWaves
+//          pull knob, synthPanel
+//  10/14  add asobject arg to addpipeStepTwo/Three
 import UIKit
 import SceneKit
 import Photos
@@ -47,12 +54,10 @@ var OVtempo = 135 //Move to params ASAP
 var camXform = SCNMatrix4()
 
 class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,chooserDelegate,UIGestureRecognizerDelegate,SCNSceneRendererDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate,
-                      controlPanelDelegate,patchPanelDelegate,shapePanelDelegate,pipePanelDelegate{
+                      controlPanelDelegate,patchPanelDelegate,scalarPanelDelegate,shapePanelDelegate,pipePanelDelegate{
 
     @IBOutlet weak var skView: SCNView!
-    @IBOutlet weak var spnl: synthPanel!
     @IBOutlet weak var editButtonView: UIView!
-    @IBOutlet weak var paramKnob: Knob!
     @IBOutlet weak var textField: UITextField!
     @IBOutlet weak var resetButton: UIButton!
     @IBOutlet weak var menuButton: UIButton!
@@ -61,9 +66,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     @IBOutlet weak var voiceEditPanels: UIView!    
     @IBOutlet weak var shapeEditPanels: UIView!
     @IBOutlet weak var pipeEditPanels: UIView!
-    
+    @IBOutlet weak var scalarEditPanels: UIView!
+
     var colorTimer = Timer()
-    //var playColorsTimer = Timer()
     var pLabel = infoText()
     //10/29 version info (mostly for debugging)
     var version = ""
@@ -71,6 +76,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //10/17 solo
     var soloVoiceID = ""
     var touchLocation = CGPoint()
+    var startTouch    = UITouch()
     var latestTouch   = UITouch()
     var chooserMode = ""
     var shouldNOTUpdateMarkers = false
@@ -82,6 +88,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     var paPanel = patchPanel()
     var sPanel  = shapePanel()
+    var scPanel = scalarPanel()
     var piPanel = pipePanel()
     
     var chooser = chooserVC()
@@ -96,6 +103,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var OSP  =  OogieShapeParams.sharedInstance //9/19/21 oogie shape params
     var OPP  =  OogiePipeParams.sharedInstance //9/19/21 oogie shape params
     var OPaP =  OogiePatchParams.sharedInstance //9/28
+    var OScP =  OogieScalarParams.sharedInstance  //10/13 new scalar type
 
     //10/27 for finding new marker lat/lons
     let llToler = Double.pi / 10.0
@@ -124,10 +132,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var selectedMarker    = Marker()
     var selectedSphere    = SphereShape()  //10/18
     var selectedPipeShape = PipeShape()   //11/30
+    var selectedScalarShape   = ScalarShape()  //10/15
     // Dictionaries of 3D nodes
     var shapes3D      = Dictionary<String, SphereShape>()
     var markers3D     = Dictionary<String, Marker>()
     var pipes3D       = Dictionary<String, PipeShape>()
+    var scalars3D     = Dictionary<String, ScalarShape>()
     var oogieOrigin = SCNNode() //3D origin, all objects added to this parent
     var pkeys = PianoKeys()    //3D keys for playing test samples
 
@@ -140,6 +150,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var updating3D        = false
     var screenCaptureFlag = false // Used by TIFFIE
     var needTiffie        = false // Used by TIFFIE
+    
+    //10/7  for selectObjectMenu
+    let imageS = UIImage(named: "shapeIcon.jpg")
+    let imageP = UIImage(named: "pipeIcon.jpg")
+    let imageV = UIImage(named: "voiceIcon.jpg")
 
    //=====<oogie2D mainVC>====================================================
     override func viewDidLoad() {
@@ -212,12 +227,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             print("...no default scene found, create!")
             self.OVScene.sceneLoaded = true  //5/7
         }
-        spnl = UINib(nibName: "synthPanel", bundle: .main).instantiate(withOwner: nil, options: nil).first as? synthPanel
-        // let view = Bundle.main.loadNibNamed("CustomView", owner: nil, options: nil)!.first as! UIView // does the same as above
-        spnl.frame = CGRect(x: 0, y: 450, width: 375, height: 220)
-        self.view.addSubview(spnl)
-        spnl.isHidden = true
-        spnl.dButton.addTarget(self, action: #selector(synthXClicked), for: .touchUpInside)
 
         //Place bottom buttons / knobs automagically...
         let csz = UIScreen.main.bounds.size;
@@ -228,19 +237,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             viewHit = csz.width
             viewWid = csz.height
         }
-        var pwh : CGFloat   = 256
-        let inset : CGFloat = 160
-        var pRect = CGRect(x: viewWid - inset, y: viewHit - inset, width: pwh, height: pwh)
-        paramKnob.frame = pRect
-        paramKnob.isHidden = true
-        //Add tap gesture to knob...
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(wheelTap(sender:)))
-        paramKnob.addGestureRecognizer(tapGesture)
-        //paramKnob.verbose = true  //10/10  test
-        
-        pwh = 80
-        let inset2  : CGFloat = 80
-        pRect = CGRect(x: viewWid - inset2 , y: viewHit - inset2, width: pwh, height: pwh)
+        let pwh    : CGFloat   = 80
+        //let inset  : CGFloat = 160
+        let inset2 : CGFloat = 80
+        var pRect = CGRect(x: viewWid - inset2 , y: viewHit - inset2, width: pwh, height: pwh)
         //make edit button round
         editButtonView.frame = pRect
         editButtonView.layer.cornerRadius = 40
@@ -287,8 +287,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         shapeEditPanels.backgroundColor = .clear
         shapeEditPanels.addSubview(sPanel)
         sPanel.delegate = self
-        shapeEditPanels.isHidden = false
-        
+
         // 9/14 pipe editing panel(s)
         pipeEditPanels.frame = CGRect(x: 0 , y: Int(viewHit) , width: Int(viewWid), height: allphit)
         //10/1 REDO: just set view rect here, then add to view hierarchy
@@ -296,8 +295,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         pipeEditPanels.backgroundColor = .clear
         pipeEditPanels.addSubview(piPanel)
         piPanel.delegate = self
-        pipeEditPanels.isHidden = false
 
+        //10/15 TEMP, get scalar panel offscreen
+        scPanel.setupView(CGRect(x: 0 , y: 0, width: Int(viewWid), height: allphit))
+        scalarEditPanels.backgroundColor = .clear
+        scalarEditPanels.addSubview(scPanel)
+        scPanel.delegate = self
+        scalarEditPanels.frame = CGRect(x: 0 , y: Int(viewHit) , width: Int(2*viewWid), height: allphit)
         
         //Sept 28 NEW top label!
         pLabel = infoText(frame: CGRect(x: 0,y: 32,width: viewWid,height: 80))
@@ -331,6 +335,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //Try running color player in bkgd...
         print("STARTLOOP Should ONLY HAPPEN ONCE!")
         OVScene.startLoop()
+        loadSynthBuffersWithCannedWaves() //10/12 one-time synth wave load
+
     } //end viewDidLoad
     
     
@@ -397,8 +403,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         self.create3DScene(scene:scene) //  then create new scene from file
         pLabel.updateLabelOnly(lStr:"Loaded " + OVSceneName)
         self.OVScene.sceneLoaded = true
-        OVScene.startLoop() // Start music up again...
-
     }
 
     
@@ -505,8 +509,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             case "updatepipe":  // Pipe label / etc needs changing?
                 if let pipe3D = pipes3D[OVScene.selectedPipeKey] //12/5 USE SCENE-LOADED NAME!
                 {
+                    print("update pipe info???  \(OVScene.selectedPipe.ibuffer)")
                     //12/5 update pipe label and graphfff
-                    pipe3D.updateInfo(nameStr: OVScene.selectedPipe.PS.name, vals: OVScene.selectedPipe.ibuffer)
+                    pipe3D.updateInfo(nameStr: OVScene.selectedPipe.PS.name,
+                                      pinfo: OVScene.selectedPipe.getPipeInfo())
                     pipe3D.pipeColor = pipe3D.getColorForChan(chan: OVScene.selectedPipe.PS.fromChannel)
                 }
             default: break
@@ -655,10 +661,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
      {
          var dval = Double(newVal) //10/2 need to convert in some cases..
          var ptype = ""
-         if      whatWeBeEditing == "voice" {ptype = OVP.getParamType(pname: pname)}
-         else if whatWeBeEditing == "shape" {ptype = OSP.getParamType(pname: pname)}
-         else if whatWeBeEditing == "pipe"  {ptype = OPP.getParamType(pname: pname)}
-         else if whatWeBeEditing == "patch" {ptype = OPaP.getParamType(pname: pname)} // 9/30
+         if      whatWeBeEditing == "voice"  {ptype = OVP.getParamType(pname: pname)}
+         else if whatWeBeEditing == "scalar" {ptype = OScP.getParamType(pname: pname)} //10/16 scalar
+         else if whatWeBeEditing == "shape"  {ptype = OSP.getParamType(pname: pname)}
+         else if whatWeBeEditing == "pipe"   {ptype = OPP.getParamType(pname: pname)}
+         else if whatWeBeEditing == "patch"  {ptype = OPaP.getParamType(pname: pname)} // 9/30
 
          //let ptype = OVP.getParamType(pname: pname)
          if pname != oldvpname //user changed parameter? load up info to UI
@@ -686,10 +693,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                    pmin : 0 , pmax : pmax , choiceStrings: choiceStrings)
              oldvpname = pname; //remember for next time
              OVScene.selectedFieldName = pname
-             if      whatWeBeEditing == "voice" {OVScene.loadCurrentVoiceParams()}
-             else if whatWeBeEditing == "shape" {OVScene.loadCurrentShapeParams()}
-             else if whatWeBeEditing == "pipe"  {OVScene.loadCurrentPipeParams()}
-             else if whatWeBeEditing == "patch" {OVScene.loadCurrentPatchParams()} //9/30 new
+             if      whatWeBeEditing == "voice"  {OVScene.loadCurrentVoiceParams()}
+             else if whatWeBeEditing == "scalar" {OVScene.loadCurrentScalarParams()}
+             else if whatWeBeEditing == "shape"  {OVScene.loadCurrentShapeParams()}
+             else if whatWeBeEditing == "pipe"   {OVScene.loadCurrentPipeParams()}
+             else if whatWeBeEditing == "patch"  {OVScene.loadCurrentPatchParams()} //9/30 new
          }
          //convert from slider unit to proper units...
          // 9/30 there is a problem here for some param types???
@@ -703,7 +711,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                                      named : pname,
                                                      toDouble : Double(newVal),
                                                      toString : pvalue )
-        // 9/27 wups, save back to scene!!!asdf
+        // 9/27 wups, save back to scene!!!
         OVScene.saveEditBackToSceneWith(objType:whatWeBeEditing)
 
         update3DSceneForSceneChanges(sceneChanges)
@@ -741,47 +749,60 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         for puid in s.inPipes { updatePipeByUID(puid) }
         updatingPipe = false
     } //end updatePipeByShape
-
+    
     //=======>ARKit MainVC===================================
-    // broke out from updatePipeByVoice 5/2
+    // broke out from updatePipeByVoice 5/2  only should be called if we are selected!!!
     func updatePipeByUID(_ puid:String)
     {
-// 9/25       if let n = OVScene.pipeUIDToName[puid]                // get pipes name
-//        {
-            if let pipeObj = OVScene.scenePipes[puid]           //   find pipe struct
-                {
-                    addPipe3DNode(oop: pipeObj, newNode : false) //1/30
-                    let vals = pipeObj.ibuffer //11/28 want raw unscaled here!
-                    if let pipe3D = pipes3D[puid]    // get Pipe 3dobject itself to restore texture
-                    {
-                        pipe3D.texturePipe(phase:0.0 , chan: pipeObj.PS.fromChannel.lowercased(),
-                                           vals: vals, vsize: vals.count , bptr : pipeObj.bptr)
-                    }
-                }
-// 9/25       }
+        if let pipeObj = OVScene.scenePipes[puid]           //   find pipe struct
+        {
+            addPipe3DNode(oop: pipeObj, newNode : false) //1/30
+            let vals = pipeObj.ibuffer //11/28 want raw unscaled here!
+            if let pipe3D = pipes3D[puid]    // get Pipe 3dobject itself to restore texture
+            {
+               // print("texture pipe \(pipeObj.bptr) \(vals) ")
+                pipe3D.texturePipe(phase:0.0 , chan: pipeObj.PS.fromChannel.lowercased(),
+                                   vals: vals, vsize: vals.count , bptr : pipeObj.bptr)
+            }
+        }
+    } //end updatePipeByUID
 
-    }
-    
-    
-     
     //=======>ARKit MainVC===================================
     // 10/17 there isnt a real double-tap detector, so instead
     //  we will use touchesMoved to put up a popup for the marker...
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else {return}
         latestTouch = touch
+        //print("touchesmoved...\(latestTouch)")
+        guard let sceneView   = skView else {return}
+        let t1 = latestTouch.location(in: sceneView)
+        let t2 = latestTouch.previousLocation(in: sceneView)
+        //better only have one here!
+        for key in OVScene.sceneScalars.keys
+        {
+           if var scalar = OVScene.sceneScalars[key]
+            {
+               scalar.handleTouch(t1:t1 , t2:t2)
+
+           }
+        }
+//        for scalar in
+//        {
+//        }
         getCamXYZ() //11/24 Save new 3D cam position
     } //end touchesMoved
     
     //=======>ARKit MainVC===================================
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        print("touches ENDED...")
     }
     
     //=======>ARKit MainVC===================================
     // Used to select items in the AR 3D world...
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else {return}
-        latestTouch = touch
+        startTouch            = touch
+        //print("touches  BEGAN...\(startTouch)")
         handleTouch(touch: touch)
     } //end touchesBegan
     
@@ -790,7 +811,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func handleTouch(touch:UITouch)
     {
         guard let sceneView   = skView else {return}
-        touchLocation         = latestTouch.location(in: sceneView)
+        touchLocation         = startTouch.location(in: sceneView) //10/15 change name
         guard let nodeHitTest = sceneView.hitTest(touchLocation, options: nil).first else {return}
         let hitNode  = nodeHitTest.node
         var selected = false //9/25
@@ -812,6 +833,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             else if uid.contains("pipe") //Found a pipe? get which one
             {
                 selected = selectOrDeselectPipeBy(uid:uid)
+            }
+            else if uid.contains("scalar") //Found a pipe? get which one
+            {
+                print("BING hit scalar")
+                selected = selectOrDeselectScalarBy(uid:uid)
             }
         }     //end let name
         if !selected
@@ -845,66 +871,119 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end handleKeyboardPressWith
 
     //=====<oogie2D mainVC>====================================================
-    // 9/25 Toggle select for desired marker, returns selected status asdf
+    //Kluge 10/15
+    func closePanels(otherThan:String)
+    {
+        var allPanels = [pipeEditPanels,shapeEditPanels,voiceEditPanels] //assume scalar for starter
+        if otherThan      == "pipe"   {allPanels = [shapeEditPanels,scalarEditPanels,voiceEditPanels]}
+        else if otherThan == "shape"  {allPanels = [pipeEditPanels,scalarEditPanels,voiceEditPanels]}
+        else if otherThan == "voice"  {allPanels = [pipeEditPanels,scalarEditPanels,shapeEditPanels]}
+        for panel in allPanels
+        {
+            if let panelView = panel as? UIView
+            {
+                shiftPanelDown(panel: panelView)
+            }
+            
+        } //ok shiftem down
+    }
+    
+    //=====<oogie2D mainVC>====================================================
+    // 9/25 Toggle select for desired marker, returns selected status
     func selectOrDeselectMarkerBy(uid:String) -> Bool
     {
         var selected = false
-//  9/27      let key = findMarkerByUID(uid: name) //4/30 redo find
-//        if (key != "")
-//        {
-            unselectAnyOldStuffBy(uid:uid)
-            shiftPanelDown(panel: shapeEditPanels)  //put away shape editor
-            shiftPanelDown(panel: pipeEditPanels)   //put away pipe editor
-            if let testMarker = markers3D[uid]
+        unselectAnyOldStuffBy(uid:uid)
+        closePanels(otherThan: "voice")
+        piPanel.stopAnimation() //10/5
+        if let testMarker = markers3D[uid]
+        {
+            selectedMarker = testMarker
+            selectedMarker.toggleHighlight()
+            if selectedMarker.highlighted  //hilited? Set up edit
             {
-                selectedMarker = testMarker
-                selectedMarker.toggleHighlight()
-                if selectedMarker.highlighted  //hilited? Set up edit
+                //DHS 1/16:this looks to get OLD values not edited values!
+                if let testVoice = OVScene.sceneVoices[uid] //got legit voice?
                 {
-                    //DHS 1/16:this looks to get OLD values not edited values!
-                    if let testVoice = OVScene.sceneVoices[uid] //got legit voice?
+                    whatWeBeEditing = "voice"
+                    //9/1/21 TEST CLUGE???
+                    //If OVSCene needs to know this then whatWeBeEditing is moot!
+                    OVScene.editing = whatWeBeEditing;
+                    if let smname = selectedMarker.name  //update param label w/ name
                     {
-                        whatWeBeEditing = "voice"
-                        //9/1/21 TEST CLUGE???
-                        //If OVSCene needs to know this then whatWeBeEditing is moot!
-                        OVScene.editing = whatWeBeEditing;
-                        if let smname = selectedMarker.name  //update param label w/ name
-                        { self.pLabel.updateLabelOnly(lStr:"Selected " + smname) }
-                        OVScene.selectedVoice     = testVoice //Get associated voice for this marker
-                        OVScene.selectedMarkerKey = uid      //points to OVS struct in scene
-                        selectedMarker.updatePanels(nameStr: OVScene.selectedMarkerKey) //10/11 add name panels
-                        updatePkeys() //3/30 update kb if needed
-                        //Pack params, send to VC
-                        cPanel.paramDict = OVScene.selectedVoice.getParamDictWith(soundPack: OVSoundPack)
-                        cPanel.configureView()
-                        //Need to hand a lot of stuff to patch panel...
-                        paPanel.paramDict = OVScene.selectedVoice.getPatchParamDict()
-                        paPanel.whichSamp = Int32(OVScene.selectedVoice.OVS.whichSamp)
-                        paPanel.patchName = OVScene.selectedVoice.OVS.patchName  //9/30
-                        paPanel.configureView()
-                        shiftPanelUp(panel: voiceEditPanels) //9/11 shift controls so they are visible
-                        shiftPanelRight(panel:voiceEditPanels) //10/1 make sure we start on control panel
+                        self.pLabel.updateLabelOnly(lStr:"Selected " + smname)
+                        selectedMarker.updatePanels(nameStr: smname) //10/4 fix
                     }
-                    selected = true
+                    OVScene.selectedVoice     = testVoice //Get associated voice for this marker
+                    OVScene.selectedMarkerKey = uid      //points to OVS struct in scene
+                    updatePkeys() //3/30 update kb if needed
+                    //Pack params, send to VC
+                    cPanel.paramDict = OVScene.selectedVoice.getParamDictWith(soundPack: OVSoundPack)
+                    cPanel.configureView()
+                    //Need to hand a lot of stuff to patch panel...
+                    paPanel.paramDict = OVScene.selectedVoice.getPatchParamDict()
+                    paPanel.whichSamp = Int32(OVScene.selectedVoice.OVS.whichSamp)
+                    paPanel.patchName = OVScene.selectedVoice.OVS.patchName  //9/30
+                    paPanel.configureView()
+                    shiftPanelUp(panel: voiceEditPanels) //9/11 shift controls so they are visible
+                    shiftPanelRight(panel:voiceEditPanels) //10/1 make sure we start on control panel
                 }
-                else
-                {
-                    selected = false
-                    shiftPanelDown(panel: voiceEditPanels) //9/11 shift controls offscreen
-                }
-            } //end let testMarker...
-// 9/27        } //end if key
+                selected = true
+            }
+            else
+            {
+                selected = false
+                shiftPanelDown(panel: voiceEditPanels) //9/11 shift controls offscreen
+            }
+        } //end let testMarker...
         return selected
     } //end selectOrDeselectMarkerBy
+    
+    //=====<oogie2D mainVC>====================================================
+    // 10/14 new
+    func selectOrDeselectScalarBy(uid:String) -> Bool
+    {
+        var selected = false
+        unselectAnyOldStuffBy(uid: uid) //9/26
+        closePanels(otherThan: "scalar")
+        piPanel.stopAnimation() //10/5
+        if let testShape = scalars3D[uid] //1/26
+        {
+            OVScene.selectedScalarKey = uid
+            selectedScalarShape   = testShape
+            selectedScalarShape.toggleHighlight()
+            //Wow is this redundant?
+            if selectedScalarShape.highlighted  //hilited? Set up edit
+            {
+                whatWeBeEditing = "scalar"   //2/6 WTF?
+                
+                self.pLabel.updateLabelOnly(lStr:"Selected " + self.selectedScalarShape.name!)
+                if let testScalarObj = OVScene.sceneScalars[uid] //got legit voice?
+                {
+                    OVScene.selectedScalar     = testScalarObj
+                    OVScene.selectedShapeKey  = uid //10/21
+                    shiftPanelUp(panel: scalarEditPanels) //9/11 shift controls so they are visible
+                    scPanel.paramDict = OVScene.selectedScalar.getParamDict()
+                    scPanel.configureView() //9/12 loadup stuff
+                }
+                selected = true
+            }
+            else //unhighlighted?
+            {
+                shiftPanelDown(panel: scalarEditPanels) //9/11 shift controls so they are visible
+                selected = false
+            }
+        }
+        return selected
+    } //end selectOrDeselectScalarBy
     
     //=====<oogie2D mainVC>====================================================
     // 9/25 Toggle select for desired shape, returns selected status
     func selectOrDeselectShapeBy(uid:String) -> Bool
     {
         var selected = false
-        unselectAnyOldStuffBy(uid: uid) //9/26
-        shiftPanelDown(panel: voiceEditPanels)  //put away voice editor
-        shiftPanelDown(panel: pipeEditPanels)   //put away pipe editor
+        closePanels(otherThan: "shape")
+        piPanel.stopAnimation() //10/5
         if let testShape = shapes3D[uid] //1/26
         {
             OVScene.selectedShapeKey = uid
@@ -946,13 +1025,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func selectOrDeselectPipeBy(uid:String) -> Bool
     {
         var selected = false
-//9/25        let key = findPipe(uid: name)
         if let pipe3D = pipes3D[uid]
         {
             selectedPipeShape = pipe3D
             unselectAnyOldStuffBy(uid:uid) //11/30
-            shiftPanelDown(panel: voiceEditPanels)  //put away shape editor
-            shiftPanelDown(panel: shapeEditPanels)   //put away pipe editor
+            closePanels(otherThan: "pipe")
             OVScene.selectedPipeKey = uid
             selectedPipeShape.toggleHighlight()
             //9/25 WOW. this is looking at the LOADED pipe data.
@@ -965,7 +1042,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 //Beam pipe name and output buffer to a texture in the pipe...
                 // ideally this should be updaged on a timer!
                 let name = OVScene.selectedPipe.PS.name //9/25
-                selectedPipeShape.updateInfo(nameStr: name, vals: spo.ibuffer)
+                selectedPipeShape.updateInfo(nameStr: name,
+                                             pinfo: spo.getPipeInfo())
                 selected = true
                 if selectedPipeShape.highlighted  //hilited? Set up edit
                 {
@@ -978,11 +1056,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     OVScene.loadCurrentPipeParams()
                     piPanel.outputNames = OVScene.selectedFieldDisplayVals //now we should have our outputs
                     piPanel.configureView() //9/12 loadup stuff
+                    piPanel.startAnimation() //10/5
                     selected = true
                 }
                 else //deselect?
                 {
                     shiftPanelDown(panel: pipeEditPanels)
+                    piPanel.stopAnimation() //10/5
                     selected = false
                 }
             } //end let spo
@@ -1005,9 +1085,15 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 { selectedMarker.unHighlight() }
             OVScene.selectedMarkerKey = ""
         }
+        else if whatWeBeEditing == "scalar" //10/15 new
+        {
+            if selectedScalarShape.highlighted &&
+                OVScene.selectedScalarKey != uid
+                { selectedScalarShape.unHighlight() }
+            OVScene.selectedScalarKey = ""
+        }
         else if whatWeBeEditing == "shape"
         {
-            //selectedSphere.unHighlight()
             if selectedSphere.highlighted &&
                 OVScene.selectedShapeKey != uid
                 { selectedSphere.unHighlight() }
@@ -1027,12 +1113,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end unselectAnyOldStuff
     
 
-    
-    //=====<oogie2D mainVC>====================================================
-    @objc func synthXClicked(sender : UIButton){
-        spnl.isHidden = true
-    }
-    
     //=====<oogie2D mainVC>====================================================
     func menu()
     {
@@ -1043,6 +1123,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         let alert = UIAlertController(title: tstr, message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.setValue(attStr, forKey: "attributedTitle")
         alert.view.tintColor = UIColor.black //lightText, works in darkmode
+        alert.addAction(UIAlertAction(title: "Reset Camera", style: .default, handler: { action in
+            self.resetCamera()
+        }))
         alert.addAction(UIAlertAction(title: "Load Scene...", style: .default, handler: { action in
             self.chooserMode = "loadScene"
             self.performSegue(withIdentifier: "chooserLoadSegue", sender: self)
@@ -1063,14 +1146,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 //        alert.addAction(UIAlertAction(title: "Save TIFFIE...", style: .default, handler: { action in
 //            self.packupAndSaveTiffie() ///5/11 new kind of scene storage!
 //        }))
-        alert.addAction(UIAlertAction(title: "Patch Editor", style: .default, handler: { action in
-            self.performSegue(withIdentifier: "EditPatchSegue", sender: self)
-        }))
         alert.addAction(UIAlertAction(title: "Clear Scene", style: .default, handler: { action in
             self.clearScenePrompt()
-        }))
-        alert.addAction(UIAlertAction(title: "Dump Buffers", style: .default, handler: { action in
-            self.dumpBuffers()
         }))
         alert.addAction(UIAlertAction(title: "Textures...", style: .default, handler: { action in
             self.performSegue(withIdentifier: "textureSegue", sender: self)
@@ -1079,20 +1156,76 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.updatePkeys() //3/30 update kb if needed
             self.pkeys.isHidden = !self.pkeys.isHidden
         }))
-        alert.addAction(UIAlertAction(title: "Reset Camera", style: .default, handler: { action in
-            self.resetCamera()
+        alert.addAction(UIAlertAction(title: "Select...", style: .default, handler: { action in
+            self.selectObjectMenu()
         }))
-
-        alert.addAction(UIAlertAction(title: "Dump Scene", style: .default, handler: { action in
-            let d = self.allP.getBufferReport()
-            print ("scene dump: \(d)")
-            self.OVScene.OSC.dump()
+        alert.addAction(UIAlertAction(title: "Dump Scene...", style: .default, handler: { action in
+            let s = self.OVScene.getCurrentSceneDumpString()
+            print(s)
+            self.infoAlert(title:"oogie scene dump" , message : s)
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
         self.present(alert, animated: true, completion: nil)
     } //end menu
     
+    
+    //=====<oogie2D mainVC>====================================================
+    // 10/7 it would be nice to sort the names in this menu...??
+    func selectObjectMenu()
+    {
+        let tstr = "Select Object"
+        let attStr = NSMutableAttributedString(string: tstr)
+        attStr.addAttribute(NSAttributedString.Key.font, value: UIFont.boldSystemFont(ofSize: 25), range: NSMakeRange(0, attStr.length))
+        let alert = UIAlertController(title: tstr, message: nil, preferredStyle: UIAlertController.Style.alert)
+        alert.setValue(attStr, forKey: "attributedTitle")
+        alert.view.tintColor = UIColor.black //lightText, works in darkmode
+        let dv = OVScene.getNameUIDDict(forEvery: "voice") //get name -> UID map
+        for name in dv.keys.sorted()
+        {
+            let uid = dv[name]
+            if uid != OVScene.selectedMarkerKey
+            {
+                let action = UIAlertAction(title: name, style: .default, handler: { action in
+                    let _ = self.selectOrDeselectMarkerBy(uid:uid!) //we definitely have UID!
+                })
+                action.setValue(imageV?.withRenderingMode(.alwaysOriginal), forKey: "image")
+                alert.addAction(action)
+            }
+        }
+        let ds = OVScene.getNameUIDDict(forEvery: "shape") //get name -> UID map
+        for name in ds.keys.sorted()
+        {
+            let uid = ds[name]
+            if uid != OVScene.selectedShapeKey
+            {
+                let action = UIAlertAction(title: name, style: .default, handler: { action in
+                    let _ = self.selectOrDeselectShapeBy(uid:uid!) //we definitely have UID!
+                })
+                action.setValue(imageS?.withRenderingMode(.alwaysOriginal), forKey: "image")
+                alert.addAction(action)
+            }
+        }
+        let dp = OVScene.getNameUIDDict(forEvery: "pipe") //get name -> UID map
+        for name in dp.keys.sorted()
+        {
+            let uid = dp[name]
+            if uid != OVScene.selectedPipeKey
+            {
+                let action = UIAlertAction(title: name, style: .default, handler: { action in
+                    let _ = self.selectOrDeselectPipeBy(uid:uid!) //we definitely have UID!
+                })
+                action.setValue(imageP?.withRenderingMode(.alwaysOriginal), forKey: "image")
+                alert.addAction(action)
+            }
+        }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { action in
+            print("cancel...")
+        }))
+
+        self.present(alert, animated: true, completion: nil)
+    } //end selectObjectMenu
+
     
     //=====<oogie2D mainVC>====================================================
     // voice popup... various functions
@@ -1268,14 +1401,14 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     //  Step 1: get output channel, Step 2: pick target , Step 3: choose parameter
     func addPipeStepOne(voice:OogieVoice)
     {
-        let alert = UIAlertController(title: "Choose Output Channel", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        let alert = UIAlertController(title: "Choose Pipe Output Channel", message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.view.tintColor = UIColor.black //2/6 black text
         //DHS 12/1 REPLACE!!!
         let chanz = ["Red","Green","Blue","Hue","Saturation","Luminosity","Cyan", "Magenta" ,"Yellow"]
         for chan in chanz
         {
             alert.addAction(UIAlertAction(title: chan, style: .default, handler: { action in
-                self.addPipeStepTwo(voice: voice,channel: chan.lowercased())
+                self.addPipeStepTwo(voice: voice,channel: chan.lowercased(), asObject:"Pipe") //10/14
             }))
         }
         
@@ -1286,25 +1419,29 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
   
     //=====<oogie2D mainVC>====================================================
-    func addPipeStepTwo(voice:OogieVoice , channel : String)
+    // 10/14 add asObject so we can use this to add pipes or scalars
+    func addPipeStepTwo(voice:OogieVoice , channel : String, asObject : String)
     {
         //print("step 2 chan \(channel)")
         //12/30 we should look in sceneShapes/sceneVoices for our list...
         let shapeList = OVScene.getListOfSceneShapeNames() //9/28
         let voiceList = OVScene.getListOfSceneVoiceNames()
-        let alert = UIAlertController(title: "Choose Destination", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        let alert = UIAlertController(title: "Choose " + asObject + " Destination", message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.view.tintColor = UIColor.black //2/6 black text
         for l11 in shapeList
         {
             let uid = OVScene.findSceneShapeUIDByName ( name: l11)
             alert.addAction(UIAlertAction(title: l11, style: .default, handler: { action in
-                self.addPipeStepThree(voice: voice,channel: channel , destination : uid ,isShape: true)
+                self.addPipeStepThree(voice: voice,channel: channel , destination : uid ,
+                                      isShape: true ,asObject: asObject)
             }))
         }
         for l12 in voiceList
         {
+            let uid = OVScene.findSceneVoiceUIDByName ( name: l12) //10/15 wups!
             alert.addAction(UIAlertAction(title: l12, style: .default, handler: { action in
-                self.addPipeStepThree(voice: voice,channel: channel , destination : l12.lowercased(),isShape: false)
+                self.addPipeStepThree(voice: voice,channel: channel , destination : uid,
+                                      isShape: false ,asObject: asObject)
             }))
         }
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
@@ -1314,20 +1451,28 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
     
     //=====<oogie2D mainVC>====================================================
-    func addPipeStepThree(voice:OogieVoice , channel : String , destination : String , isShape : Bool)
+    // 10/14 add asObject so we can use this to add pipes or scalars
+    func addPipeStepThree(voice:OogieVoice , channel : String , destination : String , isShape : Bool, asObject : String)
     {
         //print("step 3 chan \(channel) destination \(destination) shape \(isShape)")
-        let alert = UIAlertController(title: "Choose Parameter", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+        let destItem = isShape ? "Shape" : "Voice" //10/14
+        let alert = UIAlertController(title: "Choose " + destItem + " Parameter", message: nil, preferredStyle: UIAlertControllerStyle.alert)
         alert.view.tintColor = UIColor.black //2/6 black text
         var menuNames = OSP.shapeParamNamesOKForPipe
         if !isShape {menuNames = OVP.voiceParamNamesOKForPipe}
         for pname in menuNames
             {
                 alert.addAction(UIAlertAction(title: pname, style: .default, handler: { action in
-                    //Add our pipe to scene... (BREAK OUT TO METHOD WHEN WORKING!)
-                    let ps = PipeStruct(fromObject: voice.OVS.uid, fromChannel: channel.lowercased(), toObject: destination, toParam: pname.lowercased())
-                    // 9/28 WTF?  let pcount = 1 + self.OVScene.scenePipes.count //use count to get name
-                    self.addPipeToScene(ps: ps, key: "", op: "new")
+                    if asObject == "Pipe" //10/14
+                    {
+                        let ps = PipeStruct(fromObject: voice.OVS.uid, fromChannel: channel.lowercased(), toObject: destination, toParam: pname.lowercased())
+                        self.addPipeToScene(ps: ps, op: "new")
+                    }
+                    else
+                    {
+                        let ss = ScalarStruct(toObject: destination, toParam: pname.lowercased())
+                        self.addScalarToScene(scalarSS: ss, op: "new")
+                    }
                 }))
             }
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
@@ -1434,6 +1579,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         shiftPanelDown(panel: voiceEditPanels)   //put away pipe editor
         shiftPanelDown(panel: shapeEditPanels)  //put away shape editor
         shiftPanelDown(panel: pipeEditPanels)   //put away pipe editor
+        piPanel.stopAnimation() //10/5
 
         // 5/7 iterate over all shapes and halt timers first
         for (_,shape) in OVScene.sceneShapes
@@ -1481,7 +1627,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             { addVoiceToScene(nextOVS: nextOVS,   op: "load") }
         //OK add pipes too
         for (key, nextPipe) in OVScene.OSC.pipes
-            { addPipeToScene(ps: nextPipe, key: key, op: "load") }
+            { addPipeToScene(ps: nextPipe, op: "load") }
 
         pkeys          = PianoKeys() //make new 3d shape, texture it
         pkeys.isHidden = true //Hide for now
@@ -1498,26 +1644,17 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var buf  : Int32 = 0
     //=====<oogie2D mainVC>====================================================
     @IBAction func testSelect(_ sender: Any) {
-        
-//        let dumpo = getBufferDump()
-//        print("annd dump is \(dumpo)")
-        shiftPanelDown(panel: voiceEditPanels) //9/11 shift controls offscreen
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        appDelegate.verbose = !appDelegate.verbose //10/12 toggle debug output
+        OVScene.verbose = appDelegate.verbose
 
         
-//        buf = buf + 1
-//        if buf > 50 { buf = 0 }
+        //       OVScene.validate()
+//        let scShape = ScalarShape.init()
+//        scene.rootNode.addChildNode(scShape)
 //
-//        let bsize = (sfx() as! soundFX).getBufferSize(buf)
-//
-//        print("incr buf : \(buf) size \(bsize)")
-        
-        //dumpDebugShit()
-        //packupAndSaveTiffie()
-       // createMTImage(name:"duhhhhhh")
-        //
-       // var dumpo = (sfx() as! soundFX).dumpBuffer(<#T##which: Int32##Int32#>, <#T##dsize: Int32##Int32#>)]
-        
-        //setSynthMasterLevel(128)
+//        scShape.updateIndicator(with: "Testerini", value: 0.8)
+//        scShape.updateLabel(with:"Voice_00001:Latitude")
         
     } //end testSelect
     
@@ -1551,44 +1688,52 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     //=====<oogie2D mainVC>====================================================
     @IBAction func test2Select(_ sender: Any) {
+        //10/13 test new scalar control
+//        let newSS = ScalarStruct()
+//        addScalarToScene(scalarSS: newSS, op:  "new")
+        //NOTE voice/channel NOT used
+        addPipeStepTwo(voice:self.OVScene.selectedVoice, channel : "", asObject : "Scalar")
+
+        //func addScalarToScene (scalarSS:ScalarStruct , op : String)
 
 //OK this works with samples and ONE synth, cant get other synth patches loaded yet.
-        (sfx() as! soundFX).setSynthMasterLevel(128)
-        (sfx() as! soundFX).setSynthPLevel(50)
-        (sfx() as! soundFX).setSynthPKeyOffset(50)
-        (sfx() as! soundFX).setSynthPKeyDetune(50)
-        (sfx() as! soundFX).setSynthVibAmpl(0)
-        (sfx() as! soundFX).setSynthVibeAmpl(0)
-        (sfx() as! soundFX).setSynthDetune(1)  //this was the mystery causing the nasty synth blart sound.
-        var stype  = SYNTH_VOICE
-        if buf > 7
-        {
-            stype = SAMPLE_VOICE
-            (sfx() as! soundFX).setSynthAttack(0);
-            (sfx() as! soundFX).setSynthDecay(0);
-            (sfx() as! soundFX).setSynthSustain(0);
-            (sfx() as! soundFX).setSynthRelease(0);
-            (sfx() as! soundFX).setSynthSustainL(0);
-        }
-        else
-        {
-            (sfx() as! soundFX).setSynthAttack(50);
-            (sfx() as! soundFX).setSynthDecay(5);
-            (sfx() as! soundFX).setSynthSustain(10);
-            (sfx() as! soundFX).setSynthSustainL(80);
-            (sfx() as! soundFX).setSynthRelease(80);
-            (sfx() as! soundFX).buildEnvelope(Int32(buf),true); //arg whichvoice?
-            (sfx() as! soundFX).dumpEnvelope(Int32(buf));  
-        }
-        print("play note : \(note) type \(stype)")
-        (sfx() as! soundFX).playNote(note,
-                                     buf ,
-                                     stype)
-        note = note + 1
-        if note > 80 { note = 50 }
+//        (sfx() as! soundFX).setSynthMasterLevel(128)
+//        (sfx() as! soundFX).setSynthPLevel(50)
+//        (sfx() as! soundFX).setSynthPKeyOffset(50)
+//        (sfx() as! soundFX).setSynthPKeyDetune(50)
+//        (sfx() as! soundFX).setSynthVibAmpl(0)
+//        (sfx() as! soundFX).setSynthVibeAmpl(0)
+//        (sfx() as! soundFX).setSynthDetune(1)  //this was the mystery causing the nasty synth blart sound.
+//        var stype  = SYNTH_VOICE
+//        if buf > 7
+//        {
+//            stype = SAMPLE_VOICE
+//            (sfx() as! soundFX).setSynthAttack(0);
+//            (sfx() as! soundFX).setSynthDecay(0);
+//            (sfx() as! soundFX).setSynthSustain(0);
+//            (sfx() as! soundFX).setSynthRelease(0);
+//            (sfx() as! soundFX).setSynthSustainL(0);
+//        }
+//        else
+//        {
+//            (sfx() as! soundFX).setSynthAttack(50);
+//            (sfx() as! soundFX).setSynthDecay(5);
+//            (sfx() as! soundFX).setSynthSustain(10);
+//            (sfx() as! soundFX).setSynthSustainL(80);
+//            (sfx() as! soundFX).setSynthRelease(80);
+//            (sfx() as! soundFX).buildEnvelope(Int32(buf),true); //arg whichvoice?
+//            (sfx() as! soundFX).dumpEnvelope(Int32(buf));
+//        }
+//        print("play note : \(note) type \(stype)")
+//        (sfx() as! soundFX).playNote(note,
+//                                     buf ,
+//                                     stype)
+//        note = note + 1
+//        if note > 80 { note = 50 }
 
-    }
+    } //end test2select
     
+    //=====<oogie2D mainVC>====================================================
 //    func getBufferDump()
 //    {
 //        for i in 0...255
@@ -1753,12 +1898,12 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //First, set up scene structures, get fresh voice back...
         let newVoice = OVScene.addVoiceSceneData(nextOVS : nextOVS , op:op)
         // use this voice and create the 3D marker
-        addVoice3DNode(voice:newVoice, op:op)
+        addVoice3DNode (voice:newVoice, op:op)
     } //end addVoiceToScene
     
     //=====<oogie2D mainVC>====================================================
     // always adds sphere for now...
-    func addVoice3DNode(voice:OogieVoice, op:String)
+    func addVoice3DNode (voice:OogieVoice, op:String)
     {
         if op != "new"
         {
@@ -1782,6 +1927,61 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             print("error finding shape for voice \(voice.OVS.name)")
         }
     } //end addVoice3DNode
+
+    //=====<oogie2D mainVC>====================================================
+    // 10/13 add scalar control object
+    func addScalarToScene (scalarSS:ScalarStruct , op : String)
+    {
+        //ScalarShape cominb back as (shape:ScalarShape,pos3D:SCNVector3)
+        let psTuple = OVScene.addScalarSceneData (scalarSS:scalarSS, op:op , startPosition:startPosition)
+        addScalar3DNode (pst:psTuple)
+    } //end addScalarToScene
+    
+    //=====<oogie2D mainVC>====================================================
+    // 10/14 new , copy addShape3DNode
+    func addScalar3DNode (pst : (shape:OogieScalar,pos3D:SCNVector3))
+    {
+        var scalar3D   = ScalarShape() //make new 3d shape, texture it
+        let scalarSS   = pst.shape.SS
+        let uid        = scalarSS.uid //9/27
+        //get target object...
+        let toObj   = scalarSS.toObject //
+        var sPos00  = SCNVector3(0.0,0.0,0.0)
+        var isShape = false
+        var tlat : Double = 0.0
+        var tlon : Double = 0.0
+        if let sphereNode = shapes3D[toObj]  //Found a shape as target?
+        {
+            sPos00  = sphereNode.position
+            isShape = true
+        }
+        else //Assume voice/marker?
+        {
+            if let tmarker =  markers3D[toObj]
+            {
+               tlat    = tmarker.lat
+               tlon    = tmarker.lon
+               sPos00  = getMarkerParentPositionByName(name:toObj) //12/30
+            }
+        }
+        // complex, creates scalar and a pipe connecting w/ target object
+        let scalarNode = scalar3D.create3DScalar(uid: uid,sPos00 : pst.pos3D,
+                                                    tlat: tlat , tlon: tlon, sPos01 : sPos00,
+                                                    isShape:isShape,newNode:true)
+        scalar3D.addChildNode(scalarNode) //add our complex crap to parent...
+        scalar3D.uid = uid
+        scalar3D.key = uid  //10/14 looks like key is redundant??
+        //WHICH node gets the name???? maybe just the cylinder?
+        scalar3D.cylNode.name = uid //try click on cylinder?
+        scalar3D.name = uid //10/15 for overall click?
+//        sphereNode.shapeNode.name = uid  //9/27 pass uid to shape node too!
+        // NOTE 3d os of scalar is defined in global space! 
+        //        scalar3D.position = pst.pos3D // get 3d location from incoming tuple, Place 3D object as needed..
+        scalar3D.name     = scalarSS.name
+        oogieOrigin.addChildNode(scalar3D)  // Add shape node to scene
+        scalars3D[uid] = scalar3D     // 9/26 Add shape to 3d dict
+    } //end addScalar3DNode
+
 
 
     //=====<oogie2D mainVC>====================================================
@@ -1815,9 +2015,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     
     //=====<oogie2D mainVC>====================================================
     // 4/29 cleanup, peel off 3d part to separate method, data to OVScene
-    func addPipeToScene(ps : PipeStruct , key : String, op : String)
+    func addPipeToScene(ps : PipeStruct , op : String)
     {
-        if let oop = OVScene.addPipeSceneData(ps : ps , name : key, op : op)
+        if let oop = OVScene.addPipeSceneData(ps : ps ,  op : op) // 10/4 cleanup
         {
             // 1/22 split off 3d portion
              addPipe3DNode(oop : oop , newNode : true) //1/30
@@ -1850,6 +2050,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
              let flat    = fmarker.lat
              let flon    = fmarker.lon
              let sPos00  = getMarkerParentPositionByName(name:from)
+            
+            print("updatepipe lat/lon \(flat),\(flon) : markerpos \(sPos00)")
              let toObj   = oop.PS.toObject
              var sPos01  = fmarker.position
              var tlat    = Double.pi/2.0
@@ -1904,7 +2106,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         picker.dismiss(animated: false) { }
         OVScene.setLoopQuiet(flag: false) //9/13/21 ok make sounds again...
-//        OVScene.startLoop() // 5/11 restart music
     }
 
     //-----<imagePickerDelegate>-------------------------------------
@@ -1919,7 +2120,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 {
                     infoAlert(title:"TIFFIE load failed" , message : s)
                     OVScene.setLoopQuiet(flag: false) //9/13/21 ok make sounds again...
-//                    OVScene.startLoop() // 5/11 restart music
                 }
                 else
                 {
@@ -2011,6 +2211,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end findPipe
     
     //=====<oogie2D mainVC>====================================================
+    // 10/9 pull setTimerSpeed case
     func handle3DUpdates(updates3D:[String])
     {
         if updating3D {return}
@@ -2024,13 +2225,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 let key = String(ops3D[1])
                 switch op
                 {
-                case "setTimerSpeed":   // update 3D shape timer speed?
-                    if ops3D.count > 2  // got a 3rd data value?
-                    {
-                        guard let pipeVal = Double(ops3D[2]) else {break}  // get data from pipe
-                        guard let shape3D = shapes3D[key]    else {break}  // 3D shape to apply data to
-                        //5/7 pulled                                shape3D.setTimerSpeed(rs: Double(pipeVal))
-                    }
                 case "update3DShapeByKey": update3DShapeBy(uid:key) //handle shape param change
                 case "updatePipeTexture":  // update pipe texture motion
                     if let pipe3D = pipes3D[key] //get 3D pipe handle
@@ -2039,7 +2233,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                         let vals = pipe.ibuffer // get raw pipe input data...pass to 3D object
                         pipe3D.texturePipe(phase:0.0 , chan: pipe.PS.fromChannel.lowercased(),
                                            vals: vals, vsize: vals.count , bptr : pipe.bptr)
-                } //end pipe3D
+                        //10/5 update selected pipe graphic display...
+                        if whatWeBeEditing == "pipe"
+                        {
+                            selectedPipeShape.updateInfo(nameStr: pipe3D.name!,
+                                                         pinfo: pipe.getPipeInfo()) //10/6
+                        }
+                    } //end pipe3D
                 case "updateMarkerPosition":  // change a marker 3D position
                     if let marker = markers3D[key]
                     {
@@ -2254,7 +2454,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         print("...chooser cancel")
         OVScene.setLoopQuiet(flag:false) //9/13/21 ok make sounds again...
-//        OVScene.startLoop() // Start music up again...
     }
 
     //---<chooserVCDelegate>--------------------------------------
@@ -2267,27 +2466,33 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             //6/29/21 FIX! let ppp = allP.getPatchByName(name: name)
             //6/29/21 FIX! print("ppp \(ppp)")
         }
-        else //handle scene?
+        else //load new scene?
         {
             OVSceneName  = name
             clearScene(withDefaultScene: false) //5/14 clear before load!
             self.OVScene.sceneLoaded = false //5/7 add loaded flag
             self.OVScene.OSC = DataManager.loadScene(OVSceneName, with: OSCStruct.self)
-            finishSettingUpScene()
+            finishSettingUpScene()   // finish 3d setup.. this may entail setting up a BAD SCENE!!?!?!?
+            // 10/10 handle bad scenes!
+            let sceneStatus = OVScene.validate()
+            if sceneStatus != "OK" //10/11 error has to be in foreground thread dispatch
+            {
+                DispatchQueue.main.async { [self] in //err message needs to be in foreground thread
+                    infoAlert(title:"Bad Scene Loaded\ncreating Default Scene instead" , message : sceneStatus)
+                    self.clearScene(withDefaultScene: true)
+                } //end dispatch
+            } //end if sceneStatus
+            else // valid scene?
+                { OVScene.setLoopQuiet(flag:false) } //10/12 turn sound back on  
         }
     } //end choseFile
-    
 
-    
     //---<chooserVCDelegate>--------------------------------------
     // 11/17 new delegate return w/ filenames from chooser
     func newFolderContents(c: [String])
     {
-       // patchNamez = c
-       // patchNum = 0
-
     }
- //
+
     //---<chooserVCDelegate>--------------------------------------
     //Delegate callback from Chooser...
     func needToSaveFile(name: String) {
@@ -2297,7 +2502,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         pLabel.updateLabelOnly(lStr:"Saved " + OVSceneName)
         OVScene.setLoopQuiet(flag:false) //9/13/21 ok make sounds again...
     }
-
     
     //=====<oogie2D mainVC>====================================================
     // 9/1/21, go for random patch...
@@ -2317,7 +2521,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                                                       purchasedBase: 0, purchasedMax: 0)
             randV.OVS.name = "Random Sample"
         case SYNTH_VOICE: randV.loadRandomSynthPatch()
-            (sfx() as! soundFX).buildEnvelope(0,true); //arg whichvoice?
+            (sfx() as! soundFX).buildEnvelope(Int32(randV.OOP.wave),true); //10/8 synth waves in bufs 0..4
             randV.OVS.name = "Random Synth"
         case PERCUSSION_VOICE: randV.loadRandomPercPatch(builtinBase: bbot, builtinMax: btop)
             randV.OVS.name = "Random Percussion"
@@ -2354,23 +2558,39 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end loadRandomPatch
     
     //=====<oogie2D mainVC>====================================================
+    // 10/8 add shorthand, synth wave setup
     func loadPatchByName (pName:String)
     {
         if let oop = allP.patchesDict[pName]
         {
             print("loadPatchByName: \(oop)")
-            self.OVScene.selectedVoice.OOP = oop
+            let ovsel = self.OVScene.selectedVoice // 10/8 shorthand
+            ovsel.OOP = oop
             let editDict = (paramEdits() as! edits).getForPatch(pName) //10/1 apply any edits
-            OVScene.selectedVoice.applyEditsWith(dict: editDict) //modify voices patch to suit edits
+            ovsel.applyEditsWith(dict: editDict) //modify voices patch to suit edits
             let nn = allP.getSampleNumberByName(ss: oop.name)
-            self.OVScene.selectedVoice.OVS.whichSamp = nn.intValue //10/1
-            if self.OVScene.selectedVoice.OOP.type == PERCKIT_VOICE
+            ovsel.OVS.whichSamp = nn.intValue //10/1
+            selectedMarker.updateTypeInt(newTypeInt : Int32(ovsel.OOP.type)) //10/4
+            if ovsel.OOP.type == PERCKIT_VOICE
             {
-                self.OVScene.selectedVoice.getPercLooxBufferPointerSet() //go get buff ptrs...
+                ovsel.getPercLooxBufferPointerSet() //go get buff ptrs...
             }
             print("load patch \(pName),  buf \(nn)")
         }
     } //end loadPatchByName
+    
+    //=====<controlPanelDelegate>====================================================
+    //10/12 load synth buffers with the basic 5 wave types UP FRONT...
+    // IS there a better place for this?
+    // ONLY CALL THIS ONCE!
+    func loadSynthBuffersWithCannedWaves()
+    {
+        for i in 0...4   //sine, saw,square,ramp,noise
+        {
+            (sfx() as! soundFX).buildaWaveTable(Int32(i),Int32(i));  //This could be dangerous!
+
+        }
+    } //end loadSynthBuffersWithCannedWaves
     
     //=====<controlPanelDelegate>====================================================
      //controlPanel delegate returns...  9/28 BUG: pvalue for patch param is wrong, points to prev item from selection
@@ -2379,6 +2599,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
      {
          print("mainvc: didSetControlValue \(which) \(newVal) \(pname)")
          
+        if pname == "nchan"
+        {
+            print("bing nchan!!!")
+        }
+        
          if pname == "patch" //new patch? 10/3 change toi string
          {
              if newVal == 0 //RANDOM
@@ -2387,21 +2612,28 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
              }
              else
              {
-                 // 10/3 NO NEED? let patchName = allP.getSoundPackPatchNameByIndex(index: Int(newVal-1)) //patches start 1....n
-                 print("load patch \(pvalue)")
-                 loadPatchByName(pName: pvalue) //10/3
-                 OVScene.selectedVoice.OVS.patchName = pvalue  //9/30 wups forgot to save...
+                 if let ps = pvalue //unwrap our string...
+                 {
+                     // 10/3 NO NEED? let patchName = allP.getSoundPackPatchNameByIndex(index: Int(newVal-1)) //patches start 1....n
+                     //print("load patch \(ps)")
+                     loadPatchByName(pName: pvalue) //10/3
+                     OVScene.selectedVoice.OVS.patchName = ps  //9/30 wups forgot to save...
+                     pLabel.updateLabelOnly(lStr:"patch:\(ps)") //10/12 add output
+                 }
              } //end else not random
          } //end which 17
-         if pname == "soundpack" //9/11 handle new soundpack
+         // 10/12 add else here,
+         else if pname == "soundpack" //9/11 handle new soundpack
          {
              OVSoundPack = allP.getSoundPackNameByIndex(index: Int(newVal));
              allP.getSoundPackByName(name: OVSoundPack)
              let patchName = allP.getSoundPackPatchNameByIndex(index: 0) //patches start 1....n
-             print("choose sp \(OVSoundPack) patch \(patchName)  ... NEED to update patchPicker!!!")
+             print("choose colorpack \(OVSoundPack) patch \(patchName)  ... NEED to update patchPicker!!!")
+             pLabel.updateLabelOnly(lStr:"cpack:\(OVSoundPack)") //10/12 add output
              loadPatchByName(pName: patchName)
              var pnames = [String]()
              pnames.append("Random")
+             //HMM this should be seaprate??
              let psize = allP.getSoundPackSize()
              if psize > 0
              {
@@ -2436,31 +2668,105 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }
 
      
-     //=====<shapePanelDelegate>====================================================
-     // 9/15 redid to handle  OVScene.loadCurrentShapeParams
-     func didSetShapeValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
-     {
-         print("mainvc: didSetShapeValue \(which) \(newVal) \(pname) \(pvalue)")
-         if which == 0 //texture?
-         {
-             //call a delegate return here...
-             if pname == "default"
-             {
-                 let ii = UIImage(named: "spectrumOLD")!   //This really should be defined everywhere!
-                 gotTexture(name: pname, tex: ii)
-             }
-             else if let ii = tc.texDict[pname] //try for texture
-             {
-                 gotTexture(name: pname, tex: ii)
-             }
-         }
-         else{ //normal param??
-             editParam(which,newVal,pname,pvalue,undoable)
-         }
-     } //end didSetShapeValue
+
+    //=====<scalarPanelDelegate>====================================================
+    // 10/17 redid to handle  OVScene.loadCurrentShapeParams
+    func didSetScalarValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
+    {
+        print("mainvc: didSetScalarValue \(which) \(newVal) \(pname) \(pvalue)")
+        if pvalue == "value" //scalar value triggers live 3d response and changes another scene object
+        {
+            var val      = Double(newVal)  //val comes in 0..1 range...
+            var objName   = ""
+            var dmult :Double = 1.0
+            var doff  :Double = 0.0
+            let lorange :Double = OVScene.selectedScalar.SS.loRange
+            let hirange :Double = OVScene.selectedScalar.SS.hiRange
+            // lets fit val into the lo/hi range...
+            val = lorange + val * (hirange-lorange)
+            print("...finalparamval \(val)")
+            var ftype     = "double"
+            let tobject   = OVScene.selectedScalar.SS.toObject //get target UID
+            let paramName = OVScene.selectedScalar.SS.toParam
+            if let shape  = OVScene.sceneShapes[tobject]  //oogieShape
+            {
+//                let paramTuple = shape.getParam(named: paramName)
+                if let vArray = OSP.shapeParamsDictionary[paramName] // get param metadata
+                {
+                    if vArray.count > 6   //gotta get to 5th / 6th elt...
+                    {
+                        ftype   = vArray[1] as! String
+                        dmult   = vArray[5] as! Double
+                        doff    = vArray[6] as! Double
+                    }
+                }
+                if ftype == "double" //convert to full param value range
+                {
+                    val = (val * dmult) + doff  //use mult/off fromparam...
+                }
+                print(" \(paramName)  val \(newVal)  -> \(val)")
+                shape.setParam(named: paramName, toDouble: val, toString: pvalue)  // 10/17 hook up to param
+                OVScene.sceneShapes[tobject] = shape //saveit back!
+                update3DShapeBy(uid:tobject)
+                pLabel.updateLabelOnly(lStr: "\(paramName) :" + String(val))
+            }
+            else if let voice = OVScene.sceneVoices[tobject]
+            {
+                //got voice
+                objName = voice.OVS.name
+            }
+           
+            print(" ....set value to \(newVal)")
+            //just go straight to the 3d indicator!
+            selectedScalarShape.updateIndicator(with: pname, value: CGFloat(newVal))
+            selectedScalarShape.updateLabel(with: objName)
+            
+            //asdf
+            //asdf
+        }
+        else
+        {
+            editParam(which,newVal,pname,pvalue,undoable)
+        }
+    } //end didSetScalarValue
+
+    // 10/15/21
+    func didSelectScalarDice() {
+        //print("didSelectScalarDice")
+        pLabel.updateLabelOnly(lStr:"Randomize Scalar") //9/18 info for user!
+    }
+    func didSelectScalarReset() {
+        //print("didSelectScalarReset")
+        pLabel.updateLabelOnly(lStr:"Reset Shape") //9/18 info for user!
+    }
+    func didSelectScalarDismiss() {   //9/24 new for touch on editlabel in UI
+        //print("didSelectScalarDismiss")
+        deselectAndCloseEditPanel()
+    }
 
     //=====<shapePanelDelegate>====================================================
-    // 9/18/21
+    // 9/15 redid to handle  OVScene.loadCurrentShapeParams
+    func didSetShapeValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
+    {
+        print("mainvc: didSetShapeValue \(which) \(newVal) \(pname) \(pvalue)")
+        if pname == "texture" //texture?  10/7 use string!
+        {
+            //call a delegate return here...
+            if pvalue == "default"
+            {
+                let ii = UIImage(named: "spectrumOLD")!   //This really should be defined everywhere!
+                gotTexture(name: pvalue, tex: ii)
+            }
+            else if let ii = tc.texDict[pvalue] //10/7 try for texture
+            {
+                gotTexture(name: pvalue, tex: ii) //10/7
+            }
+        }
+        else{ //normal param??
+            editParam(which,newVal,pname,pvalue,undoable)
+        }
+    } //end didSetShapeValue
+    //=====<shapePanelDelegate>====================================================
     func didSelectShapeDice() {
         //print("didSelectShapeDice")
         pLabel.updateLabelOnly(lStr:"Randomize Shape") //9/18 info for user!
@@ -2475,6 +2781,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     }
 
     
+
     //=====<pipePanelDelegate>====================================================
     // 9/15 redid to handle  OVScene.loadCurrentShapeParams
     func didSetPipeValue(_ which: Int32, _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
@@ -2482,8 +2789,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         print("mainvc: didSetPipeValue \(which) \(newVal) \(pname) \(pvalue)")
         editParam(which,newVal,pname,pvalue,undoable)
     }
-    // 9/18/21
-    func didSelectPipeDice() {
+    func didSelectPipeDice() {  // 9/18/21
         //print("didSelectPipeDice")
         pLabel.updateLabelOnly(lStr:"Randomize Shape") //9/18 info for user!
     }
@@ -2495,11 +2801,20 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //print("didSelectPipeDismiss")
         deselectAndCloseEditPanel()
     }
+    func needPipeDataImage() {   //10/5
+        print("needPipeDataImage")
+        piPanel.setDataImage(selectedPipeShape.dataImage) //update panel!
+    }
 
     //=====<oogie2D mainVC>====================================================
     // 9/24 deselects 3D shape and closes open panel; relies on whatWeBeEditing!
     func deselectAndCloseEditPanel ()
     {
+        if whatWeBeEditing == "scalar" //10/15 new
+        {
+            selectedScalarShape.toggleHighlight()   //handle 3D update
+            shiftPanelDown(panel: scalarEditPanels)
+        }
         if whatWeBeEditing == "shape"
         {
             selectedSphere.toggleHighlight()   //handle 3D update
@@ -2509,6 +2824,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         {
             selectedPipeShape.toggleHighlight()   //handle 3D update
             shiftPanelDown(panel: pipeEditPanels)  //9/24  put away voice editor
+            piPanel.stopAnimation() //10/5
         }
         else if whatWeBeEditing == "voice" || whatWeBeEditing == "patch"  //10/3
         {
@@ -2630,7 +2946,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         //print("didSelectPatchReset")
         pLabel.updateLabelOnly(lStr:"Reset Patch") //9/18 info for user!
         loadPatchByName (pName:OVScene.selectedVoice.OVS.patchName)
-//        paPanel.patchName = OVScene.selectedVoice.OVS.patchName  //10/3
+//       paPanel.patchName = OVScene.selectedVoice.OVS.patchName  //10/3
+        paPanel.paramDict = OVScene.selectedVoice.getPatchParamDict() //10/5 send new params down...
         paPanel.configureView()
     }
     func didSelectPatchDismiss() {   //9/24 new for touch on editlabel in UI

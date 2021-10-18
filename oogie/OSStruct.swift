@@ -17,6 +17,7 @@
 //  10/25 change rotParams
 //  1/21  change to OSStruct for symmetry w/ OVStruct
 //  2/3   add comment field
+//  10/7  change name default
 import SceneKit
 
 //Parameter area...
@@ -49,7 +50,7 @@ struct OSStruct : Codable {
     init()
     {
         key       = ""
-        name      = "sphere"
+        name      = "shape_00001"  //10/7 for new scene...
         comment   = COMMENT_DEFAULT //2/3 from appDelegate
         primitive = "sphere"
         texture   = "default"

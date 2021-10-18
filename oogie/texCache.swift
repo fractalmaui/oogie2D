@@ -12,11 +12,11 @@
 //
 //  BUG in deleteImageFile!!
 //   {Error Domain=NSPOSIXErrorDomain Code=2 "No such file or directory"}}
+// 10/7/21 change cachesDirectory, use bundleID
+//   toplevelfolders/appID/Library/Caches/com.frak.oogie2d/filesgohere
 import Foundation
 
 class texCache {
-    
-    
     //This is supposed to be a singleton...
     static let sharedInstance = texCache()
 
@@ -33,14 +33,14 @@ class texCache {
     private init()
     {
         //print(" texCache isborn")
+        let bundle =  Bundle.main.bundleIdentifier //assume this is always valid! force unwrap below
         cacheMasterFile = "cacheList.txt"
-        cachesDirectory = DataManager.getCacheDirectory().appendingPathComponent("textures")
+        cachesDirectory = DataManager.getCacheDirectory().appendingPathComponent(bundle!)
         cacheMasterURL  = cachesDirectory.appendingPathComponent(cacheMasterFile)
         print(" cache URL \(cacheMasterURL)")
         loadMasterCacheFile()
         loadCache()
     }
-    
     
     //=====(texCache)=============================================
     // delete internal AND file!
@@ -56,7 +56,6 @@ class texCache {
         }
         rewriteMasterCacheFile()
         deleteImageFile(fileName : name)
-
     } //end deleteItemByName
     
     //=====(texCache)=============================================
@@ -93,6 +92,7 @@ class texCache {
     func updateMasterFile(latestFileName : String)
     {
         let stringToWrite = latestFileName + "\n"
+        print("update textures \(cacheMasterURL.path)")
         if FileManager.default.fileExists(atPath: cacheMasterURL.path) //exists?
         {
             if let fileUpdater = try? FileHandle(forUpdating: cacheMasterURL) {
@@ -108,7 +108,7 @@ class texCache {
             do {  //write text to file 
                 try stringToWrite.write(to: cacheMasterURL, atomically: false, encoding: .utf8)
             }
-            catch {/* error handling here */}
+            catch {print("ERROR writing texture cache!")}
         }
     }
     

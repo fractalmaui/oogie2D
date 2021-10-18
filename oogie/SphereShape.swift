@@ -220,7 +220,7 @@ class SphereShape: SCNNode {
         let text_style=NSMutableParagraphStyle()
         text_style.alignment=NSTextAlignment.center
         
-        var textColor = UIColor.white
+        let textColor = UIColor.white
         let xmargin : CGFloat = 300 //WTF why doesnt this stretch label?
         let textFontAttributes = [
             NSAttributedString.Key.font: textFont,

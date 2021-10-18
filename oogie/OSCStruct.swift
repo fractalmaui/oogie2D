@@ -25,6 +25,7 @@ struct OSCStruct : Codable {
     var shapes    : Dictionary<String, OSStruct>
     var voices    : Dictionary<String, OVStruct>
     var pipes     : Dictionary<String, PipeStruct>
+    var scalars   : Dictionary<String, ScalarStruct>  //10/13 new
 
     //======(OSCStruct)=============================================
     init()
@@ -37,15 +38,17 @@ struct OSCStruct : Codable {
         shapes    = Dictionary<String, OSStruct>()
         voices    = Dictionary<String, OVStruct>()
         pipes     = Dictionary<String, PipeStruct>()
+        scalars   = Dictionary<String, ScalarStruct>() //10/13 new
     }
     
     //======(OSCStruct)=============================================
     mutating func clearScene()
     {
-        name  = "empty"
+        name = "empty"
         shapes.removeAll()
         voices.removeAll()
-        pipes.removeAll()   //wups 2/1
+        pipes.removeAll()
+        scalars.removeAll()   //10/13 new
     }
     
     //======(OSCStruct)=============================================

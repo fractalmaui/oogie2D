@@ -62,10 +62,10 @@ double drand(double lo_range,double hi_range );
 -(void) setupCannedData
 {
     if (allParams != nil) return; //only go thru once!
-    NSLog(@" setup canned pipe Param data...");
-    allParams      = @[@"inputchannel",@"outputparam",@"lorange",@"hirange",@"name",@"comment"];
+    //NSLog(@" setup canned pipe Param data...");
+    allParams      = @[@"inputchannel",@"outputparam",@"lorange",@"hirange",@"invert",@"name",@"comment"];
     sliderNames    = @[@"LoRange",@"HiRange"];
-    pickerNames    = @[@"InputChannel",@"OutputParam"];
+    pickerNames    = @[@"InputChannel",@"OutputParam",@"Invert"];
     textFieldNames = @[@"Name",@"Comments"];
     
     icParams = @[@"Red", @"Green", @"Blue", @"Hue",
@@ -74,10 +74,37 @@ double drand(double lo_range,double hi_range );
     
     inputChanParams = @[ @"Red", @"Green", @"Blue", @"Hue",
         @"Luminosity", @"Saturation", @"Cyan", @"Magenta", @"Yellow"];
-
-
+    invertParams = @[@"Off", @"On"];
 
 } //end setupCannedData
+
+
+//======(pipePanel)==========================================
+- (void) startAnimation
+{
+    animTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:self
+                       selector:@selector(animTimerTick:) userInfo:nil repeats:YES];
+}
+
+//======(pipePanel)==========================================
+- (void)animTimerTick:(NSTimer *)timer
+{
+    //NSLog(@" anim bing");
+    [self.delegate needPipeDataImage];
+}
+
+//======(pipePanel)==========================================
+- (void) stopAnimation
+{
+    [animTimer invalidate];
+}
+
+//======(pipePanel)==========================================
+- (void) setDataImage:(UIImage*) i
+{
+    //NSLog(@" setdataimage %@",i);
+    if (dataImageView != nil) dataImageView.image = i;
+}
 
 //======(pipePanel)==========================================
 -(void) setupView:(CGRect)frame
@@ -207,19 +234,30 @@ double drand(double lo_range,double hi_range );
     [resetButton addTarget:self action:@selector(resetSelect:) forControlEvents:UIControlEventTouchUpInside];
     [header addSubview:resetButton];
     
+     
     //Add shape controls panel-------------------------------------
     xi = OOG_XMARGIN;
-    yi = 60;
+    yi = 60 + OOG_SLIDER_HIT;
     xs = viewWid-2*OOG_XMARGIN;
-    ys = 8*OOG_SLIDER_HIT + 3*OOG_TEXT_HIT + OOG_PICKER_HIT + 2*OOG_YMARGIN;
+    ys = 8*OOG_SLIDER_HIT + 3*OOG_TEXT_HIT + 2*OOG_PICKER_HIT + 2*OOG_YMARGIN;
     UIView *sPanel = [[UIView alloc] init];
     [sPanel setFrame : CGRectMake(xi,yi,xs,ys)];
     sPanel.backgroundColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1];
     [scrollView addSubview:sPanel];
     
+    //10/5 add data image, make slider height
     xi = OOG_XMARGIN;
-    yi = xi; //top of form
+    yi = xi; //top of panel
+    xs = viewWid-3*OOG_XMARGIN;
+    ys = 2*OOG_SLIDER_HIT;
+    dataImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"empty64x64"]];
+    [dataImageView setFrame:CGRectMake(xi,yi,xs,ys)];
+    dataImageView.layer.borderWidth  = 2;
+    dataImageView.layer.borderColor  = [UIColor darkGrayColor].CGColor;
+    [sPanel addSubview:dataImageView];
 
+    xi = OOG_XMARGIN;
+    yi+= (ys+OOG_YSPACER); //skip down below last item
     // 2 pickers ... Input/Output
     [self addPickerRow:sPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
@@ -238,6 +276,11 @@ double drand(double lo_range,double hi_range );
     [self addSliderRow:sPanel : iSlider : SLIDER_BASE_TAG + iParam : sliderNames[iSlider] : yi : OOG_SLIDER_HIT:0.0:1.0];
     yi += (OOG_SLIDER_HIT+OOG_YSPACER);
     iSlider++;
+    iParam++;
+    // invert picker
+    [self addPickerRow:sPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
+    yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
+    iPicker++;
     iParam++;
 
     // 2 text entry fields... name / comment 9/20 fix yoffset bug
@@ -403,7 +446,7 @@ double drand(double lo_range,double hi_range );
 //======(pipePanel)==========================================
 -(void) configureView
 {
-    NSLog(@" reload picker 1...");
+    //NSLog(@" reload picker 1...");
     [allPickers[1] reloadAllComponents]; //load pipe outputs, they may change over time
     NSString *s = @"no name"; //get voice name for title
     NSArray *a  = [_paramDict objectForKey:@"name"]; //extract the pipe name...
@@ -589,17 +632,21 @@ double drand(double lo_range,double hi_range );
 //======(pipePanel)==========================================
 - (NSString *)getPickerTitleForTagAndRow : (int)tag : (int)row
 {
-    //NSLog(@" get picker tag %d",tag);
+    //NSLog(@" pipes...get picker tag %d",tag);
     NSString *title = @"";
     if (tag == PICKER_BASE_TAG + 0) //input chans
     {
         title = inputChanParams[row];
     }
-    if (tag == PICKER_BASE_TAG + 1) // output names (variable)
+    else if (tag == PICKER_BASE_TAG + 1) // output names (variable)
     {
         title = _outputNames[row];
     }
-    NSLog(@" gptit %d %@",row,title);
+    else if (tag == PICKER_BASE_TAG + 4) // output names (variable)
+    {
+        title = invertParams[row];
+    }
+   // NSLog(@" gptit %d %@",row,title);
     return title;
 }
 
@@ -610,22 +657,24 @@ double drand(double lo_range,double hi_range );
 - (void)pickerView:(UIPickerView *)pickerView didSelectRow: (NSInteger)row inComponent:(NSInteger)component {
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
     int liltag = (int)pickerView.tag % 1000;
+    BOOL undoable = !rollingDiceNow && !resettingNow;
     if (liltag == 0)
-        [self.delegate didSetPipeValue:liltag :(float)row: allParams[liltag] : inputChanParams[row]: !rollingDiceNow && !resettingNow];
-    else
-        [self.delegate didSetPipeValue:liltag :(float)row: allParams[liltag] :_outputNames[row]: !rollingDiceNow && !resettingNow];
-    //8/3 update picker activity count
-    int pMinusBase = (int)(pickerView.tag-PICKER_BASE_TAG);
-//    if (pMinusBase>=0 && pMinusBase<MAX_PIPE_PICKERS) pChanges[pMinusBase]++;
+        [self.delegate didSetPipeValue:liltag :(float)row: allParams[liltag] : inputChanParams[row]: undoable];
+    else if (liltag == 1)
+        [self.delegate didSetPipeValue:liltag :(float)row: allParams[liltag] :_outputNames[row]: undoable];
+    else if (liltag == 4) // 10/5 invert picker
+        [self.delegate didSetPipeValue:liltag :(float)row: allParams[liltag] :invertParams[row]: undoable];
 }
 
 
 //-------<UIPickerViewDelegate>-----------------------------
 // tell the picker how many rows are available for a given component
 - (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component {
-    int tag = (int)pickerView.tag;
-    if ( tag == PICKER_BASE_TAG)  return 9; //input channels
-    else if ( tag == PICKER_BASE_TAG+1)  return _outputNames.count;
+    int liltag = (int)pickerView.tag % 1000;
+    //NSLog(@" get numrows for picker %d",liltag);
+    if ( liltag == 0)  return 9; //input channels
+    else if ( liltag == 1)  return _outputNames.count;
+    else if ( liltag == 4)  return invertParams.count;
     return 0; //empty (failed above test?)
 }
 

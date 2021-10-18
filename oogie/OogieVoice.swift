@@ -15,6 +15,9 @@
 //  9/15  redid all param ranges to accommodate slider range 0..1
 //  9/16  add FX params to getParam
 //  9/18  add oogieVoiceParams singleton
+//  10/8  synth waves now stored in buffers 0..4
+//  10/12 move lastBeatTime to top ,add verbose arg to playColors
+//
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -35,19 +38,19 @@ let MAX_CBOX_FRAMES = 20 //11/18 for playColors support
 
 // 9/23 canned perc kit defaults
 let percDefaults : [String] = ["Bass_Drum_1","Acoustic_Snare","Low_Tom","Low_Mid_Tom",
-                              "High_Tom","Open_Hi_Hat","Closed_Hi_Hat","Ride_Cymbal_1"]
+                               "High_Tom","Open_Hi_Hat","Closed_Hi_Hat","Ride_Cymbal_1"]
 
 var sfx = soundFX.sharedInstance
 
 let MAX_LOOX = 8
 
 
-    //4/19/20 debug analysis vars
-    typealias debugTuple = (date: Date, note: Int)
-    var dhptr = 0    //history recorder ptr
-    let dhmax = 64   //history recorder size
-    // init fixed size array...
-    var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
+//4/19/20 debug analysis vars
+typealias debugTuple = (date: Date, note: Int)
+var dhptr = 0    //history recorder ptr
+let dhmax = 64   //history recorder size
+// init fixed size array...
+var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
 
 
 
@@ -109,6 +112,8 @@ let MAX_LOOX = 8
     var inPipes  = Set<String>()    //1/22 use insert and remove to manage...
     var outPipes = Set<String>()   //1/22 use insert and remove to manage...
 
+    var lastbeatTime = Date() //10/12 moved up from below
+    
     //-----------(oogieVoice)=============================================
     override init() {
         super.init()
@@ -123,7 +128,8 @@ let MAX_LOOX = 8
         OVS.panFixed  = 128
         //9/8 unique ID for tab
         uid = ProcessInfo.processInfo.globallyUniqueString
-        masterPitch = 0
+        masterPitch   = 0
+        lastbeatTime  = Date() //10/12 timetag voice
     }
     
     //-----------(oogieVoice)=============================================
@@ -193,11 +199,6 @@ let MAX_LOOX = 8
         
     } //end analyzeDebugHistory
     
-    
-    var dogcount = 0
-    var lasta  = 0.0
-    var lastba = 0.0
-    var lastbeatTime = Date()
     //-----------(oogieVoice)=============================================
     // check to see if angle a has gone past a rotTrigger boundary
     // BUG: angle is still varying WILDLY, and beat misses when this happens!
@@ -216,7 +217,7 @@ let MAX_LOOX = 8
         let doubleBeat = a0to2pi / (pi2 / OVS.rotTrigger)
         let newBeat = Int(floor(doubleBeat))
         //NSLog("getBeat a %f angle %f  aoff %f  ", a,a0to2pi,a-lasta  )
-        lasta = a
+        //lasta = a
         if newBeat != beat
         {
             let beatTime = Date()
@@ -224,7 +225,7 @@ let MAX_LOOX = 8
             //NSLog("...newbeat %d tdelta %f adelta %f",newBeat,beatDelta,a - lastba)
             beat = newBeat
             lastbeatTime = beatTime
-            lastba = a
+            //lastba = a
             return true
         }
         return false
@@ -294,9 +295,7 @@ let MAX_LOOX = 8
         }
         if found // find param name
         {
-            let sindex = String(format: "%2.2d", iindex)         // convert to string for lookup
             if let paramz = OVP.voiceParamsDictionary[name]       //  use name to get param lims
-//9/14/21 OLD            if let paramz = voiceParamsDictionaryOLD[sindex]       // finally, get params array
             {
                 let pc = paramz.count
                 if let ptype = paramz[1] as? String //Check param type
@@ -361,6 +360,8 @@ let MAX_LOOX = 8
             let pTuple = getParam(named : pname.lowercased())
             s = s + String(format: "%@:%@\n",pname,pTuple.sParam)
         }
+        // 10/12 wups! add more params
+        s = s + String(format: "%@:%@\n","shapekey",OVS.shapeKey)
         s = s + String(format: "UID:%@\n",OVS.uid)
         return s
     }
@@ -654,7 +655,6 @@ let MAX_LOOX = 8
         case "bottommidi"   : OVS.bottomMidi = ival
         case "topmidi"      : OVS.topMidi = ival
         case "midichannel"  : OVS.midiChannel = ival
-        case "name"         : OVS.name = sval
         //8/11/21 performance params
         case "portamento"    : OVS.portamento   = ival
         case "viblevel"      : OVS.vibLevel     = ival
@@ -802,7 +802,7 @@ let MAX_LOOX = 8
     // 11/18 move in from mainvC. heavy lifter, lots of crap brought together
     //  needs masterPitch. should it be an arg or class member?
     //  4/19 add angle arg
-    func playColors(angle : Double, rr : Int ,gg : Int ,bb : Int) -> Bool
+    func playColors(angle : Double, rr : Int ,gg : Int ,bb : Int, verbose : Bool) -> Bool
     {
         var inkeyNote = 0
         var inkeyOldNote = 0
@@ -826,7 +826,7 @@ let MAX_LOOX = 8
             // 5/14 add pitch shift
             inkeyNote    = masterPitch + OVS.pitchShift + Int((sfx() as! soundFX).makeSureNoteis(inKey: Int32(OVS.keySig),Int32(midiNote)))
             // Mono: Handle releasing old note...
-// 8/14 NO NEED?            if OVS.poly == 1 {(sfx() as! soundFX).releaseNote(Int32(inkeyOldNote),0)} //2nd arg, WTF??
+            // 8/14 NO NEED?            if OVS.poly == 1 {(sfx() as! soundFX).releaseNote(Int32(inkeyOldNote),0)} //2nd arg, WTF??
             //TBD....[synth setTimetrax:OVgettimetrax(vloop)];
             //New note outside tolerance?
             
@@ -838,31 +838,29 @@ let MAX_LOOX = 8
             if OVS.rotTrigger == 0 //Use colors as trigger?
             {
                 gotTriggered = (abs (nchan - lnchan) > OVS.thresh) && nc < 12 //5/2
-                if (nc >= 12){ print(" SYNTH/sample notecount overflow!!") }
+                if (nc >= 20){ print("   ...SYNTH notecount \(nc)") }
             }
             else //use beats trigger?
             {
-                    //print("beats key \(OVS.key) angle \(angle)")
-                    gotTriggered = getBeat(a: angle) //uses angle from shape
+                //print("beats key \(OVS.key) angle \(angle)")
+                gotTriggered = getBeat(a: angle) //uses angle from shape
             }
             //if (abs (nchan - lnchan) > 2*OVS.thresh) && nc < 12
             if gotTriggered // 4/19
             {
                 //NSLog("OVPlayColors:Midinote %d",midiNote)
                 //print(" toler check: nchan \(nchan) lnchan \(lnchan) nc \(nc) thresh \(OVS.thresh)",nchan,lnchan,nc )
-
+                
                 //print(" playnote type:\(vt)  whichsamp:\(OVS.whichSamp) id:\(OVS.uid)");
                 (sfx() as! soundFX).setSynthMono(Int32(mono))
                 (sfx() as! soundFX).setSynthMonoUN(Int32(uniqueCount))
-                
-                
-                //sfx() as! soundFX).build
-                //Does this need to be above ADSR?
-                //if vt == SYNTH_VOICE (sfx() as! soundFX).buildaWaveTable(0, Int32(OOP.wave))
                 if vt == SYNTH_VOICE
                 {
-                    (sfx() as! soundFX).buildaWaveTable(0, Int32(OOP.wave))
-
+                    if OOP.wave == 3   //10/8 rebuild wave for squares ONLY
+                    {
+                        // 10/8/21 cant get WAVE_SQUARE to work here, WTF?
+                        (sfx() as! soundFX).buildaWaveTable(3, 3)
+                    }
                 }
                 (sfx() as! soundFX).setSynthAttack(Int32(OOP.attack))
                 //print("....playColors:attack \(OOP.attack)")
@@ -870,7 +868,7 @@ let MAX_LOOX = 8
                 (sfx() as! soundFX).setSynthSustain(Int32(OOP.sustain))
                 (sfx() as! soundFX).setSynthSustainL(Int32(OOP.sLevel))
                 (sfx() as! soundFX).setSynthRelease(Int32(OOP.release))
-                (sfx() as! soundFX).buildEnvelope(0,true)
+                // 10/8 NO NEED?             (sfx() as! soundFX).buildEnvelope(0,true)
                 (sfx() as! soundFX).setSynthPortamento(Int32(OVS.portamento))
                 (sfx() as! soundFX).setSynthVibAmpl(Int32(OVS.vibLevel))
                 (sfx() as! soundFX).setSynthVibSpeed(Int32(OVS.vibSpeed))
@@ -889,16 +887,16 @@ let MAX_LOOX = 8
                 (sfx() as! soundFX).setSynthPLevel(50);
                 (sfx() as! soundFX).setSynthPKeyOffset(50);
                 (sfx() as! soundFX).setSynthPKeyDetune(50);
-
+                
                 var noteToPlay = -1
                 var bptr = 0
                 //-------SYNTH: built-in canned wave samples--------------------------
                 if vt == SYNTH_VOICE
                 {
+                    bptr = OOP.wave //10/8 synth waves use bufs 0..4
                     lastgain = Int(Double(vchan) * 0.7 * OVS.level) // 8/11 for delay
-                    lastbuf  = 0
+                    lastbuf  = bptr
                     lasttype = SYNTH_VOICE
-
                     (sfx() as! soundFX).setSynthGain(Int32(lastgain))
                     if OVS.panMode != 11  //No fixed pan? Use pchan
                     {
@@ -911,9 +909,11 @@ let MAX_LOOX = 8
                     (sfx() as! soundFX).setSynthSampOffset(Int32(OVS.sampleOffset))
                     //4/19 add master pitch,2 octave offset (synths are low sample rate)
                     noteToPlay    = inkeyNote + 24
+                    //print("play synth buf \(bptr) note \(noteToPlay)")
                     if quantTime == 0 //No Quant, play now
                     {
                         (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(vt))
+                        if verbose { print(" ...synthNote bptr[\(bptr)]:\(noteToPlay)") }
                     }
                     else
                     {
@@ -930,7 +930,7 @@ let MAX_LOOX = 8
                 else if vt == SAMPLE_VOICE //10/16 add GM samples
                 {
                     lastgain = Int(Double(vchan) * 0.7 * OVS.level) //8/11 for delay
-
+                    
                     (sfx() as! soundFX).setSynthGain(Int32(lastgain))
                     (sfx() as! soundFX).setSynthDetune(Int32(OVS.detune)); //5/9 add detune as editable param
                     (sfx() as! soundFX).setSynthPan(Int32(pchan))
@@ -942,6 +942,7 @@ let MAX_LOOX = 8
                     if quantTime == 0 //No Quant, play now
                     {
                         (sfx() as! soundFX).playNote(Int32(inkeyNote), Int32(bptr) ,Int32(vt)) //Play Middle C for now...
+                        if verbose { print(" ...sampleNote bptr[\(bptr)]:\(inkeyNote)") }
                     }
                     else
                     {
@@ -962,14 +963,15 @@ let MAX_LOOX = 8
                     lastbuf  = bptr //8/11 for delay
                     lasttype = PERCUSSION_VOICE
                     if OVS.detune == 0  //5/9 add detune on/off
-                        {noteToPlay = 60}
+                    {noteToPlay = 60}
                     else
-                        {noteToPlay = inkeyNote}
-
+                    {noteToPlay = inkeyNote}
+                    
                     //ok playit
                     if quantTime == 0 //No Quant, play now
                     {
                         (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(vt)) //Play Middle C for now...
+                        if verbose { print(" ...percussionNote bptr[\(bptr)]:\(noteToPlay)") }
                     }
                     else
                     {
@@ -993,7 +995,7 @@ let MAX_LOOX = 8
                     bptr = bufferPointerSet[octave]
                     lastbuf  = bptr //8/11 for delay
                     lasttype = PERCKIT_VOICE
-                 
+                    
                     let pkPan = OOP.percLooxPans[octave]
                     print("pkpan[\(octave)] = \(pkPan)")
                     (sfx() as! soundFX).setSynthPan(Int32(pkPan))
@@ -1001,13 +1003,14 @@ let MAX_LOOX = 8
                     if quantTime == 0 //No Quant, play now
                     {
                         (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(vt)) //Play Middle C for now...
+                        if verbose { print(" ...percKitNote bptr[\(bptr)]:\(noteToPlay)") }
                     }
                     else
                     {
                         (sfx() as! soundFX).playNote(withDelay: Int32(noteToPlay) , Int32(bptr) ,Int32(vt),Int32(quantTime))
                     }
                 } //end perckit block
-                                uniqueCount = Int((sfx() as! soundFX).getSynthUniqueCount())
+                uniqueCount = Int((sfx() as! soundFX).getSynthUniqueCount())
                 hiLiteFrame = MAX_CBOX_FRAMES
                 oldNote     = nchan
                 saveColors()

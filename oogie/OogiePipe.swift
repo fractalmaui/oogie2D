@@ -19,6 +19,7 @@
 //  5/2  add calls to setupRange in param lo/hi range change
 //  9/19 add oogiePipeParams
 //  9/28 add delay to set/get param
+//  10/5 add invert
 import Foundation
 import SceneKit
 
@@ -29,6 +30,7 @@ struct OogiePipe {
     var OPP     =  OogiePipeParams.sharedInstance //9/18/21 oogie voice params
     //Working variables...
     let pbSize  = 256
+    var wrapped = false
     var ibuffer : [Float] //input buffer
     var obuffer : [Float] //output buffer
     var bptr    = 0
@@ -65,10 +67,18 @@ struct OogiePipe {
     {
         return OPP.pipeParamNames.count
     }
-    
 
-
-    
+    //-----------(OogiePipe)=============================================
+    func getPipeInfo() -> pipeInfo
+    {
+        var pinfo = pipeInfo()
+        pinfo.pbSize  = pbSize
+        pinfo.bptr    = bptr
+        pinfo.wrapped = wrapped
+        pinfo.buffer  = obuffer
+        return pinfo
+    }
+   
     //======(OogiePipe)=============================================
     // add channel data to buffer, wrap around at pbSize
     mutating func addToBuffer (f : Float)
@@ -83,9 +93,14 @@ struct OogiePipe {
         else{
             ibuffer[bptr] = f
             obuffer[bptr] = cf
+            
         }
         bptr = bptr + 1
-        if bptr >= pbSize {bptr = 0}
+        if bptr >= pbSize
+        {
+            bptr = 0
+            wrapped = true  //10/6
+        }
         gotData = true //11/25
         if vvvvb
         {
@@ -197,7 +212,7 @@ struct OogiePipe {
         var d = Dictionary<String, Any>()
         for pname in OPP.pipeParamNames //look at all params...
         {
-            print("pack pipe param \(pname)")
+            //print("pack pipe param \(pname)")
             let plow = pname.lowercased()
             let pTuple = getParam(named : plow)
             let sv = pTuple.sParam
@@ -255,6 +270,8 @@ struct OogiePipe {
             sp = String(horg)
         case "delay"    :
             dp = Double(PS.delay)
+        case "invert"    :
+            dp = Double(PS.invert) //10/5
         case "name"    :
             sp = PS.name
         case "comment"    :
@@ -277,6 +294,7 @@ struct OogiePipe {
         case "lorange"      : PS.loRange     = dval ; setupRange(lo: PS.loRange,hi: PS.hiRange)  //5/2
         case "hirange"      : PS.hiRange     = dval ; setupRange(lo: PS.loRange,hi: PS.hiRange)  //5/2
         case "delay"        : PS.delay       = Int(dval) //9/28 add delay
+        case "invert"       : PS.invert      = Int(dval) //10/5 invert
         case "name"         : PS.name        = sval
         case "comment"      : PS.comment     = sval
         default:print("Error:Bad pipe param in set")

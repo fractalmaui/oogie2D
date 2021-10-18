@@ -19,8 +19,6 @@
 		7208A4C922E2C7F3000AA144 /* Marker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7208A4C822E2C7F3000AA144 /* Marker.swift */; };
 		721857B926F1A08800D21B62 /* pipePanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 721857B826F1A08800D21B62 /* pipePanel.m */; };
 		72246CF5268DD9C100EC9F11 /* animals in Resources */ = {isa = PBXBuildFile; fileRef = 72246CF2268DD76000EC9F11 /* animals */; };
-		722BB24522F3B2C900D990B2 /* synthPanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = 722BB24422F3B2C900D990B2 /* synthPanel.xib */; };
-		722CC1C3245B4AEF00686779 /* pixelData.m in Sources */ = {isa = PBXBuildFile; fileRef = 722CC1C2245B4AEF00686779 /* pixelData.m */; };
 		723091A7244EC1CD00A45527 /* RepeatingTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 723091A6244EC1CD00A45527 /* RepeatingTimer.swift */; };
 		7236B51726EEBEDB000B6306 /* shapePanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 7236B51626EEBEDB000B6306 /* shapePanel.m */; };
 		72372EDE2373DC890065F58A /* Misc in Resources */ = {isa = PBXBuildFile; fileRef = 72372EDD2373DC890065F58A /* Misc */; };
@@ -34,7 +32,6 @@
 		7255495E232365A70054A522 /* TextureVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7255495D232365A70054A522 /* TextureVC.swift */; };
 		72554961232369E90054A522 /* TextureCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72554960232369E90054A522 /* TextureCell.swift */; };
 		7257DFB623D7864600CC2CE0 /* OogieShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7257DFB523D7864600CC2CE0 /* OogieShape.swift */; };
-		7259B7CA22F3D553004774CC /* synthPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7259B7C922F3D553004774CC /* synthPanel.swift */; };
 		725F033822E2DF5C00A6A5FD /* oogieBmp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 725F033722E2DF5C00A6A5FD /* oogieBmp.swift */; };
 		725F034922E304E700A6A5FD /* AudioBufferPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 725F034022E304E700A6A5FD /* AudioBufferPlayer.m */; };
 		725F034A22E304E700A6A5FD /* SynthDave.m in Sources */ = {isa = PBXBuildFile; fileRef = 725F034422E304E700A6A5FD /* SynthDave.m */; };
@@ -43,6 +40,10 @@
 		726BE5C0268C608D0097BC04 /* SPStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726BE5BF268C608D0097BC04 /* SPStruct.swift */; };
 		726CA8712376566800C382AE /* helpVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726CA8702376566800C382AE /* helpVC.swift */; };
 		726EAC232408D884004C4C52 /* PianoKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726EAC222408D884004C4C52 /* PianoKeys.swift */; };
+		7275E5F1271027A90086EEEA /* pipeIcon.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7275E5EE271027A70086EEEA /* pipeIcon.jpg */; };
+		7275E5F2271027A90086EEEA /* shapeIcon.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7275E5EF271027A80086EEEA /* shapeIcon.jpg */; };
+		7275E5F3271027A90086EEEA /* voiceIcon.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7275E5F0271027A80086EEEA /* voiceIcon.jpg */; };
+		7277D6D1270D50AA0094C541 /* pixelData.m in Sources */ = {isa = PBXBuildFile; fileRef = 7277D6CF270D50AA0094C541 /* pixelData.m */; };
 		727F08DD2367B5B80054C517 /* OogiePipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727F08DC2367B5B80054C517 /* OogiePipe.swift */; };
 		727F08DF23680A8E0054C517 /* PipeStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727F08DE23680A8E0054C517 /* PipeStruct.swift */; };
 		7280B826237B60640055EB77 /* FactorySettings in Resources */ = {isa = PBXBuildFile; fileRef = 7280B825237B60630055EB77 /* FactorySettings */; };
@@ -50,16 +51,21 @@
 		729599A326C61C44000A1C5F /* patchPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 729599A226C61C44000A1C5F /* patchPanel.m */; };
 		729599A826C61CC1000A1C5F /* edits.m in Sources */ = {isa = PBXBuildFile; fileRef = 729599A726C61CC1000A1C5F /* edits.m */; };
 		729905A726EDAC0900CFF5EE /* weirdness in Resources */ = {isa = PBXBuildFile; fileRef = 729905A626EDABE700CFF5EE /* weirdness */; };
+		729CB4EA2717DD6800237AE6 /* OogieScalar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 729CB4E92717DD6700237AE6 /* OogieScalar.swift */; };
 		72A0800E2704D09E006486F3 /* OogiePatchParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72A0800D2704D09E006486F3 /* OogiePatchParams.swift */; };
 		72A8D80726F7E89300A4FA47 /* OogieVoiceParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72A8D80626F7E89300A4FA47 /* OogieVoiceParams.swift */; };
 		72A8D80A26F7F1E900A4FA47 /* OogieShapeParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72A8D80926F7F1E900A4FA47 /* OogieShapeParams.swift */; };
 		72A8D80D26F7F50400A4FA47 /* OogiePipeParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72A8D80C26F7F50400A4FA47 /* OogiePipeParams.swift */; };
 		72AFB97E23070B640009A577 /* OSStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72AFB97D23070B640009A577 /* OSStruct.swift */; };
 		72B7C5CB2322E48500175D4C /* ColorTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B7C5CA2322E48500175D4C /* ColorTools.swift */; };
+		72C8FA14271A183500B3CB19 /* scalarPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 72C8FA13271A183500B3CB19 /* scalarPanel.m */; };
+		72CE35F6271760EE006C57D0 /* OogieScalarParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72CE35F5271760EE006C57D0 /* OogieScalarParams.swift */; };
+		72CE35F8271762EA006C57D0 /* ScalarStruct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72CE35F7271762EA006C57D0 /* ScalarStruct.swift */; };
 		72D04B0122E6C232001922E2 /* OogieVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D04B0022E6C232001922E2 /* OogieVoice.swift */; };
+		72D3D5F3270E2134001D6E8C /* pipeInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D3D5F2270E2134001D6E8C /* pipeInfo.swift */; };
 		72D3D69622F69C19001EACA7 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D3D69522F69C19001EACA7 /* DataManager.swift */; };
 		72D3D69822F69C61001EACA7 /* OogiePatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D3D69722F69C61001EACA7 /* OogiePatch.swift */; };
-		72DB6EAA2329C4CA005406DC /* Knob.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DB6EA92329C4C9005406DC /* Knob.swift */; };
+		72D7BE2927128B76008CA0F9 /* ScalarShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D7BE2827128B76008CA0F9 /* ScalarShape.swift */; };
 		72DC1BE926EDCEC600760016 /* percKitIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 72DC1BCB26EDCEC300760016 /* percKitIcon.png */; };
 		72DC1BEA26EDCEC600760016 /* sampleIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 72DC1BCC26EDCEC300760016 /* sampleIcon.png */; };
 		72DC1BEB26EDCEC600760016 /* meashst.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 72DC1BCD26EDCEC400760016 /* meashst.jpg */; };
@@ -120,9 +126,6 @@
 		721FAF3C2338795000DC3091 /* GMidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GMidi.h; sourceTree = "<group>"; };
 		72246CF2268DD76000EC9F11 /* animals */ = {isa = PBXFileReference; lastKnownFileType = folder; path = animals; sourceTree = "<group>"; };
 		722753C92333766300A2DC29 /* dog.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dog.wav; sourceTree = "<group>"; };
-		722BB24422F3B2C900D990B2 /* synthPanel.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = synthPanel.xib; sourceTree = "<group>"; };
-		722CC1C2245B4AEF00686779 /* pixelData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = pixelData.m; path = oogie/MiscObjC/pixelData.m; sourceTree = SOURCE_ROOT; };
-		722CC1C4245B4B0A00686779 /* pixelData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pixelData.h; sourceTree = "<group>"; };
 		723091A6244EC1CD00A45527 /* RepeatingTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatingTimer.swift; sourceTree = "<group>"; };
 		7236B51526EEBEDB000B6306 /* shapePanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = shapePanel.h; sourceTree = "<group>"; };
 		7236B51626EEBEDB000B6306 /* shapePanel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = shapePanel.m; sourceTree = "<group>"; };
@@ -144,7 +147,6 @@
 		7255495D232365A70054A522 /* TextureVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextureVC.swift; sourceTree = "<group>"; };
 		72554960232369E90054A522 /* TextureCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextureCell.swift; sourceTree = "<group>"; };
 		7257DFB523D7864600CC2CE0 /* OogieShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogieShape.swift; sourceTree = "<group>"; };
-		7259B7C922F3D553004774CC /* synthPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = synthPanel.swift; sourceTree = "<group>"; };
 		725F033722E2DF5C00A6A5FD /* oogieBmp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = oogieBmp.swift; sourceTree = "<group>"; };
 		725F034022E304E700A6A5FD /* AudioBufferPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AudioBufferPlayer.m; sourceTree = "<group>"; };
 		725F034122E304E700A6A5FD /* cheat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cheat.h; sourceTree = "<group>"; };
@@ -159,6 +161,11 @@
 		726BE5BF268C608D0097BC04 /* SPStruct.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SPStruct.swift; sourceTree = "<group>"; };
 		726CA8702376566800C382AE /* helpVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = helpVC.swift; sourceTree = "<group>"; };
 		726EAC222408D884004C4C52 /* PianoKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PianoKeys.swift; sourceTree = "<group>"; };
+		7275E5EE271027A70086EEEA /* pipeIcon.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = pipeIcon.jpg; path = Resources/pipeIcon.jpg; sourceTree = SOURCE_ROOT; };
+		7275E5EF271027A80086EEEA /* shapeIcon.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = shapeIcon.jpg; path = Resources/shapeIcon.jpg; sourceTree = SOURCE_ROOT; };
+		7275E5F0271027A80086EEEA /* voiceIcon.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = voiceIcon.jpg; path = Resources/voiceIcon.jpg; sourceTree = SOURCE_ROOT; };
+		7277D6CF270D50AA0094C541 /* pixelData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = pixelData.m; sourceTree = "<group>"; };
+		7277D6D0270D50AA0094C541 /* pixelData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pixelData.h; sourceTree = "<group>"; };
 		727EDCE22335C0D70028B011 /* moog01.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = moog01.wav; path = Percussion/moog01.wav; sourceTree = "<group>"; };
 		727F08DC2367B5B80054C517 /* OogiePipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogiePipe.swift; sourceTree = "<group>"; };
 		727F08DE23680A8E0054C517 /* PipeStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipeStruct.swift; sourceTree = "<group>"; };
@@ -169,6 +176,7 @@
 		729599A626C61CC1000A1C5F /* edits.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = edits.h; sourceTree = "<group>"; };
 		729599A726C61CC1000A1C5F /* edits.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = edits.m; sourceTree = "<group>"; };
 		729905A626EDABE700CFF5EE /* weirdness */ = {isa = PBXFileReference; lastKnownFileType = folder; path = weirdness; sourceTree = "<group>"; };
+		729CB4E92717DD6700237AE6 /* OogieScalar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OogieScalar.swift; sourceTree = "<group>"; };
 		72A0800D2704D09E006486F3 /* OogiePatchParams.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OogiePatchParams.swift; sourceTree = "<group>"; };
 		72A11254268C5EBC00B25E95 /* vwhorn44k.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = vwhorn44k.wav; sourceTree = "<group>"; };
 		72A11258268C5EF800B25E95 /* bub1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = bub1.wav; sourceTree = "<group>"; };
@@ -177,10 +185,15 @@
 		72A8D80C26F7F50400A4FA47 /* OogiePipeParams.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OogiePipeParams.swift; sourceTree = "<group>"; };
 		72AFB97D23070B640009A577 /* OSStruct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSStruct.swift; sourceTree = "<group>"; };
 		72B7C5CA2322E48500175D4C /* ColorTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTools.swift; sourceTree = "<group>"; };
+		72C8FA12271A183500B3CB19 /* scalarPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = scalarPanel.h; path = oogie/scalarPanel.h; sourceTree = SOURCE_ROOT; };
+		72C8FA13271A183500B3CB19 /* scalarPanel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = scalarPanel.m; path = oogie/scalarPanel.m; sourceTree = SOURCE_ROOT; };
+		72CE35F5271760EE006C57D0 /* OogieScalarParams.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OogieScalarParams.swift; sourceTree = "<group>"; };
+		72CE35F7271762EA006C57D0 /* ScalarStruct.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScalarStruct.swift; sourceTree = "<group>"; };
 		72D04B0022E6C232001922E2 /* OogieVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogieVoice.swift; sourceTree = "<group>"; };
+		72D3D5F2270E2134001D6E8C /* pipeInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = pipeInfo.swift; sourceTree = "<group>"; };
 		72D3D69522F69C19001EACA7 /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
 		72D3D69722F69C61001EACA7 /* OogiePatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OogiePatch.swift; sourceTree = "<group>"; };
-		72DB6EA92329C4C9005406DC /* Knob.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Knob.swift; path = oogie/UI/Knob.swift; sourceTree = SOURCE_ROOT; };
+		72D7BE2827128B76008CA0F9 /* ScalarShape.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScalarShape.swift; sourceTree = "<group>"; };
 		72DC1BCB26EDCEC300760016 /* percKitIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = percKitIcon.png; path = Resources/percKitIcon.png; sourceTree = SOURCE_ROOT; };
 		72DC1BCC26EDCEC300760016 /* sampleIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = sampleIcon.png; path = Resources/sampleIcon.png; sourceTree = SOURCE_ROOT; };
 		72DC1BCD26EDCEC400760016 /* meashst.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = meashst.jpg; path = Resources/meashst.jpg; sourceTree = SOURCE_ROOT; };
@@ -258,70 +271,63 @@
 				725F033F22E304E700A6A5FD /* audio */,
 				5226E90F1FD4481B00C72C21 /* AppDelegate.swift */,
 				5226E9111FD4481B00C72C21 /* ViewController.swift */,
-				72E463E723702E3D003360D6 /* chooserVC.swift */,
-				726CA8702376566800C382AE /* helpVC.swift */,
-				7255495D232365A70054A522 /* TextureVC.swift */,
-				72554960232369E90054A522 /* TextureCell.swift */,
-				5226E9131FD4481B00C72C21 /* Main.storyboard */,
+				727F08E0236894310054C517 /* UI */,
 				5226E9161FD4481B00C72C21 /* Assets.xcassets */,
+				5226E9131FD4481B00C72C21 /* Main.storyboard */,
 				5226E9181FD4481B00C72C21 /* LaunchScreen.storyboard */,
 				72D3D69522F69C19001EACA7 /* DataManager.swift */,
 				7237D6B0230FC49F00A38D63 /* AllPatches.swift */,
 				72E20BCF245A18630097A590 /* OogieScene.swift */,
 				72D3D69722F69C61001EACA7 /* OogiePatch.swift */,
 				72A0800D2704D09E006486F3 /* OogiePatchParams.swift */,
-				724886AF26C4C89F00249263 /* controlPanel.h */,
-				724886B026C4C89F00249263 /* controlPanel.m */,
-				721857B726F1A08800D21B62 /* pipePanel.h */,
-				721857B826F1A08800D21B62 /* pipePanel.m */,
-				729599A126C61C44000A1C5F /* patchPanel.h */,
-				729599A226C61C44000A1C5F /* patchPanel.m */,
-				7236B51526EEBEDB000B6306 /* shapePanel.h */,
-				7236B51626EEBEDB000B6306 /* shapePanel.m */,
 				729599A626C61CC1000A1C5F /* edits.h */,
 				729599A726C61CC1000A1C5F /* edits.m */,
 				724886B326C4CA9B00249263 /* oogieStyles.h */,
-				7208A4C822E2C7F3000AA144 /* Marker.swift */,
 				72D04B0022E6C232001922E2 /* OogieVoice.swift */,
 				72A8D80626F7E89300A4FA47 /* OogieVoiceParams.swift */,
+				7237FEB12306952B000A571A /* OVStruct.swift */,
+				7208A4C822E2C7F3000AA144 /* Marker.swift */,
 				7257DFB523D7864600CC2CE0 /* OogieShape.swift */,
 				72A8D80926F7F1E900A4FA47 /* OogieShapeParams.swift */,
+				5262740D1FD44F3400790D87 /* SphereShape.swift */,
+				72AFB97D23070B640009A577 /* OSStruct.swift */,
 				727F08DC2367B5B80054C517 /* OogiePipe.swift */,
 				72A8D80C26F7F50400A4FA47 /* OogiePipeParams.swift */,
-				7237FEB12306952B000A571A /* OVStruct.swift */,
+				720220B9238C6B6B001F7483 /* PipeShape.swift */,
+				72D3D5F2270E2134001D6E8C /* pipeInfo.swift */,
+				727F08DE23680A8E0054C517 /* PipeStruct.swift */,
+				72CE35F5271760EE006C57D0 /* OogieScalarParams.swift */,
+				729CB4E92717DD6700237AE6 /* OogieScalar.swift */,
+				72D7BE2827128B76008CA0F9 /* ScalarShape.swift */,
+				72CE35F7271762EA006C57D0 /* ScalarStruct.swift */,
 				72EE838223125D7B00FFAAE1 /* OSCStruct.swift */,
-				72AFB97D23070B640009A577 /* OSStruct.swift */,
 				726BE5BF268C608D0097BC04 /* SPStruct.swift */,
-				5262740D1FD44F3400790D87 /* SphereShape.swift */,
 				726EAC222408D884004C4C52 /* PianoKeys.swift */,
 				725F033722E2DF5C00A6A5FD /* oogieBmp.swift */,
 				724C877E231F8587008E4625 /* texCache.swift */,
 				72B7C5CA2322E48500175D4C /* ColorTools.swift */,
-				720220B9238C6B6B001F7483 /* PipeShape.swift */,
-				727F08DE23680A8E0054C517 /* PipeStruct.swift */,
 				725F035E22E305CC00A6A5FD /* oogie2D-Bridging-Header.h */,
-				720404912467C17500E12164 /* MiscObjC */,
-				727F08E0236894310054C517 /* UI */,
+				720404912467C17500E12164 /* Misc */,
 				723091A6244EC1CD00A45527 /* RepeatingTimer.swift */,
 				720796052465239B0052CE39 /* Settings.bundle */,
 			);
 			path = oogie;
 			sourceTree = "<group>";
 		};
-		720404912467C17500E12164 /* MiscObjC */ = {
+		720404912467C17500E12164 /* Misc */ = {
 			isa = PBXGroup;
 			children = (
 				720404952467C1E100E12164 /* alpha5x7.h */,
-				722CC1C2245B4AEF00686779 /* pixelData.m */,
-				722CC1C4245B4B0A00686779 /* pixelData.h */,
 				724F3D1B24687A0400A9A3E7 /* OogieTiffie.h */,
 				724F3D1C24687A0400A9A3E7 /* OogieTiffie.m */,
+				7277D6D0270D50AA0094C541 /* pixelData.h */,
+				7277D6CF270D50AA0094C541 /* pixelData.m */,
 				724F3D1E24687B8000A9A3E7 /* UIImageExtras.h */,
 				724F3D1F24687B8000A9A3E7 /* UIImageExtras.m */,
 				720404932467C19B00E12164 /* tiffie.h */,
 				720404922467C19B00E12164 /* tiffie.m */,
 			);
-			path = MiscObjC;
+			path = Misc;
 			sourceTree = "<group>";
 		};
 		725F033F22E304E700A6A5FD /* audio */ = {
@@ -361,12 +367,23 @@
 		727F08E0236894310054C517 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				72E463E723702E3D003360D6 /* chooserVC.swift */,
+				726CA8702376566800C382AE /* helpVC.swift */,
+				7255495D232365A70054A522 /* TextureVC.swift */,
+				72554960232369E90054A522 /* TextureCell.swift */,
+				724886AF26C4C89F00249263 /* controlPanel.h */,
+				724886B026C4C89F00249263 /* controlPanel.m */,
+				721857B726F1A08800D21B62 /* pipePanel.h */,
+				721857B826F1A08800D21B62 /* pipePanel.m */,
+				729599A126C61C44000A1C5F /* patchPanel.h */,
+				729599A226C61C44000A1C5F /* patchPanel.m */,
+				72C8FA12271A183500B3CB19 /* scalarPanel.h */,
+				72C8FA13271A183500B3CB19 /* scalarPanel.m */,
+				7236B51526EEBEDB000B6306 /* shapePanel.h */,
+				7236B51626EEBEDB000B6306 /* shapePanel.m */,
 				724886B526C4CB6400249263 /* genOogie.h */,
 				724886B626C4CB6400249263 /* genOogie.m */,
 				7283A65C234085400088560D /* infoText.swift */,
-				72DB6EA92329C4C9005406DC /* Knob.swift */,
-				722BB24422F3B2C900D990B2 /* synthPanel.xib */,
-				7259B7C922F3D553004774CC /* synthPanel.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -374,6 +391,9 @@
 		72EE83812312536B00FFAAE1 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				7275E5EE271027A70086EEEA /* pipeIcon.jpg */,
+				7275E5EF271027A80086EEEA /* shapeIcon.jpg */,
+				7275E5F0271027A80086EEEA /* voiceIcon.jpg */,
 				72DC1C0826EDCF2F00760016 /* arrowLeft.png */,
 				72DC1C0B26EDCF2F00760016 /* arrowRight.png */,
 				72DC1C0926EDCF2F00760016 /* bluedice.png */,
@@ -477,6 +497,7 @@
 				72DC1C0226EDCEC600760016 /* spectrumOLD.png in Resources */,
 				72DC1C0326EDCEC600760016 /* spectrumGradient.png in Resources */,
 				729905A726EDAC0900CFF5EE /* weirdness in Resources */,
+				7275E5F2271027A90086EEEA /* shapeIcon.jpg in Resources */,
 				72246CF5268DD9C100EC9F11 /* animals in Resources */,
 				72DC1C0F26EDCF2F00760016 /* greendice.png in Resources */,
 				72DC1BF926EDCEC600760016 /* ProfileNOT.png in Resources */,
@@ -498,10 +519,12 @@
 				72DC1BF426EDCEC600760016 /* rightBevel.png in Resources */,
 				5226E91A1FD4481B00C72C21 /* LaunchScreen.storyboard in Resources */,
 				72DC1BF226EDCEC600760016 /* dnArrow.png in Resources */,
+				7275E5F3271027A90086EEEA /* voiceIcon.jpg in Resources */,
 				72DC1BF126EDCEC600760016 /* dawgj.jpg in Resources */,
 				72DC1C0526EDCEC600760016 /* wheel01.png in Resources */,
 				7280B826237B60640055EB77 /* FactorySettings in Resources */,
 				72DC1C0626EDCEC600760016 /* percIcon.png in Resources */,
+				7275E5F1271027A90086EEEA /* pipeIcon.jpg in Resources */,
 				72DC1BF026EDCEC600760016 /* tp.png in Resources */,
 				72372EDE2373DC890065F58A /* Misc in Resources */,
 				72DC1C0E26EDCF2F00760016 /* bluedice.png in Resources */,
@@ -516,7 +539,6 @@
 				72DC1BF826EDCEC600760016 /* chex4x4.png in Resources */,
 				72DC1BFE26EDCEC600760016 /* synthIcon.png in Resources */,
 				72DC1BFB26EDCEC600760016 /* oogieLogo.png in Resources */,
-				722BB24522F3B2C900D990B2 /* synthPanel.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -537,23 +559,25 @@
 				72D3D69622F69C19001EACA7 /* DataManager.swift in Sources */,
 				724F3D1D24687A0500A9A3E7 /* OogieTiffie.m in Sources */,
 				725F034A22E304E700A6A5FD /* SynthDave.m in Sources */,
-				7259B7CA22F3D553004774CC /* synthPanel.swift in Sources */,
 				72A0800E2704D09E006486F3 /* OogiePatchParams.swift in Sources */,
 				7257DFB623D7864600CC2CE0 /* OogieShape.swift in Sources */,
 				727F08DF23680A8E0054C517 /* PipeStruct.swift in Sources */,
-				72DB6EAA2329C4CA005406DC /* Knob.swift in Sources */,
 				72D04B0122E6C232001922E2 /* OogieVoice.swift in Sources */,
 				72E20BD0245A18630097A590 /* OogieScene.swift in Sources */,
+				72CE35F6271760EE006C57D0 /* OogieScalarParams.swift in Sources */,
 				724F3D2024687B8000A9A3E7 /* UIImageExtras.m in Sources */,
 				726CA8712376566800C382AE /* helpVC.swift in Sources */,
+				72D3D5F3270E2134001D6E8C /* pipeInfo.swift in Sources */,
 				72A8D80726F7E89300A4FA47 /* OogieVoiceParams.swift in Sources */,
 				7208A4C922E2C7F3000AA144 /* Marker.swift in Sources */,
 				725F034B22E304E700A6A5FD /* soundFX.m in Sources */,
+				72D7BE2927128B76008CA0F9 /* ScalarShape.swift in Sources */,
 				72A8D80D26F7F50400A4FA47 /* OogiePipeParams.swift in Sources */,
-				722CC1C3245B4AEF00686779 /* pixelData.m in Sources */,
+				72CE35F8271762EA006C57D0 /* ScalarStruct.swift in Sources */,
 				7236B51726EEBEDB000B6306 /* shapePanel.m in Sources */,
 				723091A7244EC1CD00A45527 /* RepeatingTimer.swift in Sources */,
 				7255495E232365A70054A522 /* TextureVC.swift in Sources */,
+				7277D6D1270D50AA0094C541 /* pixelData.m in Sources */,
 				724886B126C4C89F00249263 /* controlPanel.m in Sources */,
 				727F08DD2367B5B80054C517 /* OogiePipe.swift in Sources */,
 				729599A326C61C44000A1C5F /* patchPanel.m in Sources */,
@@ -562,8 +586,10 @@
 				5262740E1FD44F3400790D87 /* SphereShape.swift in Sources */,
 				72E463E823702E3D003360D6 /* chooserVC.swift in Sources */,
 				726EAC232408D884004C4C52 /* PianoKeys.swift in Sources */,
+				729CB4EA2717DD6800237AE6 /* OogieScalar.swift in Sources */,
 				7237FEB22306952B000A571A /* OVStruct.swift in Sources */,
 				724C877F231F8587008E4625 /* texCache.swift in Sources */,
+				72C8FA14271A183500B3CB19 /* scalarPanel.m in Sources */,
 				72554961232369E90054A522 /* TextureCell.swift in Sources */,
 				5226E9101FD4481B00C72C21 /* AppDelegate.swift in Sources */,
 				72A8D80A26F7F1E900A4FA47 /* OogieShapeParams.swift in Sources */,
@@ -715,7 +741,7 @@
 				DEVELOPMENT_TEAM = HV8UXF4ZBD;
 				INFOPLIST_FILE = oogie/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.1.012;
+				MARKETING_VERSION = 1.1.013;
 				PRODUCT_BUNDLE_IDENTIFIER = com.frak.oogie2d;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG VERSION_2D USE_TESTPATTERN";
@@ -734,7 +760,7 @@
 				DEVELOPMENT_TEAM = HV8UXF4ZBD;
 				INFOPLIST_FILE = oogie/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.1.012;
+				MARKETING_VERSION = 1.1.013;
 				PRODUCT_BUNDLE_IDENTIFIER = com.frak.oogie2d;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[arch=*]" = VERSION_2D;

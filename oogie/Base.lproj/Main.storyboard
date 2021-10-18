@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="17701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19162" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
     <device id="retina5_5" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17703"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19144"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -44,14 +44,6 @@
                                     <action selector="textChanged:" destination="BYZ-38-t0r" eventType="editingChanged" id="pOB-7M-GPO"/>
                                 </connections>
                             </textField>
-                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ytU-L8-vSH" customClass="Knob" customModule="oogie2D" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="256" height="256"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <connections>
-                                    <action selector="paramChanged:" destination="BYZ-38-t0r" eventType="valueChanged" id="MfS-i5-pqU"/>
-                                </connections>
-                            </view>
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="JFL-Ef-KDg">
                                 <rect key="frame" x="264" y="130" width="78" height="36"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
@@ -117,6 +109,11 @@
                                     <action selector="test2Select:" destination="BYZ-38-t0r" eventType="touchUpInside" id="jA2-hd-xmW"/>
                                 </connections>
                             </button>
+                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BlM-zL-5Qo">
+                                <rect key="frame" x="30" y="174" width="240" height="128"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <color key="backgroundColor" systemColor="systemIndigoColor"/>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="zc3-DA-LYV"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -131,9 +128,9 @@
                         <outlet property="editButton" destination="HD6-Ym-lWp" id="0zp-e4-8hN"/>
                         <outlet property="editButtonView" destination="7ud-tS-oNA" id="8KM-CA-CTB"/>
                         <outlet property="menuButton" destination="mYP-8l-Xao" id="D6r-Dq-DZc"/>
-                        <outlet property="paramKnob" destination="ytU-L8-vSH" id="WRr-EV-5aR"/>
                         <outlet property="pipeEditPanels" destination="vZo-k7-SrP" id="4wG-vB-Bbj"/>
                         <outlet property="resetButton" destination="lxs-e0-IlI" id="msS-P0-J5P"/>
+                        <outlet property="scalarEditPanels" destination="BlM-zL-5Qo" id="N2H-rT-kwn"/>
                         <outlet property="shapeEditPanels" destination="kpM-cF-emo" id="xnr-m8-ZcG"/>
                         <outlet property="skView" destination="rne-bI-Plw" id="p5o-YK-JSL"/>
                         <outlet property="textField" destination="a8N-XW-Idc" id="j8y-Fl-zEl"/>
@@ -324,7 +321,7 @@
                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                         <prototypes>
                                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="Cell" id="Fe6-S7-1iY">
-                                                <rect key="frame" x="0.0" y="28" width="207" height="43.666667938232422"/>
+                                                <rect key="frame" x="0.0" y="44.666666030883789" width="207" height="43.666667938232422"/>
                                                 <autoresizingMask key="autoresizingMask"/>
                                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="Fe6-S7-1iY" id="OVx-oA-3lt">
                                                     <rect key="frame" x="0.0" y="0.0" width="207" height="43.666667938232422"/>
@@ -341,7 +338,7 @@
                                         <color key="backgroundColor" systemColor="systemTealColor"/>
                                         <prototypes>
                                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="Cell" id="GAb-IY-dK5">
-                                                <rect key="frame" x="0.0" y="28" width="207" height="43.666667938232422"/>
+                                                <rect key="frame" x="0.0" y="44.666666030883789" width="207" height="43.666667938232422"/>
                                                 <autoresizingMask key="autoresizingMask"/>
                                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="GAb-IY-dK5" id="8dt-uh-ahg">
                                                     <rect key="frame" x="0.0" y="0.0" width="207" height="43.666667938232422"/>
@@ -452,7 +449,7 @@
             <color red="1" green="0.23137254901960785" blue="0.18823529411764706" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemTealColor">
-            <color red="0.35294117647058826" green="0.78431372549019607" blue="0.98039215686274506" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.18823529411764706" green="0.69019607843137254" blue="0.7803921568627451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemYellowColor">
             <color red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

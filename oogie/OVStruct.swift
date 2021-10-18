@@ -14,6 +14,7 @@
 //  4/18  add rotTrigger
 //  4/30  change shapeName to shapeKey
 //  5/9   make detune editable param
+//  10/7  change name default
 import Foundation
 struct OVStruct : Codable {
 
@@ -69,7 +70,7 @@ struct OVStruct : Codable {
     init()
     {
         key          = ""
-        name         = "empty"
+        name         = "voice_00001"  //10/7 for scene start from scratch
         comment      = ""
         patchName    = "empty"
         shapeKey     = ""

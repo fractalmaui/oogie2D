@@ -29,7 +29,7 @@ import Foundation
     let SustainParams   : [Any] = ["Sustain" ,    "double", 0.0   , 255.0   , 3.0, 255.0, 0.0 ]
     let SLevelParams    : [Any] = ["SLevel" ,     "double", 0.0   , 255.0   , 0.0, 255.0, 0.0 ]
     let ReleaseParams   : [Any] = ["Release" ,    "double", 0.0   , 255.0   , 40.0, 255.0, 0.0 ]
-    let DutyParams      : [Any] = ["Duty" ,       "double", 0.0   , 255.0   , 128.0, 255.0, 0.0 ]
+    let DutyParams      : [Any] = ["Duty" ,       "double", 0.0   , 100.0   , 50.0, 100.0, 0.0 ]
     // NOTE this is in percent!
     let SampOffParams   : [Any] = ["SampleOffset" ,  "double", 0.0   , 100.0   , 0.0, 100.0, 0.0 ]
     let PKeyDetuneParams : [Any] = ["PKeyDetune" ,   "double", 0.0   , 255.0   , 0.0, 255.0, 0.0 ]
