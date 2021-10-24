@@ -14,6 +14,7 @@
 //
 //  Scalar is a single-value parameter controller for oogie2D/AR
 //  10/15 complex! added pipe mech, similar to pipe but not enuf to resuse code!
+//  10/20 make pipe orange, add animation on scalar change
 import SceneKit
  
 class ScalarShape: SCNNode {
@@ -48,18 +49,17 @@ class ScalarShape: SCNNode {
     //10/15 rename vars to more useful
 #if VERSION_2D
     // floory is where all scalar pipes go
-    var floory  = Float(-1.3)
+    var floory  = Float(-1.2)
     // shapeYoff is assumed bottom of all shapes, floor must be below this
-    let shapeYoff = Float(1.3)
+    let shapeYoff = Float(1.2)
 
     let overallScale : CGFloat = 0.1
-    let torusRad     : CGFloat = 0.15
-    let boxSize      : CGFloat = 0.1
-    let pipeRad      : CGFloat = 0.02
+    let torusRad     : CGFloat = 0.1
+    var pipeRad      : CGFloat = 0.005  //teeny pipes!
     let markerHit    : Double  = 0.2
     let shapeRad     : Double  = 1.0
-    let bwid : CGFloat =  0.15 //info box size
-    let bhit : CGFloat =  0.02
+    let bwid : CGFloat =  0.2 //info box size
+    let bhit : CGFloat =  0.06
     let crad : CGFloat = 0.03  //main cyl rad
     let chit : CGFloat = 0.4  //main cyl hite
     let phit : CGFloat = 0.02  //main cyl pedestal
@@ -70,7 +70,6 @@ class ScalarShape: SCNNode {
     //Generally AR should be 1/4 size of 2D
     let overallScale : CGFloat = 0.025
     let torusRad     : CGFloat = 0.05
-    let boxSize      : CGFloat = 0.025
     let pipeRad      : CGFloat = 0.005
     let markerHit    : Double  = 0.05  //1/13
     let shapeRad     : Double  = 0.25
@@ -88,7 +87,9 @@ class ScalarShape: SCNNode {
     var panelNodes   : [SCNNode] = []
     var jsize = CGSize(width: 512, height: 32) //overall description image size
 
-                                       
+    var fadeTimer = Timer()
+    var fadeCount : Int = 0
+    
     //-----------(ScalarShape)=============================================
     // NOTE this basically functions as the init, returned node is added
     //   as a child of this object...
@@ -96,41 +97,47 @@ class ScalarShape: SCNNode {
                         tlat : Double , tlon : Double , sPos01  : SCNVector3 ,
                         isShape: Bool, newNode : Bool ) -> SCNNode
     {
-        scalarNode = createControlShape(sPos00:sPos00)
-
+        
+        if newNode
+        {
+            pipeColor =  UIColor(red: 0.4, green: 0.4, blue: 0.2, alpha: 1) //10/20 new dorabge color
+            scalarNode = createControlShape(sPos00:sPos00)
+            scalarNode.name = ""  //9/27 reset name as object gets added...
+            self.uid        = uid //incoming uid
+        }
+        else
+        {
+            print("edit scalar node")
+        }
+        
         //Get xz positioning for child nodes...
-        var xpos = Float(sPos00.x)
-        var zpos = Float(sPos00.z)
-
-        self.uid = uid //incoming uid
-        scalarNode.name = ""  //9/27 reset name as object gets added...
-
+//        let xpos = Float(sPos00.x)
+//        let zpos = Float(sPos00.z)
         //start pipe from heart of scalar to target object...
         // spos00 is scalar new location as passed in...
         mainPipeParent = create3DPipe(  sPos00  : sPos00 ,
-                           tlat : tlat , tlon : tlon , sPos01  : sPos01 ,
-                           isShape: isShape, newNode : newNode)
-        scalarNode.addChildNode(mainPipeParent)
-
-        //10/11 add torii to indicate select status
-        torus1 = SCNTorus(ringRadius: torusRad+0.1, pipeRadius: pipeRad)
-        torus1.firstMaterial?.emission.contents  = UIColor.white
-        torusNode1 = SCNNode(geometry: torus1)
-
-       // var torYoff = Float(phit) //bottom torus
-        var torusPos = cylBasePos  //3d location, bottom of cylinder
-        torusNode1.position = torusPos; //SCNVector3(xpos,torYoff,zpos)
-        torusNode1.scale    = SCNVector3(0.1,0.1,0.1)
-        scalarNode.addChildNode(torusNode1)
-        torusNode2 = SCNNode(geometry: torus1)
-        torusPos.y = torusPos.y + Float(chit) //2nd torus, top of cylinder
-        torusNode2.position = torusPos
-        torusNode2.scale    = SCNVector3(0.1,0.1,0.1)
-        scalarNode.addChildNode(torusNode2)
+                                        tlat : tlat , tlon : tlon , sPos01  : sPos01 ,
+                                        isShape: isShape, newNode : newNode)
+        if newNode //10/20 adding for first time?
+        {
+            scalarNode.addChildNode(mainPipeParent)
+            
+            //10/11 add torii to indicate select status
+            torus1 = SCNTorus(ringRadius: torusRad+0.1, pipeRadius: 3*pipeRad) //10/20 fatten torii
+            torus1.firstMaterial?.emission.contents  = UIColor.white
+            torusNode1 = SCNNode(geometry: torus1)
+            // var torYoff = Float(phit) //bottom torus
+            var torusPos = cylBasePos  //3d location, bottom of cylinder
+            torusNode1.position = torusPos; //SCNVector3(xpos,torYoff,zpos)
+            torusNode1.scale    = SCNVector3(0.1,0.1,0.1)
+            scalarNode.addChildNode(torusNode1)
+            torusNode2 = SCNNode(geometry: torus1)
+            torusPos.y = torusPos.y + Float(chit) //2nd torus, top of cylinder
+            torusNode2.position = torusPos
+            torusNode2.scale    = SCNVector3(0.1,0.1,0.1)
+            scalarNode.addChildNode(torusNode2)
+        }
         
-//        scalarNode.scale    = SCNVector3(overallScale,overallScale,overallScale) //Shrink down by half
-//        scalarNode.position = sPos00 //SCNVector3(0,-chit*0.5*overallScale,0)  //shift down by half height in global space
-
         return scalarNode
     }
 
@@ -293,7 +300,7 @@ class ScalarShape: SCNNode {
         let yi = CGFloat(0.0)
         let xs = frame.size.width
         let ys = frame.size.height
-        let textFont = UIFont(name: "Helvetica Bold", size: CGFloat(ys*0.8))!
+        let textFont = UIFont(name: "Helvetica Bold", size: CGFloat(ys*1.3))! //10/20 make xtra big
         let text_style=NSMutableParagraphStyle()
         text_style.alignment=NSTextAlignment.center
         let textFontAttributes = [
@@ -316,15 +323,19 @@ class ScalarShape: SCNNode {
                        isShape: Bool, newNode : Bool
      ) -> SCNNode
      {
-         
+         //print("SCALAR: create3DPipe: uid \(uid) ballz \(ballz.count)")
 
          var cIndex = 0 //local pointer to cylinder nodes during update
          var bIndex = 0 //local pointer to ball nodes during update
+         //10/19   BUT we got no ballz after init? wtf?
          if !newNode && ballz.count == 0 {return SCNNode()} //wups! no pipe to update yet!
          if newNode
          {
              mainPipeParent = SCNNode()
          }
+//         else{
+//             print("duh edit 3dpipe to scalar")
+//         }
 
          if newNode
          {
@@ -384,13 +395,13 @@ class ScalarShape: SCNNode {
          var epfx: Float = 0.0
          var epfy: Float = 0.0
          var epfz: Float = 0.0
-         var enlen: Double = 0.0
+         var enlen: Double = 1.0
 
          if (!isShape) // route pipe to marker, has lots of elbows
          {
              //Second half of pipe, same but for  sPos01 pos, lat lon
              nx =  cos( tlon) * cos( tlat) //1/14 wups need to incorporate cosine!
-             nz = -sin( tlon) * sin( tlat)
+             nz = -sin( tlon) * cos( tlat) //10/22 was sin(tlat)???
              ny =  sin( tlat)
 
              enx = cos( tlon)
@@ -400,30 +411,33 @@ class ScalarShape: SCNNode {
              enx = enx / enlen
              eny = eny / enlen
              enz = enz / enlen
-             
-             
-             //10/16 for now get rid of p2. it is being drawn in weird places,
-             // also get rid of its cylinder...
-             pfx =  sPos01.x + Float(shapeRad + markerHit) * Float(nx)
-             pfy =  sPos01.y + Float(shapeRad + markerHit) * Float(ny)
-             pfz =  sPos01.z + Float(shapeRad + markerHit) * Float(nz)
+             // get 2 higher orbits for marker and pipe connect point
+             let markerRad  = Float(shapeRad + markerHit)
+             let markerRad2 = Float(shapeRad + 2*markerHit)
+
+             pfx = sPos01.x + markerRad * Float(nx)
+             pfy = sPos01.y + markerRad * Float(ny)
+             pfz = sPos01.z + markerRad * Float(nz)
              //Compute pos at top of marker...
+             // netaget pfy, big ball goes from TR to BL
+             //negate pfz, y goes from -1 to 1, z from 1 to -1
              let p2 = SCNVector3(pfx,pfy,pfz)
              
              //Compute equatorial position (zero lat)
-             epfx =  sPos01.x + Float(shapeRad + 2*markerHit) * Float(enx)
-             epfz =  sPos01.z + Float(shapeRad + 2*markerHit) * Float(enz)
+             epfx =  sPos01.x + markerRad2 * Float(enx)
+             epfz =  sPos01.z + markerRad2 * Float(enz)
              let p3 = SCNVector3(epfx,pfy,epfz) //first junction point
              //Draw sphere at first cylinder end junction, 2nd shape
              if (newNode)   //2/1
              {
-// 10/16 last link                addBall(parent: mainPipeParent,p:p2 )
-                addBall(parent: mainPipeParent,p:p3 )
+                 print("add last link ball...")
+                 addBall(parent: mainPipeParent,p:p2 )
+                 addBall(parent: mainPipeParent,p:p3 )
              }
              else if bIndex < ballz.count //update? just change position
              {
-                 // 10/16                ballz[bIndex].position = p2
-                 // 10/16                bIndex += 1
+                ballz[bIndex].position = p2
+                bIndex += 1
                 ballz[bIndex].position = p3
                 bIndex += 1
             }
@@ -453,14 +467,14 @@ class ScalarShape: SCNNode {
                  cylz.append(tuple3.n)
                  mainPipeParent.addChildNode(tuple4.n)
                  cylz.append(tuple4.n)
-// 10/16  last link        mainPipeParent.addChildNode(tuple5.n)
-// 10/16  last link        cylz.append(tuple5.n)
+                 mainPipeParent.addChildNode(tuple5.n)
+                 cylz.append(tuple5.n)
                  cylGeometries.append(tuple3.g)
                  cylHeights.append(tuple3.h)
                  cylGeometries.append(tuple4.g)
                  cylHeights.append(tuple4.h)
-// 10/16  last link        cylGeometries.append(tuple5.g)
-// 10/16  last link        cylHeights.append(tuple5.h)
+                 cylGeometries.append(tuple5.g)
+                 cylHeights.append(tuple5.h)
              }
              else if !newNode  //update? just send resulting transforms to cylz array
              {
@@ -472,11 +486,10 @@ class ScalarShape: SCNNode {
                  cylz[cIndex].geometry  = tuple4.g
                  cylGeometries[cIndex]  = tuple4.g
                  cIndex+=1
-// 10/16 last link
-//                 cylz[cIndex].transform = tuple5.t
-//                 cylz[cIndex].geometry  = tuple5.g
-//                 cylGeometries[cIndex]  = tuple5.g
-//                 cIndex+=1
+                 cylz[cIndex].transform = tuple5.t
+                 cylz[cIndex].geometry  = tuple5.g
+                 cylGeometries[cIndex]  = tuple5.g
+                 cIndex+=1
              }
          }
          else //trivial pipe to shape?
@@ -546,13 +559,17 @@ class ScalarShape: SCNNode {
                  cIndex+=1
              }
          } //end else
+         
+         //print("--->SCALAR: ENDOFcreate3DPipe: uid \(uid) ballz \(ballz.count)")
+
          return mainPipeParent
      } //end create3DPipe
 
     //-----------(oogiePipe)=============================================
     func makeCornerSphere(pos : SCNVector3) -> (g:SCNSphere , n:SCNNode)
     {
-        let sphere = SCNSphere(radius: pipeRad)
+        // TEST 5.2 is reslly 1.2
+        let sphere = SCNSphere(radius: 1.2 * pipeRad) //10/18 add elbows just for shit
         sphere.firstMaterial?.diffuse.contents   = pipeColor
         sphere.firstMaterial?.emission.contents  = pipeColor
         let sphereNode = SCNNode(geometry:sphere)
@@ -572,7 +589,7 @@ class ScalarShape: SCNNode {
         (g: SCNGeometry , n:SCNNode,h : Float, t : SCNMatrix4)
     {
         let lookAt = to - from
-        print("makecyl to \(to) from \(from) lookat \(lookAt)")
+        //print("makecyl to \(to) from \(from) lookat \(lookAt)")
         let height = lookAt.length()
         let y  = lookAt.normalized()
         let up = lookAt.cross(vector: to).normalized()
@@ -605,6 +622,43 @@ class ScalarShape: SCNNode {
         ballz.append(nextNode) //keep track for highlight
     } //end addBall
 
+    //-----------(ScalarShape)=============================================
+    // starts a timer which recolors the scalar pipes
+    func startFadeout()
+    {
+        fadeTimer.invalidate() //clobber old timer first
+        //print("scalar start fadeout")
+        colorPipesWith(brightness: 6.0)  //bright yellow pipes
+        fadeTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.animateScalarTick), userInfo:  nil, repeats: true)
+        fadeCount = 6;  //how many tics we will tock
+    } //end startFadeout
+    
+    //-----------(ScalarShape)=============================================
+    // f goes from 1 to 0, 0 is orange, 1 is bright yellow
+    func colorPipesWith(brightness:Float)
+    {
+        let rgfloat = 0.4 + CGFloat(brightness) * 0.1
+        let sColor = UIColor(red: rgfloat, green: rgfloat, blue: 0.2, alpha: 1)
+        for i in 0..<cylGeometries.count
+        {
+            cylGeometries[i].firstMaterial?.diffuse.contents   = sColor
+            cylGeometries[i].firstMaterial?.emission.contents  = sColor
+        }
+    } //end colorPipesWith
+    
+    //-----------(ScalarShape)=============================================
+    // 10/20 animate scalar pipe color
+    // handle timed sxalar aniation pdates
+    @objc func animateScalarTick()
+    {
+        //print("scalar fade out \(fadeCount)")
+        fadeCount = fadeCount - 1;
+        colorPipesWith(brightness: Float(fadeCount))
+        if  fadeCount == 0
+        {
+            fadeTimer.invalidate()
+        }
+    } //end animateScalar
     
     //-----------(ScalarShape)=============================================
     func toggleHighlight()
@@ -647,7 +701,7 @@ class ScalarShape: SCNNode {
         var s1 = cylBasePos
         if uhit >= 0.0 //need to shift up?
         {
-//asdf
+
             s1.y = s1.y + Float(chit * uhit)
             print("box xyz \(s1)")
         }

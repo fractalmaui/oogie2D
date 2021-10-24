@@ -14,6 +14,7 @@
 // 9/24 remove swipe gesture,add dismiss button
 // 10/1 redo with NSArrays instead of C-arrays
 //  10/3 add indices to sliders/pickers
+//  10/21 add delete button
 
 #import "pipePanel.h"
 
@@ -152,6 +153,7 @@ double drand(double lo_range,double hi_range );
     editLabel.text = @"Edit Pipe";
     editLabel.textAlignment = NSTextAlignmentCenter;
     [self addSubview : editLabel];
+
     // 9/24 add dismiss button for oogieAR only
     dismissButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [dismissButton setFrame:CGRectMake(xi,yi,xs,ys)];
@@ -208,6 +210,16 @@ double drand(double lo_range,double hi_range );
      [diceButton setTintColor:[UIColor grayColor]];
      [diceButton addTarget:self action:@selector(diceSelect:) forControlEvents:UIControlEventTouchUpInside];
      [header addSubview:diceButton];
+    
+    //10/21 add delete button top RL
+    xs = OOG_HEADER_HIT * 0.8;
+    ys = xs;
+    xi = viewWid - ys - 3*OOG_XMARGIN; //LH side, note inset
+    deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [deleteButton setImage:[UIImage imageNamed:@"redx.png"] forState:UIControlStateNormal];
+    [deleteButton setFrame:CGRectMake(xi,yi,xs,ys)];
+    [deleteButton addTarget:self action:@selector(deleteSelect:) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:deleteButton];
     
     //7/9 add longpress on dice for undo
     undoLPGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(LPGestureUndo:)];
@@ -421,7 +433,7 @@ double drand(double lo_range,double hi_range );
         UIPickerView * picker = A[0];
         picker.delegate   = self;
         picker.dataSource = self;
-        NSLog(@" add picker %@ at %d",picker,index);
+        //NSLog(@" add picker %@ at %d",picker,index);
         [allPickers addObject:picker];
     }
     
@@ -579,6 +591,15 @@ double drand(double lo_range,double hi_range );
 {
     [self randomizeParams];
 } //end diceSelect
+
+//======(pipePanel)==========================================
+// 10/21 delete this pipe
+- (IBAction)deleteSelect:(id)sender
+{
+    [self.delegate didSelectPipeDelete];
+} //end deleteSelect
+
+
 
  
 //======(pipePanel)==========================================

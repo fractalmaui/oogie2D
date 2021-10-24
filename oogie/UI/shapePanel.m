@@ -127,12 +127,23 @@ double drand(double lo_range,double hi_range );
     editLabel.text = @"Edit Shape";
     editLabel.textAlignment = NSTextAlignmentCenter;
     [self addSubview : editLabel];
+    
     // 9/24 add dismiss button for oogieAR only
     dismissButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [dismissButton setFrame:CGRectMake(xi,yi,xs,ys)];
     dismissButton.backgroundColor = [UIColor clearColor];
     [dismissButton addTarget:self action:@selector(dismissSelect:) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:dismissButton];
+    //10/21 add delete button top RL
+    xs = OOG_HEADER_HIT * 0.8;
+    ys = xs;
+    xi = viewWid - ys - 3*OOG_XMARGIN; //LH side, note inset
+    deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [deleteButton setImage:[UIImage imageNamed:@"redx.png"] forState:UIControlStateNormal];
+    [deleteButton setFrame:CGRectMake(xi,yi,xs,ys)];
+    [deleteButton addTarget:self action:@selector(deleteSelect:) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:deleteButton];
+    
 
     // 9/24 HEADER, top buttons and title info
     xi = OOG_XMARGIN;
@@ -179,7 +190,7 @@ double drand(double lo_range,double hi_range );
      [diceButton setTintColor:[UIColor grayColor]];
      [diceButton addTarget:self action:@selector(diceSelect:) forControlEvents:UIControlEventTouchUpInside];
      [header addSubview:diceButton];
-    
+
     //7/9 add longpress on dice for undo
     undoLPGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(LPGestureUndo:)];
     undoLPGesture.numberOfTouchesRequired = 1;
@@ -549,7 +560,13 @@ double drand(double lo_range,double hi_range );
     [self randomizeParams];
 } //end diceSelect
 
- 
+//======(shapePanel)==========================================
+// 10/21 delete this shape
+- (IBAction)deleteSelect:(id)sender
+{
+    [self.delegate didSelectShapeDelete];
+} //end deleteSelect
+
 //======(shapePanel)==========================================
 - (IBAction)resetSelect:(id)sender
 {

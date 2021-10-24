@@ -35,6 +35,7 @@
     UIButton *loNotebutton;
     UIButton *hiNotebutton;
     UIButton *dismissButton;
+    UIButton *deleteButton;
 
     // 10/1 new data structs
     NSArray *allParams;
@@ -96,6 +97,7 @@
 -(void) didSelectControlReset ; //7/11
 -(void) didSelectControlDismiss ; //9/24
 -(void) updateControlModeInfo : (NSString*) infostr ; //5/19
+-(void) didSelectControlDelete ; //10/21
 
 @end
 

@@ -58,9 +58,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
     var sfx = soundFX.sharedInstance
     var tc  = texCache.sharedInstance //9/3 texture cache
     
-    let NUM_SFX_SAMPLES = 7  // "GM_001_C3"
-    var sfxSoundFiles: [String] = ["dog" , "congaMid" , "clave00" , "bub1",
-                                          "clave00" , "congaMid" , "vwhorn44k"]
+    var userSampleBase = 0 //where user samples live after all soundpacks are loaded
 
     var OVP  =  OogieVoiceParams.sharedInstance //9/19/21 oogie voice params
     var OSP  =  OogieShapeParams.sharedInstance //9/19/21 oogie shape params
@@ -178,10 +176,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
         let folders = ["GMPercussion","animals","weirdness"]   //9/11 add weirdness soundpack
         
         var fcount = 0
-        var sampnum = LOAD_SAMPLE_OFFSET; //starting point for samples...
+        var sampnum = LOAD_SAMPLE_OFFSET; //32?  starting point for samples...
         for subFolder in folders
         {
-            if fcount == 1 { sampnum = Int32(externalSampleBase) }
+            if fcount == 1 { sampnum = Int32(externalSampleBase) } //ok move up to 2556
             var url = URL(fileURLWithPath: "") //Start w/ empty path
             url = (Bundle.main.resourceURL?.appendingPathComponent(subFolder))!
             var fileNamez : [String] = []
@@ -213,6 +211,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
             fcount+=1; //update folder count
         }
         (sfx() as! soundFX).loadAudioBKGD(-1)
+        userSampleBase = Int(sampnum);
     } //end loadSamples
 
 

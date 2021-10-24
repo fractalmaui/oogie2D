@@ -102,8 +102,8 @@ class oogieBmp: NSObject {
                             blue:  CGFloat(data[pixelInfo + 2]) / 255.0,
                             alpha: CGFloat(data[pixelInfo + 3]) / 255.0)
         
-        let c2 = pd.getRGBAtPoint(Int32(Int(xcoord)),Int32(ycoord))
-        print("XY \(xcoord),\(ycoord) c \(color) vs c2 \(c2)")
+//        let c2 = pd.getRGBAtPoint(Int32(Int(xcoord)),Int32(ycoord))
+//        print("XY \(xcoord),\(ycoord) c \(color) vs c2 \(c2)")
       
         return color
     } //end getPixelColor

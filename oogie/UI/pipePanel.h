@@ -22,10 +22,6 @@
 #import "soundFX.h"
 @protocol pipePanelDelegate;
 
-//#define MAX_PIPE_SLIDERS 2 
-//#define MAX_PIPE_PICKERS 2
-#define MAX_PIPE_TEXTFIELDS 2
- // obPopupDelegate,
 @interface pipePanel : UIView <UIGestureRecognizerDelegate,UITextFieldDelegate,UITextViewDelegate,
                             UIPickerViewDelegate,UIPickerViewDataSource>
 {
@@ -43,10 +39,9 @@
     UIButton *loNotebutton;
     UIButton *hiNotebutton;
     UIButton *dismissButton;
-
-    UITextField *ptextFields[MAX_PIPE_TEXTFIELDS];
-    UIView *header,*footer;
-    UILabel *titleLabel;
+    UIButton *deleteButton;
+    UIView   *header,*footer;
+    UILabel  *titleLabel;
 
     // 10/1 new data structs
     NSArray *allParams;
@@ -80,7 +75,6 @@
     
 }
 
-
 @property (nonatomic, unsafe_unretained) id <pipePanelDelegate> delegate; // receiver of completion messages
 
 @property (nonatomic, assign) BOOL wasEdited;
@@ -88,7 +82,6 @@
 @property (nonatomic, strong) NSArray *outputNames;
 
 - (void) setupView:(CGRect)frame;
-
 - (void) configureView;
 - (void) updateSessionAnalytics;
 - (void) startAnimation;
@@ -108,6 +101,7 @@
 -(void) didSelectPipeDismiss ; //9/24
 -(void) needPipeDataImage ; //10/24
 //-(void) updateControlModeInfo : (NSString*) infostr ; //5/19
+-(void) didSelectPipeDelete ; //10/21
 
 @end
 

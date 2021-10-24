@@ -26,7 +26,8 @@ class OogieShape: NSObject {
 
     var OOS  = OSStruct()  // codable struct for i/o
     var OSP =  OogieShapeParams.sharedInstance //9/19/21 oogie voice params
-    var inPipes = Set<String>()   //use insert and remove to manage...
+    var inPipes   = Set<String>()   //use insert and remove to manage...
+    var inScalars = Set<String>()    //10/21 new for scalars
     var paramListDirty = true //4/25 add paramList for display purposes
     var paramList  = [String]()
     //5/3 move bmp from SphereShape
@@ -114,6 +115,8 @@ class OogieShape: NSObject {
             let pTuple = getParam(named : pname.lowercased())
             s = s + String(format: "%@:%@\n",pname,pTuple.sParam)
         }
+        s = s + String(format: "inPipes   %@\n",inPipes)   //10/21 add more info
+        s = s + String(format: "inScalars %@\n",inScalars)  
         s = s + String(format: "UID:%@\n",OOS.uid)
         return s
     }

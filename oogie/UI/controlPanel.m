@@ -25,6 +25,7 @@
 // 9/18 add randomize, remove sendAllParamsToParent, add sendUpdatedParamsToParent
 // 9/21 remove footer, add top edit label
 // 9/24 add dismiss button
+//  10/21 add delete button
 #import "controlPanel.h"
 //#import "AppDelegate.h" //KEEP this OUT of viewController.h!!
 
@@ -238,7 +239,17 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
      [diceButton setTintColor:[UIColor grayColor]];
      [diceButton addTarget:self action:@selector(diceSelect:) forControlEvents:UIControlEventTouchUpInside];
      [header addSubview:diceButton];
-    
+
+    //10/21 add delete button top RL
+    xs = OOG_HEADER_HIT * 0.8;
+    ys = xs;
+    xi = viewWid - ys - 3*OOG_XMARGIN; //LH side, note inset
+    deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [deleteButton setImage:[UIImage imageNamed:@"redx.png"] forState:UIControlStateNormal];
+    [deleteButton setFrame:CGRectMake(xi,yi,xs,ys)];
+    [deleteButton addTarget:self action:@selector(deleteSelect:) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:deleteButton];
+
     //7/9 add longpress on dice for undo
     undoLPGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(LPGestureUndo:)];
     undoLPGesture.numberOfTouchesRequired = 1;
@@ -830,6 +841,13 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     [self randomizeParams  ];
     resetButton.hidden = FALSE; //indicate param change
 } //end diceSelect
+
+//======(controlPanel)==========================================
+// 10/21 delete this voice
+- (IBAction)deleteSelect:(id)sender
+{
+    [self.delegate didSelectControlDelete];
+} //end deleteSelect
 
 
 //======(controlPanel)==========================================

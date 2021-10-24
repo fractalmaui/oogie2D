@@ -35,6 +35,7 @@
     UIButton *goRightButton;
     UILabel *titleLabel;
     UIButton *dismissButton;
+    UIButton *deleteButton;
 
     UIView *header,*footer;
     
@@ -86,6 +87,7 @@
 -(void) didSelectShapeDice ;
 -(void) didSelectShapeReset ;
 -(void) didSelectShapeDismiss ; //9/24
+-(void) didSelectShapeDelete ; //10/21
 
 @end
 

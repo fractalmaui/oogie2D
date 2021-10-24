@@ -35,6 +35,11 @@
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <color key="backgroundColor" systemColor="systemIndigoColor"/>
                             </view>
+                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BlM-zL-5Qo">
+                                <rect key="frame" x="87" y="304" width="240" height="128"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <color key="backgroundColor" systemColor="systemIndigoColor"/>
+                            </view>
                             <textField opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="Duhhhh" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="a8N-XW-Idc">
                                 <rect key="frame" x="0.0" y="80" width="375" height="52"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
@@ -109,11 +114,6 @@
                                     <action selector="test2Select:" destination="BYZ-38-t0r" eventType="touchUpInside" id="jA2-hd-xmW"/>
                                 </connections>
                             </button>
-                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BlM-zL-5Qo">
-                                <rect key="frame" x="30" y="174" width="240" height="128"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <color key="backgroundColor" systemColor="systemIndigoColor"/>
-                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="zc3-DA-LYV"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -138,11 +138,12 @@
                         <segue destination="BJM-oe-vDf" kind="show" identifier="textureSegue" id="XIi-BD-iH3"/>
                         <segue destination="P1S-LI-aTV" kind="show" identifier="chooserLoadSegue" id="o3T-u2-j67"/>
                         <segue destination="P1S-LI-aTV" kind="show" identifier="chooserSaveSegue" id="l6k-On-ror"/>
+                        <segue destination="563-ef-j4w" kind="show" identifier="samplesVCSegue" id="5j7-EC-89n"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1103" y="-156"/>
+            <point key="canvasLocation" x="1251" y="-584"/>
         </scene>
         <!--TextureVC-->
         <scene sceneID="uAX-pO-5hf">
@@ -418,6 +419,22 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Wg1-2g-fkG" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1956" y="-553.67316341829087"/>
+        </scene>
+        <!--SamplesVC-->
+        <scene sceneID="Lda-Ul-0YO">
+            <objects>
+                <viewController modalPresentationStyle="fullScreen" id="563-ef-j4w" customClass="samplesVC" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="NU7-dR-crL">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="736"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <viewLayoutGuide key="safeArea" id="nxX-vR-U50"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="4Nx-Hn-HnZ"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="bV1-7h-VFh" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2690" y="-583"/>
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>

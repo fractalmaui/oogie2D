@@ -413,13 +413,15 @@ import UIKit
                 var userSoundPack = SPStruct()
                 var files = try FileManager.default.contentsOfDirectory(atPath: surl.path)
                 files = files.sorted() //1/31/21 sort filenames!
+                print("loadUserSoundPack: \(surl)")
                 for fileName in files {
                     if !fileName.contains("#") //1/31/21
                     {
                         var upatch = OogiePatch()
                         upatch.name = fileName //store sample name
-                        //print("  ...load userSound \(fileName)")
+                        print("  ...load userSoundPatch patch \(fileName)")
                         userSoundPack.addPatch(name: fileName, patch: upatch)
+                        patchesDict[fileName] = upatch  //10/24 need to save in dict?
                     }
                 }
                 soundPacks[USER_SP_NAME] = userSoundPack  //1/31/21 was in wrong place!
@@ -431,7 +433,7 @@ import UIKit
         if !allSoundPackNames.contains(USER_SP_NAME) //10/28 check for dupes
         {
             allSoundPackNames.append(USER_SP_NAME)
-            //print("asp add \(USER_SP_NAME)")
+            print("asp add \(USER_SP_NAME)")
         }
     } //end loadUserSoundPack
     

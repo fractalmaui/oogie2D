@@ -39,8 +39,8 @@ static edits *sharedInstance = nil;
     if (self = [super init])
     {
         NSArray  *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-
         docPath    = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"edits"];
+        NSLog(@"load edits from %@",docPath);
         editDict   = [[NSMutableDictionary alloc] init];
         savedEdits = [[NSMutableDictionary alloc] init]; // for restoring edits after a cancel
         [self loadFromDocs];

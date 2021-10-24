@@ -12,6 +12,7 @@
 #import "pipePanel.h"
 #import "scalarPanel.h" //10/15
 #import "shapePanel.h"
+#import "samplesVC.h"
 #import "edits.h"
 #import "genOogie.h"
 #import "oogieStyles.h"

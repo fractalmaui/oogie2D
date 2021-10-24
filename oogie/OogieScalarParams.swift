@@ -22,12 +22,13 @@ import SceneKit
 
     static let sharedInstance = OogieScalarParams()
     //Output params depend on object scalar is hooked up to...
+    //Parmas: Name,Type,Min,Max,Default,DisplayMult,DisplayOffset?? (string params need a list of items)
     let OutputParamParams    : [Any] = ["OutputParam",  "string","mt"]
     let XParams              : [Any] = ["XPos" , "double", -maxMeters , maxMeters , 0.0, 10.0, -5.0 ] //10/3 changed default
     let YParams              : [Any] = ["YPos" , "double", -maxMeters , maxMeters , 0.0, 10.0, -5.0 ]
     let ZParams              : [Any] = ["ZPos" , "double", -maxMeters , maxMeters , 0.0, 10.0, -5.0 ]
-    let ScalarLoRangeParams  : [Any] = ["LoRange" , "double", 0.0 , 1.0 , 0.5, 1.0, 0.0 ] //10/17 redo ranges
-    let ScalarHiRangeParams  : [Any] = ["HiRange" , "double", 0.0 , 1.0 , 0.5, 1.0, 0.0 ]
+    let ScalarLoRangeParams  : [Any] = ["LoRange" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ] //10/17 redo ranges
+    let ScalarHiRangeParams  : [Any] = ["HiRange" , "double", 0.0 , 1.0 , 1.0, 1.0, 0.0 ]
     let InvertParams         : [Any] = ["Invert",  "string","off","on"]
     let ScalarNameParams     : [Any] = ["Name",         "text", "mt"]
     let ScalarCommParams     : [Any] = ["Comment",      "text", "mt"]

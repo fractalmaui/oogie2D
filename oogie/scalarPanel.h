@@ -35,6 +35,7 @@
     UIButton *loNotebutton;
     UIButton *hiNotebutton;
     UIButton *dismissButton;
+    UIButton *deleteButton;
 
     UITextField *ptextFields[MAX_SCALAR_TEXTFIELDS];
     UIView *header,*footer;
@@ -84,6 +85,7 @@
 -(void) didSelectScalarDice ;
 -(void) didSelectScalarReset ;
 -(void) didSelectScalarDismiss ; //9/24
+-(void) didSelectScalarDelete ; //10/21
 
 @end
 

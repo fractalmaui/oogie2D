@@ -17,7 +17,7 @@
 //  9/18  add oogieVoiceParams singleton
 //  10/8  synth waves now stored in buffers 0..4
 //  10/12 move lastBeatTime to top ,add verbose arg to playColors
-//
+//  10/20 add inScalars
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -109,8 +109,9 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
     var paramListDirty = true //4/25 add paramList for display purposes
     var paramList  = [String]()
     
-    var inPipes  = Set<String>()    //1/22 use insert and remove to manage...
-    var outPipes = Set<String>()   //1/22 use insert and remove to manage...
+    var inPipes   = Set<String>()    //1/22 use insert and remove to manage...
+    var outPipes  = Set<String>()   //1/22 use insert and remove to manage...
+    var inScalars = Set<String>()    //10/20 new for scalars
 
     var lastbeatTime = Date() //10/12 moved up from below
     
@@ -134,15 +135,16 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
     
     //-----------(oogieVoice)=============================================
     func copy(with zone: NSZone? = nil) -> Any {
-        let copy      = OogieVoice()
+        let copy       = OogieVoice()
         //Only copy editable/savable/ID items, dont worry about most working vars
-        copy.OVS      = OVS
-        copy.OOP      = OOP
-        copy.inPipes  = inPipes
-        copy.outPipes = outPipes
-        copy.uid      = uid
+        copy.OVS       = OVS
+        copy.OOP       = OOP
+        copy.inPipes   = inPipes
+        copy.outPipes  = outPipes
+        copy.inScalars = inScalars //10/20
+        copy.uid       = uid
         //Performance vars that NEED copying
-        copy.muted    = muted
+        copy.muted     = muted
         return copy
     }
     
@@ -362,6 +364,9 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         }
         // 10/12 wups! add more params
         s = s + String(format: "%@:%@\n","shapekey",OVS.shapeKey)
+        s = s + String(format: "inPipes   %@\n",inPipes) //10/21 add more info
+        s = s + String(format: "outPipes  %@\n",outPipes)
+        s = s + String(format: "inScalars %@\n",inScalars)
         s = s + String(format: "UID:%@\n",OVS.uid)
         return s
     }

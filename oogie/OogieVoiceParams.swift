@@ -158,6 +158,7 @@ import Foundation
         voiceParamsDictionary["nfixed"] = NFixedParams   //10/4 n/v/p fixed
         voiceParamsDictionary["vfixed"] = VFixedParams
         voiceParamsDictionary["pfixed"] = PFixedParams
+        voiceParamsDictionary["detune"] = DetuneParams //10/19 forgot this one
         voiceParamsDictionary["rottrigger"] = RotTriggerParams //4/18 add rot trigger
         voiceParamsDictionary["pkeydetune"] = DetuneParams //5/9 add detune
         voiceParamsDictionary["bottommidi"] = BottomMidiParams

@@ -174,6 +174,7 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     }
     
     //---(chooserVC)--------------------------------------
+    // 10/18 KRASH here if scenes folder is missing! WTF?
     func getFolderContents()
     {
         if mode == chooserLoadSceneMode || mode == chooserSaveSceneAsMode
@@ -184,6 +185,8 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         {
             filez = DataManager.getDirectoryContents(whichDir: "patches")
         }
+        //20/21 duh sort it or what
+        filez = filez.sorted()
         //print("chooser filez  \(filez)")
 
     }

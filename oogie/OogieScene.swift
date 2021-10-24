@@ -30,6 +30,9 @@
 //  10/12   in playAllPipesMarkers double check pipe exists, also
 //            pull buildaWaveTable call in setupSynthOrSample
 //            fix bug in addVoiceSceneData
+//  10/20  fix bug in clearOogieStructs
+//  10/21  add cleanupScalarOuts
+//  10/23  update getNameUIDDict for scalar
 import Foundation
 import SceneKit
 class OogieScene: NSObject {
@@ -83,6 +86,8 @@ class OogieScene: NSObject {
     var lastFieldPatch  = OogiePatch()
     var lastFieldInt    : Int = -1 //used for haptics triggering ONLY
     var lastBackToValue : Bool = false
+    
+    var soloVoiceID = ""   //10/20 for solo voices
     
     var pipeUIDToName = Dictionary<String, String>()
     
@@ -176,7 +181,7 @@ class OogieScene: NSObject {
     //          note on create a UID comes in via scalarSS!!
     func addScalarSceneData (scalarSS:ScalarStruct, op:String , startPosition : SCNVector3)  -> (shape:OogieScalar,pos3D:SCNVector3)
     {
-        var pos3D          = getFreshXYZ()
+        var pos3D          = getFreshXYZwith(spacing: 1.0) //10/20 redo
         let uid            = scalarSS.uid   //10/14 assume UID is always valid!!!
         var newSStruct     = scalarSS //Copy in our scalar to be cloned...
         newSStruct.uid     = uid     //  and uid too!
@@ -194,19 +199,27 @@ class OogieScene: NSObject {
         var newOogieScalar   = OogieScalar()   // 1/21 new shape struct
         newOogieScalar.uid   = uid
         newOogieScalar.SS    = newSStruct //pack up new scalar data
-        
+
         //here is object we are pointing to...
         newOogieScalar.SS.toObject = scalarSS.toObject
-        
+        // 10/18 do i need do this crap?? WTF?? why not a vector3D copy??
+        newOogieScalar.SS.xPos = Double(pos3D.x)
+        newOogieScalar.SS.yPos = Double(pos3D.y)
+        newOogieScalar.SS.zPos = Double(pos3D.z)
+
         //OK now for 3d representation. Find centers of two objects:
         let toObj = scalarSS.toObject
         if let shape = sceneShapes[toObj] //Found a shape as target?
         {
             newOogieScalar.destination = "shape"
+            shape.inScalars.insert(uid) //A10/21 dd our UID to shape inscalars
+
         }
         else if let voice = sceneVoices[toObj] //Assume voice instead...
         {
             newOogieScalar.destination    = "voice"
+            voice.inScalars.insert(uid) //Add our UID to voice inscalars
+            //10/20 HMM this works, shouldnt i have to save voice back to sceneVoices?
         }
         else  //4/28
         {
@@ -220,7 +233,7 @@ class OogieScene: NSObject {
     // 9/26 redo for uid keying  asdf
     func addShapeSceneData (shapeOSS:OSStruct , op : String, startPosition : SCNVector3) -> (shape:OogieShape,pos3D:SCNVector3)
     {
-        var pos3D  = getFreshXYZ()
+        var pos3D  = getFreshXYZwith(spacing: 3.0)  //10/20 redo
         var uid    = shapeOSS.uid   //key / uid are the SAME
         //SceneData half------------------------------------------------------------------
         var newOSStruct = shapeOSS //Copy in our shape to be cloned...
@@ -327,15 +340,57 @@ class OogieScene: NSObject {
     } // end changeVoiceType
     
     //-----------(oogieScene)=============================================
+    // 10/21 redid, cleanup of pipe datastructures only...
     func cleanupPipeInsAndOuts(uid:String)
     {
         if let pipe = scenePipes[uid]
         {
-            removeVoiceOutputPipe(pipe:pipe)
+            let destUID = pipe.PS.toObject
             if pipe.destination == "shape" //headed to a shape?
-               { removeShapeInputPipe(pipe:pipe) }
-            //... need to handle voice input later!
+            {
+                if let shape3D = sceneShapes[destUID] //find our shape...
+                {
+                    shape3D.inPipes.remove(uid)  //remove scalar input (note uid)
+                }
+            }
+            else if pipe.destination == "voice" //headed to a voice?
+            {
+                if let voice3D = sceneVoices[destUID]
+                {
+                    voice3D.inPipes.remove(uid)  //remove input
+                }
+            } //end destination
+            //Remove pipe as voice output...
+            let sourceUID = pipe.PS.fromObject
+            if let voice3D = sceneVoices[sourceUID]
+            {
+                voice3D.outPipes.remove(uid)  //remove output
+            }
         }
+    }  //end cleanupPipeInsAndOuts
+    
+    //-----------(oogieScene)=============================================
+    // 10/21 removes connections between scalars and shapes/markers
+    func cleanupScalarOuts(uid:String)
+    {
+        if let scalar = sceneScalars[uid]
+        {
+            let destUID = scalar.SS.toObject
+            if scalar.destination == "shape" //headed to a shape?
+            {
+                if let shape3D = sceneShapes[destUID] //find our shape...
+                {
+                    shape3D.inScalars.remove(uid)  //remove scalar input (note uid)
+                }
+            } //end destination
+            else if scalar.destination == "voice" //headed to a voice?
+            {
+                if let voice3D = sceneVoices[destUID]
+                {
+                    voice3D.inScalars.remove(uid)  //remove input
+                }
+            } //end destination
+        } //end if let scalar
     }  //end cleanupPipeInsAndOuts
     
     //-----------(oogieScene)=============================================
@@ -367,18 +422,8 @@ class OogieScene: NSObject {
         }
     } //end removeVoiceOutputPipe
     
-    //-----------(oogieScene)=============================================
-    // 1/22 data bookkeeping, remove pipe UID from dest shapes inPipes set
-    func removeShapeInputPipe(pipe:OogiePipe)
-    {
-        let sname = pipe.PS.toObject //get our voice name
-        if let shape = sceneShapes[sname]  //and the shape...
-        {
-            shape.inPipes.remove(pipe.uid) //delete UID entry
-        }
-    } //end removeShapeInputPipe
-
     
+
     //-----------(oogieScene)=============================================
     // 2/1 clears internal dictionaries of oogieVoices, Shapes and Pipes
     func clearOogieStructs()
@@ -386,6 +431,7 @@ class OogieScene: NSObject {
         sceneVoices.removeAll()
         sceneShapes.removeAll()
         scenePipes.removeAll()
+        sceneScalars.removeAll() //10/20 forgot dis wone!
     } //end clearOogieStructs
 
     
@@ -474,12 +520,17 @@ class OogieScene: NSObject {
 
     //-----------(oogieScene)=============================================
     // convenience func, gets dict of name -> UID pairs
+    // 10/23 add scalar
     func getNameUIDDict(forEvery:String) -> Dictionary<String, String>
     {
         var d = Dictionary<String, String>()
         if forEvery == "voice"
         {
             for (_,v) in sceneVoices { d[v.OVS.name] = v.OVS.uid }
+        }
+        else if forEvery == "scalar"
+        {
+            for (_,sc) in sceneScalars {d[sc.SS.name] = sc.SS.uid}
         }
         else if forEvery == "shape"
         {
@@ -533,15 +584,15 @@ class OogieScene: NSObject {
     //-----------(oogieScene)=============================================
     //   get centroid first, then go " around the clock"
     //   1/22 redo math, was wrong in computing new item offset from centroid
-    func getFreshXYZ() -> SCNVector3
+    func getFreshXYZwith(spacing : Float) -> SCNVector3
     {
         let crTuple = getSceneCentroidAndRadius() //5/12 new
         var newPos3D = crTuple.c
         var outerRad = crTuple.r
         #if VERSION_2D
-        outerRad += 3.0   //1/22
+        outerRad += spacing   //1/22
         #elseif VERSION_AR
-        outerRad += 0.5   //1/22  tighten spatial arrangement in AR
+        outerRad += spacing*0.25   //1/22  tighten spatial arrangement in AR
         #endif
         //Add our offset radius to the centroid to get fresh pos
         switch(shapeClockPos)
@@ -806,8 +857,15 @@ class OogieScene: NSObject {
     // 10/16 new
     func loadCurrentScalarParams()
     {
-        if let vArray = OScP.scalarParamsDictionary[selectedFieldName]
+        if var vArray = OScP.scalarParamsDictionary[selectedFieldName]
         {
+            if selectedFieldName == "outputparam" //10/18  same as for pipe
+            {
+                if vArray.count == 3 {vArray.remove(at: 2)} //Get rid of trailer
+                //append shape/voice/etc parameters....
+                if selectedScalar.destination == "shape" {vArray = vArray + OSP.shapeParamNamesOKForPipe }
+                else                                   {vArray = vArray + OVP.voiceParamNamesOKForPipe }   //9/19/21
+            }
             breakOutSelectedFields(vArray: vArray)
         }
     } //end loadCurrentScalarParams
@@ -817,7 +875,7 @@ class OogieScene: NSObject {
     // 9/22 redo
     func loadCurrentPipeParams()
     {
-        if var vArray = OPP.pipeParamsDictionary[selectedFieldName] //9/22 wups
+        if var vArray = OPP.pipeParamsDictionary[selectedFieldName] // get metadata for param
         {
             if selectedFieldName == "outputparam" //9/22 output? params may vary
             {
@@ -941,7 +999,7 @@ class OogieScene: NSObject {
     // Handles shape, voice, and pipe param changes.
     //  lots can go wrong here, maybe break this up?
     // 9/1 remove editing arg
-
+    // 10/20 add scalar 3D support
     func setNewParamValue(newEditState : String , named : String , toDouble : Double , toString : String ) -> [String]
     {
         editing = newEditState //9/1/21
@@ -994,6 +1052,7 @@ class OogieScene: NSObject {
             case "latitude", "longitude":
                 results.append("movemarker")
                 results.append("updatevoicepipe")
+                results.append("updatevoicescalar") //10/20 
                 //results.append("updateshapepipe") //9/20 what if we have a shape pipe?
             case "type":
                 if intChoiceChanged
@@ -1164,24 +1223,33 @@ class OogieScene: NSObject {
         //10/26 first we need to clean target...
         OSC.voices.removeAll()
         OSC.shapes.removeAll()
+        OSC.pipes.removeAll()
+        OSC.scalars.removeAll() //10/18/21 new for scalars
         //update scene with any changed voice paras...
         for (key, nextVoice) in sceneVoices //10/26 wups
         {
-            nextVoice.OVS.key = key           //4/30 pack up key too!
-            OSC.voices[key]   = nextVoice.OVS  //1/21 cleanup
+            nextVoice.OVS.key = key            //  pack up key
+            OSC.voices[key]   = nextVoice.OVS  // pack the codable part
+        }
+        for (key,nextScalar) in sceneScalars
+        {
+            // 10/18 weird bug. just save the SS somehow..
+//            nextScalar.SS.key = key              //  pack up key
+            var SS2 = nextScalar.SS
+            SS2.key = key      //  pack up key
+            OSC.scalars[key]   = SS2  // pack the codable part
         }
         for (key,nextShape) in sceneShapes
         {
-            nextShape.OOS.key = key           //4/30 pack up key too!
-            OSC.shapes[key]   = nextShape.OOS  //1/21 pack the codable part
+            nextShape.OOS.key = key             //  pack up key
+            OSC.shapes[key]   = nextShape.OOS  // pack the codable part
         }
         //DHS 12/5 pipes may have been renamed!
-        OSC.pipes.removeAll()
         for (key,nextPipe) in scenePipes  //11/24 add pipes to output!
         {
-            var npwork     = nextPipe     //why do i need this?
-            npwork.PS.key  = key           //4/30 pack up key too!
-            OSC.pipes[key] = npwork.PS
+            var npwork     = nextPipe       //why do i need this?
+            npwork.PS.key  = key           //  pack up key
+            OSC.pipes[key] = npwork.PS    // pack the codable part
         }
         OSC.packParams() //11/22 need to pack some stuff up first!
         DataManager.saveScene(self.OSC, with: sname)
@@ -1361,7 +1429,7 @@ class OogieScene: NSObject {
                 workVoice = nextVoice
             }
             var playit = true //10/17 add solo support
-            //SOLO??                   if soloVoiceID != "" && workVoice.uid != soloVoiceID {playit = false}
+            if soloVoiceID != "" && workVoice.uid != soloVoiceID {playit = false}
             if  playit && !workVoice.muted  //10/17 add mute
             {
                 if let shape = sceneShapes[workVoice.OVS.shapeKey] //get our voice parent shape...
@@ -1574,6 +1642,11 @@ class OogieScene: NSObject {
         for (_,shape) in scenePipes
         {
             s = s + shape.dumpParams() + "\n"
+        }
+        s = s + "Scalars:" + delimiter + "\n"  //10/21 new
+        for (_,scalar) in sceneScalars
+        {
+            s = s + scalar.dumpParams() + "\n"
         }
         s = s + "\nEnd Scene Dump\n"
         return s

@@ -38,6 +38,7 @@ public class DataManager {
         let urlV  = url.appendingPathComponent("voices")
         let urlS  = url.appendingPathComponent("shapes")
         let urlZ  = url.appendingPathComponent("scenes")
+        let urlY  = url.appendingPathComponent("samples") //10/23 huh? wtf? why diff from oogieCAM?
         let curl  = getCacheDirectory()
         let curlT = curl.appendingPathComponent("textures")
         do
@@ -47,6 +48,8 @@ public class DataManager {
             try FileManager.default.createDirectory(atPath: urlS.path, withIntermediateDirectories: true, attributes: nil)
             try FileManager.default.createDirectory(atPath: urlZ.path, withIntermediateDirectories: true, attributes: nil)
             try FileManager.default.createDirectory(atPath: curlT.path, withIntermediateDirectories: true, attributes: nil)
+            // 10/23 add samples
+            try FileManager.default.createDirectory(atPath: urlY.path, withIntermediateDirectories: true, attributes: nil)
         }
         catch let error as NSError
         {

@@ -9,7 +9,7 @@
 //
 //  Created by Dave Scruton on 10/15/21
 //  Copyright © 1990 - 2021 fractallonomy, inc. All Rights Reserved.
-
+//  10/21 add delete button
 #import "scalarPanel.h"
 
 @implementation scalarPanel
@@ -105,6 +105,16 @@
     [dismissButton addTarget:self action:@selector(dismissSelect:) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:dismissButton];
     
+    //10/21 add delete button top RL
+    xs = OOG_HEADER_HIT * 0.8;
+    ys = xs;
+    xi = viewWid - ys - 3*OOG_XMARGIN; //LH side, note inset
+    deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [deleteButton setImage:[UIImage imageNamed:@"redx.png"] forState:UIControlStateNormal];
+    [deleteButton setFrame:CGRectMake(xi,yi,xs,ys)];
+    [deleteButton addTarget:self action:@selector(deleteSelect:) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:deleteButton];
+    
     int panelSkip = 5; //Space between panels
     // HEADER, top buttons and title info
     xi = OOG_XMARGIN;
@@ -145,7 +155,7 @@
     //9/3 add dice where helpbutton WAS
     diceButton = [UIButton buttonWithType:UIButtonTypeCustom];
     NSLog(@" NOTE we need cyan dice for scalar!");
-    [diceButton setImage:[UIImage imageNamed:@"bluedice.png"] forState:UIControlStateNormal];
+    [diceButton setImage:[UIImage imageNamed:@"cyandice.png"] forState:UIControlStateNormal];
     int inset = 4; //10/27 tiny dice!
     CGRect rr = CGRectMake(xi+inset, yi+inset, xs-2*inset, ys-2*inset);
     [diceButton setFrame:rr];
@@ -439,6 +449,42 @@
 {
     [self randomizeParams];
 } //end diceSelect
+
+//======(scalarPanel)==========================================
+// 10/21 delete this scalar 
+- (IBAction)deleteSelect:(id)sender
+{
+    [self.delegate didSelectScalarDelete];
+} //end diceSelect
+
+//====(OOGIECAM MainVC)============================================
+//-(void) deleteScalarPrompt
+//{
+//    NSString *title = @"Delete Selected Scalar";
+//    NSMutableAttributedString *tatString = [[NSMutableAttributedString alloc]initWithString:
+//                                            title];
+//    [tatString addAttribute : NSForegroundColorAttributeName value:[UIColor blackColor]
+//                       range:NSMakeRange(0, tatString.length)];
+//    [tatString addAttribute:NSFontAttributeName value:[UIFont boldSystemFontOfSize:30]
+//                      range:NSMakeRange(0, tatString.length)];
+//    UIAlertController *alert = [UIAlertController alertControllerWithTitle:
+//                                NSLocalizedString(title,nil)
+//                                message:@"Scalar will be permanently removed"
+//                                preferredStyle:UIAlertControllerStyleAlert];
+//    [alert setValue:tatString forKey:@"attributedTitle"];
+//    alert.view.tintColor = [UIColor blackColor]; //lightText, works in darkmode
+//
+//    [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"OK",nil)
+//                                              style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
+//        [self delegate didSelectScalarDelete];
+//                                              }]];
+//    [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"Cancel",nil)
+//                                              style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
+//                                              }]];
+//    [self presentViewController:alert animated:YES completion:nil];
+//
+//} //end errorMessage
+
 
 
 //======(scalarPanel)==========================================

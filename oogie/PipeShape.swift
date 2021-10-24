@@ -20,6 +20,8 @@
 // 10/5  add dataImage access
 // 10/6  add wraparound support to pipeDataImage, pull image from pipe 3d label
 //        redo createPipeDataImage
+// 10/22 fix bug in create3DPipe
+// 10/23 fix AR infobox size bug
 import Foundation
 import UIKit
 import SceneKit
@@ -103,10 +105,15 @@ class PipeShape: SCNNode {
     let shapeRad    : Double = 1.0
     let markerHit = 0.2
     let pipeRad : CGFloat = 0.04 // 4/23/20 make bigger
+    let infoBoxWid = 0.08 //10/23 scale info box
+    let infoBoxHit = 0.01
+    
     #elseif VERSION_AR
     let shapeRad    : Double = 0.25
     let markerHit = 0.05  //1/13
     let pipeRad : CGFloat = 0.008 //1/20
+    let infoBoxWid = 0.02 //10/23 scale info box
+    let infoBoxHit = 0.0025
     #endif
     var pipeColor = UIColor(hue: 0.1, saturation: 1.0, brightness: 1.0, alpha: 1.0)
     var dataImage = UIImage() //10/5
@@ -211,7 +218,7 @@ class PipeShape: SCNNode {
              
              //11/29 info box. gets parented later down...
              // created small, zooms up on select
-             infobox = SCNBox(width: 0.085, height: 0.015 , length: 0.015, chamferRadius: 0)
+             infobox = SCNBox(width: infoBoxWid, height: infoBoxHit , length: infoBoxHit, chamferRadius: 0)
              infobox.firstMaterial?.diffuse.contents  = UIColor.blue
              //11/30 rotate box, was scaled wrongly for short/wide texture
              infoNode = SCNNode(geometry: infobox)
@@ -323,7 +330,7 @@ class PipeShape: SCNNode {
          {
              //Second half of pipe, same but for  sPos01 pos, lat lon
              nx =  cos( tlon) * cos( tlat) //1/14 wups need to incorporate cosine!
-             nz = -sin( tlon) * sin( tlat)
+             nz = -sin( tlon) * cos( tlat) //10/22 bug fix, was sin(tlat)
              ny =  sin( tlat)
 
              enx = cos( tlon)

@@ -181,19 +181,19 @@ struct OogieScalar {
     } //end getParam
     
     
+    //======(OogieScalar)=============================================
     //we need to handle this the latest /prev touch points t2 / t1 to stay independent of any UI
+    // empty for now, maybe at AR time?
     mutating func handleTouch (t1:CGPoint , t2:CGPoint)
     {
         //        if let scalar = OVScene.sceneScalars
                 
                 //        let t1 = startTouch.location(in: sceneView)
         //        let t2 = latestTouch.location(in:  sceneView)
-                let dx = t1.x - t2.x
-                let dy = t1.y - t2.y
-                print("moved delta \(dx), \(dy)")
-
-
-    }
+//                let dx = t1.x - t2.x
+//                let dy = t1.y - t2.y
+                //print("scalar handleTouch: moved delta \(dx), \(dy)")
+    } //end handleTouch
     
     //======(OogieScalar)=============================================
     //  sets param by name to either double or string depending on type
