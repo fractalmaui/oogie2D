@@ -10,6 +10,8 @@
 //  Created by Dave Scruton on 10/15/21
 //  Copyright © 1990 - 2021 fractallonomy, inc. All Rights Reserved.
 //  10/21 add delete button
+// 10/29 close KB if panel closes, see lastSelectedTextField
+// 10/30 add shouldChangeCharactersInRange delegate callback
 #import "scalarPanel.h"
 
 @implementation scalarPanel
@@ -27,7 +29,8 @@
         allSliders     = [[NSMutableArray alloc] init];
         allPickers     = [[NSMutableArray alloc] init];
         allTextFields  = [[NSMutableArray alloc] init];
-        
+        lastSelectedTextField = nil; //indicate no select
+
         _outputNames = @[]; //start with something!
         _wasEdited     = FALSE; //9/8
         diceUndo       = FALSE; //7/9
@@ -94,7 +97,7 @@
                           CGRectMake(xi,yi,xs,ys)];
     [editLabel setBackgroundColor : [UIColor cyanColor]];
     [editLabel setTextColor : [UIColor blackColor]];
-    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 28.0]];
+    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 22.0]];   //11/19
     editLabel.text = @"Edit Scalar";
     editLabel.textAlignment = NSTextAlignmentCenter;
     [self addSubview : editLabel];
@@ -115,7 +118,7 @@
     [deleteButton addTarget:self action:@selector(deleteSelect:) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:deleteButton];
     
-    int panelSkip = 5; //Space between panels
+    //int panelSkip = 5; //Space between panels
     // HEADER, top buttons and title info
     xi = OOG_XMARGIN;
     yi = 30;
@@ -136,7 +139,7 @@
     titleLabel = [[UILabel alloc] initWithFrame:
                   CGRectMake(xi,yi,xs,ys)];
     [titleLabel setTextColor : [UIColor whiteColor]];
-    [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 32.0]];
+    [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 22.0]];  //11/19
     titleLabel.text = @"Scalar";
     titleLabel.textAlignment = NSTextAlignmentCenter;
     [header addSubview : titleLabel];
@@ -247,7 +250,7 @@
     [self addSubview:vLabel];
     
     //Scrolling area...
-    int scrollHit = 450;
+    int scrollHit = 600;  //11/13 add room at bottom
     //if (cappDelegate.gotIPad) scrollHit+=120; //3/27 ipad needs a bit more room
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
     [self clearAnalytics];
@@ -420,6 +423,7 @@
 //======(scalarPanel)==========================================
 - (IBAction)dismissSelect:(id)sender
 {
+    [lastSelectedTextField resignFirstResponder]; //10/29 Close keyboard if up
     [self.delegate didSelectScalarDismiss];
 }
 
@@ -593,7 +597,17 @@
 //==========<UITextFieldDelegate>====================================================
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField
 {
+    [self.delegate didStartTextEntry:allParams[(textField.tag % 1000)]];  //10/30 pass field name
+    lastSelectedTextField = textField;  //10/29
     return YES;
+}
+
+//==========<UITextFieldDelegate>====================================================
+// 10/30 for displaying text entry on mainVC, note string only contains EDITS
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
+{
+    [self.delegate didChangeTextEntry:textField.text];  //pass text to parent
+    return true;
 }
 
 //==========<UITextFieldDelegate>====================================================

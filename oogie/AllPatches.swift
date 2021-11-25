@@ -23,6 +23,7 @@
 //  4/26  cleanup
 //  6/23  add 4 new sPatches entries:RampLead, etc, using xtraParams field
 //  8/2   updates to handle oogiecammetalshop as productID
+//  11/1  add loadUserPatches
 import Foundation
 import UIKit
 
@@ -63,8 +64,9 @@ import UIKit
     // 10/22 moved from init
     @objc func loadAllSoundPacksAndPatches()
     {
-        loadPatches()
+        loadBuiltinPatches()
         loadFactorySoundPacks()
+        loadUserPatches() //11/1 
     }
 
     //----(AllPatches)==============================================
@@ -177,22 +179,24 @@ import UIKit
     // called from setupSynthOrSample
     @objc func getADSRDisplay (bptr : Int , adsrImage : UIImageView) -> UIImage?
     {
-        let asize = 256
-        let wbptr = (sfx() as! soundFX).getWorkBuffer()
-        // NOW copy envelope from its world to work area...
-        (sfx() as! soundFX).copyEnvelope(Int32(bptr),Int32(wbptr))
-
-        guard let NNvalz = (sfx() as! soundFX).getEnvelopeForDisplay( wbptr  , Int32(asize))
-            else {return nil}
-        if (NNvalz.count == 0) {return nil} //9/14 bail on empty too
-        //OUCH. comes back as array of nsnumbers
-        var valz : [Float] = []
-        for val in NNvalz  //should be an array of nsnumber floats
-        {
-            if let nn = val as? NSNumber { valz.append(nn.floatValue) }
-        }
-        let result = createADSRImage(frame:adsrImage.frame,vals: valz)
-        return result
+        print("OBSOLETE getADSRDisplay")
+        return nil
+//        let asize = 256
+//        let wbptr = (sfx() as! soundFX).getWorkBuffer()
+//        // NOW copy envelope from its world to work area...
+//        //11/25 OBSOLETE (sfx() as! soundFX).copyEnvelope(Int32(bptr),Int32(wbptr))
+//
+//        //11/25 OBSOLETE guard let NNvalz = (sfx() as! soundFX).getEnvelopeForDisplay( wbptr  , Int32(asize))
+//        //11/25 OBSOLETE             else {return nil}
+//        if (NNvalz.count == 0) {return nil} //9/14 bail on empty too
+//        //OUCH. comes back as array of nsnumbers
+//        var valz : [Float] = []
+//        for val in NNvalz  //should be an array of nsnumber floats
+//        {
+//            if let nn = val as? NSNumber { valz.append(nn.floatValue) }
+//        }
+//        let result = createADSRImage(frame:adsrImage.frame,vals: valz)
+//        return result
     } //end getADSRDisplay
 
     
@@ -257,14 +261,33 @@ import UIKit
         allPatchCount = max(patchesDict.count,allPatchCount);
         soundPacks[displayName] = purchasedPack //3/5 change to use 2nd arg
         allSoundPackNames.append(displayName) //3/5 change to use 2nd arg
-    }
+    } //end loadPurchasedPatches
+
+    //----(AllPatches)==============================================
+    // 11/1/21 load user-generated patches
+    @objc func loadUserPatches()
+    {
+        var wP = Dictionary<String, OogiePatch>()
+        wP = DataManager.loadUserPatchesToDict(OogiePatch.self) //get any user patches...
+        let keys = Array(wP.keys).sorted(by: <)
+        // note we just load PATCHES, no soundpack intended...
+        for i in 0..<keys.count
+        {
+            let pname = keys[i]
+            if let patch = wP[pname]
+            {
+                let pkey = "U_" + pname   //add special prefix for key
+                patchesDict[pkey] = patch
+            }
+        }
+    } //end loadUserPatches
 
 
 
     //----(AllPatches)==============================================
     // 10/12 new :load canned patches to one big dict
     //  accessed
-    @objc func loadPatches()
+    @objc func loadBuiltinPatches()
     {
         //print("loadAllPatches");
         patchesDict.removeAll() //10/12 our target
@@ -288,7 +311,9 @@ import UIKit
 
         allPatchCount = patchesDict.count;
         print("...got \(allPatchCount) patches")
-    } //end loadPatches
+    } //end loadBuiltinPatches
+    
+    
     var  sPatches =  [ "SineWave","Sawtooth","SquareWave","RampWave",
                        "SineLead","SawLead","SquareLead","RampLead", //6/13/21
                        "Mellow","Bubbles","Casio","SoftSynth",
@@ -423,9 +448,26 @@ import UIKit
                         userSoundPack.addPatch(name: fileName, patch: upatch)
                         patchesDict[fileName] = upatch  //10/24 need to save in dict?
                     }
-                }
+                }  //end for filename
+                //11/1 OK now lets add custom user patches also...
+                let keys = patchesDict.keys
+                for key in keys
+                {
+                    if key.count > 4   //look for keys starting with U_....
+                    {
+                        let a0 = key.index(key.startIndex, offsetBy: 0)
+                        let a1 = key.index(key.startIndex, offsetBy: 1)
+                        if key[a0] == "U" && key[a1] == "_"
+                        {
+                            if let p = patchesDict[key]
+                            {
+                                userSoundPack.addPatch(name: key, patch: p)
+                            }
+                        }
+                    }
+                } //end for key
                 soundPacks[USER_SP_NAME] = userSoundPack  //1/31/21 was in wrong place!
-            }
+            } //end do
             catch{
                print("error loading user soundpack")
             }
@@ -436,6 +478,15 @@ import UIKit
             print("asp add \(USER_SP_NAME)")
         }
     } //end loadUserSoundPack
+    
+    //----(AllPatches)==============================================
+    // 11/11 for 3D dice control, just get rand patch name
+    @objc func getRandomPatchName() -> String
+    {//asdf
+        let keys = Array(patchesDict.keys)
+        let rint = Int.random(in: 0..<keys.count)
+        return keys[rint]
+    }
     
     //----(AllPatches)==============================================
     // 10/29 for refunds (not yet implemented)

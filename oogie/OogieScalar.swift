@@ -24,6 +24,7 @@ struct OogieScalar {
     var destination = ""
     var gotData = false //11/25
     var uid     = "nouid"
+    var value   = 0.0
     
 
     var paramListDirty = true //4/25 add paramList for display purposes

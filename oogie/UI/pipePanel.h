@@ -14,9 +14,6 @@
 
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-//#import "flurryAnalytics.h"
-//#import "miniHelp.h"
-//#import "obPopup.h"
 #import "genOogie.h"
 #import "oogieStyles.h"
 #import "soundFX.h"
@@ -33,6 +30,7 @@
     UIButton *diceButton;
     UIButton *goLeftButton;
     UIButton *goRightButton;
+    UITextField *lastSelectedTextField; //10/29
 
     UIImageView *dataImageView;
 
@@ -102,6 +100,8 @@
 -(void) needPipeDataImage ; //10/24
 //-(void) updateControlModeInfo : (NSString*) infostr ; //5/19
 -(void) didSelectPipeDelete ; //10/21
+-(void) didStartTextEntry : (NSString*) pname; //10/30
+-(void) didChangeTextEntry : (NSString*) pname;
 
 @end
 

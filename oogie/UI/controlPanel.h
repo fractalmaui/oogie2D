@@ -45,8 +45,10 @@
     NSMutableArray *allSliders;
     NSMutableArray *allPickers;
     NSMutableArray *allTextFields;
+    UITextField *lastSelectedTextField; //10/29
     
     NSArray *keySigs;
+    NSArray *quants;
     NSArray *monoPoly;
     NSArray *musicalKeys;
     NSArray *vibratoWaves;
@@ -83,6 +85,7 @@
 -(void) setupView:(CGRect)frame;
 - (void) configureView;
 - (void)updateSessionAnalytics;
+-(void) resetPatchPicker : (int)index;
 
 
 @end
@@ -96,6 +99,8 @@
 -(void) didSelectControlDice ; //4/28
 -(void) didSelectControlReset ; //7/11
 -(void) didSelectControlDismiss ; //9/24
+-(void) didStartTextEntry : (NSString*) pname;
+-(void) didChangeTextEntry : (NSString*) pstr;
 -(void) updateControlModeInfo : (NSString*) infostr ; //5/19
 -(void) didSelectControlDelete ; //10/21
 

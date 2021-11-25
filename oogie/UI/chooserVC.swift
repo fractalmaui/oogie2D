@@ -11,16 +11,19 @@
 //  Copyright © 2020 fractallonomy. All rights reserved.
 //  9/18/21 complete redo
 //  9/28    fix saveas file display
-
+//  10/30   make sure newname is set properly in all new file ops
+// 10/31 add type to needtosavefile
+// 11/7  add option to select oogieShare folder for scene loads
+// 11/8   add getPathToLoadOrSaveAt, add usingCloud flag, add overwriteProhibitedMessage
 import UIKit
 import Foundation
 
 protocol chooserDelegate
 {
     func newFolderContents(c: [String])
-    func chooserChoseFile(name: String)
+    func chooserChoseFile(name: String , path: String , fromCloud: Bool)
     func chooserCancelled()
-    func needToSaveFile(name: String)
+    func needToSaveFile(name: String,type: String, toCloud: Bool) //11/7
 }
 
 
@@ -32,6 +35,7 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     @IBOutlet weak var nameText: UITextField!
     @IBOutlet weak var saveButton: UIButton!
 
+    @IBOutlet weak var cloudButton: UIButton!
     var delegate: chooserDelegate?
     let chooserLoadSceneMode   = "loadScene"
     // 9/28 NOTE saveScene is unneeded, chooser never comes up in that mode
@@ -42,6 +46,7 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     let chooserSavePatchAsMode = "savePatchAs"
 
     var mode = ""
+    var usingCloud = false
     let cellHeight = 40 //should be large enuf for one line of text
     
     var filez : [String] = []
@@ -116,12 +121,27 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         }
     } //end viewDidLoad
     
+
+    //---(chooserVC)--------------------------------------
+    @IBAction func cloudSelect(_ sender: Any)
+    {
+        print(" cloud...")
+        usingCloud = !usingCloud
+        getFolderContents()
+        table.reloadData()
+        var s = "Cloud..."
+        if !usingCloud {s = "Local..."}
+        cloudButton.setTitle(s, for: .normal) //update button
+    }
+
+
     //---(chooserVC)--------------------------------------
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         //print("chooserwillappear, mode \(mode)")
         getFolderContents()
         configureView()
+        cloudButton.setTitle("Local...", for: .normal) 
     }
 
     //---(chooserVC)--------------------------------------
@@ -179,7 +199,10 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     {
         if mode == chooserLoadSceneMode || mode == chooserSaveSceneAsMode
         {
-            filez = DataManager.getDirectoryContents(whichDir: "scenes")
+            if !usingCloud
+                {filez = DataManager.getDirectoryContents(whichDir: "scenes")}
+            else
+                {filez = DataManager.getDirectoryContents(whichDir: "oogieshare")}
         }
         if mode == chooserLoadPatchMode || mode == chooserSavePatchAsMode
         {
@@ -197,7 +220,7 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         print("Replace...")
         let alert = UIAlertController(title: "Replace Existing File?", message: nil, preferredStyle: UIAlertController.Style.alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
-            self.delegate?.needToSaveFile(name: self.newName)
+            self.delegate?.needToSaveFile(name: self.newName,type:self.mode, toCloud: self.usingCloud) //10/31
             self.dismiss(animated: true, completion: nil)
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
@@ -205,6 +228,16 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         }))
         self.present(alert, animated: true, completion: nil)
     }
+
+    //---(chooserVC)--------------------------------------
+    func overwriteProhibitedMessage()
+    {
+        let alert = UIAlertController(title: "Please choose a new name", message: "this name is already taken", preferredStyle: UIAlertController.Style.alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
+        }))
+        self.present(alert, animated: true, completion: nil)
+    } //end overwriteProhibitedMessage
+
     
     //---(chooserVC)--------------------------------------
     func handleSave(name : String)
@@ -215,10 +248,13 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
         }
         else if filez.contains(name) //Exists? Prompt for replace
         {
-            promptForReplace()
+            newName = name;
+            if usingCloud    { overwriteProhibitedMessage() } //11/8
+            else             { promptForReplace() }
         }
         else{                        //New File? Just save
-            delegate?.needToSaveFile(name: name)
+            newName = name;    //10/30
+            delegate?.needToSaveFile(name: newName,type:mode, toCloud: usingCloud) //10/31
             dismiss(animated: true, completion: nil)
         }
 
@@ -254,23 +290,38 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     } //end cellForRowAt...
     
     //---<UITableViewDelegate>--------------------------------------
+    //11/8 get path to chosen file for delegate convenience.
+    func getPathToLoadOrSaveAt() -> String
+    {
+        var path = ""
+        var sUrl = DataManager.getSceneDirectory ()   // assume local folder
+        if usingCloud
+        {
+            sUrl = DataManager.getOogieshareDirectory ()   // cloud share folder
+        }
+        path = sUrl.absoluteString
+        return path
+    } //end getPathToLoadOrSaveAt
+    
+    //---<UITableViewDelegate>--------------------------------------
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         chosenFile = filez[indexPath.row]
+        let path = getPathToLoadOrSaveAt()
         if mode == chooserLoadPatchMode
         {
             let ss = chosenFile.split(separator: ":")//11/13 Compound strings?
             if ss.count == 2  {chosenFile = String(ss[0])} // found one? Choose first part
-            delegate?.chooserChoseFile(name: chosenFile)
+            delegate?.chooserChoseFile(name: chosenFile,path:path,fromCloud:usingCloud)
             dismiss(animated: true, completion: nil)
         }
         else if mode == chooserLoadSceneMode
         {
-            delegate?.chooserChoseFile(name: chosenFile)
+            delegate?.chooserChoseFile(name: chosenFile,path:path,fromCloud:usingCloud)
             dismiss(animated: true, completion: nil)
         }
         else if mode == chooserSaveSceneAsMode
         {
-            handleSave(name: chosenFile) //puts up chooser!
+            handleSave(name: chosenFile) //puts up chooser!   10/30
         }
     } //end didSelectRowAt
     
@@ -282,9 +333,8 @@ class chooserVC: UIViewController,UITextFieldDelegate,UITableViewDelegate,UITabl
     
     //---<UITextFieldDelegate>--------------------------------------
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        newName = textField.text!
         textField.resignFirstResponder() //dismiss kb if up
-        handleSave(name: newName)
+        handleSave(name: textField.text!) //10/30
         return true
     }
     //---<UITextFieldDelegate>--------------------------------------

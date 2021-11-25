@@ -17,6 +17,7 @@
 //  11/17 add gotAllZeroes
 //  11/24 add xtraParams 
 //  2/12  3 new params, pLevel, pKeyOffset, pKeyDetune
+//  11/1 add dumpParams
 import Foundation
 struct OogiePatch : Codable {
     
@@ -129,5 +130,14 @@ struct OogiePatch : Codable {
     {
         DataManager.dump(self)
     }
+    
+    //======(OogiePatch)=============================================
+    // 11/1 new
+    func dumpParams() -> String
+    {
+        return DataManager.getDumpString(self)
+    }
+    
+
 
 }

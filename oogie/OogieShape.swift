@@ -19,6 +19,9 @@
 //  5/11 add createMTImage, need in common area w/ sphereShape though
 //  5/14 add cleanup for bmp data
 //  9/19 add oogieShapeParams
+//  11/7 try texture Cache thumb in setBitmap
+//  11/9 change computeCurrentAngle
+//  11/15 add default texture to texCache
 import Foundation
 
 
@@ -42,12 +45,7 @@ class OogieShape: NSObject {
     var refDate  = Date()
     var oldTInterval : Double = 0.0
     
-    #if USE_TESTPATTERN
-    let defaultTexture = "spectrumOLD" //"tp"  8/12 testd
-    #else
-    let defaultTexture = "oog2-stripey00t"
-    #endif
-
+    
     //-----------(oogieShape)=============================================
     override init() {
         super.init()
@@ -143,7 +141,7 @@ class OogieShape: NSObject {
         var d = Dictionary<String, Any>()
         for pname in OSP.shapeParamNames //look at all params...9.19.21
         {
-            print("pack shape param \(pname)")
+            //print("pack shape param \(pname)")
             let plow = pname.lowercased()
             let pTuple = getParam(named : plow)
             let sv = pTuple.sParam
@@ -178,16 +176,17 @@ class OogieShape: NSObject {
         return d
     } //end getParamList
     
- 
-    
     //-----------(oogieShape)=============================================
+    // 11/9 redo so refDate / refAngle constantly change
     func computeCurrentAngle() -> Double
     {
         let cDate = Date()
         //5/6 how long we be spinnin?
         let timeInterval : Double = cDate.timeIntervalSince(refDate)
         oldTInterval = timeInterval
-        return refAngle + (2.0 * Double.pi)*(timeInterval/rotTime)
+        refDate  = cDate  //11/9/21 should handle speed changes better this way
+        refAngle = refAngle + (2.0 * Double.pi)*(timeInterval/rotTime) //11/9 advance angle
+        return refAngle
     } //end computeCurrentAngle
     
     //-----------(oogieShape)=============================================
@@ -212,6 +211,7 @@ class OogieShape: NSObject {
         if irot > 0
         {
             if irot > 8 {irot = 8}
+            //11/21/21 WOW it looks like OVtempo is coming from mainVC????  OUcH!
             rspeed = 60.0 / Double(OVtempo) //time for one beat
             //11/23 change rotation speed mapping
             rspeed = rspeed * 1.0 * Double(irot) //4/4 timing, apply rot type
@@ -239,22 +239,15 @@ class OogieShape: NSObject {
     
     
     //-----------(oogieShape)=============================================
-    // 9/2 add default support
+    // 11/7 add thumb fallthru, cleanup
     func setBitmap (s : String)
     {
-        let tekture = UIImage(named: defaultTexture)
+        var tekture = tc.defaultTexture  //11/15 add default to TC
         if s != "default" //non-default? try from cache!
         {
-            if let ctek = tc.texDict[s]
-            {
-                bmp.setupImage(i:ctek)
-                return
-            }
-            else {
-                bmp.setupImage(i:createMTImage(name:s))
-                //print("error fetching texture \(s)")
-                return
-            }
+            if let ctek = tc.texDict[s]        {tekture = ctek}
+            else if let ctek = tc.thumbDict[s] {tekture = ctek} //11/7 try thumb!
+            else {tekture =  createMTImage(name:s)} //11 / 7 cleanup
         }
         bmp.setupImage(i:tekture!)
     } //end setBitmap
@@ -277,7 +270,7 @@ class OogieShape: NSObject {
         let text_style=NSMutableParagraphStyle()
         text_style.alignment=NSTextAlignment.center
         
-        var textColor = UIColor.white
+        let textColor = UIColor.white
         let xmargin : CGFloat = 300 //WTF why doesnt this stretch label?
         let textFontAttributes = [
             NSAttributedString.Key.font: textFont,

@@ -54,6 +54,9 @@
 @property (nonatomic, unsafe_unretained) id <samplesVCDelegate> delegate; // receiver of completion messages
 @property(nonatomic,assign)   BOOL isUp; //8/21
 
+-(void) initAllVars;
+
+
 @end
 
 

@@ -10,6 +10,8 @@
 //  Created by Dave Scruton on 9/19/21.
 //  Params for oogieVoice objects. singleton, created once
 //  9/28 pulled numeric param dict entries
+//  10/26 add audio3D
+//  11/10 add quant
 import Foundation
 
 // 8/12/21 make accessible in objective C
@@ -67,10 +69,12 @@ import Foundation
     let MidiChannelParams: [Any] = ["MidiChannel","int" ,  1.0 ,16.0 , 1.0 , 128.0,  0.0 ]
     let VNameParams    : [Any]   = ["Name",      "text", "mt"]
     let VCommParams    : [Any]   = ["Comment",   "text", "mt"]
+    let QuantParams    : [Any]   = ["Quantize",     "string" , "Off", "1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/64"] //11/10
 
     let fx100Params : [Any]     = ["FX",   "double" ,  0.0 , 0.0 , 0.0 , 100.0,  0.0 ] // for f/x sliders
-    let fxWaveParamsOLD : [Any]     = ["FXWave",   "int" ,  0.0 , 0.0 , 0.0 , 4.0,  0.0 ] // for wave pickers
+    let fxWaveParamsOLD : [Any]   = ["FXWave",   "int" ,  0.0 , 0.0 , 0.0 , 4.0,  0.0 ] // for wave pickers
     let fxWaveParams : [Any]      = ["FXWave",     "string" , "Sine", "Saw", "Square", "Ramp"]
+    let audio3dParams : [Any]     = ["Audio3D",    "string" , "Normal", "3d", "XPan", "YPan", "ZPan"]    // 10/26
 
     // All param names, must match first item above for each param!
     let voiceParamNames : [String]    = ["Latitude", "Longitude","Type","Patch","ChromaticKey",
@@ -176,6 +180,8 @@ import Foundation
         voiceParamsDictionary["delaytime"]    = fx100Params
         voiceParamsDictionary["delaysustain"] = fx100Params
         voiceParamsDictionary["delaymix"]     = fx100Params
+        voiceParamsDictionary["audio3d"]      = audio3dParams //10/26
+        voiceParamsDictionary["quant"]        = QuantParams
 
     } //end setupVoiceParams
     

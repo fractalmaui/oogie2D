@@ -22,13 +22,13 @@
 // 11/4  add patchExists
 // 11/13 replaced loadSynthpatches... with loadSynthPatchesToDict..
 // 12/27 add getDumpString
-//  2/4  add getSceneVersion,getVersionFromSceneString
+//  2/4/21 add getSceneVersion,getVersionFromSceneString
+// 11/1  add loadUserPatchesToDict, minor code cleanup to
+// 11/7  add cloud folder oogieShare
 import Foundation
 
-
-
 public class DataManager {
-
+    
     //======(DataManager)=============================================
     // Must be called ONCE before any subfolders are accessed!
     static func createSubfolders()
@@ -39,6 +39,7 @@ public class DataManager {
         let urlS  = url.appendingPathComponent("shapes")
         let urlZ  = url.appendingPathComponent("scenes")
         let urlY  = url.appendingPathComponent("samples") //10/23 huh? wtf? why diff from oogieCAM?
+        let urlX  = url.appendingPathComponent("oogieshare") //11/7 oogieshare for cloud access
         let curl  = getCacheDirectory()
         let curlT = curl.appendingPathComponent("textures")
         do
@@ -50,13 +51,15 @@ public class DataManager {
             try FileManager.default.createDirectory(atPath: curlT.path, withIntermediateDirectories: true, attributes: nil)
             // 10/23 add samples
             try FileManager.default.createDirectory(atPath: urlY.path, withIntermediateDirectories: true, attributes: nil)
+            // 11/7 add cloud folder oogieShare
+            try FileManager.default.createDirectory(atPath: urlX.path, withIntermediateDirectories: true, attributes: nil)
         }
         catch let error as NSError
         {
             NSLog("Unable to create directory \(error.debugDescription)")
         }
     } //end createSubfolders
-  
+    
     //======(DataManager)=============================================
     // get Document Directory
     static func getDocumentDirectory () -> URL {
@@ -66,8 +69,8 @@ public class DataManager {
             self.gotDMError(msg: "Unable to access document directory")
             return URL(fileURLWithPath: "") //Empty for now?
         }
-    }
-
+    } //end getDocumentDirectory
+    
     //======(DataManager)=============================================
     // get Cache Directory
     static func getCacheDirectory () -> URL {
@@ -77,7 +80,7 @@ public class DataManager {
             self.gotDMError(msg: "Unable to access cache directory")
             return URL(fileURLWithPath: "") //Empty for now?
         }
-    }
+    } //end getCacheDirectory
     
     //======(DataManager)=============================================
     // get Patch Directory
@@ -91,19 +94,26 @@ public class DataManager {
         return getDocumentDirectory().appendingPathComponent("scenes")
     }
     
-    
-    public func substring(s:String,index: Int, length: Int) -> String {
-        if s.characters.count <= index {
-            return ""
-        }
-        let leftIndex = s.index(s.startIndex, offsetBy: index)
-        if s.characters.count <= index + length {
-            return s.substring(from: leftIndex)
-        }
-        let rightIndex = s.index(s.endIndex, offsetBy: -(s.characters.count - index - length))
-        return s.substring(with: leftIndex..<rightIndex)
+    //======(DataManager)=============================================
+    // 11/7 oogieshare cloud support
+    static func getOogieshareDirectory () -> URL {
+        return getDocumentDirectory().appendingPathComponent("oogieshare")
     }
-
+    
+    //11/1/21 stubbed, no need, pull ASAP
+    //======(DataManager)=============================================
+    //    public func substring(s:String,index: Int, length: Int) -> String {
+    //        if s.characters.count <= index {
+    //            return ""
+    //        }
+    //        let leftIndex = s.index(s.startIndex, offsetBy: index)
+    //        if s.characters.count <= index + length {
+    //            return s.substring(from: leftIndex)
+    //        }
+    //        let rightIndex = s.index(s.endIndex, offsetBy: -(s.characters.count - index - length))
+    //        return s.substring(with: leftIndex..<rightIndex)
+    //    }
+    
     //======(DataManager)=============================================
     // 2/4 new, gets actual scene file, parses out version.
     //       used to make sure we dont crash JSON read on mismatched file!
@@ -155,8 +165,8 @@ public class DataManager {
         }
         return(0,0,0) //Failure!
     } //end getVersionFromSceneString
-
-
+    
+    
     //======(DataManager)=============================================
     // get Patch Directory
     static func getShapeDirectory () -> URL {
@@ -168,7 +178,7 @@ public class DataManager {
     static func getVoiceDirectory () -> URL {
         return getDocumentDirectory().appendingPathComponent("voices")
     }
-
+    
     //======(DataManager)=============================================
     // 11/6 gets a variety of folder contents, whichDIr determines ...
     static func getDirectoryContents(whichDir : String) -> [String]
@@ -177,7 +187,8 @@ public class DataManager {
         do {
             var url = URL(fileURLWithPath: "") //Start w/ empty path
             //Get Scene Directory contents 11/22
-            if whichDir == "scenes" { url = getSceneDirectory() }
+            if whichDir == "scenes"          { url = getSceneDirectory() }
+            else if whichDir == "oogieshare" { url = getOogieshareDirectory() } //11/7
             else if whichDir == "patches"
             {
                 url = getPatchDirectory()
@@ -195,11 +206,10 @@ public class DataManager {
         }catch{
             fatalError("could not find \(whichDir) directory")
         }
-
     } //end getDirectoryContents
     
     
-     //======(DataManager)=============================================
+    //======(DataManager)=============================================
     static func getSceneDirectoryContents() -> [String]
     {
         do {
@@ -209,7 +219,7 @@ public class DataManager {
         }catch{
             fatalError("could not find scene directory")
         }
-       // return []
+        // return []
     }
     
     //=====(AllPatches)=============================================
@@ -223,12 +233,12 @@ public class DataManager {
         else if (n == "GM") {name = "GMPatches"}
         return name
     } //end getCategoryFolderName
-
-
+    
+    
     //======(DataManager)=============================================
     // 11/14 add category for access to different folders
     static func savePatch <T:Encodable> (_ object:T, with fileName:String , cat : String) {
-
+        
         var purl = URL(fileURLWithPath:"")
         if (cat != "US") //Builtin patch? Get folder
         {
@@ -247,14 +257,14 @@ public class DataManager {
     static func saveShape <T:Encodable> (_ object:T, with fileName:String) {
         save(object , with: getShapeDirectory(), with: fileName)
     }
-
+    
     //======(DataManager)=============================================
     static func saveScene <T:Encodable> (_ object:T, with fileName:String) {
         print("saveScene \(getSceneDirectory())/\(fileName))") //10/8
         save(object , with: getSceneDirectory(), with: fileName)
     }
-
-
+    
+    
     //======(DataManager)=============================================
     static func saveVoice <T:Encodable> (_ object:T, with fileName:String) {
         save(object , with: getVoiceDirectory(), with: fileName)
@@ -277,7 +287,7 @@ public class DataManager {
             self.gotDMError(msg: error.localizedDescription)
         }
     }
-
+    
     //======(DataManager)=============================================
     // 12/27 new
     static func getDumpString <T:Encodable> (_ object:T) -> String
@@ -300,7 +310,7 @@ public class DataManager {
         let dumpStr = getDumpString(object)
         print(dumpStr)
     } //end dump
-
+    
     //======(DataManager)=============================================
     // 9/15 new func, diagnostic dump to output log
     static func OLDdump <T:Encodable> (_ object:T) {
@@ -314,7 +324,7 @@ public class DataManager {
             self.gotDMError(msg: error.localizedDescription)
         }
     } //end dump
-
+    
     //======(DataManager)=============================================
     // Save any kind of codable objects, just to docs folder
     static func saveToDocs <T:Encodable> (_ object:T, with fileName:String) {
@@ -345,9 +355,16 @@ public class DataManager {
         path = path + "/patches"
         return loadAllToDict ( url: URL.init(fileURLWithPath: path) , with:type)
     }
-
-
-
+    
+    //======(DataManager)=============================================
+    // 11/1/21 load user patches from installed app documents area... asdf
+    static func loadUserPatchesToDict <T:Decodable> (_ type:T.Type ) -> Dictionary<String, T>
+    {
+        let url   = getDocumentDirectory()
+        let urlP  = url.appendingPathComponent("patches")
+        return  loadAllToDict ( url: urlP , with:type)
+    }
+    
     //======(DataManager)=============================================
     //  patches may come from more than one folder, hence the url
     static func loadPatch <T:Decodable> ( url:URL , with fileName:String, with type:T.Type) -> T{
@@ -370,8 +387,15 @@ public class DataManager {
     
     //======(DataManager)=============================================
     static func loadScene <T:Decodable> (_ fileName:String, with type:T.Type) -> T{
-        print("loadScene \(getSceneDirectory())\(fileName))") // 10/4 debug
+        //print("loadScene \(getSceneDirectory())\(fileName))") // 10/4 debug
         return load( getSceneDirectory(),  with: fileName,  with: type)
+    }
+    
+    //======(DataManager)=============================================
+    // 11/8 new
+    static func loadCloudScene <T:Decodable> (_ fileName:String, with type:T.Type) -> T{
+        //print("loadCloudScene \(getOogieshareDirectory())\(fileName))") // 10/4 debug
+        return load( getOogieshareDirectory(),  with: fileName,  with: type)
     }
     
     //======(DataManager)=============================================
@@ -401,6 +425,7 @@ public class DataManager {
     // 10/27 OUCH! How do I return on an error w/o a fatal?
     static func load <T:Decodable> (_ url : URL , with fileName:String, with type:T.Type) -> T {
         let url2 = url.appendingPathComponent(fileName, isDirectory: false)
+        print("Load \(url2)")
         if !FileManager.default.fileExists(atPath: url2.path) {
             fatalError("File not found at path \(url2.path)")
         }
@@ -415,7 +440,7 @@ public class DataManager {
             fatalError("Data unavailable at path \(url2.path)")
         }
     } //end load
- 
+    
     //======(DataManager)=============================================
     // Load any kind of codable objects
     // 10/27 OUCH! How do I return on an error w/o a fatal?
@@ -451,11 +476,11 @@ public class DataManager {
             return data
             
         }else{
-             self.gotDMError(msg:"Data unavailable at path \(url.path)")
+            self.gotDMError(msg:"Data unavailable at path \(url.path)")
         }
         return nil
     }
-
+    
     //======(DataManager)=============================================
     static func getBuiltinPatchFolderPath ( subfolder : String , isFactory : Bool) -> String
     {
@@ -469,9 +494,9 @@ public class DataManager {
         {
             path = Bundle.main.resourceURL!.appendingPathComponent(subfolder).path
         }
-        return path //URL(fileURLWithPath: path)
+        return path
     } //end getBuiltinPatchFolderPath
-
+    
     //======(DataManager)=============================================
     static func loadUpDictWithPatchesFromSubfolder  <T:Decodable> (_ type:T.Type , subFolder : String , fromFactory : Bool) -> Dictionary<String, T>
     {
@@ -496,14 +521,14 @@ public class DataManager {
     {
         return loadUpDictWithPatchesFromSubfolder(type, subFolder: "PercussionPatches", fromFactory:     fromFactory)
     }
-     
+    
     //======(DataManager)=============================================
     // Not used by oogie2D / oogieAR???
     static func loadBuiltinGMPercussionPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
     {
         return loadUpDictWithPatchesFromSubfolder(type, subFolder: "GMPercussionPatches", fromFactory:     fromFactory)
     }
-     
+    
     //======(DataManager)=============================================
     static func loadBuiltinPercKitPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
     {
@@ -511,11 +536,11 @@ public class DataManager {
     }
     
     //======(DataManager)=============================================
-     static func loadBuiltinCritterPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
-     {
-         return loadUpDictWithPatchesFromSubfolder(type, subFolder: "CritterPatches", fromFactory:     fromFactory)
-     }
-  
+    static func loadBuiltinCritterPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
+    {
+        return loadUpDictWithPatchesFromSubfolder(type, subFolder: "CritterPatches", fromFactory:     fromFactory)
+    }
+    
     //======(DataManager)=============================================
     static func loadBuiltinGMPatchesToDict <T:Decodable> (_ type:T.Type , fromFactory : Bool) -> Dictionary<String, T>
     {
@@ -527,7 +552,7 @@ public class DataManager {
     {
         return  loadAllToDict ( url: getPatchDirectory() , with:type)
     }
-
+    
     //======(DataManager)=============================================
     static func loadAllPatchesToArray <T:Decodable> (_ type:T.Type) -> [T] {
         return loadAll( url: getPatchDirectory() , with:type)
@@ -541,50 +566,39 @@ public class DataManager {
     //======(DataManager)=============================================
     //Load all files of type to dict, indexed by name
     static func loadAllToDict <T:Decodable> ( url:URL , with type:T.Type) ->
-                Dictionary<String, T>
+    Dictionary<String, T>
     {
         do {
             let files = try FileManager.default.contentsOfDirectory(atPath: url.path)
-            
             var ourDict = Dictionary<String, T>()
-            
             for fileName in files {
                 ourDict[fileName] = loadPatch( url: url, with:fileName, with: type)
-//                modelObjects.append(loadPatch( url: url, with:fileName, with: type))
             }
             return ourDict
         }catch{
             fatalError("loadAllToDict:bad load")
         }
     } //end loadAllToDict
-
-
+    
     //======(DataManager)=============================================
     // Load all files from a directory, needs URL
     static func loadAll <T:Decodable> ( url:URL , with type:T.Type) -> [T] {
         do {
             let files = try FileManager.default.contentsOfDirectory(atPath: url.path)
-            
             var modelObjects = [T]()
-            
             for fileName in files {
                 modelObjects.append(loadPatch( url: url, with:fileName, with: type))
             }
-            
             return modelObjects
-            
-            
         }catch{
             fatalError("could not load any files")
         }
-    }
-    
+    } //end loadAll
     
     //======(DataManager)=============================================
     // Delete a file
     static func delete (_ fileName:String) {
         let url = getDocumentDirectory().appendingPathComponent(fileName, isDirectory: false)
-        
         if FileManager.default.fileExists(atPath: url.path) {
             do {
                 try FileManager.default.removeItem(at: url)
@@ -592,21 +606,21 @@ public class DataManager {
                 self.gotDMError(msg: error.localizedDescription)
             }
         }
-    }
+    } //end delete
     
     //======(DataManager)=============================================
     // 10/27 shows error but only briefly!
     static func gotDMError(msg: String)
     {
         print("Data Manager Error: \(msg)")
-//        let alertController = UIAlertController(title: "DataManager Error", message: msg, preferredStyle: UIAlertControllerStyle.alert)
-//        alertController.addAction(UIAlertAction(title: "Close", style: UIAlertActionStyle.cancel, handler: nil))
-//
-//        let alertWindow = UIWindow(frame: UIScreen.main.bounds)
-//        alertWindow.rootViewController = UIViewController()
-//        alertWindow.windowLevel = UIWindowLevelAlert + 1;
-//        alertWindow.makeKeyAndVisible()
-//        alertWindow.rootViewController?.present(alertController, animated: false, completion: nil)
+        //        let alertController = UIAlertController(title: "DataManager Error", message: msg, preferredStyle: UIAlertControllerStyle.alert)
+        //        alertController.addAction(UIAlertAction(title: "Close", style: UIAlertActionStyle.cancel, handler: nil))
+        //
+        //        let alertWindow = UIWindow(frame: UIScreen.main.bounds)
+        //        alertWindow.rootViewController = UIViewController()
+        //        alertWindow.windowLevel = UIWindowLevelAlert + 1;
+        //        alertWindow.makeKeyAndVisible()
+        //        alertWindow.rootViewController?.present(alertController, animated: false, completion: nil)
     } //end gotDMError
     
 } //end DataManager

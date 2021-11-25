@@ -19,7 +19,6 @@
 // DHS 09/22/19: Redo sample load for oogie, loads from internal folders
 // DHS 10/6     Add GM Names, getGMName func
 // DHS 11/6     move GeneralMidiNames to Misc subfolder
-// DHS 11/9     add getWorkBuffer, getEnvelopeForDisplay
 // DHS 6/19-22  add recording hooks into synth
 // 2/12/21      add fineTuning
 // 2/19/21      add playNoteWithDelay to support delay
@@ -28,6 +27,7 @@
 // 5/10  enlarge sample space to 1024
 // 5/17  add # punct check in loadSamplesNow
 // 6/26  pull queueNote
+//  11/25 remove old envelope crap
 #include "soundFX.h"
 
 @implementation soundFX
@@ -224,20 +224,6 @@ int HH,LL,SS;  //Used in rgb -> HLS
     
 }
 
-//=====(soundFX)==========================================
-// 5/24
--(int) getEnvelopeSize : (int) which
-{
-    return [synth getEnvelopeSize:which];
-}
-
-
-//=====(soundFX)==========================================
-//  DHS 11/9
--(NSArray *) getEnvelopeForDisplay: (int) which : (int) size
-{
-    return [synth getEnvelopeForDisplay:which :size];
-}
 //=====(soundFX)==========================================
 //Sloppy!
 -(int) getPercussionTriggerKey : (NSString *)name
@@ -1264,11 +1250,6 @@ int dtp;
 -(void) copyBufferOutResampled : (int) bnum : (int)fsize : (float*) fbuf
 {
     [synth copyBufferOutResampled :  bnum : fsize : fbuf];
-}
-
--(void) copyEnvelope : (int) from : (int) to;
-{
-    [synth copyEnvelope:from :to];
 }
 
 // 10/31

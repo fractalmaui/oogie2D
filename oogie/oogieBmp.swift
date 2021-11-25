@@ -13,6 +13,7 @@
 //  10/23 add scale/offsets
 //  5/2   integrate pixelData.h/m, stores bitmap data ONCE and accesses an array
 //  5/14  add cleanup for bmp data
+//  11/15 add defaultTexture to texCache
 // https://stackoverflow.com/questions/32297704/convert-uiimage-to-nsdata-and-convert-back-to-uiimage-in-swift
 
 import Foundation
@@ -28,16 +29,12 @@ class oogieBmp: NSObject {
     var yoff   = 0.0
     var duh = 0
     var pd = pixelData()
-    
+    let tc  = texCache.sharedInstance //11/15 for loading textures...
+
     //-----------(oogieBmp)=============================================
     override init() {
         super.init()
-        var iname = "tp" //8/12/21 add new tp : DIDNT change initial sphere texture, WTF?
-        iname = "spectrumOLD"
-        if let image = UIImage.init(named: iname)
-        {
-            setupImage(i: image)
-        }
+        if let ii = tc.defaultTexture  { setupImage(i: ii) } //11/15 add default to TC
     }
     
     //-----------(oogieBmp)=============================================
@@ -49,6 +46,7 @@ class oogieBmp: NSObject {
     
     //-----------(oogieBmp)=============================================
     // incoming image gets its bitmap extracted to memory inside pd
+    //11/16 MEMORY LEAKS HERE!!!
     func setupImage ( i: UIImage )
     {
         image = i //10/21

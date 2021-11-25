@@ -18,6 +18,7 @@
 //  1/21  change to OSStruct for symmetry w/ OVStruct
 //  2/3   add comment field
 //  10/7  change name default
+//  10/25 add xtraparams
 import SceneKit
 
 //Parameter area...
@@ -44,6 +45,7 @@ struct OSStruct : Codable {
     var rotYaxis     : Double
     var rotZaxis     : Double
     var uid          : String
+    var xtraParams  : String //10/25. ADD NEW FIELD for audio 3D placement, whatever in the future...
 
 
     //======(OSStruct)=============================================
@@ -52,6 +54,7 @@ struct OSStruct : Codable {
         key       = ""
         name      = "shape_00001"  //10/7 for new scene...
         comment   = COMMENT_DEFAULT //2/3 from appDelegate
+        xtraParams = ""  //10/25/21
         primitive = "sphere"
         texture   = "default"
         xPos      = 0.0

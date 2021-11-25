@@ -22,6 +22,7 @@
 //        redo createPipeDataImage
 // 10/22 fix bug in create3DPipe
 // 10/23 fix AR infobox size bug
+// 10/26 get rid of 2D support for coords, various float var type changes
 import Foundation
 import UIKit
 import SceneKit
@@ -101,20 +102,15 @@ extension SCNMatrix4 {
 class PipeShape: SCNNode {
 
     //12/30 is there a smarter way to do this?
-    #if VERSION_2D
-    let shapeRad    : Double = 1.0
-    let markerHit = 0.2
-    let pipeRad : CGFloat = 0.04 // 4/23/20 make bigger
-    let infoBoxWid = 0.08 //10/23 scale info box
-    let infoBoxHit = 0.01
-    
-    #elseif VERSION_AR
+    //10/26 remove VERSION_2D crap
     let shapeRad    : Double = 0.25
     let markerHit = 0.05  //1/13
     let pipeRad : CGFloat = 0.008 //1/20
     let infoBoxWid = 0.02 //10/23 scale info box
     let infoBoxHit = 0.0025
-    #endif
+    let colorz : [UIColor] = [.red,.green,.blue,.cyan,.magenta,.yellow,.gray,.white]
+
+
     var pipeColor = UIColor(hue: 0.1, saturation: 1.0, brightness: 1.0, alpha: 1.0)
     var dataImage = UIImage() //10/5
     var ballGeomz : [SCNSphere] = []
@@ -130,7 +126,7 @@ class PipeShape: SCNNode {
     var zoomed = false
     var infobox = SCNBox()
     var infoNode = SCNNode()
-
+    var multiGrid = UIImage()
     // 1/26 new stuff...
     var flat    = 0.0
     var flon    = 0.0
@@ -138,6 +134,8 @@ class PipeShape: SCNNode {
     var tlon    = 0.0
     var sPos00  = SCNVector3()
     var sPos01  = SCNVector3()
+    
+    var channel = 0  //11/17 pipe color channel
     /**
      * Divides the x, y and z fields of a SCNVector3 by the same scalar value and
      * returns the result as a new SCNVector3.
@@ -262,13 +260,10 @@ class PipeShape: SCNNode {
              ballz.removeAll()
          }
          //Bump up ceiling to just above shapes...
-         #if VERSION_2D
-         var ceilingy  = Float(1.0)
-         let shapeYoff = Float(2.0) // 2/3/20
-         #elseif VERSION_AR
+         //10/26 remove VERSION_2D crap
          var ceilingy  = Float(0.2)
          let shapeYoff = Float(0.5) // 2/3/20
-         #endif
+
          let ty0 =  sPos00.y + shapeYoff //2/3/20 redid
          ceilingy = max(ceilingy,ty0)
          let ty1 =  sPos01.y + shapeYoff //2/3/20 redid
@@ -490,62 +485,6 @@ class PipeShape: SCNNode {
         return resultImage
     } //end createPipeLabel
     
-    //-----------(oogiePipe)=============================================
-    public func OLDcreatePipeLabel(label: String , frame:CGRect ,vals : [Float]) -> UIImage {
-           UIGraphicsBeginImageContextWithOptions(frame.size, false, 1)
-           let context = UIGraphicsGetCurrentContext()!
-           context.setFillColor(UIColor.black.cgColor);
-       var vmin :Float = 999.0
-       var vmax :Float = -999.0
-       if vals.count == 0 //1/13/20 handle empty vals
-       {
-           vmin = 0
-           vmax = 0
-       }
-      else
-       {
-           for i in 0...vals.count-1
-           {
-               vmin = min(vmin,vals[i])
-               vmax = max(vmin,vals[i])
-           }
-       }
-       let vconv : Float = 1.0 / 255.0
-       //print("vminmax \(vmin),\(vmax)")
-           context.fill(frame);
-           //First draw pipe label...
-           var xi = CGFloat(0.0)
-           var yi = CGFloat(0.0)
-           var xs = frame.size.width
-           var ys = CGFloat(20.0)
-           let textFont = UIFont(name: "Helvetica Bold", size: CGFloat(ys-3))!
-           let text_style=NSMutableParagraphStyle()
-           text_style.alignment=NSTextAlignment.center
-               let textFontAttributes = [
-                       NSAttributedString.Key.font: textFont,
-                       NSAttributedString.Key.foregroundColor: UIColor.white,
-                       NSAttributedString.Key.paragraphStyle: text_style
-                       ] as [NSAttributedString.Key : Any]
-           let trect =  CGRect(x: xi, y: yi, width: xs, height: ys)
-           label.draw(in: trect, withAttributes: textFontAttributes)
-           //Now time to add some graphics below...
-           xi = 0
-           yi = frame.size.height
-   //        let cc = UIColor.white
-           let cc =  UIColor.init(red: 1,    green: 0.94, blue: 0.14, alpha: 1) //10/5 try yellow!
-
-           context.setFillColor(cc.cgColor);
-           xs = 1
-           for val in vals
-           {
-               ys = CGFloat(20.0 * vconv*val) //11/30 convert 0..255 -> 0..1
-               context.fill(CGRect(x: xi, y: yi-ys, width: xs, height: ys))
-               xi = xi + xs
-           }
-           let resultImage = UIGraphicsGetImageFromCurrentImageContext()!
-           UIGraphicsEndImageContext()
-           return resultImage
-       } //end createPipeLabel
 
     //-----------(oogiePipe)=============================================
     // 10/5 just store graph internally
@@ -659,6 +598,130 @@ class PipeShape: SCNNode {
         return resultImage
     } //end createGridImage
 
+    // for all pipe textures, make 7 different grids, R/G/B/C/M/Y/Greyscale
+    public func createMultiGridImage( ) -> UIImage {
+        let frame = CGRect(x: 0,y: 0,width: 512,height: 512) //nice and big
+        UIGraphicsBeginImageContextWithOptions(frame.size, false, 1)
+        guard let context = UIGraphicsGetCurrentContext() else {return UIImage()} //DHS 1/31
+        context.setFillColor(UIColor.black.cgColor);
+        context.fill(frame);
+        
+        let cc = colorz.count
+        
+        var xi = 0.0
+        var yi = 0.0
+        var xs = Double(frame.size.width)
+        var ys = 1.0
+        
+        
+        for i in 0...cc-1 //loop over colors...draw gradient top to bottom
+        {
+            yi = 0.0
+            let c = colorz[i]
+            xs = Double(512 / cc)
+            xi = Double(i) * xs
+            for j in 0...Int(frame.size.height-1) //create gradient for each color
+            {
+                let cc = getBarColor(c: c, fampl: CGFloat(j) / CGFloat(frame.size.height) ) //CGFloat(Float(iii%64)/64.0))
+                context.setFillColor(cc.cgColor);
+                context.fill(CGRect(x: xi, y: yi, width: xs, height: ys));
+                yi = yi + 1.0
+            }
+        }
+        let xg = 8*8   //# gridlines across/updown
+        let yg = 8
+        context.setFillColor(UIColor.white.cgColor);
+        //lets do vertical lines... (along pipes)
+        xi = 0.0
+        yi = 0.0
+        xs = 1.0
+        ys = CGFloat(frame.size.height)
+        for _ in 0...xg-1
+        {
+            context.fill(CGRect(x: xi, y: yi, width: xs, height: ys));
+            xi  = xi + frame.size.width/CGFloat(xg)
+        }
+        
+        //Draw grid lines ACROSS image now...
+        xi = 0.0
+        yi = 0.0
+        xs = CGFloat(frame.size.width)
+        ys = CGFloat(1.0)
+        for _ in 0...yg-1
+        {
+            context.fill(CGRect(x: xi, y: yi, width: xs, height: ys));
+            yi  = yi + frame.size.height/CGFloat(yg)
+        }
+        
+        //Pack up and return image!
+        let resultImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        return resultImage
+    } //end createMultiGridImage
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    //-----------(oogiePipe)=============================================
+    // 11/1 new, only makes 1xn grid
+    public func createBabyGridImage(frame:CGRect , c:UIColor ,  yg : Int, bptr:Int) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(frame.size, false, 1)
+        guard let context = UIGraphicsGetCurrentContext() else {return UIImage()} //DHS 1/31
+        context.setFillColor(UIColor.black.cgColor);
+        context.fill(frame);
+        
+        var xi = CGFloat(0.0)
+        var yi = CGFloat(0.0)
+        var xs = CGFloat(0.0)
+        var ys = CGFloat(0.0)
+
+        //fill in wave now vertically
+        xi = 0.0
+        yi = 0.0
+        xs = CGFloat(frame.size.width)
+        ys = 1.0
+        //print("cgimage hite \(frame.size.height)")
+        _ = CGFloat(frame.size.height)
+        //Create bkgd gradient!
+        for i in 0...Int(frame.size.height-1) //step along whole length if vals..
+        {
+            var iii = i - bptr
+            while iii < 0 {iii = iii + 256}
+            let cc = getBarColor(c: c, fampl: CGFloat(Float(iii%64)/64.0))
+            context.setFillColor(cc.cgColor);
+            context.fill(CGRect(x: xi, y: yi, width: xs, height: ys));
+            yi = yi + 1.0
+        }
+        //add gray? GRID xy lines...
+        context.setFillColor(UIColor.white.cgColor);
+        xi = 0.0
+        yi = 0.0
+        xs = 1.0
+        ys = CGFloat(frame.size.height)
+        context.fill(CGRect(x: xi, y: yi, width: xs, height: ys));
+        
+        xi = 0.0
+        yi = 0.0
+        xs = CGFloat(frame.size.width)
+        ys = CGFloat(1.0)
+        for _ in 0...yg-1
+        {
+            context.fill(CGRect(x: xi, y: yi, width: xs, height: ys));
+            yi  = yi + frame.size.height/CGFloat(yg)
+        }
+        
+        //Pack up and return image!
+        let resultImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        return resultImage
+    } //end createBabyGridImage
+
     
     //-----------(oogiePipe)=============================================
     // 11/27 given 0...1 amplitude input, output color dimmed just so...
@@ -685,7 +748,7 @@ class PipeShape: SCNNode {
         var ccc = UIColor.black
         switch chan
         {
-        case "red"         : ccc = UIColor.red
+            case "red"         : ccc = UIColor.red
             case "green"   : ccc = UIColor.green
             case "blue"    : ccc = UIColor.blue
             case "cyan"    : ccc = UIColor.cyan
@@ -696,32 +759,115 @@ class PipeShape: SCNNode {
         
         return ccc
     }
+
+    //-----------(oogiePipe)=============================================
+    // 11/17 point to color in multicolors
+    public func getIndexForChan(chan:String) -> Int
+    {
+        var ii = 0
+        switch chan
+        {
+            case "red"     : ii = 0
+            case "green"   : ii = 1
+            case "blue"    : ii = 2
+            case "cyan"    : ii = 3
+            case "magenta" : ii = 4
+            case "yellow"  : ii = 5
+            default:  ii = 6  //grayscale
+        }
+        return ii
+    } //end getIndexForChan
     
     //-----------(oogiePipe)=============================================
-    func texturePipe( phase : Float ,chan : String , vals : [Float],vsize : Int , bptr : Int)
+    //11/16 just slide pipe texture along, using bptr
+    //  channel is used to pick a segment of texture
+    func updatePipeTexture( bptr:Int)
     {
-        let xs = 2.0
+        //var chtotal = 0.0
+        let xt = Float(channel) / 8.0
+        let yt = 1.0 - (Float(bptr) / 256.0)
+        let xs = 0.125   //1/8 of texture for each color grad
+        var ys = 1.0
+        var i = 0
+        for g in cylGeometries //hope this in order???
+        {
+            let hh = cylHeights[i]
+            ys = 4.0 * Double(hh) //yscale proportional to cylinder height
+            let scale = SCNMatrix4MakeScale(Float(xs), Float(ys), 0)
+            let translation = SCNMatrix4MakeTranslation(Float(xt), Float(yt), 0)
+            let transform = SCNMatrix4Mult(scale,translation)
+
+            //print("cyl:\(g) hh \(hh)")
+            if g.firstMaterial != nil
+            {
+                g.firstMaterial!.diffuse.contentsTransform  = transform
+                g.firstMaterial!.emission.contentsTransform = transform
+            }
+            i = i + 1
+        }
+    } //end updatePipeTexture
+
+    
+    func updatePipeTextureOLD(bptr:Int)
+    {
+        //var chtotal = 0.0
+       // for h in cylHeights {chtotal = chtotal + Double(h)}
+
+        let xt : Float = 0.0
+        let yt = 1.0 - (Float(bptr) / 256.0)
+        let xs = 8.0
+        var ys = 2.0
+        var i = 0
+        for g in cylGeometries //hope this in order???
+        {
+            let hh = cylHeights[i]
+            ys = Double(hh) //match cylinder height in yscale...
+            let scale = SCNMatrix4MakeScale(Float(xs), Float(ys), 0)
+            let translation = SCNMatrix4MakeTranslation(Float(xt), Float(yt), 0)
+            let transform = SCNMatrix4Mult(scale,translation)
+
+            //print("cyl:\(g) hh \(hh)")
+            if g.firstMaterial != nil
+            {
+                g.firstMaterial!.diffuse.contentsTransform  = transform
+                g.firstMaterial!.emission.contentsTransform = transform
+            }
+            i = i + 1
+        }
+    } //end updatePipeTexture
+
+    //-----------(oogiePipe)=============================================
+    // also called from outside when pipe edited
+    func setNewChannel( chan : String)
+    {
+        channel = getIndexForChan(chan:chan)
+    }
+    
+    
+    //-----------(oogiePipe)=============================================
+    // 11/16 remove valz arg
+    func addPipeTexture( phase : Float ,chan : String , vsize : Int , bptr : Int)
+    {
+        let xs = 8.0
         var ys = 2.0
         let xt = 0.0
         var yt :Float = 0.0
+        //11/17 this should only be made ONCE!!
+        multiGrid = createMultiGridImage()
+        setNewChannel(chan: chan)
+ 
         
         var chtotal = 0.0
         for h in cylHeights {chtotal = chtotal + Double(h)}
         
         var cp = 0
-        let chanColor = getColorForChan(chan: chan)
-        let vsizze = vals.count
-        //DHS 11/28 we need to know how big the pipe buffer is here!
-        let f = CGRect(x: 0, y: 0, width: 32, height: vsizze) //11/28 where do i get buffer size?
+        //let chanColor = getColorForChan(chan: chan)
         //11/28Compute #gridlines along pipe
         let yg = 4*Int(CGFloat(chtotal));
         //1/30 avoid krash on zero yg
         if yg == 0 {return}
-        //load up a gradient for the image colors, use buffer and bptr offset..
-        _ = vsizze
-        let t = createGridImage(frame:f , c:chanColor , xg : 4 , yg : yg,bptr:bptr)
-        
-        for g in cylGeometries
+
+        for g in cylGeometries //loop over pipe segments
         {
             let h = cylHeights[cp]
             cp+=1
@@ -732,10 +878,7 @@ class PipeShape: SCNNode {
                 fm.diffuse.wrapT = .repeat
                 fm.emission.wrapS = .repeat
                 fm.emission.wrapT = .repeat
-           
                 ys = wavelength * Double(h) / chtotal
-                
-                
                 let scale = SCNMatrix4MakeScale(Float(xs), Float(ys), 0)
                 let translation = SCNMatrix4MakeTranslation(Float(xt), Float(yt), 0)
                 let transform = SCNMatrix4Mult(scale,translation)
@@ -744,14 +887,12 @@ class PipeShape: SCNNode {
 
                 yt = yt + Float(ys)
                 
-                fm.diffuse.contents = t
-                fm.emission.contents = t
+                fm.diffuse.contents = multiGrid //11/17
+                fm.emission.contents = multiGrid
             }
 
         }
-        
-        
-    } //end texturePipe
+    } //end addPipeTexture
 
     //-----------(PipeShape)=============================================
     func toggleHighlight()

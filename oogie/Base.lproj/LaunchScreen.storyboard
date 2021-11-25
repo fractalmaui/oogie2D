@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="15400" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19162" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15404"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19144"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -16,12 +16,11 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="   oogie" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vvF-Fd-S5A" userLabel="oogie">
-                                <rect key="frame" x="0.0" y="144" width="414" height="59"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="   oogie" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vvF-Fd-S5A" userLabel="oogie">
+                                <rect key="frame" x="0.0" y="48" width="414" height="80"/>
                                 <color key="backgroundColor" red="0.0" green="0.0" blue="0.25098039215686274" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="59" id="1hb-bv-uSN"/>
-                                    <constraint firstAttribute="width" secondItem="vvF-Fd-S5A" secondAttribute="height" multiplier="414:59" id="QFD-DO-ori"/>
+                                    <constraint firstAttribute="height" constant="80" id="1hb-bv-uSN"/>
                                 </constraints>
                                 <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="49"/>
                                 <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -42,6 +41,7 @@ All Rights Reserved.</string>
                                 <nil key="highlightedColor"/>
                             </label>
                         </subviews>
+                        <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
                             <constraint firstItem="3Qb-h0-xEh" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="5tL-kq-ZRc"/>
@@ -57,9 +57,8 @@ All Rights Reserved.</string>
                             <constraint firstItem="vvF-Fd-S5A" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="h0N-fN-8gG"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="3Qb-h0-xEh" secondAttribute="trailing" id="ljc-j1-U9T"/>
                             <constraint firstItem="vvF-Fd-S5A" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="ut1-Kh-VJV"/>
-                            <constraint firstItem="vvF-Fd-S5A" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="100" id="w8C-Kz-OwC"/>
+                            <constraint firstItem="vvF-Fd-S5A" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="50" id="w8C-Kz-OwC"/>
                         </constraints>
-                        <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>

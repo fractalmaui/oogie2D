@@ -15,6 +15,8 @@
 //  Scalar is a single-value parameter controller for oogie2D/AR
 //  10/15 complex! added pipe mech, similar to pipe but not enuf to resuse code!
 //  10/20 make pipe orange, add animation on scalar change
+//  10/26 remove VERSION_2D crap
+//  11/3  add dice shape for randomizer
 import SceneKit
  
 class ScalarShape: SCNNode {
@@ -43,45 +45,27 @@ class ScalarShape: SCNNode {
     var scalarNode   = SCNNode()
     var torusNode1   = SCNNode()
     var torusNode2   = SCNNode()
+    var diceCube     = SCNBox()
+    var diceNode     = SCNNode()
     //see this about setting compiler switches, also use in mainVC for marker placement
     //   and for use of startPosition in AR version
     
-    //10/15 rename vars to more useful
-#if VERSION_2D
-    // floory is where all scalar pipes go
-    var floory  = Float(-1.2)
-    // shapeYoff is assumed bottom of all shapes, floor must be below this
-    let shapeYoff = Float(1.2)
-
-    let overallScale : CGFloat = 0.1
-    let torusRad     : CGFloat = 0.1
-    var pipeRad      : CGFloat = 0.005  //teeny pipes!
-    let markerHit    : Double  = 0.2
-    let shapeRad     : Double  = 1.0
-    let bwid : CGFloat =  0.2 //info box size
-    let bhit : CGFloat =  0.06
-    let crad : CGFloat = 0.03  //main cyl rad
-    let chit : CGFloat = 0.4  //main cyl hite
-    let phit : CGFloat = 0.02  //main cyl pedestal
-
-#elseif VERSION_AR
+    // 10/26 remove VERSION_2D crap
     var floory  = Float(-0.3)
     let shapeYoff = Float(0.3)
     //Generally AR should be 1/4 size of 2D
     let overallScale : CGFloat = 0.025
-    let torusRad     : CGFloat = 0.05
+    let torusRad     : CGFloat = 0.022
     let pipeRad      : CGFloat = 0.005
     let markerHit    : Double  = 0.05  //1/13
     let shapeRad     : Double  = 0.25
     let bwid : CGFloat =  0.05 //info box size
     let bhit : CGFloat =  0.005
-    let crad : CGFloat = 0.05  //main cyl rad
-    let chit : CGFloat = 0.5  //main cyl hite
+    let crad : CGFloat = 0.02 // main cyl rad
+    let chit : CGFloat = 0.2  //main cyl hite
     let phit : CGFloat = 0.02  //main cyl pedestal
-#endif
-    var pipeColor = UIColor.yellow
 
-    
+    var pipeColor = UIColor.yellow
 
     var boxPanel     = SCNBox()
     var panelNodes   : [SCNNode] = []
@@ -100,10 +84,10 @@ class ScalarShape: SCNNode {
         
         if newNode
         {
+            self.uid        = uid //incoming uid
             pipeColor =  UIColor(red: 0.4, green: 0.4, blue: 0.2, alpha: 1) //10/20 new dorabge color
             scalarNode = createControlShape(sPos00:sPos00)
             scalarNode.name = ""  //9/27 reset name as object gets added...
-            self.uid        = uid //incoming uid
         }
         else
         {
@@ -123,7 +107,7 @@ class ScalarShape: SCNNode {
             scalarNode.addChildNode(mainPipeParent)
             
             //10/11 add torii to indicate select status
-            torus1 = SCNTorus(ringRadius: torusRad+0.1, pipeRadius: 3*pipeRad) //10/20 fatten torii
+            torus1 = SCNTorus(ringRadius: torusRad, pipeRadius: 3*pipeRad) //10/20 fatten torii
             torus1.firstMaterial?.emission.contents  = UIColor.white
             torusNode1 = SCNNode(geometry: torus1)
             // var torYoff = Float(phit) //bottom torus
@@ -145,8 +129,8 @@ class ScalarShape: SCNNode {
     //-----------(ScalarShape)=============================================
     func addBoxPanel(fillColor:UIColor,sPos00  : SCNVector3) -> (bparent : SCNNode , bpanel:SCNBox)
     {
-        var xpos = sPos00.x
-        var zpos = sPos00.z
+        //var xpos = sPos00.x
+        //var zpos = sPos00.z
         let bparent = SCNNode()
         bparent.position = sPos00
         //add filler box
@@ -203,8 +187,9 @@ class ScalarShape: SCNNode {
         let mainNode = SCNNode()  // ok heres our pipe parent
         
         let f = CGRect(x: 0, y: 0, width: 128, height: 128)
-        let t = createGridImage(frame:f , bg:.white , fg:.black , xg : 16 , yg : 20 )
-        
+        let t = createGridImage(frame:f , bg:.clear , fg:.white , xg : 16 , yg : 20 )
+//        let t = createGridImage(frame:f , bg:.white , fg:.black , xg : 16 , yg : 20 )
+
         //starting point for cylinder and its children
 //        let s0 = SCNVector3(Float(xpos),Float(phit + chit/2.0),Float(zpos))
         
@@ -214,6 +199,16 @@ class ScalarShape: SCNNode {
         cylBasePos.y = cylBasePos.y - 0.5*Float(chit) //  and save bottom of cylinder for later
         let cylNode = createTexCylinder(pos: s0,hite: chit , rad: crad, ii:t)
         mainNode.addChildNode(cylNode)
+        
+        diceCube = SCNBox() //11/3 add dice box on top
+        diceCube.firstMaterial?.emission.contents = UIImage(named: "bluedice")
+        diceCube.firstMaterial?.diffuse.contents = UIImage(named: "bluedice")
+        diceNode = SCNNode(geometry: diceCube)
+        diceNode.position = SCNVector3(s0.x, s0.y + Float(0.8*chit) ,s0.z)
+        diceNode.scale    = SCNVector3(0.06,0.06,0.06)
+        diceNode.name = "dice_" + uid
+        mainNode.addChildNode(diceNode)
+
         
         // add some box panels, one will move up and down, one is fixed...
         // NOTE : cylBasePos is computed in createTclinder!! move it out?
@@ -333,9 +328,6 @@ class ScalarShape: SCNNode {
          {
              mainPipeParent = SCNNode()
          }
-//         else{
-//             print("duh edit 3dpipe to scalar")
-//         }
 
          if newNode
          {
@@ -352,20 +344,20 @@ class ScalarShape: SCNNode {
 
          //Get cylinder from our scalar pos to floor
          let p0  = cylBasePos // sPos00   //try our new lower base position
-         var cp0 = cylBasePos // sPos00
-         cp0.y = floory //set floor point, will use down below
+         var floorPos0 = cylBasePos // sPos00
+         floorPos0.y = floory //set floor point, will use down below
         
          //get 1st floor point... add ball..
          if (newNode)   //2/1
          {
-            addBall(parent: mainPipeParent,p:cp0)
+            addBall(parent: mainPipeParent,p:floorPos0)
          }
          else if bIndex < ballz.count //update? just change position
          {
-           ballz[bIndex].position = cp0
+           ballz[bIndex].position = floorPos0
            bIndex += 1
          }
-         let tuple2 = makePipeCyl(from: p0, to: cp0, newNode : newNode)
+         let tuple2 = makePipeCyl(from: p0, to: floorPos0, newNode : newNode)
          tuple2.n.name = uid //11/29 add uid to vertical pipe (for select)
          if newNode
          {
@@ -393,7 +385,7 @@ class ScalarShape: SCNNode {
          var pfy: Float = 0.0
          var pfz: Float = 0.0
          var epfx: Float = 0.0
-         var epfy: Float = 0.0
+         //var epfy: Float = 0.0
          var epfz: Float = 0.0
          var enlen: Double = 1.0
 
@@ -444,21 +436,22 @@ class ScalarShape: SCNNode {
              // make cylinder from marker to equator point
              let tuple5 = makePipeCyl(from: p3, to: p2, newNode : newNode)
              //get 2nd floor point...
-             let cp1 = SCNVector3(epfx,floory,epfz)
+             let floorPos1 = SCNVector3(epfx,floory,epfz)
              if (newNode)  //2/1
              {
-                addBall(parent: mainPipeParent,p:cp1)
+                addBall(parent: mainPipeParent,p:floorPos1)
              }
              else if bIndex < ballz.count //update? just change position
              {
-               ballz[bIndex].position = cp1
+               ballz[bIndex].position = floorPos1
                bIndex += 1
              }
-             let tuple4 = makePipeCyl(from: p3, to: cp1, newNode : newNode)
+             //BUG on ar it looks like p3 is way above sphere, WTF?
+             let tuple4 = makePipeCyl(from: p3, to: floorPos1, newNode : newNode)
              tuple4.n.name = uid //11/29 (for select)
 
              //Finally, join two floor points...
-             let tuple3 = makePipeCyl(from: cp1, to: cp0, newNode : newNode)
+             let tuple3 = makePipeCyl(from: floorPos1, to: floorPos0, newNode : newNode)
              tuple3.n.name = uid
 
              if newNode
@@ -495,19 +488,19 @@ class ScalarShape: SCNNode {
          else //trivial pipe to shape?
          {
              //print("pipe2shape")
-             let cp3 = SCNVector3( sPos01.x,floory, sPos01.z) //floor below shape
+             let floorPos1 = SCNVector3( sPos01.x,floory, sPos01.z) //floor below shape
              if (newNode)  //2/1
              {
-                addBall(parent: mainPipeParent,p:cp3)
+                addBall(parent: mainPipeParent,p:floorPos1)
              }
              else if bIndex < ballz.count //update? just change position
              {
-               ballz[bIndex].position = cp3
+               ballz[bIndex].position = floorPos1
                bIndex += 1
              }
 
              //join at floor s this out of order?
-             let tuple4 = makePipeCyl(from: cp3, to: cp0, newNode : newNode)
+             let tuple4 = makePipeCyl(from: floorPos1, to: floorPos0, newNode : newNode)
              tuple4.n.name = uid   //11/29 (for select)
 
              var cp4 = sPos01 //try a point a little above our shape center
@@ -517,9 +510,9 @@ class ScalarShape: SCNNode {
              // instead i copy it to cp4 and then jiggle cp4s xyz a bit and voila! the cylinder is there.
              
              cp4.x = cp4.x + 0.01 //jiggle around a bit
-             cp4.y = cp4.y + 0.5
+             cp4.y = cp4.y + 0.01  //10/27 wyps
              cp4.z = cp4.z + 0.01
-             let tuple3 = makePipeCyl(from:  cp3, to: cp4, newNode : newNode)
+             let tuple3 = makePipeCyl(from:  floorPos1, to: cp4, newNode : newNode)
              tuple3.n.name = uid
 
              
@@ -664,7 +657,7 @@ class ScalarShape: SCNNode {
     func toggleHighlight()
     {
         highlighted = !highlighted
-        print("scalar \(uid) toggle hilite to \(highlighted)")
+        //print("scalar \(uid) toggle hilite to \(highlighted)")
         updateHighlight()
     }
     
@@ -701,9 +694,7 @@ class ScalarShape: SCNNode {
         var s1 = cylBasePos
         if uhit >= 0.0 //need to shift up?
         {
-
             s1.y = s1.y + Float(chit * uhit)
-            print("box xyz \(s1)")
         }
         parent.position = s1
     } //end updateBoxPanel
@@ -713,7 +704,6 @@ class ScalarShape: SCNNode {
     // 10/27 support unHighlight, add zoomed double check
     func updateHighlight()
     {
-        print("updatehilite zoomed \(zoomed)")
         var tcolor = UIColor.black
         if highlighted
         {
@@ -727,11 +717,27 @@ class ScalarShape: SCNNode {
         torus1.firstMaterial?.emission.contents  = tcolor
     } //end updateHighlight
     
+    //-----------(ScalarShape)=============================================
+    // 11/4 new
+    func animateDiceSelect()
+    {
+        var zoom = 2.0
+        let scaleAction1 = SCNAction.scale(by: zoom, duration: 0.05)
+        let scaleAction2 = SCNAction.scale(by: 1.0 / zoom, duration: 0.8)
+        let sequence = SCNAction.sequence([scaleAction1, scaleAction2])
+        diceNode.runAction(sequence, completionHandler:nil)
+
+        zoom = zoom * 5.0  //bigger oom for torus
+        let scaleAction11 = SCNAction.scale(by: zoom, duration: 0.05)
+        let scaleAction12 = SCNAction.scale(by: 1.0 / zoom, duration: 0.8)
+        let sequence2 = SCNAction.sequence([scaleAction11, scaleAction12])
+        torusNode1.runAction(sequence2)
+        torusNode2.runAction(sequence2)
+    } //end animateDiceSelect
     
     //-----------(ScalarShape)=============================================
     func animateSelectOut()
     {
-        print("growem!")
         let scaleAction = SCNAction.scale(by: 10, duration: 0.3)
         torusNode1.runAction(scaleAction)
         torusNode2.runAction(scaleAction)
@@ -742,19 +748,10 @@ class ScalarShape: SCNNode {
     //-----------(ScalarShape)=============================================
     func animateSelectIn()
     {
-        print("shrinkem!")
         let scaleAction = SCNAction.scale(by: 0.1, duration: 0.3)
         torusNode1.runAction(scaleAction)
         torusNode2.runAction(scaleAction)
         zoomed = false
     }
-
-    //-----------(ScalarShape)=============================================
-    func updatePanels(nameStr : String , comm : String)
-    {
-//        let ii = createNamePlateImage(label: nameStr  , comm: comm)
-//        boxPanel.firstMaterial?.diffuse.contents = ii
-//        boxPanel.firstMaterial?.emission.contents = ii
-    } //end updatePanels
 
 } //end ScalarShape

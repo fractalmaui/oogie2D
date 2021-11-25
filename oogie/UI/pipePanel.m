@@ -15,6 +15,8 @@
 // 10/1 redo with NSArrays instead of C-arrays
 //  10/3 add indices to sliders/pickers
 //  10/21 add delete button
+// 10/29 close KB if panel closes, see lastSelectedTextField
+// 10/30 add shouldChangeCharactersInRange delegate callback
 
 #import "pipePanel.h"
 
@@ -48,6 +50,7 @@ double drand(double lo_range,double hi_range );
         allSliders     = [[NSMutableArray alloc] init];
         allPickers     = [[NSMutableArray alloc] init];
         allTextFields  = [[NSMutableArray alloc] init];
+        lastSelectedTextField = nil; //indicate no select
 
         _outputNames = @[]; //start with something!
         _wasEdited = FALSE; //9/8
@@ -149,7 +152,7 @@ double drand(double lo_range,double hi_range );
                    CGRectMake(xi,yi,xs,ys)];
     [editLabel setBackgroundColor : [UIColor blueColor]];
     [editLabel setTextColor : [UIColor whiteColor]];
-    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 28.0]];
+    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 22.0]]; //11/19
     editLabel.text = @"Edit Pipe";
     editLabel.textAlignment = NSTextAlignmentCenter;
     [self addSubview : editLabel];
@@ -162,7 +165,6 @@ double drand(double lo_range,double hi_range );
     [self addSubview:dismissButton];
 
     int panelSkip = 5; //Space between panels
-    int i=0; //6/8
 
     // 9/24 HEADER, top buttons and title info
     xi = OOG_XMARGIN;
@@ -185,7 +187,7 @@ double drand(double lo_range,double hi_range );
     titleLabel = [[UILabel alloc] initWithFrame:
                    CGRectMake(xi,yi,xs,ys)];
     [titleLabel setTextColor : [UIColor whiteColor]];
-    [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 32.0]];
+    [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 22.0]];  //11/19
     titleLabel.text = @"Pipe";
     titleLabel.textAlignment = NSTextAlignmentCenter;
     [header addSubview : titleLabel];
@@ -316,7 +318,7 @@ double drand(double lo_range,double hi_range );
     [self addSubview:vLabel];
 
     //Scrolling area...
-    int scrollHit = 400; //8/12 760; //640;  //5/20 enlarged again asdf
+    int scrollHit = 699; //  11/13 add room at bottom
     //if (cappDelegate.gotIPad) scrollHit+=120; //3/27 ipad needs a bit more room
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
     [self clearAnalytics];
@@ -551,6 +553,7 @@ double drand(double lo_range,double hi_range );
 //======(pipePanel)==========================================
 - (IBAction)dismissSelect:(id)sender
 {
+    [lastSelectedTextField resignFirstResponder]; //10/29 Close keyboard if up
     [self.delegate didSelectPipeDismiss];
 }
 
@@ -743,8 +746,19 @@ double drand(double lo_range,double hi_range );
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField
 {
     //NSLog(@" begin");
+    [self.delegate didStartTextEntry:allParams[(textField.tag % 1000)]];  //10/30 pass field name
+    lastSelectedTextField = textField; //10/29
     return YES;
 }
+
+//==========<UITextFieldDelegate>====================================================
+// 10/30 for displaying text entry on mainVC, note string only contains EDITS
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
+{
+    [self.delegate didChangeTextEntry:textField.text];  //pass text to parent
+    return true;
+}
+
 
 //==========<UITextFieldDelegate>====================================================
 - (BOOL)textFieldShouldClear:(UITextField *)textField

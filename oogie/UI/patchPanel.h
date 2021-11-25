@@ -15,11 +15,7 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #import "edits.h"
-// 8/12 FIX #import "flurryAnalytics.h"
 #import "genOogie.h"
-// 8/12 FIX #import "miniHelp.h"
-// 8/12 FIX #import "obPopup.h"
-// 8/12 FIX #import "oogieVoice.h"
 #import "oogieStyles.h"
 #import "soundFX.h"
 @protocol patchPanelDelegate;
@@ -47,26 +43,16 @@
     NSArray *paPickerNames;
     NSMutableArray *allSliders;
     NSMutableArray *allPickers;
-
-    // Field data accumulator: tracks all activity in this session
-    //  which is then used at dismiss time to save changes to edits
-//    BOOL sliderChanged[MAX_PATCH_SLIDERS];
-//    BOOL pickerChanged[MAX_PATCH_PICKERS];
-//    int sChanges[MAX_PATCH_SLIDERS]; //session analytics:count the changes!
-//    int pChanges[MAX_PATCH_PICKERS];
-
     int diceRolls;  //9/9 for analytics
     int resets;     //9/9 for analytics
     edits *paramEdits;
-    // 8/12 FIX obPopup *obp; //onboarding popup panel
-    // 8/12 FIX miniHelp *mhelp;
-    // 8/12 FIX flurryAnalytics *fanal; //8/3
-   // 8/12 fix? oogieVoice *startVoice; //8/21 for cancel
     soundFX *sfx; //8/27 for sample silencer
     BOOL diceUndo;
     BOOL rollingDiceNow,resettingNow;
     genOogie *goog;  //9/15
-
+    float aa,dd,ss,rr,slsl;  //11/24 for temp adsr work
+    int patchType; //11/24 keep track of type for UI/ other things
+    int percKitParamStart;
 }
 
 
@@ -83,10 +69,8 @@
 @property (nonatomic, strong) NSDictionary *paramDict;
 @property(nonatomic,assign)   int whichSamp;
 
-
 - (void)setupView:(CGRect)frame;
 - (void) configureView;
-- (void)updateSessionAnalytics; 
 
 
 @end

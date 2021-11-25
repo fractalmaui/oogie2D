@@ -26,26 +26,23 @@
 {
     self = [super init];
 //    sappDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
+    [self initAllVars];
 
+    return self;
+}
+
+-(void) initAllVars
+{
     rawFileNames = [[NSMutableArray alloc] init];
-    
     playing       = [[NSMutableArray alloc] init];
-
     fileDict      = [[NSMutableDictionary alloc] init];
-
     dformatter =  [[NSDateFormatter alloc] init]; //9/11
     [dformatter setDateFormat:@"EEEE, MM/d/YYYY h:mma"];
-
     fileNamesNoNumberSigns = [[NSMutableArray alloc] init];
     sfx = [soundFX sharedInstance];
-
     inv441 = 1.0 / 44100.0; //for computing sample time interval...
     _isUp = FALSE; //8/21
-    // 8/12 add notification for ProMode demo...
-    [[NSNotificationCenter defaultCenter]
-                            addObserver: self selector:@selector(demoNotification:)
-                                   name: @"demoNotification" object:nil];
-    return self;
+
 }
 
 //======(samplesVC)==========================================
@@ -540,6 +537,9 @@ int tval = 320;
 //======(samplesVC)==========================================
 -(void) getFileStatsToDict
 {
+    //10/24. why, do i need fresh handles all the time?
+    sfx = [soundFX sharedInstance];
+
     // loop over all files,
     for (NSString *s in rawFileNames)
     {
@@ -567,6 +567,7 @@ int tval = 320;
                     fseconds = [NSNumber numberWithFloat:fsecs];
                 }
             }
+            NSLog(@" addstats %d , %f , %d",chans.intValue,fseconds.floatValue,samplerate.intValue);
             [self addStatsToDict:s :d :nn : chans : fseconds : samplerate];
         }
     }

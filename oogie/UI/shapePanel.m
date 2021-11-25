@@ -17,25 +17,12 @@
 //  10/13 CLUGE for now, call sendUpdatedParamsToParent 2X in reset, otherwise
 //          some pipes dont get placed correctly, it has to do with a race condition
 //            between marker update and pipe update.!?!?!?!?
+//  10/28 add image indicator over texture picker
+//  10/29 close KB if panel closes, see lastSelectedTextField , move sPanel down
+// 10/30 add shouldChangeCharactersInRange delegate callback
 #import "shapePanel.h"
 
 @implementation shapePanel
-
-#define NORMAL_CONTROLS
-#define GOT_DIGITALDELAY
-
-double drand(double lo_range,double hi_range );
-
-//for analytics use: simple 3 letter keys for all controls
-//  first char indicates UI, then 2 letters for control
-// sliders are grouped: 3 at top, then a picker, then four more.
-/// 9/12 do i need padding after SRO???
-//NSString *ssliderKeys[] = {@"SRO",@"---",@"SXP",@"SYP",@"SZP",
-//                @"SUP",@"SVP",@"SUS",@"SVS",};
-//
-//NSString *spickerKeys[] = {@"LKS",@"LVW",@"LAW"};
-
-
 
 //======(shapePanel)==========================================
 - (id)init
@@ -52,6 +39,8 @@ double drand(double lo_range,double hi_range );
         allSliders     = [[NSMutableArray alloc] init];
         allPickers     = [[NSMutableArray alloc] init];
         allTextFields  = [[NSMutableArray alloc] init];
+        defaultImage   = [UIImage imageNamed : @"spectrumOLD"]; //11/15 should get from textureCache, swift?
+        lastSelectedTextField = nil; //10/29 indicate no select
 
         //8/3 flurry analytics
         //8/11 FIX fanal = [flurryAnalytics sharedInstance];
@@ -60,6 +49,11 @@ double drand(double lo_range,double hi_range );
         sfx   = [soundFX sharedInstance];  //8/27
         diceUndo = FALSE; //7/9
         rollingDiceNow = resettingNow = FALSE;
+        
+        topTexSlider = 0;
+        ucoord = vcoord = 0.0;
+        uscale = vscale = 1.0;
+
     }
     return self;
 }
@@ -112,7 +106,7 @@ double drand(double lo_range,double hi_range );
     [self addSubview:scrollView];
     
 
-    int panelSkip = 5; //Space between panels
+    //int panelSkip = 5; //Space between panels
     int i=0; //6/8
     
     xi = 0;
@@ -123,7 +117,7 @@ double drand(double lo_range,double hi_range );
                    CGRectMake(xi,yi,xs,ys)];
     [editLabel setBackgroundColor : [UIColor greenColor]];
     [editLabel setTextColor : [UIColor blackColor]];
-    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 28.0]];
+    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 22.0]];   //11/19
     editLabel.text = @"Edit Shape";
     editLabel.textAlignment = NSTextAlignmentCenter;
     [self addSubview : editLabel];
@@ -165,7 +159,7 @@ double drand(double lo_range,double hi_range );
     titleLabel = [[UILabel alloc] initWithFrame:
                    CGRectMake(xi,yi,xs,ys)];
     [titleLabel setTextColor : [UIColor whiteColor]];
-    [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 32.0]];
+    [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 22.0]];   //11/19
     titleLabel.text = @"Shape";
     titleLabel.textAlignment = NSTextAlignmentCenter;
     [header addSubview : titleLabel];
@@ -223,9 +217,9 @@ double drand(double lo_range,double hi_range );
 
     //Add shape controls panel-------------------------------------
     xi = OOG_XMARGIN;
-    yi = 60;
+    yi = 90; //10/29 move down a bit
     xs = viewWid-2*OOG_XMARGIN;
-    ys = 2*OOG_PICKER_HIT +  8*OOG_SLIDER_HIT + 2*OOG_TEXT_HIT + OOG_PICKER_HIT + 2*OOG_YMARGIN;
+    ys = 2*OOG_PICKER_HIT +  8*OOG_SLIDER_HIT + 2*OOG_TEXT_HIT + 2*OOG_PICKER_HIT + 2*OOG_YMARGIN;
     UIView *sPanel = [[UIView alloc] init];
     [sPanel setFrame : CGRectMake(xi,yi,xs,ys)];
     sPanel.backgroundColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1];
@@ -235,6 +229,14 @@ double drand(double lo_range,double hi_range );
     yi = xi; //top of form
     // texture picker
     [self addPickerRow:sPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
+
+    //10/28 add image indicator on top of texture picker
+    xs = ys = OOG_PICKER_HIT;
+    xi = viewWid - 4*OOG_XMARGIN - xs;
+    thumbView = [[UIImageView alloc] initWithImage:defaultImage];
+    [thumbView setFrame:CGRectMake(xi,yi,xs,ys)];
+    [sPanel addSubview:thumbView];
+
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
     iPicker++;
     iParam++;
@@ -259,6 +261,29 @@ double drand(double lo_range,double hi_range );
         iSlider++;
         iParam++;
     }
+    
+    //Original texture view: never changes
+    int texWid = 80;
+    otView = [[UIImageView alloc] initWithImage:nil];     //[UIImage imageNamed:logoName]];
+    xs = ys = texWid;
+    xi = 120; //(viewWid - xs) * 0.5;
+    [otView setFrame:CGRectMake(xi,yi, xs, ys)];
+    [sPanel addSubview : otView];
+
+//wtf, why doesnt arrow show up?
+    xi += xs;
+    UIImageView *arrowView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"icon256"]];
+    [arrowView setFrame:CGRectMake(xi,yi, xs, ys)];
+    [sPanel addSubview : arrowView];
+
+    // Scaled / Panned texture view: shows texture map xy offsets and scaling
+    xi += xs;
+    textureView = [[UIImageView alloc] initWithImage:nil];
+    [textureView setFrame:CGRectMake(xi,yi, xs, ys)];
+    [sPanel addSubview : textureView];
+    yi+=texWid;
+    
+    topTexSlider = iParam;
     // U/V offset , U/V scale
     for (i=0;i<4;i++)
     {
@@ -279,7 +304,7 @@ double drand(double lo_range,double hi_range );
 
     //Scrolling area...
     CGRect rrr = sPanel.frame;
-    int scrollHit = rrr.size.height + 80; //we only have one panel here...
+    int scrollHit = rrr.size.height + 180;  //11/13 add room at bottom
     //if (cappDelegate.gotIPad) scrollHit+=120; //3/27 ipad needs a bit more room
     
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
@@ -429,6 +454,14 @@ double drand(double lo_range,double hi_range );
     NSArray *a  = [_paramDict objectForKey:@"name"];
     if (a.count > 0) s = a.lastObject;
     titleLabel.text = s;
+    NSArray *aa  = [_paramDict objectForKey:@"texture"];
+    if (aa != nil) //11/9 update thumb to match setting
+    {
+        NSString *s = aa.lastObject;   //should be our setting?
+        NSLog(@"texture %@",s);
+        [self updateThumbImageByKey : s : 1]; //11/9 do not use row 0 here!
+    }
+    [self updateTextureDisplay];
     [self configureViewWithReset : FALSE];
 }
 
@@ -436,7 +469,10 @@ double drand(double lo_range,double hi_range );
 // This is huge. it should be made to work with any control panel!
 -(void) configureViewWithReset : (BOOL)reset
 {
-    NSArray *noresetparams = @[@"texture",@"name",@"comment"];
+    //NOTE this may have to handle randomizer calls?? no texture change then!
+    NSArray *noresetparams;
+    if (reset)  noresetparams = @[@"texture",@"name",@"comment"]; // 11/9 dont change texture on reset!
+    else        noresetparams = @[@"name",@"comment"];
     NSMutableDictionary *pickerchoices = [[NSMutableDictionary alloc] init];
     [pickerchoices setObject:_texNames forKey:@0];  //textures are on picker 8
     [pickerchoices setObject:rotTypeParams forKey:@2];  //rotation types are on picker 2
@@ -501,7 +537,34 @@ double drand(double lo_range,double hi_range );
 //======(shapePanel)==========================================
 -(void)sliderAction:(id)sender
 {
+    UISlider *s = (UISlider*)sender;
+    int tag = s.tag % 1000;
+    if ( tag >= topTexSlider && tag < topTexSlider+4) //texture coord?
+    {
+        int liltag = (tag % 1000) - topTexSlider;
+        float v = s.value;
+        if (liltag > 1) //scale: fit to 0.1 to 10
+        {
+            v = 0.1 + 9.9 * v;
+        }
+        switch(liltag)
+        {
+            case 0: ucoord = v; break;
+            case 1: vcoord = v; break;
+            case 2: uscale = v; break;
+            case 3: vscale = v; break;
+        }
+        [self updateTextureDisplay];
+    }
     [self updateSliderAndDelegateValue : sender : FALSE]; //9/23
+}
+
+//======(shapePanel)==========================================
+-(void) updateTextureDisplay
+{
+    otView.image = _texture;
+    UIImage *ii = [self makeTexturedImage : _texture : 320 : 320 : ucoord : vcoord : uscale : vscale];
+    textureView.image = ii;
 }
 
 //======(shapePanel)==========================================
@@ -520,6 +583,7 @@ double drand(double lo_range,double hi_range );
 //======(controlPanel)==========================================
 - (IBAction)dismissSelect:(id)sender
 {
+    [lastSelectedTextField resignFirstResponder]; //10/29 Close keyboard if up
     [self.delegate didSelectShapeDismiss];
 }
 
@@ -570,8 +634,10 @@ double drand(double lo_range,double hi_range );
 //======(shapePanel)==========================================
 - (IBAction)resetSelect:(id)sender
 {
-    NSLog(@"ResET");
     [self resetControls];
+    ucoord = vcoord = 0.0; //11/9 reset texture size for display
+    uscale = vscale = 1.0;
+    [self updateTextureDisplay];
     [self.delegate didSelectShapeReset]; //7/11 for undo
 }
 
@@ -584,37 +650,8 @@ double drand(double lo_range,double hi_range );
     _wasEdited         = FALSE;
     resetButton.hidden = TRUE;
     resettingNow       = FALSE;
-
 } //end resetControls
 
-//======(shapePanel)==========================================
-//8/3
--(void)updateSessionAnalytics
-{
-    //NSLog(@" duh collected analytics for flurry");
-//    for (int i=0;i<MAX_SHAPE_SLIDERS;i++)
-//    {
-//        if (sChanges[i] > 0) //report changes to analytics
-//        {
-//            //NSLog(@" slider[%d] %d",i,sChanges[i]);
-//            //NSString *sname = ssliderKeys[i];
-//            //8/11 FIX[fanal updateSliderCount:sname:sChanges[i]];
-//        }
-//    }
-//    for (int i=0;i<MAX_SHAPE_PICKERS;i++)
-//    {
-//        if (pChanges[i] > 0) //report changes to analytics
-//        {
-//            //NSLog(@" picker[%d] %d",i,pChanges[i]);
-//            //NSString *pname = spickerKeys[i];
-//            //8/11 FIX[fanal updatePickerCount:pname:pChanges[i]];
-//        }
-//    }
-//    //8/11 FIX[fanal updateDiceCount : @"LDI" : diceRolls]; //9/9
-//    //8/11 FIX [fanal updateMiscCount : @"LRE" : resets]; //9/9
-//    [self clearAnalytics]; //9/9 clear for next session
-
-} //end updateSessionAnalytics
 
 //======(shapePanel)==========================================
 - (NSString *)getPickerTitleForTagAndRow : (int)tag : (int)row
@@ -634,6 +671,16 @@ double drand(double lo_range,double hi_range );
 }
 
 #pragma UIPickerViewDelegate
+
+//-------<UIPickerViewDelegate>-----------------------------
+-(void) updateThumbImageByKey : (NSString*)key : (int) row
+{
+    UIImage *kk = _thumbDict[key];
+    if ([key isEqualToString: @"default"]) //11/9
+          kk = defaultImage;
+    //10/28 add thumb....
+    thumbView.image = kk;
+}
  
 //-------<UIPickerViewDelegate>-----------------------------
 // 6/18 redo
@@ -642,7 +689,14 @@ double drand(double lo_range,double hi_range );
     //int which = 0;
     int liltag = (int)pickerView.tag % 1000;
     if (liltag == 0)
+    {
+        NSString *txt = [self getPickerTitleForTagAndRow:(int)pickerView.tag:(int)row];
+        if (pickerView.tag % 1000 == 0) //which picker?
+        {
+            [self updateThumbImageByKey : txt : (int)row]; //11/9 move to method
+        }
         [self.delegate didSetShapeValue:liltag :(float)row: allParams[liltag] : _texNames[row] :  !rollingDiceNow && !resettingNow];
+    }
     else
         [self.delegate didSetShapeValue:liltag :(float)row:allParams[liltag]: rotTypeParams[row] : !rollingDiceNow && !resettingNow];    
 }
@@ -676,7 +730,8 @@ double drand(double lo_range,double hi_range );
         [tView setFont:[UIFont fontWithName:@"Helvetica Neue" size: 16.0]];
     }
     // Fill the label text here
-    tView.text = [self getPickerTitleForTagAndRow:(int)pickerView.tag:(int)row];
+    NSString *txt = [self getPickerTitleForTagAndRow:(int)pickerView.tag:(int)row];
+    tView.text = txt;
     return tView;
 } //end viewForRow
 
@@ -703,7 +758,17 @@ double drand(double lo_range,double hi_range );
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField
 {
     //NSLog(@" begin");
+    [self.delegate didStartTextEntry:allParams[(textField.tag % 1000)]];  //10/30 pass field name
+    lastSelectedTextField = textField;  //10/29
     return YES;
+}
+
+//==========<UITextFieldDelegate>====================================================
+// 10/30 for displaying text entry on mainVC, note string only contains EDITS
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
+{
+    [self.delegate didChangeTextEntry:textField.text];  //pass text to parent
+    return true;
 }
 
 //==========<UITextFieldDelegate>=====================================================
@@ -727,6 +792,46 @@ double drand(double lo_range,double hi_range );
     if ([allParams[liltag] isEqualToString:@"name"]) titleLabel.text = s;
     return YES;
 }
+
+
+
+//=====<DUH>======================================================================
+// Only assumes square puzzles... colors already set up too!
+-(UIImage *) makeTexturedImage : (UIImage *)i : (int) bwid : (int) bhit :
+                    (float) ucoord : (float) vcoord :
+                    (float) uscale : (float) vscale
+{
+    if (uscale == 0.0 || vscale == 0.0) return [UIImage imageNamed:@"arrowLeft.png"]; //should be empty image??
+
+    CGRect rect = CGRectMake(0, 0, bwid, bhit ); //fit our target output
+    UIGraphicsBeginImageContext(rect.size);
+    
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextSetShouldAntialias(context, NO);
+    CGContextSetInterpolationQuality( UIGraphicsGetCurrentContext() , kCGInterpolationNone );
+
+    int xstride = (int)(float)bwid / uscale;
+    int ystride = (int)(float)bhit / vscale;
+    int x0 = -(int)((float)xstride * ucoord);
+    int y  = -(int)((float)ystride * vcoord);
+
+    while (y <= bhit)
+    {
+        int x = x0;
+        while (x <= bwid)
+        {
+            [i drawInRect:CGRectMake(x,y,xstride,ystride) blendMode:kCGBlendModeNormal alpha:1.0];
+            x+=xstride;
+        }
+        y+=ystride;
+    }
+
+    
+    UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return newImage;
+} //end makeBitmap
+
 
 
 

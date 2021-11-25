@@ -4,6 +4,7 @@
 //
 //  Created by Dave Scruton on 10/13/21
 //  Copyright © 2019 fractallonomy. All rights reserved.
+//  10/25 add xtraparams
 //
 import SceneKit
 struct ScalarStruct : Codable {
@@ -22,6 +23,7 @@ struct ScalarStruct : Codable {
     var invert       : Int       //9/28/21 add invert / op items
     var op           : String
     var uid          : String
+    var xtraParams  : String //10/25. ADD NEW FIELD for audio 3D placement, whatever in the future...
 
     //======(ScalarStruct)=============================================
     init()
@@ -29,6 +31,7 @@ struct ScalarStruct : Codable {
         key         = ""
         name        = ""
         comment     = COMMENT_DEFAULT //2/3
+        xtraParams = ""  //10/25/21
         toObject    = "nada"
         toParam     = "nada"
         loRange     = 0.0
@@ -50,6 +53,7 @@ struct ScalarStruct : Codable {
         key              = ""              //4/30
         name             = ""
         comment          = COMMENT_DEFAULT
+        xtraParams       = ""  //10/25/21
         self.toObject    = toObject
         self.toParam     = toParam.lowercased()
         loRange          = 0.1

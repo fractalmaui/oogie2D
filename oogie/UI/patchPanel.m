@@ -16,7 +16,8 @@
 //          let OogiePatchParams figure out display values
 //  10/3 add indices to sliders/pickers
 //         pull factoryReset, add resetControls
-
+//  11/5   add makeADSRImage , general code cleanup
+//  11/24  redo envelope display, generate ADSR herein!, cleanup non-percKit randomize
 #define ARC4RANDOM_MAX      0x100000000
 #define PERCKIT_VOICE 2
 
@@ -26,15 +27,6 @@
 @implementation patchPanel
 
 double drand(double lo_range,double hi_range);
-
-//CONVERT THESE TO NSARRAYS upon hookup of analytics!
-//for analytics use: simple 3 letter keys for all controls
-//  first char indicates UI, then 2 letters for control
-NSString *psliderKeys[] = {@"PAT",@"PDE",
-@"PSU",@"PSL",@"PRE",@"PDU",@"PNL",@"PVL",@"PPL",@"PSO",@"PLV",@"PKO",@"PDT",@"PCH",
-    @"",@"",@"",@"",@"",@"",@"",@""}; //including placeholders!
-NSString *ppickerKeys[] = {@"PWA",@"PPO",@"PNO",@"PVO",@"PPA",
-    @"PS1",@"PS2",@"PS3",@"PS4",@"PS5",@"PS6",@"PS7",@"PS8"};
 
 //Color channel choices...
 NSString *channels[] = {@"Red",@"Green",@"Blue",
@@ -48,6 +40,7 @@ NSString *synthWaves[] = {@"Sine",@"Saw",@"Square",
 
 NSString *onOffs[] = {@"Off",@"On"};
 
+float env256[256]; //work array used in envelope rendering
 
 
 //======(patchPanel)==========================================
@@ -57,7 +50,6 @@ NSString *onOffs[] = {@"Off",@"On"};
     if (self) {
         goog = [genOogie sharedInstance]; //MUST setup before UI!
         paramEdits = [edits sharedInstance];  //for saving param edits in documents
-        [self setDefaults];
         _isUp = FALSE; //8/21
         paAllParams   = nil;
         paSliderNames = nil;
@@ -156,7 +148,7 @@ NSString *onOffs[] = {@"Off",@"On"};
                    CGRectMake(xi,yi,xs,ys)];
     [editLabel setBackgroundColor : [UIColor redColor]];
     [editLabel setTextColor : [UIColor whiteColor]];
-    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 28.0]];
+    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 22.0]];   //11/19
     editLabel.text = @"Edit Voice";
     editLabel.textAlignment = NSTextAlignmentCenter;
     [self addSubview : editLabel];
@@ -187,18 +179,10 @@ NSString *onOffs[] = {@"Off",@"On"};
     UILabel *titleLabel = [[UILabel alloc] initWithFrame:
                            CGRectMake(xi,yi,xs,ys)];
     [titleLabel setTextColor : [UIColor whiteColor]];
-    [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 32.0]];
+    [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 22.0]];   //11/19
     titleLabel.text = @"Patch Edit";
     titleLabel.textAlignment = NSTextAlignmentCenter;
     [header addSubview : titleLabel];
-    
-    xs = viewWid*0.2; //10/19 narrow help button
-    xi = viewWid * 0.5 - xs*0.5;;
-    helpButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [helpButton setFrame:CGRectMake(xi,yi,xs,ys)];
-    helpButton.backgroundColor = [UIColor clearColor];
-    [helpButton addTarget:self action:@selector(helpSelect:) forControlEvents:UIControlEventTouchUpInside];
-    [header addSubview : helpButton];
     
     xs = buttonHit;
     ys = buttonHit;
@@ -355,6 +339,7 @@ NSString *onOffs[] = {@"Off",@"On"};
     [l5 setTextColor : [UIColor whiteColor]];
     l5.text = @"Percussion Kit";
     [pkPanel addSubview : l5];
+    percKitParamStart = iParam; //11/24 keep track of percKit top param#
     for (int i = 0;i<8;i++)   //add 8 sets of pickers and sliders
     {
         yi += (OOG_SLIDER_HIT+4);
@@ -370,19 +355,7 @@ NSString *onOffs[] = {@"Off",@"On"};
         iParam++;
     }
     
-    // 8/6 add help
-    xi = yi = 0;
-    xs = viewWid;
-    ys = viewHit;
-    // 8/12/21 FIX  obp = [[obPopup alloc] initWithFrameAndSizetype:CGRectMake(xi,yi,xs,ys):OB_SIZE_HELP];
-    // 8/12/21 FIX obp.delegate = self;
-    //10/24 use settings bundle flags to determine the enuf buttons visibility
-    // I have to use hardcoded value here!...WTF?#define OB_SILENCE_HELP 1202
-    // 8/12/21 FIX  obp.showEnufButton = ( [pappDelegate getOnboardingFlag : 1202] == 0) ;
-    // 8/12/21 FIX [self addSubview:obp];
-    // 8/8 this contains all the help info for popups...
-    // 8/12/21 FIX mhelp = [miniHelp sharedInstance];
-    int scrollHit = 1300;
+    int scrollHit = 1400; //11/13 add room at bottom
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
 
 } //end setupView
@@ -457,39 +430,13 @@ NSString *onOffs[] = {@"Off",@"On"};
 
 
 //======(patchPanel)==========================================
--(void) setDefaults
-{
-    //try to match Sinewave patch
-    // 8/12/21 FIX ???
-//    _ov.attack = 2;
-//    _ov.decay = 8;
-//    _ov.sustain  = 3;
-//    _ov.sLevel  = 0;
-//    _ov.releaseTime  = 40;
-//    _ov.duty = 0;
-//    _ov.noteMode = 3;
-//    _ov.volMode  = 9;
-//    _ov.pan      = 9;
-//    _ov.nchan    = 128;
-//    _ov.vchan    = 128;
-//    _ov.pchan    = 128;
-//    _ov.sampOffset = 0;
-//    for (int i=0;i<8;i++)
-//    {
-//        [_ov OVsetPercLoox:i :i];  //Should this be special for each patch?
-//        [_ov OVsetPercLooxPans:i :128]; //pan to center
-//    }
-
-} //end setDefaults
-
-//======(patchPanel)==========================================
 -(void) setEdited
 {
     if (!_wasEdited)  //7/18 show reset on change
     {
         _wasEdited = TRUE;
         //9/29 only allow reset on factory patches!!!
-        NSLog(@" set reset button hidden %d",(!_wasEdited || _randomized));
+        //NSLog(@" set reset button hidden %d",(!_wasEdited || _randomized));
         resetButton.hidden = (!_wasEdited || _randomized);  //NOT on randomized ones
     }
 } //end setEdited
@@ -500,16 +447,16 @@ NSString *onOffs[] = {@"Off",@"On"};
     // dig out type param ... percKit type is special!
     NSArray *ra = _paramDict[@"type"];
     NSNumber *nn = @0;  //10/2 handle nil errz
+    patchType = nn.intValue; //11/24
     if (ra != nil && ra.count >0) nn = ra.lastObject;
     //Load sample names into all perc pickers...
     NSString *s = @"no name"; //get voice name for title
     NSArray *a  = [_paramDict objectForKey:@"name"];
     if (a.count > 0) s = a.lastObject;
-//    titleLabel.text = s;
     [self configureViewWithReset : FALSE];
     //handle percKit pickers...
     int percPickerOffset = 1; //10/2 
-    if (nn.intValue == PERCKIT_VOICE)
+    if (patchType == PERCKIT_VOICE)
     {
         for (int i=0;i<8;i++)
         {
@@ -534,8 +481,21 @@ NSString *onOffs[] = {@"Off",@"On"};
     {
         pkPanel.hidden = TRUE;
         [self enableADSRControls : TRUE];
-        [self updateADSRDisplay];
+        //11/24 extract ADSR values...
+        for (int i=1;i<6;i++)
+        {
+            NSString *pname = paAllParams[i];
+            NSArray *paramz = _paramDict[pname];
+            if (paramz != nil)
+            {
+                NSNumber *nn = paramz.lastObject; //get default value...
+                [self setLocalEnvelopeValsByIndex:i :nn.floatValue];
+            }
+        }
+        [goog buildEnvelope256:aa:dd:ss:slsl:rr:env256];
+        adsrImage.image = [goog makeADSRImage:256 :64 : env256];
     }
+    
     NSArray *edits = [paramEdits getEditKeys:_patchName]; //10/3 check for edits
     if (edits && edits.count > 0) [self setEdited];
 }
@@ -547,17 +507,9 @@ NSString *onOffs[] = {@"Off",@"On"};
     NSMutableArray *alltext = [[NSMutableArray alloc] init]; //NO TEXT FIELDS YET
     NSArray *noresetparams = @[];   //@"patch",@"soundpack",@"name"];
     NSMutableDictionary *pickerchoices = [[NSMutableDictionary alloc] init];
-//    [pickerchoices setObject:_paNames forKey:@17];  //patches are on picker 17
-//    [pickerchoices setObject:_spNames forKey:@18];  //soundpacks are on picker 18
     NSDictionary *resetDict = [goog configureViewFromVC:reset : _paramDict : paAllParams :
                      allPickers : allSliders : alltext :
                noresetparams : pickerchoices];
-//10/3 NO NEED?
-//    if (reset) //reset? need to inform delegate of param changes...
-//    {
-//        [self sendUpdatedParamsToParent:resetDict];
-//    }
-    NSLog(@" set reset button hidden %d",!_wasEdited );
     resetButton.hidden = !_wasEdited;
 
 } //end configureViewWithReset
@@ -586,39 +538,14 @@ NSString *onOffs[] = {@"Off",@"On"};
 // 5/19 sets ADSR on/off
 -(void) enableADSRControls : (BOOL) enabled
 {
-    
-    //5/19 streamline, load empty early!?
-//    if (!enabled)
-//        [adsrImage setImage : [UIImage imageNamed:@"empty64x64"]];
     adsrImage.hidden = !enabled;
     for (int i = 0;i<6;i++) //first slider is in ADSR now 9/8
     {
         UISlider *s = (UISlider*)allSliders[i];
         s.enabled = enabled;
     }
-
 } //end enableADSRControls
-
-//======(patchPanel)==========================================
-//9/9 for session analytics
--(void) clearAnalytics
-{
-    //8/13 for session analytics: count activities
-//    diceRolls = 0; //9/9 for analytics
-//    resets    = 0; //9/9 for analytics
-//    for (int i=0;i<MAX_PRO_SLIDERS;i++) sChanges[i] = 0;
-//    for (int i=0;i<MAX_PRO_PICKERS;i++) pChanges[i] = 0;
-}
-
-//======(patchPanel)==========================================
-// 10/3 obsolete
-//-(void) resetAllEdits
-//{
-//    for (int i=0;i<paAllParams.count;i++)
-//        [paramEdits removeEdit : _patchName : paAllParams[i]];
-//    [paramEdits saveToDocs]; //Update edits file on disk
-//}  //end resetAllEdits
-
+ 
 //======(patchPanel)==========================================
 // 8/3 update session analytics here..
 -(void)sliderStoppedDragging:(id)sender
@@ -626,6 +553,14 @@ NSString *onOffs[] = {@"Off",@"On"};
     [self updateSliderAndDelegateValue : sender : FALSE]; //9/23
     UISlider *slider = (UISlider*)sender;
     int tagMinusBase = (int)(slider.tag%1000);
+
+    //NSLog(@"tag %d wavebuf %d",tagMinusBase,nn.intValue);
+    if (tagMinusBase > 0 && tagMinusBase < 6) //11/5 envelope control?
+    {
+        [goog buildEnvelope256:aa:dd:ss:slsl:rr:env256];
+        adsrImage.image = [goog makeADSRImage:256 :64 : env256];
+    }
+    
     [paramEdits addEdit: _patchName // 9/27 dont forget to add edit!
                        : paAllParams[tagMinusBase]
                        : [NSString stringWithFormat:@"%f", slider.value]]; //9/30 save float
@@ -639,6 +574,21 @@ NSString *onOffs[] = {@"Off",@"On"};
 }
 
 //======(patchPanel)==========================================
+// 11/24 for local envelope display
+-(void) setLocalEnvelopeValsByIndex : (int) index : (float)value
+{
+    switch (index)
+    {
+        case 1: aa   = value; break;
+        case 2: dd   = value; break;
+        case 3: ss   = value; break;
+        case 4: slsl = value; break;
+        case 5: rr   = value; break;
+        default: break;
+    }
+} //end setLocalEnvelopeValsByIndex
+
+//======(patchPanel)==========================================
 //called when slider is moved and on dice/resets!
 -(void) updateSliderAndDelegateValue :(id)sender : (BOOL) dice
 {
@@ -646,6 +596,10 @@ NSString *onOffs[] = {@"Off",@"On"};
     UISlider *slider = (UISlider*)sender;
     int tagMinusBase = ((int)slider.tag % 1000); // 7/11 new name
     float value = slider.value;
+    
+    //11/24 crude: get ADSR values for local display
+    if (tagMinusBase > 0 && tagMinusBase < 6) //adsr?
+        [self setLocalEnvelopeValsByIndex:tagMinusBase :value];
     NSString *name = dice ? @"" : paAllParams[tagMinusBase];
     [self.delegate didSetPatchValue:tagMinusBase:value:paAllParams[tagMinusBase]:name:TRUE];
 } //end updateSliderAndDelegateValue
@@ -657,53 +611,54 @@ NSString *onOffs[] = {@"Off",@"On"};
 }
 
 //======(patchPanel)==========================================
-- (IBAction)helpSelect:(id)sender
-{
-    [self putUpOBHelpInstructions];
-}
-
-//======(patchPanel)==========================================
-// 8/28 redo w/ bullet points
--(void) putUpOBHelpInstructions
-{
-    //  #define OB_SILENCE_HELP 1202
-// 8/12/21 FIX
-//    if ( [pappDelegate getOnboardingFlag : 1202] != 0) return; //No mini help?
-//    obp.titleText       = mhelp.obProControlsTitle;
-//    obp.blurb1Text      = mhelp.obProControlsBlurb1;
-//    obp.blurb2Text      = mhelp.obProControlsBlurb2;   //8/28 add text and attributed bullet points
-//    obp.bulletStrings   = mhelp.obProControlsBullets;
-//    obp.yTop = _yTop; //9/14 CLUGE tell popup where it is on screen
-//    obp.hasBulletPoints = TRUE;
-//    obp.obType          = 0; //type doesnt matter here
-//    [obp update];
-//    [obp bounceIn];
-}
-
-//======(patchPanel)==========================================
 // 9/18  make this generic too, and return a list of updates for delegate.
 // THEN add a method to go thru the updates dict and pass to parent,
 //    and reuse this method here and in configureView!
 -(void) randomizeParams
 {
-    NSLog(@" RANDOMIZE");
-    NSArray *norandomizeparams = @[@"patch",@"soundpack",@"name",@"comment",@"delaysustain",@"threshold"];
+    NSMutableArray *norandomizeparams = [NSMutableArray arrayWithArray: @[@"patch",@"soundpack",@"name",@"comment",@"delaysustain",@"threshold"] ];
+    if (patchType != PERCKIT_VOICE) // dont randomize any perckit stuff....
+    {
+        for (int i=percKitParamStart;i<percKitParamStart + 16;i++)
+            [norandomizeparams addObject:paAllParams[i]];
+    }
 
     NSMutableDictionary *resetDict = [goog randomizeFromVC : paAllParams : allPickers : allSliders : norandomizeparams];
+    //11/24: NOTE for patch types that are NOT percKit, we should strip out any perkloox / pans!!!
     [self sendUpdatedParamsToParent:resetDict];
     [self.delegate didSelectPatchDice]; //4/29
+    //OUCH! how do i reload new ADSR to display?
+    [self setADSRFromRandomizeResults : resetDict]; //RELOAD adsr vars from returned stuff
+    [goog buildEnvelope256:aa:dd:ss:slsl:rr:env256]; //11/24 dont forget ADSR!
+    adsrImage.image = [goog makeADSRImage:256 :64 : env256];
+
     diceRolls++; //9/9 for analytics
     diceUndo = FALSE;
     rollingDiceNow = FALSE;
 } //end randomizeParams
 
 //======(patchPanel)==========================================
+-(void) setADSRFromRandomizeResults : (NSMutableDictionary *) resetD
+{
+    for (int i=1;i<7;i++)
+    {
+        NSString *pname = paAllParams[i];
+        NSArray *a = resetD[pname];
+        if (a.count > 1) //got valid return set? extract ADSR field# and vaue
+        {
+            NSNumber *nn0 = a[0]; //get index
+            NSNumber *nn1 = a[1]; //get value
+            [self  setLocalEnvelopeValsByIndex : nn0.intValue   : nn1.floatValue];
+        }
+    }
+}
+
+//======(patchPanel)==========================================
 // 8/21 sets sliders directly and they report to parent,
 //   pickers values have to be sent to parent here
 - (IBAction)diceSelect:(id)sender
 {
-    //NOTE delaySustain if really large can cause problems, dont randomize it
-
+    [paramEdits removeAllEdits : _patchName]; // 11/25 remove old edits!
     [self randomizeParams  ];
     resetButton.hidden = FALSE; //indicate param change
 } //end diceSelect
@@ -731,53 +686,6 @@ NSString *onOffs[] = {@"Off",@"On"};
 }
 
 //======(patchPanel)==========================================
-// envelope display...
-// somehow we need to get at AllPatches to dig up bitmap,
-//  OR recreate the method here in objective c...
--(void) updateADSRDisplay
-{
-    //inside the app delegate is an allpatches object, and that
-    //  object (swift) has a handle into the synth to pull ADSR image data.
-    // simple, huh? needs the imageView for frame purposes
-    //NSLog(@" update adsr samp %d",_ov.whichSamp);
-    //5/24 make sure we are all legit, must have valid envelope!
-    //8/12/21 FIX
-//    int tsize = [sfx getEnvelopeSize: _whichSamp];
-//    if (tsize > 0) //OK to proceed?
-//    {
-//        UIImage *dog = [_allP getADSRDisplayWithBptr:_whichSamp adsrImage:adsrImage];
-//        if (dog != nil) adsrImage.image = dog; //5/24
-//
-//    }
-}
-
-//======(patchPanel)==========================================
-//8/3
--(void)updateSessionAnalytics
-{
-// 8/12/21 FIX
-//    for (int i=0;i<MAX_PRO_SLIDERS;i++)
-//    {
-//        if (sChanges[i] > 0) //report changes to analytics
-//        {
-//            NSString *sname = psliderKeys[i];
-//            [fanal updateSliderCount:sname:sChanges[i]];
-//        }
-//    }
-//    for (int i=0;i<MAX_PRO_PICKERS;i++)
-//    {
-//        if (pChanges[i] > 0) //report changes to analytics
-//        {
-//            NSString *pname = ppickerKeys[i];
-//            [fanal updatePickerCount:pname:pChanges[i]];
-//        }
-//    }
-//    [fanal updateDiceCount : @"PDI" : diceRolls]; //9/9
-//    [fanal updateMiscCount : @"PRE" : resets];    //9/9
-//    [self clearAnalytics]; //9/9 clear for next session
-} //end updateSessionAnalytics
-
-//======(patchPanel)==========================================
 -(NSString*) getPickerTitleForTagAndRow : (int) tag : (int) row
 {
     //NSLog(@" picker tag %d   row  %d",tag,row);
@@ -790,7 +698,6 @@ NSString *onOffs[] = {@"Off",@"On"};
     {
         //NSLog(@"onoff slider");
         return onOffs[row];
-
     }
     else
     {
@@ -803,32 +710,9 @@ NSString *onOffs[] = {@"Off",@"On"};
         return sname;
     }
     return @"";
-
 } //end getPickerTitleForTagAndRow
 
 #pragma UIPickerViewDelegate
- 
-
-//-------<UIPickerViewDelegate>-----------------------------
-//10/4 need to break out for dice!
--(void) updateWorkVoiceForPicker : (int) itag : (int) ival
-{
-// 8/12/21 FIX 
-//    switch (itag)
-//    {
-//        case 0: _ov.wave = ival;
-//            break;
-//        case 1: _ov.poly = ival;
-//            break;
-//        case 2: _ov.noteMode = ival;
-//            break;
-//        case 3: _ov.volMode = ival;
-//            break;
-//        case 4: _ov.pan = ival;
-//            break;
-//        default: break;
-//    }
-} //end updateWorkVoiceForPicker
 
 //-------<UIPickerViewDelegate>-----------------------------
 // 6/18 redo
@@ -879,8 +763,6 @@ NSString *onOffs[] = {@"Off",@"On"};
     return tView;
 }
 
-
- 
 //-------<UIPickerViewDelegate>-----------------------------
 // tell the picker the width of each row for a given component
 - (CGFloat)pickerView:(UIPickerView *)pickerView widthForComponent:(NSInteger)component {
@@ -895,24 +777,5 @@ NSString *onOffs[] = {@"Off",@"On"};
     return 15;
 }
 
-
-//=======<obPopupDelegate>======================================
-- (void)obPopupDidSelectOK : (int)obType
-{
-}
-
-//=======<obPopupDelegate>======================================
-- (void)obPopupDidSelectEnoughHelp : (int)obType
-{
-    //10/24 tell app Delegate to turn off minihelp... WHY do i need to use constant here!?
-    // 8/12/21 FIX [pappDelegate setOnboardingFlag : OB_SILENCE_HELP : 2]; //8/21 add int arg
-}
-
-// 8/12 for now just dismiss this panel!
-- (void)demoNotification:(NSNotification *)notification
-{
-     _isUp = FALSE; //8/21
-     //[self dismissViewControllerAnimated : YES completion:nil];
-}
 
 @end

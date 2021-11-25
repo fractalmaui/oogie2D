@@ -20,6 +20,8 @@
 #import "genOogie.h"
 #import "oogieStyles.h"
 #import "soundFX.h"
+
+
 @protocol shapePanelDelegate;
 
 @interface shapePanel : UIView <UIGestureRecognizerDelegate,UITextFieldDelegate,UITextViewDelegate,
@@ -36,8 +38,15 @@
     UILabel *titleLabel;
     UIButton *dismissButton;
     UIButton *deleteButton;
+    UIImageView *textureView;
+    UIImageView *otView;
+    UITextField *lastSelectedTextField; //10/29
 
     UIView *header,*footer;
+    
+   // UIImage *texture;
+    int topTexSlider;
+    float ucoord,vcoord,uscale,vscale;
     
     // 10/1 new data structs
     NSArray *allParams;
@@ -49,20 +58,19 @@
     NSMutableArray *allTextFields;
     NSArray *rotTypeParams;
 
+    UIImageView *thumbView;
+    UIImage *defaultImage;
+    
     int diceRolls;  //9/9 for analytics
     int resets;     //9/9 for analytics
-//    int sChanges[MAX_SHAPE_SLIDERS]; //count the changes!
-//    int pChanges[MAX_SHAPE_PICKERS];
-    
-    //flurryAnalytics *fanal; //8/3
-    //obPopup *obp; //onboarding popup panel
-    //miniHelp *mhelp;
     soundFX *sfx; //8/27 for sample silencer
     
     UILongPressGestureRecognizer *undoLPGesture;
     BOOL diceUndo;
     BOOL rollingDiceNow,resettingNow;
     genOogie *goog;  //9/15
+    
+    
 }
 
 
@@ -70,11 +78,14 @@
 
 @property (nonatomic, assign) BOOL wasEdited;
 @property (nonatomic, strong) NSDictionary *paramDict;
+@property (nonatomic, strong) NSDictionary *thumbDict;
 @property (nonatomic, strong) NSArray *texNames;
+@property (nonatomic, strong) UIImage *texture;
 
 -(void) setupView:(CGRect)frame;
 - (void) configureView;
 - (void)updateSessionAnalytics;
+- (void) updateTextureDisplay;
 
 @end
 
@@ -88,6 +99,8 @@
 -(void) didSelectShapeReset ;
 -(void) didSelectShapeDismiss ; //9/24
 -(void) didSelectShapeDelete ; //10/21
+-(void) didStartTextEntry : (NSString*) pname; //10/30
+-(void) didChangeTextEntry : (NSString*) pname;
 
 @end
 

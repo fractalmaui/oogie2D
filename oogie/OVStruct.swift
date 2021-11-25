@@ -15,6 +15,7 @@
 //  4/30  change shapeName to shapeKey
 //  5/9   make detune editable param
 //  10/7  change name default
+//  10/25 add xtraparams
 import Foundation
 struct OVStruct : Codable {
 
@@ -63,8 +64,8 @@ struct OVStruct : Codable {
     var delayTime    : Int
     var delaySustain : Int
     var delayMix     : Int
+    var xtraParams  : String //10/25. ADD NEW FIELD for audio 3D placement, whatever in the future...
 
- 
     
     //======(OVStruct)=============================================
     init()
@@ -115,6 +116,7 @@ struct OVStruct : Codable {
 
         //5/1 uid
         uid = "voice_" + ProcessInfo.processInfo.globallyUniqueString
+        xtraParams = ""  //10/25/21
     }
     
     //======(OVStruct)=============================================
@@ -124,6 +126,7 @@ struct OVStruct : Codable {
         name         = "empty"
         comment      = COMMENT_DEFAULT //2/3 from appDelegate
         patchName    = "empty"
+        xtraParams   = ""  //10/25/21
         shapeKey     = ""
         level        = 1.0 //Overall level  9/16 make 1
         xCoord       = 0.0

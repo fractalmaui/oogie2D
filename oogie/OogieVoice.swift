@@ -18,6 +18,9 @@
 //  10/8  synth waves now stored in buffers 0..4
 //  10/12 move lastBeatTime to top ,add verbose arg to playColors
 //  10/20 add inScalars
+//  10/25 add xtraParam support
+//  10/27 playColors returns last note now
+//  11/10 add quant , getQuantTime 
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -103,8 +106,10 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
     var KKK = 0
     var YYY = 0
     
-    var masterPitch = 0 //DHS 4/19 set from app delegate
-    let quantTime = 0   //DHS 11/18
+    var masterPitch = 0 // 11/21
+    var masterTune  = 0 // 11/21
+    var masterTempo = 135 // 11/21
+    var quantTime = 0   //DHS 11/18
     
     var paramListDirty = true //4/25 add paramList for display purposes
     var paramList  = [String]()
@@ -114,6 +119,9 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
     var inScalars = Set<String>()    //10/20 new for scalars
 
     var lastbeatTime = Date() //10/12 moved up from below
+    var birthTime    = Date() //11/10 for quant
+
+    var audio3d = "normal" //10/25 for 3d audio placement,
     
     //-----------(oogieVoice)=============================================
     override init() {
@@ -418,7 +426,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         d["soundpack"] = ["soundpack" , soundPack]
         for pname in OVP.voiceParamNames //look at all params... 9/18/21
         {
-            print("pack param \(pname)")
+            //print("pack param \(pname)")
             let plow = pname.lowercased()
             let pTuple = getParam(named : plow)
             let sv = pTuple.sParam
@@ -465,7 +473,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         {
             let plow = pname.lowercased()
             if plow == "percloox" || plow == "perclooxpans" {continue} //bail on percloox for now...
-            print("pack patch param \(pname)")
+            //print("pack patch param \(pname)")
             let pTuple = getPatchParam(named : plow , pIndex:0)
             let sv = pTuple.sParam
             var dv = pTuple.dParam as Double
@@ -632,7 +640,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
     func setParam(named name : String , toDouble dval: Double , toString sval: String)
     {
         let ival = Int(dval) //some params are stored as integers!
-        print("OVsetParam \(name) -> \(dval)  \(sval)")
+        //print("OVsetParam \(name) -> \(dval)  \(sval)")
 
         switch (name)
         {
@@ -671,6 +679,8 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         case "delaytime"     : OVS.delayTime    = ival
         case "delaysustain"  : OVS.delaySustain = ival
         case "delaymix"      : OVS.delayMix     = ival
+        case "audio3d"       : audio3d          = sval  //10/25
+        case "quant"         : OVS.quant        = ival
 
         default:
             print("Error:Bad voice param in set:" + name)   //5/9
@@ -765,6 +775,8 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         case "delaytime":    dp = Double(OVS.delayTime)
         case "delaysustain": dp = Double(OVS.delaySustain)
         case "delaymix":     dp = Double(OVS.delayMix)
+        case "audio3d":      sp = audio3d    //10/25
+        case "quant":        dp = Double(OVS.quant)
         default:print("Error:Bad voice param in get:" + name)  //5/9
         }
         if !isString  {sp = String(format: "%4.2f", dp)} //4/25 pack double as string
@@ -804,30 +816,91 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
 
     
     //-----------(oogieVoice)=============================================
+    // future-proof? packs some vars into xtraParams as a string
+    //  call right before save to file
+    func packXtraParams()
+    {
+        var s = ""
+        s = s + String(format: "audio3d:%@",audio3d)
+        OVS.xtraParams = s //all done? save
+    } //end packXtraParams
+    
+    //-----------(oogieVoice)=============================================
+    // future-proof? takes xtraParams in as a string, parses parsms from it
+    // call right after load from file
+    func unpackXtraParams()
+    {
+        let xss = OVS.xtraParams.split(separator: ",") //split into pairs...
+        if xss.count > 0
+        {
+            for spair in xss // get pairs
+            {
+                let onePair = spair.split(separator: ",") //peel off pairs...
+                if onePair.count == 2
+                {
+                    let sl = String(onePair[0])
+                    let sr = String(onePair[1])
+                    switch(sl) //lets look at our lh names...
+                    {
+                    case "audio3d":  audio3d = sr
+                    default: print(" error...bad xtra param \(sl)")
+                    }
+                }
+            } //end for spair
+        } //end xss.count
+    } //end unpackXtraParams
+    
+    //-----------(oogieVoice)=============================================
+    //11/10 returns ms time to next quantize step time
+    // NOTE birth time must be reset if tempo changes!
+    func getQuantTime(q:Int) -> Int
+    {
+        var qtime = 0
+        //first do some math... get time per beat
+        let lookups = [1,2,4,8,16,32,64,128,256] //last 2 never get used?
+        if q > 0
+        {
+            let qexp = lookups[q-1]
+            let timePerBeat = (240.0 / Double(qexp)) / Double(masterTempo)
+            //get time now
+            let now = Date()
+            let interval = now.timeIntervalSince(birthTime) //overall time since birth
+            let beats = Int(interval / timePerBeat)  //# beats
+            
+            //let lilt = interval - (Double(beats) * timePerBeat) //do i even need this?
+            //let lilt  = interval % timePerBeat   // time into beat
+            qtime = Int(1000.0 * ( ( Double(beats+1) * timePerBeat ) - interval ) )//get ms to next quant step
+            //print(".........................................interval \(interval) beats \(beats)  qtime \(qtime)")
+        }
+        
+        return qtime
+    }
+    
+    //-----------(oogieVoice)=============================================
     // 11/18 move in from mainvC. heavy lifter, lots of crap brought together
     //  needs masterPitch. should it be an arg or class member?
     //  4/19 add angle arg
-    func playColors(angle : Double, rr : Int ,gg : Int ,bb : Int, verbose : Bool) -> Bool
+    func playColors(angle : Double, rr : Int ,gg : Int ,bb : Int, verbose : Bool) -> Int
     {
         var inkeyNote = 0
-        var inkeyOldNote = 0
+        //var inkeyOldNote = 0
+        var noteToPlay = 0
         //this sets midiNote!
         setInputColor(chr: rr, chg: gg, chb: bb)
-        var noteWasPlayed = false
         bufferPointer = 0;
         if OOP.type == PERCUSSION_VOICE || OOP.type == SAMPLE_VOICE
         {
             //9/11 use sample num from voice... for perc/samples now
             bufferPointer = OVS.whichSamp
         }
-        
-        //NSLog("....playColors:NOTE: %d npvchan %d %d %d",midiNote,nchan,pchan,vchan)
+        if verbose { print("....playColors:NOTE:\(midiNote) NPV:\(nchan) \(pchan) \(vchan)") }
+         //DEBUG print("....playColors:NOTE:\(midiNote) type:\(OOP.type) uid:\(uid)")
         let vt    = OOP.type
         if midiNote > 0  || OVS.rotTrigger != 0//Play something?
         {
             (sfx() as! soundFX).setSynthMIDI(Int32(OVS.midiDevice), Int32(OVS.midiChannel)) //chan: 0-16
             let nc = (sfx() as! soundFX).getSynthNoteCount()
-            inkeyOldNote = oldNote
+            //inkeyOldNote = oldNote
             // 5/14 add pitch shift
             inkeyNote    = masterPitch + OVS.pitchShift + Int((sfx() as! soundFX).makeSureNoteis(inKey: Int32(OVS.keySig),Int32(midiNote)))
             // Mono: Handle releasing old note...
@@ -853,8 +926,15 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
             //if (abs (nchan - lnchan) > 2*OVS.thresh) && nc < 12
             if gotTriggered // 4/19
             {
-                //NSLog("OVPlayColors:Midinote %d",midiNote)
+                if verbose { print("....triggered:Midinote \(midiNote)") }
                 //print(" toler check: nchan \(nchan) lnchan \(lnchan) nc \(nc) thresh \(OVS.thresh)",nchan,lnchan,nc )
+                //11/10 handle quantize...
+                quantTime = 0
+                if OVS.quant != 0 //1/10 add quant interval
+                {
+                    quantTime = getQuantTime(q: OVS.quant)
+                }
+                
                 
                 //print(" playnote type:\(vt)  whichsamp:\(OVS.whichSamp) id:\(OVS.uid)");
                 (sfx() as! soundFX).setSynthMono(Int32(mono))
@@ -881,6 +961,8 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
                 (sfx() as! soundFX).setSynthVibeAmpl(Int32(OVS.vibeLevel))
                 (sfx() as! soundFX).setSynthVibeSpeed(Int32(OVS.vibeSpeed))
                 (sfx() as! soundFX).setSynthVibeWave(Int32(OVS.vibeWave))
+                (sfx() as! soundFX).setSynthInfinite(0) //11/2/21 just in case
+                
                 if OVS.portamento > 0 //8/11 keep track of last note for portamento!
                 {
                     (sfx() as! soundFX).setPortamentoLastNote(Int32(lastnoteplayed))
@@ -893,7 +975,6 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
                 (sfx() as! soundFX).setSynthPKeyOffset(50);
                 (sfx() as! soundFX).setSynthPKeyDetune(50);
                 
-                var noteToPlay = -1
                 var bptr = 0
                 //-------SYNTH: built-in canned wave samples--------------------------
                 if vt == SYNTH_VOICE
@@ -922,12 +1003,10 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
                     }
                     else
                     {
-                        (sfx() as! soundFX).playNote(withDelay:  32 , Int32(bptr) ,Int32(vt),Int32(quantTime))
+                        (sfx() as! soundFX).playNote(withDelay: Int32(noteToPlay) , Int32(bptr) ,Int32(vt),Int32(quantTime))
                     }
-                    noteWasPlayed = true
                     lastnoteplayed = inkeyNote
                     applyDelayIfAny() //8/11/21
-                    noteWasPlayed = true   //5/15
                 } //End synth block
                 else if vt == HARMONY_VOICE
                 {
@@ -953,7 +1032,6 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
                     {
                         (sfx() as! soundFX).playNote(withDelay: Int32(inkeyNote), Int32(bptr) ,Int32(vt),Int32(quantTime))
                     }
-                    noteWasPlayed = true
                     lastnoteplayed = inkeyNote
                     applyDelayIfAny() //8/11/21
                 } //end sample block 9/22
@@ -982,7 +1060,6 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
                     {
                         (sfx() as! soundFX).playNote(withDelay: Int32(noteToPlay) , Int32(bptr) ,Int32(vt),Int32(quantTime))
                     }
-                    noteWasPlayed = true
                     lastnoteplayed = noteToPlay
                     applyDelayIfAny() //8/11/21
                 } //end percussion block
@@ -1002,7 +1079,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
                     lasttype = PERCKIT_VOICE
                     
                     let pkPan = OOP.percLooxPans[octave]
-                    print("pkpan[\(octave)] = \(pkPan)")
+                    //print("pkbuf \(bptr) pkpan[\(octave)] = \(pkPan)")
                     (sfx() as! soundFX).setSynthPan(Int32(pkPan))
                     noteToPlay = 32
                     if quantTime == 0 //No Quant, play now
@@ -1022,7 +1099,11 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
                 addToDebugHistory(n:noteToPlay) //4/19 add debug tracker
             } //end abs toler check
         } //end midinote...
-        return noteWasPlayed
+        else  //11/20 zer0 note? clear old note too
+        {
+            lnchan = 0
+        }
+        return noteToPlay
     } //end playColors
     
     //====(OOGIECAM MainVC)============================================
@@ -1049,6 +1130,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
             if gain < 0    {gain = 0}
             (sfx() as! soundFX).setSynthGain(gain)
             sustain = sustain * sustainmult
+            print(" ..delay \(workTime) note \(lastnoteplayed)  buf \(lastbuf) gain \(gain)")
             (sfx() as! soundFX).playNote(withDelay:  Int32(lastnoteplayed) , Int32(lastbuf) ,Int32(lasttype),Int32(workTime))
             workTime+=timeMS;
         } // end while
@@ -1093,7 +1175,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
                             }
                         }
                         //Finally! now set the patch param to reflect edit...
-                        print(" apply edit to \(pname) value \(dd)")
+                        //print(" apply edit to \(pname) value \(dd)")
                         setPatchParam(named: pname, toDouble: dd, toString: ssn)
                     }
                 } //end let ssn
@@ -1155,7 +1237,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         {   //and add approp. buffer pointers to pointer set
             
             let nn = allP.getSampleNumberByName(ss: pName)
-            bufferPointerSet.append(Int(nn));
+            bufferPointerSet.append(nn.intValue); //10/26 wups
             //Int((sfx() as! soundFX)getPercussionBuffer(pName.lowercased())))
         }
     } //end getPercLooxBufferPointerSet
@@ -1318,7 +1400,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         var tpchan = 0
         var tvchan = 0
         let tschan = 0
-        let pf     = 0.0
+        //let pf     = 0.0
 
         if (chr==0) && (chg==0) && (chb==0) //black means no sound/note/center pan
         {
@@ -1460,6 +1542,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         OOP.duty       = 0;
         OVS.sampleOffset = Int.random(in:0...30);
         OVS.whichSamp    = Int.random(in:builtinBase...builtinMax)
+        print("rand perc buffer \(OVS.whichSamp)")
         OVS.panMode      = Int.random(in:0...11);
         OVS.panFixed     = Int.random(in:0...255);
         OVS.detune       = Int(Double.random(in:0...1.5)); // 9/1 copy from oogiecam
@@ -1489,11 +1572,20 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         for loop in 0...7
         {
             let bptr = Int.random(in:builtinBase...builtinMax)
-            if let bname = allP.bufLookups[NSNumber(value: bptr)]
+            //10/27 slow as fuck, find proper loaded sample name for bptr...
+            let d = allP.patLookups //  mixed case names!
+            var bname = ""
+            for (s,n) in d  //get string / number
             {
+                if n.intValue == bptr {bname = s;break}
+            }
+            
+            
+//            if let bname = allP.bufLookups[NSNumber(value: bptr)]
+//            {
                 OOP.percLoox[loop]     = bname
                 OOP.percLooxPans[loop] = Int.random(in: 0...255);
-            }
+//            }
         }
     } //end loadRandomPercKitPatch
     
@@ -1540,7 +1632,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         OOP.release     = Double.random(in:0.0...79.5);
         OOP.duty        = Double.random(in:0...99.5);
         //No need?    OOP.level       = Double.random(in:0.3...0.7);
-        OOP.wave        = Int.random(in:0...5);
+        OOP.wave        = Int.random(in:0...4); //10/27 wups
         //MIDI keyboard range for outgoing notes
         OVS.bottomMidi  = 12;  // 2/28 redo top/bottom MIDI
         OVS.topMidi     = 108; // 2/28 redo

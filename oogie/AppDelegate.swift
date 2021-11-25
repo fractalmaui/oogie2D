@@ -34,30 +34,35 @@
 //  Compiler switching:
 //    https://stackoverflow.com/questions/24003291/ifdef-replacement-in-the-swift-language
 //  4/20 pull loadallSamples
-
-
+//  10/25 add copyFactoryScenes... copyInFactoryStuff
+//  10/27  add percussionBase , percussionTop
+//  11/21  add masterTune, masterTempo
 import UIKit
 
 
 
-let COMMENT_DEFAULT = "..."   //2/3   stoopid global visible everywhere
+let COMMENT_DEFAULT = ""   //10/30   stoopid global visible everywhere
 var appSettings = Dictionary<String, Any>()
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
+@objc class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
 
     var window: UIWindow?
     
     var versionStr = ""
-    let externalSampleBase   = 256;
     //All patches: singleton, holds built-in and locally saved patches...
     var allP = AllPatches.sharedInstance
     var masterPitch = 0 //4/19 master pitch shift in notes
+    @objc var masterTune  = 0 //11/21
+    @objc var masterTempo = 135 //11/21
 
     //Audio Sound Effects...
     var sfx = soundFX.sharedInstance
     var tc  = texCache.sharedInstance //9/3 texture cache
     
+    var percussionBase = 0 //10/27 drums start here
+    var percussionTop  = 0
+    let externalSampleBase   = 256;
     var userSampleBase = 0 //where user samples live after all soundpacks are loaded
 
     var OVP  =  OogieVoiceParams.sharedInstance //9/19/21 oogie voice params
@@ -94,14 +99,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
         //10/21 allpatches needs to know if anything was bought!
 //        NSArray* A = [self getPurchasedSoundPacksKeys];
 //        [allP setPSPNWithA:A]; //cryptic, huh!
-        allP.loadAllSoundPacksAndPatches();
         allP.createSubfolders() //10/8 WTF? why wasnt this here?
+        allP.loadAllSoundPacksAndPatches();  //11/2 wups was in wrong place
 
         loadSettings()
+        
+        copyInFactoryStuff() //10/25
+        
         loadSamples()  //7/1/21
         return true
     }
     
+
     //========AppDelegate==============================================
     func applicationWillResignActive(_ application: UIApplication) {
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
@@ -133,53 +142,89 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
         print("OK! samples loaded now")
     }
 
+    let skMasterTempo       = "masterTempo"
+    let skMasterTune        = "masterTune"
+    let skSpinTimerPeriod   = "spinTimerPeriod"
+    let skColorTimerPeriod  = "colorTimerPeriod"
+    let skBlinkTimerPeriod  = "blinkTimerPeriod"
+    let skCopyFactoryScenes = "copyFactoryScenes"
+
     //====(AppDelegate)----------------------------------------------
-    // 5/7 add settings bundle...
+    //10/24/21 cleanup , add factory copy flag
     func loadSettings()
     {
         let defaults = UserDefaults.standard
         defaults.synchronize()
-        let dd = defaults.double(forKey: "spinTimerPeriod")
+        let dd = defaults.double(forKey: skSpinTimerPeriod)
         if (dd == 0.0) //no settings yet?
         {
-            defaults.setValue(0.1, forKey: "colorTimerPeriod")
-            defaults.setValue(0.1, forKey: "spinTimerPeriod")
-            defaults.setValue(0.1, forKey: "blinkTimerPeriod")
+            defaults.setValue(135, forKey: skMasterTempo)
+            defaults.setValue(0,   forKey: skMasterTune)
+            defaults.setValue(0.1, forKey: skColorTimerPeriod)
+            defaults.setValue(0.1, forKey: skSpinTimerPeriod)
+            defaults.setValue(0.1, forKey: skBlinkTimerPeriod)
+            defaults.setValue(1,   forKey: skCopyFactoryScenes)
             //print("reset defaults ...")
         }
         //print("spintimer  is \(defaults.double(forKey: "spinTimerPeriod"))")
         //print("colortimer is \(defaults.double(forKey: "colorTimerPeriod"))")
         //print("blinktimer is \(defaults.double(forKey: "blinkTimerPeriod"))")
-        appSettings["colorTimerPeriod"] = defaults.double(forKey: "colorTimerPeriod")
-        appSettings["spinTimerPeriod"]  = defaults.string(forKey: "spinTimerPeriod")
-        appSettings["blinkTimerPeriod"] = defaults.double(forKey: "blinkTimerPeriod")
+        appSettings[skMasterTempo]       = defaults.double(forKey: skMasterTempo)
+        appSettings[skMasterTune]        = defaults.double(forKey: skMasterTune)
+        appSettings[skColorTimerPeriod]  = defaults.double(forKey: skColorTimerPeriod)
+        appSettings[skSpinTimerPeriod]   = defaults.string(forKey: skSpinTimerPeriod)
+        appSettings[skBlinkTimerPeriod]  = defaults.double(forKey: skBlinkTimerPeriod)
+        appSettings[skCopyFactoryScenes] = defaults.double(forKey: skCopyFactoryScenes)
+        if let d = appSettings[skMasterTempo] as? Double{
+            masterTempo = Int(d)
+        }
+        if let d = appSettings[skMasterTune] as? Double{
+            masterTune  = Int(d)
+        }
     } //end loadSettings
 
     //====(AppDelegate)----------------------------------------------
-    // no need yet...
-    func saveSettings()
+    // 10/24 need to validate!
+    func setCopyFactoryScenesFlag(value : Int)
     {
-//        let defaults = UserDefaults.standard
-//        defaults.setValue(appSettings["colorTimerPeriod"], forKey: "colorTimerPeriod")
-//        defaults.setValue(myTextField.text, forKey: textFieldKeyConstant)
-//        defaults.set(mySwitch.isOn, forKey: switchKeyConstant)
+        let defaults = UserDefaults.standard
+        defaults.set(value, forKey: skCopyFactoryScenes)
     }
+
     
-    
+    //====(AppDelegate)----------------------------------------------
+    //11/21
+    @objc func updateMasterTempo(value : Int)
+    {
+        masterTempo = value;
+       // let defaults = UserDefaults.standard
+        UserDefaults.standard.set(value, forKey: skMasterTempo)
+    }
+
+    //====(AppDelegate)----------------------------------------------
+    //11/21
+    @objc func updateMasterTune(value : Int)
+    {
+        masterTune = value;
+      //  let defaults = UserDefaults.standard
+        UserDefaults.standard.set(value, forKey: skMasterTune)
+    }
+
+
     //====(AppDelegate)----------------------------------------------
     //  6/12/20 redid
     func loadSamples()
     {
-        //var loop=0
-       // workVoice = [voices objectAtIndex:0];
-        
         let folders = ["GMPercussion","animals","weirdness"]   //9/11 add weirdness soundpack
-        
         var fcount = 0
-        var sampnum = LOAD_SAMPLE_OFFSET; //32?  starting point for samples...
+        var sampnum = LOAD_SAMPLE_OFFSET //32?  starting point for samples...
+        percussionBase = Int(sampnum) //10/27
         for subFolder in folders
         {
-            if fcount == 1 { sampnum = Int32(externalSampleBase) } //ok move up to 2556
+            if fcount == 1 //first set of built-in samples?
+            {
+                sampnum = Int32(externalSampleBase)
+            }
             var url = URL(fileURLWithPath: "") //Start w/ empty path
             url = (Bundle.main.resourceURL?.appendingPathComponent(subFolder))!
             var fileNamez : [String] = []
@@ -187,7 +232,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
                 fileNamez = try FileManager.default.contentsOfDirectory(atPath: url.path)
             }
             catch{
-                print("could not find \(url)")
+                print(" loadSamples:could not find \(url)")
                 return
             }
             fileNamez = fileNamez.sorted() //sort by alpha?
@@ -208,13 +253,78 @@ class AppDelegate: UIResponder, UIApplicationDelegate, sfxDelegate {
                     }
                 }
             } //end for fname
+            if fcount == 0
+            {
+                percussionTop = Int(sampnum); //10/27 top GMPercussion buffer
+            }
             fcount+=1; //update folder count
         }
         (sfx() as! soundFX).loadAudioBKGD(-1)
         userSampleBase = Int(sampnum);
     } //end loadSamples
-
-
+    
+    //========AppDelegate==============================================
+    // one-time only? or factory reset file actions
+    //  settings bundle should be loaded first!
+    func copyInFactoryStuff()
+    {
+        //do we need fresh scenes for new user?
+        var needNewScenes = true
+        if let nn = appSettings[skCopyFactoryScenes] as? NSNumber
+        {
+            //print("skCopyFactoryScenes \(nn)")
+            if (nn.intValue == 0)
+            {
+                needNewScenes = false
+                //print("...no need for factory copy scenes")
+            }
+        }
+        if needNewScenes
+        {
+            //print("copy new scenes...")
+            copyFactoryScenesToDocuments()
+            setCopyFactoryScenesFlag(value:0) //clear our defaults flag so we dont repeat!
+        }
+    }
+    
+    //====(AppDelegate)----------------------------------------------
+    func copyFactoryScenesToDocuments()
+    {
+        var resPath = Bundle.main.resourceURL!.appendingPathComponent("FactorySettings").path
+        resPath = resPath + "/" + "Scenes" //Now add proper subpath...
+        let fs  = "Factory Scene"
+        
+        do{
+            let dirContents = try FileManager.default.contentsOfDirectory(atPath: resPath)
+            
+            let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+            //let filteredFiles = dirContents.filter { $0.contains(".oos")}
+            for fileName in dirContents
+            {
+                if let dURL = documentsURL{
+                    let factoryFolderName = "FactorySettings/Scenes/" + fileName
+                    let sceneFolderName   = "scenes/" + fileName
+                    let sourceURL = Bundle.main.bundleURL.appendingPathComponent(factoryFolderName)
+                    if let destURL   = documentsURL?.appendingPathComponent(sceneFolderName)
+                    {
+                        do {
+                            //print("copy from \(sourceURL) to \(destURL)")
+                            try FileManager.default.copyItem(at: sourceURL, to: destURL)
+                            print("...copied \(fs):\(fileName)")
+                        }
+                        catch{
+                            print("...error copying \(fs):\(fileName)")
+                        }
+                    }
+                }
+            }
+            setCopyFactoryScenesFlag(value:0) //clear our defaults flag so we dont repeat!
+        }
+        catch
+        {
+            print("error finding \(fs)")
+        }
+    } //end copyFactoryScenesToDocuments
 
 
 } //end AppDelegate

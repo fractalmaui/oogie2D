@@ -55,7 +55,7 @@ class infoText: UIView {
     var fieldType = TSTRING_TTYPE
     var fadeTimer = Timer() //11/4
 
-    let bigfonthit = 40
+    let bigfonthit = 32   //11/13/21 shrink for more content
 
     
     override init(frame: CGRect) {

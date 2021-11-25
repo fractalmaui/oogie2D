@@ -17,7 +17,7 @@
 //   on read, the last closing bracket (maybe more) gets omitted, causing the
 //   JSON reader to crash.  On top of that the data unpacker fails when it tries
 //   to read a partial chunk that is too short... it gets a null for the chunk.
-// 
+//  11/16/21  fix memory leak in readFromPhotos, writeToPhotos
 #import "OogieTiffie.h"
 @implementation OogieTiffie
 
@@ -152,6 +152,8 @@
     //NSLog(@" result len %d",(int)result.length);
     //NSLog(@" got string [%@]",result);
     //NSLog(@" stringlen %d vs %d",result.length,jsonSize);
+    CGContextRelease(tcontext); //11/16/21 wups, fix memory leak
+
     return result; //Indicate success!
 } //end readFromPhotos
 
@@ -410,6 +412,7 @@
                                    nil);
     packTerm();
     free(imageData);
+    CGContextRelease(tcontext); //11/16/21 wups, fix memory leak
     [_delegate didWriteRTTiffie];
 } //end writeToPhotos
 

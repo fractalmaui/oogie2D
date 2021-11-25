@@ -25,7 +25,13 @@
 // 9/18 add randomize, remove sendAllParamsToParent, add sendUpdatedParamsToParent
 // 9/21 remove footer, add top edit label
 // 9/24 add dismiss button
-//  10/21 add delete button
+// 10/21 add delete button
+// 10/27 add resetPatchPicker
+// 10/28 fix layout bugs reset button / editlabel
+// 10/29 close KB if panel closes, see lastSelectedTextField
+// 10/30 add shouldChangeCharactersInRange delegate callback
+// 11/1   shrink editLabel, repeat on other panels?
+// 11/10 add quant field
 #import "controlPanel.h"
 //#import "AppDelegate.h" //KEEP this OUT of viewController.h!!
 
@@ -34,24 +40,7 @@
 #define NORMAL_CONTROLS
 #define GOT_DIGITALDELAY
 
-
-double drand(double lo_range,double hi_range );
- 
-
-
-//for analytics use: simple 3 letter keys for all controls
-//  first char indicates UI, then 2 letters for control
-// sliders are grouped: 3 at top, then a picker, then four more.
-//NSString *sliderKeys[] = {@"LTH",@"LBN",@"LTN",@"---",
-//                @"LOV",@"LPO",
-//                @"LVL",@"LVS",@"",
-//                @"LAL",@"LAS",@"",
-//                @"DET",@"DEF",@"DEM"}; //2/19 note padding b4 delay
-//NSString *pickerKeys[] = {@"LKS",@"LVW",@"LAW"};
-
-
-NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it matches order in SYNTH 
-
+NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it matches order in SYNTH
 
 
 //======(controlPanel)==========================================
@@ -75,7 +64,8 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
         allSliders     = [[NSMutableArray alloc] init];
         allPickers     = [[NSMutableArray alloc] init];
         allTextFields  = [[NSMutableArray alloc] init];
-
+        
+        lastSelectedTextField = nil; //10/29 indicate no select
         // 8/12 add notification for ProMode demo...
         [[NSNotificationCenter defaultCenter]
                                 addObserver: self selector:@selector(demoNotification:)
@@ -95,7 +85,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     if (allParams != nil) return; //only go thru once!
     //NSLog(@" setup canned voice Param data...");
     allParams      = @[@"patch",@"soundpack",
-                       @"threshold",@"bottommidi",@"topmidi",@"keysig",@"poly",
+                       @"threshold",@"bottommidi",@"topmidi",@"keysig",@"poly",@"quant",
                        @"nchan",@"nfixed",@"vchan",@"vfixed",@"pchan",@"pfixed", //10/3
                        @"level",@"portamento",
                        @"viblevel" ,@"vibspeed",@"vibwave",
@@ -110,13 +100,15 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
                        @"Delay Time" ,@"Delay Sustain",@"Delay Mix",
                        @"Latitude", @"Longitude"];
     // note some picker names arent used...
-    pickerNames    = @[@"Patch",@"SoundPack",@"KeySig",@"Mono/Poly",@"mt",@"mt",@"mt",@"FVib Wave",@"AVib Wave"];
+    pickerNames    = @[@"Patch",@"SoundPack",@"KeySig",@"Mono/Poly",@"Quantize",@"mt",@"mt",@"mt",@"FVib Wave",@"AVib Wave"];
     textFieldNames = @[@"Name",@"Comments"];
     
     musicalKeys = @[@"C",@"C#",@"D",@"D#",@"E",@"F",@"F#",@"G",@"G#",@"A",@"A#",@"B"];
     keySigs = @[@"Major",@"Minor",@"Lydian",@"Phrygian",
                 @"Mixolydian",@"Locrian",@"Egyptian",@"Hungarian",
                 @"Algerian",@"Japanese",@"Chinese",@"Chromatic"];
+    quants = @[@"None",@"1/1",@"1/2",@"1/4",
+                @"1/8",@"1/16",@"1/32",@"1/64"];
     monoPoly = @[@"Mono",@"Poly"];
     vibratoWaves = @[ @"Sine",@"Saw",@"Square",@"Ramp"];
     //WTF? these pickers  fUCk up the text align, crop off first 4 chars
@@ -182,7 +174,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
                    CGRectMake(xi,yi,xs,ys)];
     [editLabel setBackgroundColor : [UIColor redColor]];
     [editLabel setTextColor : [UIColor whiteColor]];
-    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 28.0]];
+    [editLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 22.0]]; //11/16 looks stupid small
     editLabel.text = @"Edit Voice";
     editLabel.textAlignment = NSTextAlignmentCenter;
     [self addSubview : editLabel];
@@ -214,7 +206,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     titleLabel = [[UILabel alloc] initWithFrame:
                    CGRectMake(xi,yi,xs,ys)];
     [titleLabel setTextColor : [UIColor whiteColor]];
-    [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 32.0]];
+    [titleLabel setFont:[UIFont fontWithName:@"Helvetica Neue" size: 22.0]];  //11/19
     titleLabel.text = @"...";
     titleLabel.textAlignment = NSTextAlignmentCenter;
     [header addSubview : titleLabel];
@@ -240,6 +232,23 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
      [diceButton addTarget:self action:@selector(diceSelect:) forControlEvents:UIControlEventTouchUpInside];
      [header addSubview:diceButton];
 
+    //Add reset button next to dice
+    float borderWid = 5.0f;
+    UIColor *borderColor = [UIColor whiteColor];
+    xi += xs + 5;
+    xs = buttonHit * 1.4; // 5/20 viewWid*0.15;
+    resetButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [resetButton setTitle:@"Reset" forState:UIControlStateNormal];
+    [resetButton setFrame:CGRectMake(xi, yi, xs, ys)];
+    [resetButton setTitleColor:[UIColor colorWithRed:1 green:0.5 blue:0.5 alpha:1] forState:UIControlStateNormal];
+    resetButton.backgroundColor    = [UIColor blackColor];
+    resetButton.layer.cornerRadius = 10;
+    resetButton.clipsToBounds      = TRUE;
+    resetButton.layer.borderWidth  = borderWid;
+    resetButton.layer.borderColor  = borderColor.CGColor;
+    [resetButton addTarget:self action:@selector(resetSelect:) forControlEvents:UIControlEventTouchUpInside];
+    [header addSubview:resetButton];
+
     //10/21 add delete button top RL
     xs = OOG_HEADER_HIT * 0.8;
     ys = xs;
@@ -257,22 +266,6 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     undoLPGesture.cancelsTouchesInView = NO;
     [diceButton addGestureRecognizer:undoLPGesture];
 
-    //Add reset button next to dice
-    float borderWid = 5.0f;
-    UIColor *borderColor = [UIColor whiteColor];
-    xi += xs + 5;
-    xs = buttonHit * 1.4; // 5/20 viewWid*0.15;
-    resetButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [resetButton setTitle:@"Reset" forState:UIControlStateNormal];
-    [resetButton setFrame:CGRectMake(xi, yi, xs, ys)];
-    [resetButton setTitleColor:[UIColor colorWithRed:1 green:0.5 blue:0.5 alpha:1] forState:UIControlStateNormal];
-    resetButton.backgroundColor    = [UIColor blackColor];
-    resetButton.layer.cornerRadius = 10;
-    resetButton.clipsToBounds      = TRUE;
-    resetButton.layer.borderWidth  = borderWid;
-    resetButton.layer.borderColor  = borderColor.CGColor;
-    [resetButton addTarget:self action:@selector(resetSelect:) forControlEvents:UIControlEventTouchUpInside];
-    [header addSubview:resetButton];
 
     //Left/Right switch UI buttons...
     xs = buttonHit;
@@ -324,7 +317,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 
     //Add color panel-------------------------------------
     panelY += pahit;
-    pahit = 3*OOG_SLIDER_HIT + 2*OOG_TEXT_HIT + 2*OOG_PICKER_HIT + 3*OOG_YSPACER + 2*OOG_YMARGIN;
+    pahit = 3*OOG_SLIDER_HIT + 2*OOG_TEXT_HIT + 3*OOG_PICKER_HIT + 3*OOG_YSPACER + 2*OOG_YMARGIN;
     yi = panelY;
     ys = pahit;
     xi = OOG_XMARGIN;
@@ -362,6 +355,11 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     iPicker++;
     iParam++;
     yi += (OOG_PICKER_HIT+OOG_YSPACER);
+    // add quant picker
+    [self addPickerRow:cPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
+    iPicker++;
+    iParam++;
+    yi += (OOG_PICKER_HIT+OOG_YSPACER);
 
     // it was in the patch editor but that was the wrong place
     //Color Channels panel next... 3 groups of picker/slider pairs and one slider below that
@@ -388,7 +386,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     ys = OOG_PICKER_HIT + 5; // 50; //Need more spacing between pickers!
     // WHY is picker font so HUGE? Shrink it and we can reduce ysize!
     for (int i=0;i<3;i++)
-    {     //args: parent, pickerTag, sliderTag, ypos , ysize asdf
+    {     //args: parent, pickerTag, sliderTag, ypos , ysize
         [self addPickerSliderRow : cPanel : iParam : iParam+1 : sliderNames[iSlider] : yi :ys]; //i/j = picker / slider # 10/16
         iParam+=2; //skip down 2
         yi+=ys-18; //5/24 test squnch
@@ -526,7 +524,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 
     
     //Scrolling area...
-    int scrollHit = 1400; //10/3 added new stuff
+    int scrollHit = 1500; //11/13 add empty padding ab tobbom
     //if (cappDelegate.gotIPad) scrollHit+=120; //3/27 ipad needs a bit more room
     
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
@@ -699,10 +697,22 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 }
 
 //======(controlPanel)==========================================
+// 10/27 reset patch picker to desired index (parent should know?)
+-(void) resetPatchPicker : (int)index
+{
+    int nrows = (int)[allPickers[0] numberOfRowsInComponent:0]; //see what we got...
+    if (index >= nrows) return;
+    [allPickers[0] selectRow:index inComponent:0 animated:FALSE];
+}
+
+//======(controlPanel)==========================================
 // This is huge. it should be made to work with any control panel!
 -(void) configureViewWithReset : (BOOL)reset
 {
-    NSArray *noresetparams = @[@"patch",@"soundpack",@"name"];
+    NSArray *noresetparams = @[];
+    //10/29 reset? dont change patch!
+    if (reset) noresetparams = @[@"patch",@"soundpack",@"name"];
+    else       noresetparams = @[@"soundpack",@"name"];
     NSMutableDictionary *pickerchoices = [[NSMutableDictionary alloc] init];
     [pickerchoices setObject:_paNames forKey:@0];  //patches are on picker 0
     [pickerchoices setObject:_spNames forKey:@1];  //soundpacks are on picker 1
@@ -766,6 +776,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 //======(controlPanel)==========================================
 - (IBAction)dismissSelect:(id)sender
 {
+    [lastSelectedTextField resignFirstResponder]; //10/29 Close keyboard if up
     [self.delegate didSelectControlDismiss];
 }
 
@@ -933,11 +944,15 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     {
         title = monoPoly[row];
     }
-    else if ( tag == PICKER_BASE_TAG+7 || tag == PICKER_BASE_TAG+9 || tag == PICKER_BASE_TAG+11)
+    if (tag == PICKER_BASE_TAG+7) //11/10 add quant cboice
+    {
+        title = quants[row];
+    }
+    else if ( tag == PICKER_BASE_TAG+8 || tag == PICKER_BASE_TAG+10 || tag == PICKER_BASE_TAG+12)
     {
         title = colorChannels[row];
     }
-    else if (tag == PICKER_BASE_TAG+17 || tag == PICKER_BASE_TAG+20)
+    else if (tag == PICKER_BASE_TAG+18 || tag == PICKER_BASE_TAG+21)
     {
         title = vibratoWaves[row];
     }
@@ -953,7 +968,7 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
     int liltag = (int)pickerView.tag - PICKER_BASE_TAG; //just pass tags to parent now
     NSString *patchName = @"";
-    NSLog(@" chose t %d r %d",liltag,row);
+    //NSLog(@" chose t %d r %d",liltag,row);
     if (liltag == 0) //patch? pass back our name...
     {
         if (row > 0)
@@ -987,10 +1002,12 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
         return keySigs.count; //keysig
     else if ( tag == PICKER_BASE_TAG + 6)
         return monoPoly.count; //10/3 mono/poly
+    else if ( tag == PICKER_BASE_TAG + 7)
+        return quants.count; //11/10 quantize
     // 10/3 color channels
-    else if ( tag == PICKER_BASE_TAG+7 || tag == PICKER_BASE_TAG+9 || tag == PICKER_BASE_TAG+11)
+    else if ( tag == PICKER_BASE_TAG+8 || tag == PICKER_BASE_TAG+10 || tag == PICKER_BASE_TAG+12)
         return colorChannels.count; //keysig
-    else if ( tag == PICKER_BASE_TAG+17 || tag == PICKER_BASE_TAG+20 )  //vib ratos
+    else if ( tag == PICKER_BASE_TAG+18 || tag == PICKER_BASE_TAG+21 )  //vib ratos
         return vibratoWaves.count;
     return 0; //empty (failed above test?)
     
@@ -1056,11 +1073,23 @@ NSString *vibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it
 #pragma mark - UITextFieldDelegate
 
 //==========<UITextFieldDelegate>====================================================
+// 10/30 for displaying text entry on mainVC
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField
 {
-    //NSLog(@" begin");
+    NSLog(@" begin");
+    [self.delegate didStartTextEntry:allParams[(textField.tag % 1000)]];  //pass field name
+    lastSelectedTextField = textField;  //10/29
     return YES;
 }
+ 
+//==========<UITextFieldDelegate>====================================================
+// 10/30 for displaying text entry on mainVC, note string only contains EDITS
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
+{
+    [self.delegate didChangeTextEntry:textField.text];  //pass text to parent
+    return true;
+}
+
 
 //==========<UITextFieldDelegate>====================================================
 - (BOOL)textFieldShouldClear:(UITextField *)textField

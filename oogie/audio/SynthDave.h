@@ -27,12 +27,14 @@
 // 1/26  redid arpQueue, enlarged, made doubles, changed time calculations
 // 3/2   add digital delay
 // 6/25/21 add arpTones, redo arpeggiator data struct
+// 11/23/21 add env256 array, render all envelopes into 256 buffer
+// 11/25    remove old envelope crap
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioUnit/AudioUnit.h>
 #import <AudioToolbox/AudioFile.h>
 #import <Foundation/Foundation.h>
 
-#define MAX_TONE_EVENTS 64
+#define MAX_TONE_EVENTS 256   //10/27 was 64
 
 //Possible states for a ToneEvent.
 typedef enum
@@ -115,8 +117,8 @@ typedef struct
     int waveNum;            //  Ranp sine etc
     int mono;               //  Monophonic Synth/Sample mode... 0 by default
 	int detune;             //  Samples only: 0=NO pitch shift, 1=pitchshift
-	float envStep;          ///< for stepping through the envelope
-	float envDelta;         ///< how fast we're stepping through the envelope
+	double envStep;          ///< for stepping through the envelope
+    double envDelta;         ///< how fast we're stepping through the envelope
 	float gain;             ///<   note loudness
 	float lpan;             ///<   lpan  0.0 to 1.0
 	float rpan;             ///<   ppan  0.0 to 1.0
@@ -143,6 +145,7 @@ typedef struct
     int un;
     int infinite;           //Synth ONLY, holds note forever...
     BOOL needsEnvelope;     // 10/17 for sample envelopes
+    float envelope256[256];   //11/23/21 all tones have their own envelope now!!
 }
 ToneEvent;
 
@@ -162,16 +165,14 @@ ToneEvent;
 	float finalMixGain;    // Final total output volume...
     float aFactor,bFactor;   //used in sin/cos mixed waves
 	float *sBufs[MAX_SAMPLES];       // First five bufs are canned synth waves, rest are samples....
-	float *sEnvs[MAX_SAMPLES];       // we need envelopes for each synth!
-	int sElen[MAX_SAMPLES];          // envelope lengths...
+    float env512[512];      //11/23 work areas, used to produce 256 item envelopss
+    float env256[256];
+    double env256Step;      //converts from time -> envelope units, always less than 1,0
     int sRates[MAX_SAMPLES];         // 10/5/2019 keep track of sample rates
 	int sBufLens[MAX_SAMPLES];
 	int sBufChans[MAX_SAMPLES];      //1 = mono, 2=stereo
     int sTuningOffsets[MAX_SAMPLES];    //10.6 single note offsets, for GM tuning
 	int sineLength;                  ///< size of sine look-up table
-	int envLength[MAX_SAMPLES];      ///< size of envelope look-up table
-	int envDataLength[MAX_SAMPLES];      ///< amount of table space taken up by env...
-	int envIsUp[MAX_SAMPLES]; //DHS 1/8/13: this was a single var...
 	int detune;         ///< overall detune flag...
     //Last ADSR length
     int attackLength, decayLength , sustainLength, releaseLength;
@@ -244,8 +245,6 @@ ToneEvent;
 
 -(void) copyBufferOutResampled : (int) bnum : (int)fsize : (float*) fbuf; //7/7/21
 -(void) copyBuffer : (int) from : (int) to : (BOOL) clear;
--(void) copyEnvelope : (int) from : (int) to;
-
 
 -(void)startRecording:(int)maxRecordingTime;
 -(void)stopRecording:(int)cancel;
@@ -265,8 +264,6 @@ ToneEvent;
 - (float)getRVolume ;
 -(NSString *)getAudioOutputFileName;
 -(NSString *)getAudioOutputFullPath;
--(NSArray *) getEnvelopeForDisplay: (int) which : (int) size;
--(int) getEnvelopeSize : (int) which;
 -(float) getSampleProgressAsPercent : (int) n : (int) buf;
 
 //DHS set master tune
@@ -304,12 +301,10 @@ ToneEvent;
 - (void)cleanupNotes:(int)which;
 - (void)cleanupBuffersAbove:(int)index;
 - (void)decrVoiceCount:(int)n;
-- (float)getADSR: (int)which : (int)where ;
 - (int)getBufferChans: (int) index;   //7/7
 - (int)getBufferSize: (int) index;
 - (float)getBufferPlaytime: (int) index;
 - (int)getNoteCount;
-- (int)getEnvDataLen:(int)which  ;
 - (NSDictionary*) getSampleHeader:(NSString *)soundFilePath;
 - (int)getUniqueCount;
 - (int) getLastToneHandle; //6/25/21

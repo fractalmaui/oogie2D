@@ -15,6 +15,10 @@
 //  2/3   add 2nd row of test in createNamePlateImage
 //  5/7   move shape rotation over to oogieShape
 //  5/11  add createMTImage, need in common area w/ oogieShape though
+//  10/26 remove VERSION_2D crap
+//  11/11 add dice cube, redo init to add uid arg
+// 11/13 add menu box, add createPetalImage
+//  11/15 add default texture to texCache
 import SceneKit
 
  
@@ -27,12 +31,6 @@ class SphereShape: SCNNode {
     var key = "" //5/3
     let tc = texCache.sharedInstance //10/21 for loading textures...
     
-    #if USE_TESTPATTERN
-    let defaultTexture = "spectrumOLD" //"tp" 8/12 test
-    #else
-    let defaultTexture = "oog2-stripey00t"
-    #endif
-
     //10/11 add torii / box label panels
     var sphere       = SCNSphere()
     var torus1       = SCNTorus()
@@ -40,31 +38,34 @@ class SphereShape: SCNNode {
     var shapeNode    = SCNNode()
     var torusNode1   = SCNNode()
     var torusNode2   = SCNNode()
-    //see this about setting compiler switches, also use in mainVC for marker placement
-    //   and for use of startPosition in AR version
-    #if VERSION_2D
-    let sphereRad    : CGFloat = 1.0
-    let boxSize      : CGFloat = 0.1
-    let pipeRad      : CGFloat = 0.04
-    #elseif VERSION_AR
+    var diceCube     = SCNBox()   //11/11
+    var diceNode     = SCNNode()
+    var isize        = CGSize(width: 256, height: 256) //for menu image
+    var menuCube     = SCNBox()   //11/13
+    var menuNode     = SCNNode()
+    var hueIndicator = SCNNode()
+
+    // 10/26 remove VERSION_2D crap AR only
     let sphereRad    : CGFloat = 0.25
     let boxSize      : CGFloat = 0.025
     let pipeRad      : CGFloat = 0.01
-    #endif
 
+    
     var boxPanel     = SCNBox()
     var panelNodes   : [SCNNode] = []
     var jsize = CGSize(width: 512, height: 32) //overall description image size
 
     
     //-----------(SphereShape)=============================================
-    override init() {
+    init(newuid:String)
+    {
         super.init()
+        uid = newuid; //11/11
         // 10/11 redo to add sphere as child
         sphere = SCNSphere(radius: sphereRad)
         // 10/25
-        sphere.firstMaterial?.diffuse.contents  = UIImage(named: defaultTexture)
-        sphere.firstMaterial?.emission.contents = UIImage(named: defaultTexture)
+        sphere.firstMaterial?.diffuse.contents  = tc.defaultTexture  //11/15 add default to TC
+        sphere.firstMaterial?.emission.contents = tc.defaultTexture  //11/15 add default to TC
         //10/22 try scaling
         if let fm = sphere.firstMaterial
         {
@@ -75,11 +76,32 @@ class SphereShape: SCNNode {
         }
 
         shapeNode = SCNNode(geometry:sphere)
-        //10/11 add name for touch ID
-        uid = getNewShapeKey()
         shapeNode.name = ""  //9/27 reset name as object gets added...
         self.addChildNode(shapeNode)
         rotDate = Date() //reset start date
+        
+        let bs:CGFloat = 0.06
+        let yellowM = createPetalImage(label : "M", value : 0, bgcolor: .yellow, fgcolor: .black)
+        //11/13 add menu control
+        menuCube = SCNBox() //11/3 add dice box on top asdf
+        menuCube.firstMaterial?.emission.contents = yellowM
+        menuCube.firstMaterial?.diffuse.contents = yellowM
+        menuNode = SCNNode(geometry: menuCube)
+        menuNode.position = SCNVector3(0, sphereRad + 0.1,0)
+        menuNode.scale    = SCNVector3(bs,bs,bs)
+        menuNode.name = "menu_" + uid
+        self.addChildNode(menuNode)
+        
+        //11/11 add dice control asdf
+        diceCube = SCNBox() //11/3 add dice box on top
+        diceCube.firstMaterial?.emission.contents = UIImage(named: "bluedice")
+        diceCube.firstMaterial?.diffuse.contents = UIImage(named: "bluedice")
+        diceNode = SCNNode(geometry: diceCube)
+        diceNode.position = SCNVector3(0, sphereRad + 0.2,0)
+        diceNode.scale    = SCNVector3(bs,bs,bs)
+        diceNode.name = "dice_" + uid
+        self.addChildNode(diceNode)
+
         
         //10/11 add torii to indicate select status
         torus1 = SCNTorus(ringRadius: sphereRad+0.1, pipeRadius: pipeRad)
@@ -182,24 +204,21 @@ class SphereShape: SCNNode {
 
     
     //-----------(SphereShape)=============================================
-    // 9/2 add default support
+    // 11/7 add thumb fallthru, cleanup 11/15, redo logic
     func setBitmap (s : String)
     {
-        let tekture = UIImage(named: defaultTexture)
+        var tekture = UIImage()
         if s != "default" //non-default? try from cache!
         {
-            if let ctek = tc.texDict[s]
-            {
-                setBitmapImage(i:ctek)
-                return
-            }
-            else {
-                //print("error fetching texture \(s)")
-                setBitmapImage(i:createMTImage(name:s)) //5/11
-                return
-            }
+            if let ctek = tc.texDict[s]        {tekture = ctek}
+            else if let ctek = tc.thumbDict[s] {tekture = ctek} //11/7 try thumb!
+            else {tekture =  createMTImage(name:s)} //11 / 7 cleanup
         }
-        setBitmapImage(i:tekture!)
+        else if let ii =  tc.defaultTexture //handle default texture
+        {
+            tekture = ii
+        }
+        setBitmapImage(i:tekture)
     }
     
     //=====<oogie2D mainVC>====================================================
@@ -325,9 +344,10 @@ class SphereShape: SCNNode {
     {
         if let fm = sphere.firstMaterial
         {
-            let scale = SCNMatrix4MakeScale(xs, ys, 0)
+            let scale       = SCNMatrix4MakeScale(xs, ys, 0)
             let translation = SCNMatrix4MakeTranslation(xt, yt, 0)
-            let transform = SCNMatrix4Mult(scale,translation)
+            let transform   = SCNMatrix4Mult(scale,translation)
+            //11/16 MEMORY LEAK HERE TOO!!! OUCH!
             fm.diffuse.contentsTransform  = transform
             fm.emission.contentsTransform = transform
         }
@@ -343,5 +363,94 @@ class SphereShape: SCNNode {
 //        let repeatAction = SCNAction.repeatForever(action)
 //        shapeNode.runAction(repeatAction)
     }
+    
+    //-----------(ScalarShape)=============================================
+    func animateDiceSelect()
+    {
+        animateBoxSelect(sn:diceNode)
+    }
+    
+    //-----------(ScalarShape)=============================================
+    // 11/13 new
+    func animateMenuSelect()
+    {
+        animateBoxSelect(sn:menuNode)
+    }
+    
+    //-----------(ScalarShape)=============================================
+    // 11/13 rename
+    func animateBoxSelect(sn:SCNNode)
+    {
+        var zoom = 2.0
+        let scaleAction1 = SCNAction.scale(by: zoom, duration: 0.05)
+        let scaleAction2 = SCNAction.scale(by: 1.0 / zoom, duration: 0.8)
+        let sequence = SCNAction.sequence([scaleAction1, scaleAction2])
+        sn.runAction(sequence, completionHandler:nil)
+
+        zoom = zoom * 5.0  //bigger oom for torus
+        let scaleAction11 = SCNAction.scale(by: zoom, duration: 0.05)
+        let scaleAction12 = SCNAction.scale(by: 1.0 / zoom, duration: 0.8)
+        let sequence2 = SCNAction.sequence([scaleAction11, scaleAction12])
+        torusNode1.runAction(sequence2)
+        torusNode2.runAction(sequence2)
+    } //end animateBoxSelect
+
+    
+    //-------(Marker)-------------------------------------
+    // 11/13 copy in from marker for menu box...
+    public func createPetalImage(label : String, value : Int, bgcolor: UIColor, fgcolor: UIColor) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(isize, false, 1)
+        let context = UIGraphicsGetCurrentContext()!
+        
+        var rect = CGRect(origin: CGPoint.zero, size: isize)
+        //Fill bkgd
+        fgcolor.setFill()
+        context.setFillColor(bgcolor.cgColor); //11/13
+        context.fill(rect);
+        
+        let ihit = isize.height
+        let barhite = Int( CGFloat(value) * CGFloat(ihit) / 255.0)
+        context.setFillColor(fgcolor.cgColor);
+        rect = CGRect(x: 0, y: Int(ihit)-barhite, width: Int(ihit), height: barhite)
+        context.fill(rect);
+        
+        context.setFillColor(UIColor.white.cgColor);
+        for y in 0...4
+        {
+            let yy = y * Int(ihit-4) / 4
+            let lrect = CGRect(x: 0, y: yy, width: Int(ihit), height: 4)
+            context.fill(lrect);
+        }
+        
+        let thite = 160
+        let h2    = isize.height / 2
+        let wid   = isize.width
+        let textFont = UIFont(name: "Helvetica Bold", size: CGFloat(thite))!
+        let text_style=NSMutableParagraphStyle()
+        text_style.alignment=NSTextAlignment.center
+        
+        var xoff : CGFloat = 0
+        var yoff : CGFloat = 0
+        var textColor = UIColor.black
+        let xmargin : CGFloat = 300 //WTF why doesnt this stretch label?
+        for _ in 0...1
+        {
+            let textFontAttributes = [
+                NSAttributedString.Key.font: textFont,
+                NSAttributedString.Key.foregroundColor: textColor,
+                NSAttributedString.Key.paragraphStyle: text_style
+                ] as [NSAttributedString.Key : Any]
+            let trect =  CGRect(x: xoff - xmargin, y: yoff + h2-CGFloat(thite)/2.0, width: wid + 2*xmargin, height: CGFloat(thite))
+            label.draw(in: trect, withAttributes: textFontAttributes)
+            xoff = xoff - 8 //for top-level label, shifted up for shadow
+            yoff = yoff - 8
+            textColor = fgcolor
+        }
+
+        let resultImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        return resultImage
+    } //end createPetalImage
+
     
 }

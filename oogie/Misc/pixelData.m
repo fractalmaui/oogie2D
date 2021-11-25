@@ -11,7 +11,8 @@
 //  Created by Dave Scruton on 4/30/20.
 //  Copyright © 2020 fractallonomy. All rights reserved.
 //
-//  5/14 add freeImageBitmap 
+//  5/14 add freeImageBitmap
+//  11/16  fix memory leak in getImageBitmap
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
@@ -45,6 +46,7 @@
     CGColorSpaceRelease( colorSpace );
     CGContextClearRect( tcontext, CGRectMake( 0, 0, twidth, theight ) );
     CGContextDrawImage( tcontext, CGRectMake( 0, 0, twidth, theight ), i.CGImage );
+    CGContextRelease(tcontext); //11/16/21 wups, fix memory leak
 } //end getImageBitmap
 
 

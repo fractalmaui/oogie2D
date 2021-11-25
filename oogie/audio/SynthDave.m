@@ -61,6 +61,8 @@
 // 7/7      add getBufferChans, copyBufferOutResampled
 // 9/10     fix deprecations in loadSampleFromPath
 // 9/16     fix potential crash in getVibOffset
+// 10/27 256 tones at once now, better supports delay
+// 11/24    add new small envelopes, one per tone
 #import <QuartzCore/CABase.h>
 #import "SynthDave.h"
 #include "oogieMidiStubs.h"
@@ -91,6 +93,7 @@ double *workBuffer; //9/20
 
 #define SYNTH_TS 500.0  // was 1000 Converts percentage synth params to real-time...
 #define INV_SYNTH_TS 0.002
+#define INV_255 1.0/255.0
 #define ATTACK_RELEASE_MULT 3.0
 //several sets of 12-key lookup tables, used to convert
 //  chromatic musical input so it sounds "in tune"...
@@ -186,11 +189,6 @@ short *audioRecBuffer;
             sRates[loop]    = -1;
 			sBufChans[loop] = -1;
             sTuningOffsets[loop] = 0; //10/6/20 for GM tuning
-			sEnvs[loop]		= NULL;
-            sElen[loop]     = 0;
-            envIsUp[loop]   = 0;
-            envLength[loop]   = 0;
-            envDataLength[loop] = 0; //10/17
 		}
 		LOOPIT(MAX_TONE_EVENTS)tones[loop].state = STATE_INACTIVE;		
 
@@ -264,12 +262,12 @@ short *audioRecBuffer;
         free(sBufs[index]);
         sBufs[index] = NULL;
     }
-    if (sEnvs[index] != NULL)
-    {
-        free(sEnvs[index]);
-        sEnvs[index] = NULL;
-        sElen[index] = 0;
-    }
+//    if (sEnvs[index] != NULL)
+//    {
+//        free(sEnvs[index]);
+//        sEnvs[index] = NULL;
+//        sElen[index] = 0;
+//    }
 } //end freeSampleMemory
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
@@ -548,7 +546,6 @@ short *audioRecBuffer;
         sBufs[which] = NULL;
     }
     int totalFrames = sNumPackets * sChans;
-    //NSLog(@"BuildSample[%d] ...size %lu",which,sNumPackets * sChans * sizeof(float));
 	sBufs[which] = malloc(totalFrames * sizeof(float)); //DHS 10/6
 	if (!sBufs[which]) return;
     sBufLens[which] = totalFrames;
@@ -746,193 +743,110 @@ short *audioRecBuffer;
 } //end copyBuffer
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
-// 11/9 Destructive copy!
--(void) copyEnvelope : (int) from : (int) to
-{
-    copyingEnvelope = to;
-    //NSLog(@"copy envelope from %d to %d",from,to);
-    //Free mem if needed
-    if (sEnvs[to] != NULL)
-    {
-        free(sEnvs[to]);
-        sEnvs[to] = NULL;
-    }
-    int elen = envLength[from];
-    if (elen == 0)
-    {
-        NSLog(@" ERROR: copy empty envelope %d -> %d",from,to);
-        return;
-    }
-    sEnvs[to] = malloc(elen * sizeof(float));
-    if (!sEnvs[to])
-    {
-        NSLog(@" err nil to envelope %d",to);
-        return;
-    }
-    for (int i=0;i<elen;i++)
-    {
-        //if (i % 16 == 0) NSLog(@"...%f",sEnvs[from][i]);
-        sEnvs[to][i] = sEnvs[from][i];
-    }
-    envLength[to] = envLength[from];
-    //REDUNDANT?
-    envDataLength[to] = envDataLength[from];
-    
-    //NSLog(@" elen[%d] %d vs datalen %d",to,envLength[to] ,envDataLength[to] );
-    envIsUp[to]   = 1;
-    sElen[to] = sElen[from];
-    copyingEnvelope = -1;
-} //end copyEnvelope
-
-//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
-// 11/11: BUG: if decay is set to 0 then the sustain gets decay color!
-//      redid to pass segment back as negative indicator!
--(NSArray *) getEnvelopeForDisplay: (int) which : (int) size
-{
-    // 5/24 add nil check to sEnvs, but WHY!?!?!
-    if (sEnvs[which]==nil)
-    {
-        NSLog(@" ERROR! nil envelope, should never happen!");
-        return nil;
-    }
-    if (size < 2 || envLength[which] < 2 || sEnvs[which]==nil) return nil;
-    NSMutableArray *a = [[NSMutableArray alloc]init];
-    int optr = 0;
-    int op = 0;
-    int phase = 0;
-    int duhsize = attackLength + decayLength + sustainLength + releaseLength;
-    float bcf = (float)duhsize / (float)size;
-    for (int i=0;i<size;i++) //fill output
-    {
-        optr = (int)((float) i * bcf);
-        if (optr > attackLength) phase = 1;
-        if (optr > attackLength + decayLength) phase = 2;
-        if (optr > attackLength + decayLength+sustainLength) phase = 3;
-        float fff = sEnvs[which][optr];
-        if (phase != op)
-        {
-            fff = -1.0 * (float)phase; //Mark phase change
-        }
-        op = phase;
-        [a addObject:[NSNumber numberWithFloat: fff]];
-    }
-    return [NSArray arrayWithArray:a];
-} //end getEnvelopeForDisplay
-
-//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 - (void)buildEnvelope:(int)which : (BOOL) buildInPlace
 {
-    //DHS 10/17 avoid redundant calls:
-    if (!buildInPlace && envDataLength[which] > 0) return;
-    //NSLog(@"  buildEnvelope %d...",which);
+//        NSLog(@" TOP ADSR============= %f %f %f %f ",
+//              ATTACK_TIME,DECAY_TIME,SUSTAIN_TIME,RELEASE_TIME );
+    [self buildEnvelope256:which];
+}
 
-	// All envelopes are same length, with data from 0.0 to 1.0. 
-	//  Each synth voice will have a corresponding envelope? 
-	// Because lower tones last longer than higher tones, we will use a delta
-	// value to step through this table. MIDI note number 60? has delta = 1.0f.
-	float envsave;
-	int i,savei,esize;
-    //Get partial envelope lengths ...
-    attackLength  = (int)(ATTACK_RELEASE_MULT * ATTACK_TIME  * sampleRate);     // attack 5/19 add mult
-    decayLength   = (int)(DECAY_TIME   * sampleRate);                          // decay
-    sustainLength = (int)(SUSTAIN_TIME * sampleRate);                         // sustain
-    releaseLength = (int)(ATTACK_RELEASE_MULT * RELEASE_TIME * sampleRate);  // release 5/19 add mult
-    //DHS 11/16 zero envelope? BailL!
-    if ( (attackLength  == 0) && (decayLength   == 0) &&
-         (sustainLength == 0) && (releaseLength == 0) )
+
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+// 11/23 render ADSR to fixed buffer size, call it 256 for now.
+//     first pass renders to a 512 byte buffer...
+- (void)buildEnvelope256 : (int) which
+{
+    if ( (ATTACK_TIME  == 0) && (DECAY_TIME   == 0) && //empty? baiul!
+        (SUSTAIN_TIME == 0) && (RELEASE_TIME == 0) )  return;
+
+    //clear work
+    for (int i=0;i<256;i++) env256[i] = 0.0;
+    for (int i=0;i<512;i++) env512[i] = 0.0;
+    float pmult = 100.0;  //ADSR vals come in range 0..1 convert to 0..100 for time lengths
+
+    int s512 = 0; //  point to output buffer
+    float envStep = 1.0 / (ATTACK_TIME*pmult);
+    float envVal  = 0.0;
+    while (envVal < 1.0)    //OK go for attack...
     {
-       // NSLog(@"  ...allzero ENV %d...",which);
-        return;
+        env512[s512] = MIN(1.0,envVal);
+        envVal+=envStep;
+        s512++;
+        if (s512 > 511) {NSLog(@" ENV A OVERFLOW");return;} //should NEVER HAPPEN
     }
-    //envelope was in use? Clobber it!
-    if (sEnvs[which] != NULL && !buildInPlace)
+    envVal = 1.0; //prevent overshoot
+    envStep = (SUSTAIN_LEVEL - 1.0) / (DECAY_TIME*pmult); //time for decay
+    while (envVal > SUSTAIN_LEVEL) //should go down now?
     {
-        NSLog(@"  ...free env %d...",which);
-        free(sEnvs[which]);
-        sEnvs[which] = NULL;
+        env512[s512] = envVal;
+        envVal+=envStep;
+        s512++;
+        if (s512 > 511) {NSLog(@" ENV D OVERFLOW");return;} //should NEVER HAPPEN
     }
-    envLength[which] = (int)sampleRate * 8;  // 5/19 enlarge   2? seconds DHS MAKE IT BIG
-    envIsUp[which] = 1;
-    if (envLength[which] && (sEnvs[which] == NULL)) //Need to allocate?
-	{
-        //NSLog(@" malloc env [%d] size %d",which,envLength[which]);
-        esize = envLength[which]*sizeof(float);
-		sEnvs[which] = (float*)malloc(esize);
-		if (!sEnvs[which]) return;
-        sElen[which] = esize;
-	}
-    else if (!envLength[which]) {
-        //NSLog(@" error in buildEnvelope: zero env length, which %d",which);
-        return;
+    envVal = SUSTAIN_LEVEL; //just in case of overshoot...
+    for (int i=0;i<(int)(SUSTAIN_TIME*100.0);i++) //sustain is in percent...
+    {
+        env512[s512] = envVal;
+        s512++;
+        if (s512 > 511) {NSLog(@" ENV S OVERFLOW");return;} //should NEVER HAPPEN
     }
-    //NSLog(@"  build env %d len %d...",which,envLength[which]);
-	
-//	NSLog(@" TOP ADSR============= %d %d %d %d %f",
-//    		  attackLength,decayLength,sustainLength,releaseLength ,sampleRate);
-
-	if (attackLength < 1)
-	{		
-		i = 0;
-		envsave = 1.0;
-	}
-	else  
-	{
-		for (  i = 0; i < attackLength; i++)
-			{
-                if (i > sElen[which]) break;   //OUCH! Shouldn't happen
-				sEnvs[which][i] = (float)i / (float)attackLength;
-				//NSLog(@" ...Aenv[%d] %f",i,sEnvs[which][i]);
-			}
-		envsave = sEnvs[which][i-1]; //save last env level...
-	}
-	savei = i;
-	// NSLog(@" ...Denvtop[%d] %d %f %d %f %f",which,savei,envsave,decayLength,sampleRate,SUSTAIN_LEVEL);
-	for (  i = savei; i < (savei + decayLength); i++)
-		{
-            if (i > sElen[which]) break;   //OUCH! Shouldn't happen
-            sEnvs[which][i] = envsave - ((float)(1.0 - SUSTAIN_LEVEL) * (i-savei) / decayLength);
-            // NSLog(@" ...Denv[%d] %f",i,sEnvs[which][i]);
-		}
-
-	//Add token sustain chunk....
-	savei = i;
-	for (  i = savei; i < savei + sustainLength; i++)
-		{
-            if (i > sElen[which]) break;   //OUCH! Shouldn't happen
-            sEnvs[which][i] = SUSTAIN_LEVEL;
-            //NSLog(@" ...Senv[%d] %f",i,sEnvs[which][i]);
-		}
-	savei = i;
-    envsave = 0;
-    if (i > 0) //DHS 9/24 prevent crash on zero envelope params
-        envsave = sEnvs[which][i-1]; //save last env level...
-	for (int i = savei; i < savei + releaseLength; i++)
-		{
-            if (i > sElen[which]) break;   //OUCH! Shouldn't happen
-            sEnvs[which][i] = envsave - envsave*((float)(i-savei) / releaseLength);
-		}
+    envStep = -SUSTAIN_LEVEL / (RELEASE_TIME*pmult); //time for decay
+    while (envVal > 0.0) //finish our envelope
+    {
+        env512[s512] = MAX(0.0,envVal);
+        envVal+=envStep;
+        s512++;
+        if (s512 > 511) {NSLog(@" ENV R FAIL");return;} //should NEVER HAPPEN
+    }
+    //TEST for (int i=0;i<512;i++) NSLog(@" env512[%d] = %f",i,env512[i]);
     
-//    for (int i=0;i<savei + releaseLength;i+=(savei + releaseLength)/10)
-//    {
-//      NSLog(@" ...env[%d] %f",i,sEnvs[which][i]);
-//    }
-    //DHS WHY doesn't i already have the length here...???
-	envDataLength[which] = i + releaseLength; //asdf
-}  //end buildEnvelope
+    //nowwww fit everything to 256 range, resample
+    int totalEnvLength = s512;   // number between 0 and 512
+    
+    if (totalEnvLength < 256 && totalEnvLength > 1) //need to interpolate?
+    {
+        float ratio = 256.0 / (float)(totalEnvLength-1);
+        for (int i=0;i<256;i++)
+        {
+            int lili = (int)((float)i/ratio);
+            float fstep = 0.0;
+            if (lili < totalEnvLength-1) fstep = env512[lili+1] - env512[lili]; //stepsize between 2 items
+            
+            float fraction = (float)i - (float)lili * ratio; //get modulo
+            fraction = fraction / ratio; //scale to 0-1 range
+            env256[i] = env512[lili] + fraction*fstep;  //save result
+        }
+    }  //end < 256
+    else //no need for interpolate? just stretch data down to fit
+    {
+        float stretch = (float)totalEnvLength / 256.0;
+        for (int i=0;i<256;i++)
+        {
+            int p512 = MIN(511,(int)((float)i * stretch));
+            env256[i] = env512[p512];
+        }
+    }
+    
+    //this number, when divided into 100 yields max seconds for A/D/S/R components
+    double msa = 20.0;
+    //TEST  for (int i=0;i<256;i++) NSLog(@" env256[%d] = %f",i,env256[i]);
+    env256Step = 256.0 / (double)((totalEnvLength/msa) * 44100.0);  //10 is mas env time?
+}  //end buildEnvelope256
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 // 8/14/21
 -(void) dumpEnvelope: (int) which
 {
-    if (envDataLength == nil || sEnvs == nil || sEnvs[which] == nil) return;
-    if (envDataLength[which] == 0) return;
-    NSLog(@" dump envelope %d, length %d",which,envDataLength[which]);
-    int emax  = envDataLength[which];
-    int istep = envDataLength[which] / 256;
-    for (int i=0;i<emax;i+=istep)
-    {
-        NSLog(@"  [%6.6d] : %f",i,sEnvs[which][i]);
-    }
+    NSLog(@"OBSOLETE dumpEnvelope...");
+//    if (envDataLength == nil || sEnvs == nil || sEnvs[which] == nil) return;
+//    if (envDataLength[which] == 0) return;
+//    NSLog(@" dump envelope %d, length %d",which,envDataLength[which]);
+//    int emax  = envDataLength[which];
+//    int istep = envDataLength[which] / 256;
+//    for (int i=0;i<emax;i+=istep)
+//    {
+//        NSLog(@"  [%6.6d] : %f",i,sEnvs[which][i]);
+//    }
 }
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
@@ -1027,7 +941,11 @@ short *audioRecBuffer;
         n1--;
         if (n0 < 0) n0 = topn;   //handle backwards wrap!
         if (n1 < 0) n1 = topn;
-        if (n0 <= arpPlayPtr) return; //Cant go before play ptr! Bail!
+        if (n0 <= arpPlayPtr)
+        {
+            NSLog(@" ERROR:arp underflow...");
+            return; //Cant go before play ptr! Bail!
+        }
         shifted = TRUE;
         //NOte n0 points to where we will be saving data!
     }
@@ -1035,7 +953,7 @@ short *audioRecBuffer;
     arpQueue[n0][ARP_PARAM_TIME] = insertTime;
     arpTones[n0]                 = [self loadupToneFromSynth:midiNote :wnum :type]; //6/25 simplify
     arpPtr++; //shift or no shift, still update end ptr!
-    //NSLog(@" insert arp at %d",n0);
+    //NSLog(@" ...insert arp at %d note %d",n0,arpTones[n0].midiNote);
 } //end playNoteWithDelay
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
@@ -1051,6 +969,7 @@ short *audioRecBuffer;
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 // 6/25 used by playNote and playNoteWithDelay
+// 11/23 needs fresh envelope256!!!
 -(ToneEvent) loadupToneFromSynth : (int)midiNote :(int)wnum :(int)type
 {
     ToneEvent t;
@@ -1076,9 +995,16 @@ short *audioRecBuffer;
     t.envSustain = (int)(255.0*SUSTAIN_TIME);
     t.envRelease = (int)(255.0*RELEASE_TIME);
     t.envStep    = 0.0f;
-    t.envDelta   = midiNote / 64.0f;
+    //11/23 OLD  t.envDelta   = midiNote / 64.0f;
     t.waveNum    = wnum;
     t.toneType   = type;
+    
+    for (int i=0;i<256;i++)  //11/23 make private copy of envelope
+    {
+        t.envelope256[i] = env256[i];
+    }
+    t.envDelta = env256Step;  //11/23 this is a teeeensy number, goes from sample space -> 256 space
+
     //2/12/21 fine tuning...
     float pgain  = 1.0;
     if (pLevel < 50) //attenuate level by 2x
@@ -1290,6 +1216,7 @@ short *audioRecBuffer;
     {
         n=foundit;
         tones[n] = t;
+        //NSLog(@" playnote from tone, %d",t.midiNote);
         [self incrVoiceCount:n];
         if (midion)  //Send out MIDI...
         {
@@ -1300,178 +1227,6 @@ short *audioRecBuffer;
         }
     }
 } //end playNoteFromTone
-
-
-//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
-// DHS 11-9 need to change to support mono synth...
-- (void)oldplayNote:(int)midiNote :(int)wnum :(int)type
-{
-    int n,foundit=0;
-    newUnique++;
-//    if (infinite)
-//        NSLog(@"...play note %d, duration %4.2f type %d, buf %d , srate %d, blen %d dt %d  mono %d mlevel %f",
-//              midiNote,
-//              (float)(sBufLens[wnum]/2)/(float)sRates[wnum],
-//              type,wnum,sRates[wnum],sBufLens[wnum],detune,_mono,masterLevel);
-    if (sBufLens[wnum] <= 0)
-    {
-        NSLog(@" ERROR: buffer[%d] empty",wnum); //DHS 9/18 diagnostic, delete later    
-        return;
-    }
-    //DHS 11/22 does this work on non-pitch shifted samples???
-    // 4/29 perform fixed pitch shift to compensate for sample rate
-    //WTF? very counterintuitive: i was shifting notes DOWN for low samples rates,
-    //  but sounds were always too low.  Now I shift UP...
-    
-    //WHY O WHY do 11k samples cause such havoc? they should be shifted 2 octaves DOWN
-    //  when played but
-    if (sRates[wnum] == 11025)
-        midiNote -= 24; //24; //5/18 back to plus shift?  2  octave shift DOWN
-    else if (sRates[wnum] == 22050)
-        midiNote -= 12; //1 octave shift UP now?
-    else if (sRates[wnum] == 16000) //4/29
-        midiNote -= 21;  // 1.75 octave shift UP now?
-    else if (sRates[wnum] == 48000) //4/29
-        midiNote += 1; // one note UP
-    if (sRates[wnum] != DEFAULT_SAMPLE_RATE) detune = TRUE; //anything but 44.1khz we need to detune!
-    if (midiNote < 1 || midiNote > 255) return;
-    //uniqueVoiceCounter++;  //keep track of nth voice...
-    if (_mono) //ok mono means find old voice and stop it!
-    {   //hopefully this will find the correct voice.  
-        // if it doesn't work, we need UNIQUE voice ids! UGH!
-        // this could fail if we have TWO voices at the same
-        //  time w/ same patch and both are mono....???
-        for (int n = 0; n < MAX_TONE_EVENTS; ++n)
-            if ( tones[n].mono && tones[n].waveNum == wnum  )
-//                if ( tones[n].mono && tones[n].waveNum == wnum &&  tones[n].un == newUnique)
-            {
-//                NSLog(@" mono fadeout tone n %d wn %d un %d",n,tones[n].waveNum,tones[n].un);
-                //Ideally each tone could be put into 'release' state and 
-                //  then quietly die down (quickly too)??
-                tones[n].state = STATE_MONOFADEOUT;
-                if (midion) OMEndNote((ItemCount)1, tones[n].midiNote);
-            }
-    }
-    foundit = -1;
-	for (n = 0; n < MAX_TONE_EVENTS; ++n)
-	{ 	if (tones[n].state == STATE_INACTIVE)  // find an empty slot
-        {
-            foundit = n;
-            break;
-        }
-    }
-    if (foundit != -1)  //empty slot? Play that note!
-    {
-        n=foundit;
-        tones[n].toneType = type;
-        tones[n].state    = STATE_PRESSED;
-        //2/12/21 add fine tuning...  +/- 50 notes
-        midiNote += (pKeyOffset-50);
-        midiNote = MAX(0,MIN(128,midiNote)); //4/26 handle wild notes!!!
-        tones[n].midiNote = midiNote;
-        tones[n].phase    = 0.0f;
-        //2/12/21 still need to change pitch using pKeyDetune!!!
-        tones[n].pitch    = pitches[midiNote];
-        //NSLog(@".. note %d ,pitch %f   ",midiNote, pitches[midiNote]);
-        [self incrVoiceCount:n];
-        if (type == SAMPLE_VOICE || type == PERCUSSION_VOICE)
-        {
-            //8/1 sample offset for percussion AND samples now!
-            tones[n].phase    = (int)((float)SAMPLE_OFFSET * (float)sBufLens[wnum] /
-                                      (float)sBufChans[wnum]); //compute offset, NOTE #chans
-        }
-        tones[n].envStep  = 0.0f;
-        tones[n].envDelta = midiNote / 64.0f;
-        tones[n].waveNum  = wnum;	
-        tones[n].toneType = type;
-        //2/12/21 fine tuning...
-        float pgain = 1.0;
-        if (pLevel < 50) //attenuate level by 2x
-        {
-            pgain = MAX(0.5,0.5 + 0.5 * (float)pLevel/50.0);
-        }
-        else if (pLevel > 50) //increase level by 2x
-        {
-            pgain = MIN(2.0,1.0 + 0.5 * (float)pLevel/50.0);
-        }
-        tones[n].gain	  = _gain * pgain * finalMixGain;
-        tones[n].detune	  = detune;
-        tones[n].mono 	  = _mono;
-        tones[n].lpan     = glpan;	 //see setPan!
-        tones[n].rpan     = grpan;	 //see setPan!
-
-        tones[n].portamentoTime  = portamentoTime;
-        tones[n].timetrax = timetrax;
-        tones[n].infinite = 0;
-        //7/17 vibrato support
-        if (vibAmpl > 0 && vibSpeed > 0) //user enabled vibrato?
-        {
-            tones[n].vibEnabled = TRUE;
-            // 9/2 add exponential range to vib ampl / speed
-            tones[n].vibAmpl    = (int)powf(1.03,(float)vibAmpl);
-            tones[n].vibSpeed   = (int)powf(1.08,(float)vibSpeed);
-            tones[n].vibWave    = vibWave;
-            tones[n].vibDelay   = vibDelay;
-            tones[n].vibIndex   = 0.0;
-            tones[n].vibStep    = 0.3*tones[n].vibSpeed;  //9/2
-            //NSLog(@" play: viba/w/s/i/s %d %d %d %f",vibAmpl,vibWave,vibSpeed,tones[n].vibStep);
-        }
-        else tones[n].vibEnabled = FALSE;
-        //4/8 amplitude vibe support
-        if (vibeAmpl > 0 && vibeSpeed > 0) //user enabled vibrato?
-        {
-            tones[n].vibeEnabled = TRUE;
-            // 9/2 add exponential range to vib ampl / speed
-            tones[n].vibeAmpl    = (int)powf(1.03,(float)vibeAmpl);
-            tones[n].vibeSpeed   = (int)powf(1.08,(float)vibeSpeed);
-            tones[n].vibeWave    = vibeWave;
-            tones[n].vibeDelay   = vibeDelay;
-            tones[n].vibeIndex   = 0.0;
-            tones[n].vibeStep    = 0.3*tones[n].vibeSpeed;  //9/2
-            //NSLog(@" play: AMPLvib a/w/s/i/s %d %d %d %f",vibeAmpl,vibeWave,vibeSpeed,tones[n].vibeStep);
-        }
-        else tones[n].vibeEnabled = FALSE;
-
-        if (type == SYNTH_VOICE || type == SAMPLE_VOICE) //6/23 add samplevoice for loop support
-        {
-            tones[n].infinite = infinite;
-        }
-        //8/2 add percussion
-        BOOL needsEnvelope = (type == SYNTH_VOICE ||
-                              type == SAMPLE_VOICE ||
-                              type == PERCUSSION_VOICE);
-        //11/10 but for all zeroes, bail on envelope!
-        if (ATTACK_TIME  == 0.0 &&
-            DECAY_TIME   == 0.0 &&
-            SUSTAIN_TIME == 0.0 &&
-            RELEASE_TIME == 0.0) needsEnvelope = FALSE;
-        
-        tones[n].needsEnvelope = needsEnvelope;
-        tones[n].un       = newUnique;
-        if (portamentoTime != 0.0 && portamentoLastNote > 0)  //6/25 need portamento? do some math
-        {
-            tones[n].portamentoLastNote    = portamentoLastNote; // is this needed?
-            tones[n].portamentoTime        = portamentoTime;
-            // 6/23 NOTE portamento pitch step has to be VERY tiny, note 100 factor!
-            tones[n].portamentoPitchStep   = (tones[n].pitch - pitches[portamentoLastNote]) /
-                                                (500.0*portamentoTime);
-            tones[n].portamentoPitchFinish = tones[n].pitch;
-            tones[n].pitch                 = pitches[portamentoLastNote]; //start with LAST NOTE
-        }
-
-        //NSLog(@"  ...got played %d, wnum %d gain %f, fmg %f",midiNote,wnum,gain,finalMixGain);
-        if (midion)  //Send out MIDI...
-        {
-            int vel = (int)(444*_gain);
-            if (vel > 127) vel = 127;
-            OMSetDevice(midiDev);
-            OMPlayNote(midiChan, midiNote, vel );   
-        }
-      // [self dumpTone:n];
-    }
-        
-    //if (foundit == -1) NSLog(@" ...ran out of tone space! limit=%d",MAX_TONE_EVENTS);
-} //end playNote
 
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
@@ -1503,7 +1258,7 @@ short *audioRecBuffer;
         tones[n].pitch    = pitch;
         [self incrVoiceCount:n];
         tones[n].envStep    = 0.0f;
-        tones[n].envDelta   = 1.0f;  //This needs to be canned!!! Maybe NO envelope?
+        tones[n].envDelta   = 1.0;  //This needs to be canned!!! Maybe NO envelope?
         tones[n].waveNum  = wnum;
         tones[n].gain	          = _gain * finalMixGain;
         tones[n].detune	= 1;
@@ -1658,15 +1413,6 @@ short *audioRecBuffer;
 }
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
-// 5/24 checks envelope size (usually b4 a copy)
--(int) getEnvelopeSize : (int) which
-{
-    if (which < 0 || which >= MAX_SAMPLES) return 0;
-    if (sEnvs[which] == nil) return 0;
-    return sElen[which];
-} //end getEnvelopeSize
-
-//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 // 11/22 add srate to keep track of weird samples rates
 -(int) getSRate : (int) bptr
 {
@@ -1798,46 +1544,21 @@ short *audioRecBuffer;
             if (tones[n].toneType == SYNTH_VOICE || tones[n].needsEnvelope)
 			{
                 if (tones[n].infinite) envValue = 1.0;
-                else if (copyingEnvelope != wn) //11/9 don't access envelope on copy!
+                //11/23 new, reuse envStep to point to 0.255 range in tone envelope, and delta to step
+                else   //WOW WAY SIMPLER !!!
                 {
-                    a = (int)tones[n].envStep;   // integer part
-                    //DHS 3/29/21 KLUGE? saw a krash with both a and c negative!
-//                    if (a < 0)
-//                    {
-//                        NSLog(@" ERROR: negative index in fillBuffers! (should NEVER HAPPEN)");
-//                        a = 0;
-//                    }
-                    b = tones[n].envStep - a;  // decimal part
-                    c = a + 1;
-                    if (c >= envLength[wn])  // don't wrap around
-                        c = a;
-                    if (c > sElen[wn])
-                        //illegal envelope access!
-                    {
-                        //if (0) NSLog(@"Illegal Envelope access: eLen[%d] = %d, abc %d %d %d",wn,sElen[wn],a,b,c);
-                        //c = 0;
-                        envValue = 0.0;
-                    }
-                    else if (sEnvs[wn] != NULL) //DHS nov 27 add existance check for sEnvs
-                        //4/26 KRASH here, weird: tone[0] played, midiNote is -30 and envStep is -6773761
-                        //  WTF? how can we get negative env step, and why a negative MIDI note?
-                        envValue = (1.0f - b)*sEnvs[wn][a] + b*sEnvs[wn][c];
-                    else {
-                        envValue = 0.0;
-                    }
-                    // Get the next envelope value. If there are no more values,
-                    // then this tone is done ringing.
-                    tones[n].envStep += tones[n].envDelta;
-                    if (((int)tones[n].envStep) >= envDataLength[wn]  )
+                    int i255 = MIN(255,tones[n].envStep*tones[n].envDelta);
+                    envValue = tones[n].envelope256[i255];
+                    tones[n].envStep = tones[n].envStep + 1.0; //one step per frame
+                    if ( i255 >= 255  ) //hit end of shortie envelope
                     {
                         tones[n].state   = STATE_INACTIVE;
                         tones[n].waveNum = -1;
+                        envValue = 0.0;
                         if (midion) OMEndNote((ItemCount)1, tones[n].midiNote);
                         [self decrVoiceCount:n];
                         continue;
                     }
-//                    NSLog(@"wnum %d  a/b/c is %d/%f/%d rawEnv %f elen %d -> value %f",
-//                          wn,a,b,c,sEnvs[wn][a],envLength[wn],envValue);
                 }
 			}  //end synth/sample voice
 			else  //Percussion/Sample voice? We won't apply envelope
@@ -2240,53 +1961,65 @@ short *audioRecBuffer;
 }
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
-- (float)getADSR: (int)which : (int)where 
-{
-	// if (where % 32 == 0) NSLog(@" getADSR %d  %d ",which,where);
-	if (!envIsUp[which]) return -1.0;
-	if (where >= envLength[which]) return -2.0;
-	return sEnvs[which][where];
-}
-//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
-- (int)getEnvDataLen:(int)which  
-{
-	if (!envIsUp[which]) return 0.0;
-	return envDataLength[which];
-}
-
-//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+// 11/23/21 new ADSR, assume input is 0...256, convert to 0...1 floating point
 - (void)setAttack: (int)newVal 
 {
- 	//take our percent val, turn it into our attack val (0 - .1)!!!
- 	ATTACK_TIME = (float) ATTACK_RELEASE_MULT*newVal*INV_SYNTH_TS; //5/19 3x longer attack/release
+ 	ATTACK_TIME = (float) newVal*INV_255; //convert to 0...1.0
 }
-
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 - (void)setDecay: (int)newVal 
 {
- 	//take our percent val, turn it into our decay val (0 - .1)!!!
- 	DECAY_TIME = (float) newVal*INV_SYNTH_TS;  //5/19 change coeef
+    DECAY_TIME = (float) newVal*INV_255; //convert to 0...1.0
 }
-
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 - (void)setSustain: (int)newVal 
 {
- 	//take our percent val, turn it into our sustain val (0 - .1)!!!
- 	SUSTAIN_TIME = 5.0 * (float) newVal*INV_SYNTH_TS; //5/19 change coeef
+    SUSTAIN_TIME = (float) newVal*INV_255; //convert to 0...1.0
 }
-
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 - (void)setSustainL: (int)newVal 
 {
- 	//take our percent val, turn it into our sustain level (DIFFERENT: 0 - 1)!!!
- 	SUSTAIN_LEVEL = (float) newVal/100.0;
+    SUSTAIN_LEVEL = (float) newVal*INV_255; //convert to 0...1.0
 }
-
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 - (void)setRelease: (int)newVal 
 {
- 	//take our percent val, turn it into our release val (0 - .1)!!!
- 	RELEASE_TIME = (float) ATTACK_RELEASE_MULT*newVal*INV_SYNTH_TS; //5/19 3x longer attack/release
+    RELEASE_TIME = (float) newVal*INV_255; //convert to 0...1.0
+}
+
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+- (void)OLDsetAttack: (int)newVal
+{
+     //take our percent val, turn it into our attack val (0 - .1)!!!
+     ATTACK_TIME = (float) ATTACK_RELEASE_MULT*newVal*INV_SYNTH_TS; //5/19 3x longer attack/release
+}
+
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+- (void)OLDsetDecay: (int)newVal
+{
+     //take our percent val, turn it into our decay val (0 - .1)!!!
+     DECAY_TIME = (float) newVal*INV_SYNTH_TS;  //5/19 change coeef
+}
+
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+- (void)OLDsetSustain: (int)newVal
+{
+     //take our percent val, turn it into our sustain val (0 - .1)!!!
+     SUSTAIN_TIME = 5.0 * (float) newVal*INV_SYNTH_TS; //5/19 change coeef
+}
+
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+- (void)OLDsetSustainL: (int)newVal
+{
+     //take our percent val, turn it into our sustain level (DIFFERENT: 0 - 1)!!!
+     SUSTAIN_LEVEL = (float) newVal/100.0;
+}
+
+//------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
+- (void)OLDsetRelease: (int)newVal
+{
+     //take our percent val, turn it into our release val (0 - .1)!!!
+     RELEASE_TIME = (float) ATTACK_RELEASE_MULT*newVal*INV_SYNTH_TS; //5/19 3x longer attack/release
 }
 
 
@@ -2762,7 +2495,7 @@ double drand(double lo_range,double hi_range )
     UInt32 sizePerPacket = audioFormat.mBytesPerPacket; // = sizeof(Float32) = 32bytes
     UInt32 packetsPerBuffer = numSamples;
     UInt32 outputBufferSize = packetsPerBuffer * sizePerPacket;
-    
+
     // So the lvalue of outputBuffer is the memory location where we have reserved space
     UInt8 *outputBuffer = (UInt8 *)malloc(sizeof(UInt8 *) * outputBufferSize);
     

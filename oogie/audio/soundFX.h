@@ -9,7 +9,7 @@
 //  soundFX: encapsulates synth and audio buffer objects...
 //  Created by dave scruton on 3/2/16
 //  Copyright (C) fractallonomy, Inc. All rights reserved.
-//
+//  11/25 remove old envelope crap
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
@@ -65,7 +65,6 @@
 -(NSMutableDictionary*) loadGeneralMidiNames;
 -(void) copyBuffer : (int) from : (int) to : (BOOL) clear;
 -(void) copyBufferOutResampled : (int) bnum : (int)fsize : (float*) fbuf;
--(void) copyEnvelope : (int) from : (int) to;
 - (void)cleanupBuffersAbove:(int)index;
 
 - (void) dumpBuffer : (int) which : (int) dsize;
@@ -78,8 +77,6 @@
 -(int) getSampleRate : (NSString*)name : (int) type;
 -(void) glintmusic : (int) whichizzit : (int) psx;
 -(NSString*) getGMName : (int) buffer;
--(NSArray *) getEnvelopeForDisplay: (int) which : (int) size;
--(int) getEnvelopeSize : (int) which;
 -(int) getPercussionTriggerKey : (NSString *)name;
 -(int) getPercussionBuffer     : (NSString *)name;
 -(int) getGMBuffer     : (NSString *)name;
