@@ -17,23 +17,12 @@
 //  10/21 add delete button
 // 10/29 close KB if panel closes, see lastSelectedTextField
 // 10/30 add shouldChangeCharactersInRange delegate callback
-
+// 11/29 cosmetic, add bottom bevel panel
+// 12/6  add delay slider
+// 12/15 pull which from didSetPipeValue delegate method
 #import "pipePanel.h"
 
 @implementation pipePanel
-
-#define NORMAL_CONTROLS
-#define GOT_DIGITALDELAY
-
-double drand(double lo_range,double hi_range );
-
-//for analytics use: simple 3 letter keys for all controls
-//  first char indicates UI, then 2 letters for control
-// sliders are grouped: 3 at top, then a picker, then four more.
-/// 9/12 do i need padding after SRO???
-//NSString *pisliderKeys[] = {@"ILR",@"IHR"};
-//NSString *pipickerKeys[] = {@"IIC",@"IOP"};
-//
 
 //======(pipePanel)==========================================
 - (id)init 
@@ -41,8 +30,6 @@ double drand(double lo_range,double hi_range );
     self = [super initWithFrame:CGRectZero];
     if (self) {
         goog = [genOogie sharedInstance];
-        //8/3 flurry analytics
-        //8/11 FIX fanal = [flurryAnalytics sharedInstance];
         allParams      = nil; // 10/1 new data structs
         sliderNames    = nil;
         pickerNames    = nil;
@@ -67,8 +54,8 @@ double drand(double lo_range,double hi_range );
 {
     if (allParams != nil) return; //only go thru once!
     //NSLog(@" setup canned pipe Param data...");
-    allParams      = @[@"inputchannel",@"outputparam",@"lorange",@"hirange",@"invert",@"name",@"comment"];
-    sliderNames    = @[@"LoRange",@"HiRange"];
+    allParams      = @[@"inputchannel",@"outputparam",@"lorange",@"hirange",@"invert",@"delay",@"name",@"comment"];
+    sliderNames    = @[@"LoRange",@"HiRange",@"Delay"];
     pickerNames    = @[@"InputChannel",@"OutputParam",@"Invert"];
     textFieldNames = @[@"Name",@"Comments"];
     
@@ -164,8 +151,6 @@ double drand(double lo_range,double hi_range );
     [dismissButton addTarget:self action:@selector(dismissSelect:) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:dismissButton];
 
-    int panelSkip = 5; //Space between panels
-
     // 9/24 HEADER, top buttons and title info
     xi = OOG_XMARGIN;
     yi = 30;
@@ -253,7 +238,15 @@ double drand(double lo_range,double hi_range );
     xi = OOG_XMARGIN;
     yi = 60 + OOG_SLIDER_HIT;
     xs = viewWid-2*OOG_XMARGIN;
-    ys = 8*OOG_SLIDER_HIT + 3*OOG_TEXT_HIT + 2*OOG_PICKER_HIT + 2*OOG_YMARGIN;
+    ys = 9*OOG_SLIDER_HIT + 3*OOG_TEXT_HIT + 2*OOG_PICKER_HIT + 2*OOG_YMARGIN;
+    //11/29 add rounded panel beneath our last panel , cosmetic
+    UIView *bevelPanel = [[UIView alloc] init]; //name / comments panel...
+    [bevelPanel setFrame : CGRectMake(xi,yi+20,xs,ys)]; //asdf
+    bevelPanel.backgroundColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1];
+    bevelPanel.layer.cornerRadius = 20;
+    bevelPanel.clipsToBounds      = TRUE;
+    [scrollView addSubview:bevelPanel];
+    //this is the panel controls are added to
     UIView *sPanel = [[UIView alloc] init];
     [sPanel setFrame : CGRectMake(xi,yi,xs,ys)];
     sPanel.backgroundColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1];
@@ -296,6 +289,11 @@ double drand(double lo_range,double hi_range );
     yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
     iPicker++;
     iParam++;
+    // 12/6 delay slider
+    [self addSliderRow:sPanel : iSlider : SLIDER_BASE_TAG + iParam : sliderNames[iSlider] : yi : OOG_SLIDER_HIT:0.0:1.0];
+    yi += (OOG_SLIDER_HIT+OOG_YSPACER);
+    iSlider++;
+    iParam++;
 
     // 2 text entry fields... name / comment 9/20 fix yoffset bug
     yi += (OOG_TEXT_HIT+OOG_YSPACER);
@@ -318,24 +316,12 @@ double drand(double lo_range,double hi_range );
     [self addSubview:vLabel];
 
     //Scrolling area...
-    int scrollHit = 699; //  11/13 add room at bottom
+    int scrollHit = 650; //  11/29 shrink a bit
     //if (cappDelegate.gotIPad) scrollHit+=120; //3/27 ipad needs a bit more room
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
-    [self clearAnalytics];
 
 } //end setupView
 
-//======(pipePanel)==========================================
-//9/9 for session analytics
--(void) clearAnalytics
-{
-//    //8/3 for session analytics: count activities
-//    diceRolls = 0; //9/9 for analytics
-//    resets    = 0; //9/9 for analytics
-//    for (int i=0;i<MAX_PIPE_SLIDERS;i++) sChanges[i] = 0;
-//    for (int i=0;i<MAX_PIPE_PICKERS;i++) pChanges[i] = 0;
-}
- 
 //======(pipePanel)==========================================
 // 9/7 ignore slider moves!
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
@@ -460,7 +446,6 @@ double drand(double lo_range,double hi_range );
 //======(pipePanel)==========================================
 -(void) configureView
 {
-    //NSLog(@" reload picker 1...");
     [allPickers[1] reloadAllComponents]; //load pipe outputs, they may change over time
     NSString *s = @"no name"; //get voice name for title
     NSArray *a  = [_paramDict objectForKey:@"name"]; //extract the pipe name...
@@ -503,7 +488,7 @@ double drand(double lo_range,double hi_range );
         NSNumber *nt = ra[0];
         NSNumber *nv = ra[1];
         NSString *ns = ra[2];
-        [self.delegate didSetPipeValue : nt.intValue : nv.floatValue:key:ns:FALSE];
+        [self.delegate didSetPipeValue :  nv.floatValue:key:ns:FALSE]; //12/15
     }
 } //end sendUpdatedParamsToParent
 
@@ -525,7 +510,6 @@ double drand(double lo_range,double hi_range );
 } //end randomizeParams
 
 //======(pipePanel)==========================================
-// 8/3 update session analytics here..
 -(void)sliderStoppedDragging:(id)sender
 {
     [self updateSliderAndDelegateValue : sender : FALSE]; //9/23
@@ -546,7 +530,7 @@ double drand(double lo_range,double hi_range );
     int tagMinusBase = ((int)slider.tag % 1000); // 7/11 new name
     float value = slider.value;
     NSString *name = dice ? @"" : allParams[tagMinusBase];
-    [self.delegate didSetPipeValue:tagMinusBase:value:allParams[tagMinusBase]:name:TRUE];
+    [self.delegate didSetPipeValue: value:allParams[tagMinusBase]:name:TRUE];  //12/15
 } //end updateSliderAndDelegateValue
 
 
@@ -624,34 +608,6 @@ double drand(double lo_range,double hi_range );
     resettingNow       = FALSE;
 } //end resetControls
 
-//======(pipePanel)==========================================
-//8/3
--(void)updateSessionAnalytics
-{
-    //NSLog(@" duh collected analytics for flurry");
-//    for (int i=0;i<MAX_CONTROL_SLIDERS;i++)
-//    {
-//        if (sChanges[i] > 0) //report changes to analytics
-//        {
-//            //NSLog(@" slider[%d] %d",i,sChanges[i]);
-//            //NSString *sname = pisliderKeys[i];
-//            //8/11 FIX[fanal updateSliderCount:sname:sChanges[i]];
-//        }
-//    }
-//    for (int i=0;i<MAX_CONTROL_PICKERS;i++)
-//    {
-//        if (pChanges[i] > 0) //report changes to analytics
-//        {
-//            //NSLog(@" picker[%d] %d",i,pChanges[i]);
-//            //NSString *pname = pipickerKeys[i];
-//            //8/11 FIX[fanal updatePickerCount:pname:pChanges[i]];
-//        }
-//    }
-//    //8/11 FIX[fanal updateDiceCount : @"LDI" : diceRolls]; //9/9
-//    //8/11 FIX [fanal updateMiscCount : @"LRE" : resets]; //9/9
-//    [self clearAnalytics]; //9/9 clear for next session
-
-} //end updateSessionAnalytics
 
 //======(pipePanel)==========================================
 - (NSString *)getPickerTitleForTagAndRow : (int)tag : (int)row
@@ -682,12 +638,14 @@ double drand(double lo_range,double hi_range );
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
     int liltag = (int)pickerView.tag % 1000;
     BOOL undoable = !rollingDiceNow && !resettingNow;
+    NSString* fieldName = @""; //12/15 simplify
     if (liltag == 0)
-        [self.delegate didSetPipeValue:liltag :(float)row: allParams[liltag] : inputChanParams[row]: undoable];
+        fieldName = inputChanParams[row];
     else if (liltag == 1)
-        [self.delegate didSetPipeValue:liltag :(float)row: allParams[liltag] :_outputNames[row]: undoable];
+        fieldName = _outputNames[row];
     else if (liltag == 4) // 10/5 invert picker
-        [self.delegate didSetPipeValue:liltag :(float)row: allParams[liltag] :invertParams[row]: undoable];
+        fieldName = invertParams[row];
+    [self.delegate didSetPipeValue: (float)row: allParams[liltag] :fieldName: undoable]; //12/15
 }
 
 
@@ -776,7 +734,7 @@ double drand(double lo_range,double hi_range );
     [textField resignFirstResponder]; //Close keyboard
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
-    [self.delegate didSetPipeValue:liltag :0.0: allParams[liltag] : s : FALSE];   //9/20
+    [self.delegate didSetPipeValue: 0.0: allParams[liltag] : s : FALSE];   //12/15
     // 9/21 take care of name update at top of menu
     if ([allParams[liltag] isEqualToString:@"name"]) titleLabel.text = s;
     return YES;

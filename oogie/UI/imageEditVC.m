@@ -15,6 +15,8 @@
 //  https://sodocumentation.net/ios/topic/1409/uiimage
 //  simple image editor, for changing rgb channels / brightness/contrast/hue
 //  11/16/21  fix memory leak in processChannels, flipChannels,getImageFromData
+//  12/16 change brightness default
+//  12/21 add reset
 
 #import "imageEditVC.h"
 
@@ -28,15 +30,16 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
-    
-    
     coreImage = [[CIImage alloc] init];
-
-//    _image2edit = [UIImage imageNamed:@"snow-in-tokyo.jpg"];
     int xmargin = 20;
     float borderWid = 5.0f;
     UIColor *borderColor = [UIColor whiteColor];
     
+    _resetButton.layer.cornerRadius = xmargin;
+    _resetButton.clipsToBounds      = TRUE;
+    _resetButton.layer.borderWidth  = borderWid;
+    _resetButton.layer.borderColor  = [UIColor redColor].CGColor;
+
     _cancelButton.layer.cornerRadius = xmargin;
     _cancelButton.clipsToBounds      = TRUE;
     _cancelButton.layer.borderWidth  = borderWid;
@@ -52,14 +55,22 @@
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
-    vBrightness = 0.5;
-    vContrast   = 1.0;
-    vSaturation = 1.0;
-    vRed = vGreen = vBlue = 1.0;
+    [self clearSettings];
     changed     = FALSE;
     [self allocateBuffersForImage : _image2edit];
 
     [self configureControls];
+}
+
+//----(imageEditVC)------------------------------------------------------------
+//12/21 clear edit vars
+-(void) clearSettings
+{
+    vBrightness = 0.0;   //12/16 brightness range is -1.0 ... 1.0
+    vContrast   = 1.0;   //      contrast is          0.0 ... 1.0   or 2?
+    vSaturation = 1.0;   //      saturation           0.0 ... 1.0
+    vRed = vGreen = vBlue = 1.0;
+
 }
  
 //----(imageEditVC)------------------------------------------------------------
@@ -71,7 +82,6 @@
 //----(imageEditVC)------------------------------------------------------------
 -(void) configureControls
 {
-    
     _brightnessSlider.value = 0.5;
     _contrastSlider.value   = 0.5;
     _saturationSlider.value = 1.0;
@@ -82,36 +92,33 @@
     [_bgSwitch setOn:FALSE];
     [_rbSwitch setOn:FALSE];
     _workImage.image = _image2edit; //start w/ input
-    
-    
 }
 
+//----(imageEditVC)------------------------------------------------------------
+// 12/21 new
+- (IBAction)resetSelect:(id)sender {
+    [self clearSettings];
+    [self configureControls];
+    [self processImageAndUpdate];
+}
 
 //----(imageEditVC)------------------------------------------------------------
 - (IBAction)okSelect:(id)sender {
-    if (changed)
-    {
-        UIImage *ii = _editedImage;
-        [self.delegate didEditImage : _editedImage];
-    }
+    if (changed) [self.delegate didEditImage : _editedImage];  //12/16
     [self dismissVC];
 }
 
 //----(imageEditVC)------------------------------------------------------------
 - (IBAction)cancelSelect:(id)sender {
     [self dismissVC];
-
 }
-
 
 //----(imageEditVC)------------------------------------------------------------
 -(void) dismissVC
 {
-//    [self clearAllPlayRows]; //5/12 make sure nothing left playing!
     //this starts up audio again and lets mainVC know if something was changed
     [self freeImageBuffers]; //11/16
     _isUp = FALSE; //8/21
-//    [self.delegate didDismissSamplesVC:changed];
     [self dismissViewControllerAnimated : YES completion:nil];
 }
 
@@ -203,16 +210,17 @@
     _editedImage = tempImage;
     self->_workImage.image = tempImage;
     processing = FALSE;
-}
+} //end processImageAndUpdate
 
 
 //----(imageEditVC)------------------------------------------------------------
+// Does it matter in which order the filters are applied?
 -(UIImage*) changeBrightnessContrastSaturation : (UIImage*)inputImage
 {
     coreImage = [coreImage initWithImage:inputImage];
     float cont_intensity  = self->vContrast; //was  1.1f;
     float sat_intensity   = self->vSaturation; //was 1.15f;
-    float brit_intensity   = self->vBrightness;
+    float brit_intensity  = self->vBrightness;
     NSNumber *workNumBrit = [NSNumber numberWithFloat:brit_intensity];
     NSNumber *workNumCont = [NSNumber numberWithFloat:cont_intensity];
     NSNumber *workNumSat  = [NSNumber numberWithFloat:sat_intensity];
@@ -228,8 +236,6 @@
     UIImage *result = [UIImage imageWithCGImage:cgimage scale:0 orientation:[self->_image2edit imageOrientation]];
     CGImageRelease(cgimage);  //1/1/20 warning about CGColorSpaceRef memory leak??
     return result;
-    
-    
 } //end changeBrightnessContrastSaturation
 
 

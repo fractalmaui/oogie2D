@@ -13,6 +13,7 @@
 //  Copyright © 2019 fractallonomy. All rights reserved.
 //  Params for oogieScalar objects: a scalar generates a numeric control signal
 //   for other objects, much like a pipe but only upon user interaction
+//  12/17 add scalar value
 
 import Foundation
 import SceneKit
@@ -29,11 +30,13 @@ import SceneKit
     let ZParams              : [Any] = ["ZPos" , "double", -maxMeters , maxMeters , 0.0, 10.0, -5.0 ]
     let ScalarLoRangeParams  : [Any] = ["LoRange" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ] //10/17 redo ranges
     let ScalarHiRangeParams  : [Any] = ["HiRange" , "double", 0.0 , 1.0 , 1.0, 1.0, 0.0 ]
+    let ScalarValueParams    : [Any] = ["Value"   , "double", 0.0 , 1.0 , 0.5, 1.0, 0.0 ] //12/17
     let InvertParams         : [Any] = ["Invert",  "string","off","on"]
     let ScalarNameParams     : [Any] = ["Name",         "text", "mt"]
     let ScalarCommParams     : [Any] = ["Comment",      "text", "mt"]
-    // This is an array of all parameter names...
-    let scalarParamNames     : [String] = ["OutputParam","LoRange","HiRange","Name","Comment"]
+    // This is an array of all parameter names that can appear in menus...
+    //  12/23 add xyzpos,invert
+    let scalarParamNames     : [String] = ["OutputParam","XPos","YPos","ZPos","LoRange","HiRange","Invert","Name","Comment"]
 
     var scalarParamsDictionary = Dictionary<String, [Any]>()
 
@@ -53,6 +56,7 @@ import SceneKit
         scalarParamsDictionary["zpos"]         = ZParams
         scalarParamsDictionary["lorange"]      = ScalarLoRangeParams
         scalarParamsDictionary["hirange"]      = ScalarHiRangeParams
+        scalarParamsDictionary["value"]        = ScalarValueParams //12/17
         scalarParamsDictionary["invert"]       = InvertParams
         scalarParamsDictionary["name"]         = ScalarNameParams
         scalarParamsDictionary["comment"]      = ScalarCommParams

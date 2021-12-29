@@ -13,19 +13,17 @@
 //  Copyright © 1990 - 2021 fractallonomy, inc. All Rights Reserved.
 //
 //  10/23/21 copy fresh from oogieCam, pull all appDelegate refs for now
-
+//  11/26    add turnPlayButtonOnOff convenience, add to stop command
+//           hook up rename again
+//  12/16 add new header view w logo
 #import "samplesVC.h"
-//#import "AppDelegate.h" //KEEP this OUT of viewController.h!!
-
 
 @implementation samplesVC
-//AppDelegate *sappDelegate;
 
 //======(samplesVC)==========================================
 - (instancetype)init
 {
     self = [super init];
-//    sappDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
     [self initAllVars];
 
     return self;
@@ -33,6 +31,7 @@
 
 -(void) initAllVars
 {
+    if (fileDict != nil) return; //11/25 dont double ini!
     rawFileNames = [[NSMutableArray alloc] init];
     playing       = [[NSMutableArray alloc] init];
     fileDict      = [[NSMutableDictionary alloc] init];
@@ -60,25 +59,49 @@
     self.view.backgroundColor = [UIColor blackColor];
     
     int xs,ys,xi,yi;
-    yi = 0;
-    yi += 32; //10/23 just account for top notch for now...
-//    if (sappDelegate.hasTopNotch) yi += 32; //watch out for top notch
+    
+    // 12/16 add new header view w logo
+    xi = 3;
+    yi = 30;
+    ys = 60; //account for slot!
     xs = viewWid;
+    UIView *header = [[UIView alloc] init];
+    [header setFrame : CGRectMake(xi,yi,xs,ys)];
+    header.backgroundColor = [UIColor colorWithRed:0.41 green:0.41 blue:0.41 alpha:1];
+    [[self view] addSubview:header];
+    
+    //oogie gradient, deep purple
+    CAGradientLayer *g = [CAGradientLayer layer];
+    g.frame = header.bounds;
+    UIColor *deepPurple = [UIColor colorWithRed:0.2 green:0.0 blue:0.4 alpha:1]; //[UIColor blackColor].CGColor
+    UIColor *blackColor = [UIColor blackColor];
+    g.colors = @[ (id)blackColor.CGColor,(id)deepPurple.CGColor ];
+    [header.layer insertSublayer:g atIndex:0];
+    
+    xi = 10;
+    yi = 0;
+    xs = 240;
     ys = 40;
-    xi = viewWid * 0.5 - xs*0.5;;
-    titleLabel = [[UILabel alloc] initWithFrame:
-                  CGRectMake(xi, yi, xs , ys)];
-    //7/14 redo look
-    [titleLabel setFont: [UIFont systemFontOfSize:28 weight:UIFontWeightBold]];
+    titleLabel = [[UILabel alloc] initWithFrame:  CGRectMake(xi, yi, xs , ys)];
+    [titleLabel setFont: [UIFont systemFontOfSize:28 weight:UIFontWeightHeavy]];
     [titleLabel setTextColor:[UIColor whiteColor]];
-    [titleLabel setBackgroundColor:[UIColor blackColor]];
+    [titleLabel setBackgroundColor:[UIColor clearColor]];
     [titleLabel setText:@"Sample Manager"];
     titleLabel.textAlignment = NSTextAlignmentCenter;
-    [[self view] addSubview:titleLabel];
-
+    [header addSubview:titleLabel];
+    
+    xs = 80; //12/16 logo loox wide at 100, try 80
+    ys = 60;
+    xi = viewWid - xs - 20;   //20 is outer margin
+    yi = 0;
+    UIImageView*logoImage = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"oogieLogo"]];
+    [logoImage setFrame:CGRectMake(xi,yi,xs,ys)];
+    [header addSubview:logoImage];
+    
+    //footer and buttons
     int footerHit = buttonHit;
-
-    yi += ys; //skip down below title
+    xi = 0; //12/25 WUPS
+    yi = 90; //skip down below header
     xs = viewWid;
     ys = viewHit - yi - footerHit; //4/26 better fit
     ys -= 32; //10/23 just account for top notch for now...
@@ -140,7 +163,7 @@
     [bottomInfoLabel setFont:[UIFont fontWithName:@"AvenirNext-Bold" size:(int)12]];
     [bottomInfoLabel setTextColor:[UIColor colorWithRed: 0.5 green: .9 blue:.9 alpha: 1.0f]];
     [bottomInfoLabel setBackgroundColor:[UIColor clearColor]];
-    [bottomInfoLabel setText:@"Samples can be found in the Files App\n  under oogieCam/samples"];
+    [bottomInfoLabel setText:@"Samples can be found in the Files App\n  under oogie/samples"];
     [bottomInfoLabel setNumberOfLines : 0];
     bottomInfoLabel.textAlignment = NSTextAlignmentLeft;
     [footer addSubview:bottomInfoLabel];
@@ -276,7 +299,7 @@ int tval = 320;
                                 message:@"The User Samples folder is empty...\nTo add new Samples you can either\nrecord live oogieCam samples\n or import WAV files from Documents\nusing the Files App.\nNext, these samples here form the UserSamples SoundPack"
                                 preferredStyle:UIAlertControllerStyleAlert];
     [alert setValue:tatString forKey:@"attributedTitle"];
-    alert.view.tintColor = [UIColor blackColor]; //lightText, works in darkmode
+    //12/19 test for dark mode    alert.view.tintColor = [UIColor blackColor]; //lightText, works in darkmode
 
     [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"OK",nil)
                                               style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
@@ -316,7 +339,7 @@ int tval = 320;
     [alert setValue:tatString forKey:@"attributedTitle"];
     
     
-    alert.view.tintColor = [UIColor blackColor]; //lightText, works in darkmode
+    //12/19 test for dark mode    alert.view.tintColor = [UIColor blackColor]; //lightText, works in darkmode
     [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"Rename",nil)
                                               style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
         [self clearAllPlayRows]; //4/5 stop all play on rename
@@ -329,20 +352,22 @@ int tval = 320;
         [self markSampleFileForDeletion: row];
         self->changed = TRUE; //7/13
     }]];
-    
-    [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"Play",nil)
-                                              style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-        NSString *sname = self->fileNamesNoNumberSigns[row];
-        NSIndexPath *ip = [NSIndexPath indexPathForRow:row inSection:0];
-        sampleCell *scell = [self->table cellForRowAtIndexPath:ip];
-        NSLog(@" hide pb %d",row);
-        [scell setPlayButtonHidden:TRUE]; //Hide cells play button!
-        [self playUserSample:sname];
-    }]];
+    NSNumber *nn = [NSNumber numberWithInt:row];
+    if (![playing containsObject:nn]) //dont put up redundant play!
+    {
+        [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"Play",nil)
+                                                  style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
+            NSString *sname = self->fileNamesNoNumberSigns[row];
+            [self turnPlayButtonOnOff : row  : true]; //11/26 turn onn
+            [self playUserSample:sname];
+        }]];
+    }
     if (samplesPlaying > 0) //1/31/21 add stop option
     {
         [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"Stop Play",nil)
                                                   style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
+            //NSString *sname = self->fileNamesNoNumberSigns[row];
+            [self turnPlayButtonOnOff : row  : false]; //11/26 turn off
             [self->sfx  releaseAllNotes];
         }]];
     }
@@ -460,12 +485,19 @@ int tval = 320;
     NSNumber *nn = [timer userInfo];
     NSUInteger nindex = [playing   indexOfObject:nn]; //find entry in playing table
     [playing removeObjectAtIndex:nindex];            // remove from playing array
-    NSIndexPath *ip = [NSIndexPath indexPathForRow:nn.intValue inSection:0];
-    sampleCell *scell = [table cellForRowAtIndexPath:ip];
-    [scell setPlayButtonHidden:FALSE];  //OK show play button again
+    [self turnPlayButtonOnOff : nn.intValue  : false]; //11/26 turn off
     samplesPlaying--;
     // Done playing all samples? clear title
     if (samplesPlaying == 0) [self resetTitle];
+}
+
+//======(samplesVC)==========================================
+// 11/26 convenience func, used a lot
+-(void) turnPlayButtonOnOff: (int) row : (BOOL) turnOn
+{
+    NSIndexPath *ip = [NSIndexPath indexPathForRow: row inSection:0];
+    sampleCell *scell = [table cellForRowAtIndexPath:ip];
+    [scell setPlayButtonHidden:turnOn];
 }
 
 //======(samplesVC)==========================================
@@ -475,17 +507,8 @@ int tval = 320;
     // 5/17 brute force clear!
     for (int i=0;i<(int)fileNamesNoNumberSigns.count;i++)
     {
-        NSIndexPath *ip = [NSIndexPath indexPathForRow:i inSection:0];
-        sampleCell *scell = [table cellForRowAtIndexPath:ip];
-        [scell setPlayButtonHidden:FALSE];  //OK show play button again
+        [self turnPlayButtonOnOff : i : false]; //11/26 turn off
     }
-//    for (NSNumber* nn in playing)
-//    {
-//        NSIndexPath *ip = [NSIndexPath indexPathForRow:nn.intValue inSection:0];
-//        sampleCell *scell = [table cellForRowAtIndexPath:ip];
-//        NSLog(@" show pb %d",nn.intValue);
-//        [scell setPlayButtonHidden:FALSE];  //OK show play button again
-//    }
     samplesPlaying = 0;
     [sfx  releaseAllNotes];
 }
@@ -667,29 +690,28 @@ int tval = 320;
         }
         if (newName != nil &&  newName.length > 2) //at least 3 char for search 5/15 nil check
         {
-//            NSString *oldName = self->fileNamesNoNumberSigns[row];
-//            //4/27 update stats too
-//            NSDictionary *fileInfo = self->fileDict[oldName];
-//            NSNumber *lookup = [sappDelegate.allp getSampleNumberByNameWithSs:oldName];
-//
-//            if ([self renameSampleFile:oldName:newName])
-//            {
-//                [self->fileDict removeObjectForKey:oldName];  //5/15 remove old name HERE not above here!
-//                [self getSampleFolder];
-//                //make sure allpatches knows about namechange//  4/20 fix warnings inside closures, added self-> etc as needed
-//                newName = [newName stringByAppendingString : @".caf"]; //add suffix as needed
-//                [self->fileDict setObject:fileInfo forKey:newName];
-//                [sappDelegate.allp linkBufferToPatchWithNn:lookup ss:newName];
-//                [sappDelegate.allp unlinkOldBufferByNameWithSs:oldName];
-//                [self->table reloadData];
-//                self->changed = TRUE; //7/13
-//            }
-//            else
-//            {
-//                [self errorMessage:@"File Already Exists" :@"Please pick a new filename or delete the old file first"];
-//                //NSLog(@"Error renaming file");
-//            }
-//            [self clearSelection];
+            NSString *oldName = self->fileNamesNoNumberSigns[row];
+            //4/27 update stats too
+            NSDictionary *fileInfo = self->fileDict[oldName];
+            NSNumber *lookup = _patLookups[oldName];
+            if ([self renameSampleFile:oldName:newName])
+            {
+                [self->fileDict removeObjectForKey:oldName];  //5/15 remove old name HERE not above here!
+                [self getSampleFolder];
+                //make sure allpatches knows about namechange//  4/20 fix warnings inside closures, added self-> etc as needed
+                newName = [newName stringByAppendingString : @".caf"]; //add suffix as needed
+                [self->fileDict setObject:fileInfo forKey:newName];
+                //11/26 handle data update in mainVC
+                [self.delegate didRenameSample : oldName : newName : lookup];
+                [self->table reloadData];
+                self->changed = TRUE;
+            }
+            else
+            {
+                [self errorMessage:@"File Already Exists" :@"Please pick a new filename or delete the old file first"];
+                //NSLog(@"Error renaming file");
+            }
+            [self clearSelection];
         }
      }];
      [alert addAction: renameAction]; //7/17 note rename action now dismisses alert!
@@ -739,8 +761,7 @@ int tval = 320;
 - (IBAction)playSelect:(id)sender
 {
     selectedRow = [self getCellRow:sender];
-    sampleCell *clickedCell = (sampleCell *)[[sender superview] superview];
-    [clickedCell setPlayButtonHidden:TRUE]; //Hide cells play button!
+    [self turnPlayButtonOnOff : selectedRow  : true]; //11/26 turn on
     NSString *sname = fileNamesNoNumberSigns[selectedRow];
     [self playUserSample:sname];
 }
@@ -887,7 +908,7 @@ int tval = 320;
                                 message:message
                                 preferredStyle:UIAlertControllerStyleAlert];
     [alert setValue:tatString forKey:@"attributedTitle"];
-    alert.view.tintColor = [UIColor blackColor]; //lightText, works in darkmode
+    //12/19 test for dark mode    alert.view.tintColor = [UIColor blackColor]; //lightText, works in darkmode
 
     [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"OK",nil)
                                               style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {

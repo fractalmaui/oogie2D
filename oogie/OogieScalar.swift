@@ -12,6 +12,8 @@
 //  Created by Dave Scruton on 10/13/21
 //  Copyright © 2019 fractallonomy. All rights reserved.
 //  very similar to oogiePipe but w/o input channel
+//  12/17 add scalar value
+//  12/25 make scalars snap to grid
 import Foundation
 import SceneKit
 
@@ -25,7 +27,9 @@ struct OogieScalar {
     var gotData = false //11/25
     var uid     = "nouid"
     var value   = 0.0
+    var dValue = 0.0 //12/19 display value
     
+    let SCALAR_GRID_SNAP = 0.2 //12/25 make scalars snap to grid
 
     var paramListDirty = true //4/25 add paramList for display purposes
     var paramList  = [String]()
@@ -165,8 +169,8 @@ struct OogieScalar {
             dp = SS.hiRange
             let horg = SS.hiRange
             sp = String(horg)
-        case "delay"    :
-            dp = Double(SS.delay)
+        case "value"    : //12/17 add value
+            dp = SS.value
         case "invert"    :
             dp = Double(SS.invert) //10/5
         case "xpos": dp = SS.xPos
@@ -207,17 +211,24 @@ struct OogieScalar {
         case "outputparam"  : SS.toParam     = sval
         case "lorange"      : SS.loRange     = dval ; setupRange(lo: SS.loRange,hi: SS.hiRange)  //5/2
         case "hirange"      : SS.hiRange     = dval ; setupRange(lo: SS.loRange,hi: SS.hiRange)  //5/2
-        case "delay"        : SS.delay       = Int(dval) //9/28 add delay
+        case "value"        : SS.value       = dval   //12/17 add value
         case "invert"       : SS.invert      = Int(dval) //10/5 invert
-        case "xpos"         : SS.xPos        = dval
-        case "ypos"         : SS.yPos        = dval
-        case "zpos"         : SS.zPos        = dval
+        case "xpos"         : SS.xPos        = snapToGrid(dxyz: dval)
+        case "ypos"         : SS.yPos        = snapToGrid(dxyz: dval)
+        case "zpos"         : SS.zPos        = snapToGrid(dxyz: dval)
         case "name"         : SS.name        = sval
         case "comment"      : SS.comment     = sval
         default:print("Error:Bad pipe param in set")
         }
         paramListDirty = true
     } //end setParam
+    
+    //======(OogieScalar)=============================================
+    func snapToGrid ( dxyz : Double) -> Double
+    {
+        let dint = Int(dxyz / SCALAR_GRID_SNAP)
+        return Double(dint) * SCALAR_GRID_SNAP
+    }
     
     //======(OogieScalar)=============================================
     mutating func setupRange(lo:Double , hi:Double)

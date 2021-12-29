@@ -16,7 +16,8 @@
 //  9/8 added removeAllEdits
 //  4/26 cleanup
 //  5/15 add nil key check in loadFromDocs
-//  10/1 add getEditsForPatch 
+//  10/1 add getEditsForPatch
+//  12/3 rename -> loadEditsFromDocs
 
 #import "edits.h"
 
@@ -43,13 +44,13 @@ static edits *sharedInstance = nil;
         NSLog(@"load edits from %@",docPath);
         editDict   = [[NSMutableDictionary alloc] init];
         savedEdits = [[NSMutableDictionary alloc] init]; // for restoring edits after a cancel
-        [self loadFromDocs];
+        [self loadEditsFromDocs]; //12/3 rename,less ambiguous
     }
     return self;
 }
 
 //======<edits>========================================================
--(void) loadFromDocs
+-(void) loadEditsFromDocs
 {
     NSError *error;
     NSURL *url = [NSURL fileURLWithPath:docPath];
@@ -80,10 +81,10 @@ static edits *sharedInstance = nil;
                 } //done with items
                 [editDict setObject:patchDict forKey:patchName];
             }
-            else NSLog(@" ERROR: loadFromDocs nil patchname key");  //5/15
+            else NSLog(@" ERROR: loadEditsFromDocs nil patchname key");  //5/15
         } //end lineitems.count
     } // end for string s
-} //end loadFromDocs
+} //end loadEditsFromDocs
 
 //======<edits>========================================================
 -(void) pushEditForPatch : (NSString *)pname
@@ -157,6 +158,14 @@ static edits *sharedInstance = nil;
 //        }
 //    }
 //}
+
+//======<edits>========================================================
+//12/12 new
+-(void) factoryReset
+{
+    [editDict removeAllObjects];
+    [self saveToDocs];
+}
 
 //======<edits>========================================================
 // 9/8 just get rid of edits for one patch...

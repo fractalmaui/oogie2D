@@ -63,6 +63,7 @@
 @protocol samplesVCDelegate <NSObject>
 @optional
 -(void) didDismissSamplesVC: (BOOL)changed;
+-(void) didRenameSample: (NSString*)oldName : (NSString*)newName : (NSNumber*) lookup;
 @end
 
 

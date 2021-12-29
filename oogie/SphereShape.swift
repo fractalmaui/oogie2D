@@ -19,8 +19,9 @@
 //  11/11 add dice cube, redo init to add uid arg
 // 11/13 add menu box, add createPetalImage
 //  11/15 add default texture to texCache
+//  11/28  in setTextureScaleTranslationAndWrap add wrapS/T support,
+//           added getWrapModeFromInt
 import SceneKit
-
  
 class SphereShape: SCNNode {
     var rotSpeed: Double = 8.0
@@ -47,13 +48,14 @@ class SphereShape: SCNNode {
 
     // 10/26 remove VERSION_2D crap AR only
     let sphereRad    : CGFloat = 0.25
+    let sphereCubeStep : CGFloat = 0.05
+    let liilcuberad  : CGFloat = 0.04
     let boxSize      : CGFloat = 0.025
     let pipeRad      : CGFloat = 0.01
-
-    
+    //Info box around our shape
     var boxPanel     = SCNBox()
-    var panelNodes   : [SCNNode] = []
-    var jsize = CGSize(width: 512, height: 32) //overall description image size
+    var panelNodes   : [SCNNode] = [] //4 boxPanel nodes
+    var infoLabelTexSize = CGSize(width: 512, height: 64) //overall description image size
 
     
     //-----------(SphereShape)=============================================
@@ -80,25 +82,25 @@ class SphereShape: SCNNode {
         self.addChildNode(shapeNode)
         rotDate = Date() //reset start date
         
-        let bs:CGFloat = 0.06
+        //let bs:CGFloat = 0.06
         let yellowM = createPetalImage(label : "M", value : 0, bgcolor: .yellow, fgcolor: .black)
         //11/13 add menu control
         menuCube = SCNBox() //11/3 add dice box on top asdf
         menuCube.firstMaterial?.emission.contents = yellowM
-        menuCube.firstMaterial?.diffuse.contents = yellowM
+        menuCube.firstMaterial?.diffuse.contents  = yellowM
         menuNode = SCNNode(geometry: menuCube)
-        menuNode.position = SCNVector3(0, sphereRad + 0.1,0)
-        menuNode.scale    = SCNVector3(bs,bs,bs)
+        menuNode.position = SCNVector3(0, sphereRad + sphereCubeStep,0)
+        menuNode.scale    = SCNVector3(liilcuberad,liilcuberad,liilcuberad) //12/3
         menuNode.name = "menu_" + uid
         self.addChildNode(menuNode)
         
         //11/11 add dice control asdf
         diceCube = SCNBox() //11/3 add dice box on top
-        diceCube.firstMaterial?.emission.contents = UIImage(named: "bluedice")
-        diceCube.firstMaterial?.diffuse.contents = UIImage(named: "bluedice")
+        diceCube.firstMaterial?.emission.contents = UIImage(named: "yellowdice")
+        diceCube.firstMaterial?.diffuse.contents  = UIImage(named: "yellowdice")
         diceNode = SCNNode(geometry: diceCube)
-        diceNode.position = SCNVector3(0, sphereRad + 0.2,0)
-        diceNode.scale    = SCNVector3(bs,bs,bs)
+        diceNode.position = SCNVector3(0, sphereRad + 2*sphereCubeStep,0)
+        diceNode.scale    = SCNVector3(liilcuberad,liilcuberad,liilcuberad) //12/3
         diceNode.name = "dice_" + uid
         self.addChildNode(diceNode)
 
@@ -121,6 +123,9 @@ class SphereShape: SCNNode {
         let ii = createNamePlateImage(label: "..." , comm: "" )
         boxPanel.firstMaterial?.diffuse.contents  = ii
         boxPanel.firstMaterial?.emission.contents = ii
+
+        
+        //asdf
         for i in 0...3
         {
             let boxNode = SCNNode(geometry: boxPanel)
@@ -150,17 +155,17 @@ class SphereShape: SCNNode {
     //-----------(SphereShape)=============================================
      // black bkgd, long line of name text
     public func createNamePlateImage(label : String , comm: String) -> UIImage {
-         UIGraphicsBeginImageContextWithOptions(jsize, false, 1)
+         UIGraphicsBeginImageContextWithOptions(infoLabelTexSize, false, 1)
          let context = UIGraphicsGetCurrentContext()!
          
-         let rect = CGRect(origin: CGPoint.zero, size: jsize)
+         let rect = CGRect(origin: CGPoint.zero, size: infoLabelTexSize)
          //Fill bkgd
          context.setFillColor(UIColor.black.cgColor);
          context.fill(rect);
          
          let thite = 30
-         let h2    = jsize.height / 2
-         let wid   = jsize.width
+         let h2    = infoLabelTexSize.height / 2
+         let wid   = infoLabelTexSize.width
          let textFont = UIFont(name: "Helvetica Bold", size: CGFloat(thite-3))!
          let textFont2 = UIFont(name: "Helvetica Bold", size: CGFloat(thite/2))!
          let text_style=NSMutableParagraphStyle()
@@ -338,9 +343,27 @@ class SphereShape: SCNNode {
         boxPanel.firstMaterial?.diffuse.contents = ii
         boxPanel.firstMaterial?.emission.contents = ii
     } //end updatePanels
+    
+    //-----------(SphereShape)=============================================
+    //11/28 new, converts from incoming int format to scene enum
+    func getWrapModeFromInt( mode: Int) -> SCNWrapMode
+    {
+        var result : SCNWrapMode = .repeat
+        switch(mode)
+        {
+        case 0: result = .clamp
+        case 1: result = .repeat
+        case 2: result = .clampToBorder
+        case 3: result = .mirror
+        default: result = .repeat
+        }
+        return result
+    } //end getWrapModeFromInt
 
     //-----------(SphereShape)=============================================
-    func setTextureScaleAndTranslation(xs : Float, ys : Float , xt : Float, yt : Float)
+    // incoming wraps are 0..3 , correspond to SCNWrapMode enums 1..4
+    // 11/28 add wrap modes...
+    func setTextureScaleTranslationAndWrap(xs : Float, ys : Float , xt : Float, yt : Float, ws : Int , wt : Int)
     {
         if let fm = sphere.firstMaterial
         {
@@ -350,9 +373,15 @@ class SphereShape: SCNNode {
             //11/16 MEMORY LEAK HERE TOO!!! OUCH!
             fm.diffuse.contentsTransform  = transform
             fm.emission.contentsTransform = transform
+            //print("xys:\(xs),\(ys) wrapST:\(ws),\(wt)")
+            let wrs : SCNWrapMode = getWrapModeFromInt(mode:ws)
+            let wrt : SCNWrapMode = getWrapModeFromInt(mode:wt)
+            fm.diffuse.wrapS  = wrs //11/28 add wrap S/T
+            fm.emission.wrapS = wrs
+            fm.diffuse.wrapT  = wrt
+            fm.emission.wrapT = wrt
         }
-
-    }
+    } //end setTextureScaleTranslationAndWrap
     
     //-----------(SphereShape)=============================================
     func spin(r : Double)

@@ -5,7 +5,7 @@
 //  Created by Dave Scruton on 10/13/21
 //  Copyright © 2019 fractallonomy. All rights reserved.
 //  10/25 add xtraparams
-//
+//  12/17 add value, pull delay
 import SceneKit
 struct ScalarStruct : Codable {
     //These are all user-settable params for a Scalar...
@@ -19,7 +19,7 @@ struct ScalarStruct : Codable {
     var toParam      : String
     var loRange      : Double    //hi/lo ranges convert incoming
     var hiRange      : Double    // channel data to desired output range
-    var delay        : Int       //delay is in frames (30fps default)
+    var value        : Double    // 12/17 add value, 0.0 ... 1.0
     var invert       : Int       //9/28/21 add invert / op items
     var op           : String
     var uid          : String
@@ -39,7 +39,7 @@ struct ScalarStruct : Codable {
         xPos        = 0.0
         yPos        = 0.0
         zPos        = 0.0
-        delay       = 0
+        value       = 0.0
         invert      = 0
         op          = ""
         uid         = "scalar_" + ProcessInfo.processInfo.globallyUniqueString
@@ -61,7 +61,7 @@ struct ScalarStruct : Codable {
         xPos             = 0.0
         yPos             = 0.0
         zPos             = 0.0
-        delay            = 0
+        value            = 0.0
         invert           = 0
         op               = ""
         uid              = "scalar_" + ProcessInfo.processInfo.globallyUniqueString

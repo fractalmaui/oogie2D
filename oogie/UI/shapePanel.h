@@ -14,9 +14,6 @@
 
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-//#import "flurryAnalytics.h"
-//#import "miniHelp.h"
-//#import "obPopup.h"
 #import "genOogie.h"
 #import "oogieStyles.h"
 #import "soundFX.h"
@@ -33,25 +30,21 @@
     UIButton *proButton; //hides pro controls
     UIButton *helpButton;
     UIButton *diceButton;
-    UIButton *goLeftButton;
-    UIButton *goRightButton;
     UILabel *titleLabel;
     UIButton *dismissButton;
     UIButton *deleteButton;
     UIImageView *textureView;
     UIImageView *otView;
     UITextField *lastSelectedTextField; //10/29
-
     UIView *header,*footer;
-    
-   // UIImage *texture;
+
     int topTexSlider;
     float ucoord,vcoord,uscale,vscale;
     
-    // 10/1 new data structs
     NSArray *allParams;
     NSArray *sliderNames;
     NSArray *pickerNames;
+    NSArray *wrapNames;
     NSArray *textFieldNames;
     NSMutableArray *allSliders;
     NSMutableArray *allPickers;
@@ -69,8 +62,6 @@
     BOOL diceUndo;
     BOOL rollingDiceNow,resettingNow;
     genOogie *goog;  //9/15
-    
-    
 }
 
 
@@ -84,17 +75,13 @@
 
 -(void) setupView:(CGRect)frame;
 - (void) configureView;
-- (void)updateSessionAnalytics;
 - (void) updateTextureDisplay;
 
 @end
 
 @protocol shapePanelDelegate <NSObject>
 @optional
--(void) didSetShapeValue  : (int) which : (float) newVal : (NSString*) pname : (NSString*) pvalue : (BOOL)undoable;
-//-(void) didSelectRight ;
-//-(void) didSelectLeft ;
-//-(void) controlNeedsProMode ;
+-(void) didSetShapeValue  :(float) newVal : (NSString*) pname : (NSString*) pvalue : (BOOL)undoable;
 -(void) didSelectShapeDice ;
 -(void) didSelectShapeReset ;
 -(void) didSelectShapeDismiss ; //9/24

@@ -20,6 +20,7 @@
 //  9/19 add oogiePipeParams
 //  9/28 add delay to set/get param
 //  10/5 add invert
+//  12/6 implement delay
 import Foundation
 import SceneKit
 
@@ -33,7 +34,7 @@ struct OogiePipe {
     var wrapped = false
     var ibuffer : [Float] //input buffer
     var obuffer : [Float] //output buffer
-    var bptr    = 0
+    var bptr    = 0  //points to end of input buffer
     var multF   = 1.0
     var destination = ""
     var gotData = false //11/25
@@ -118,9 +119,11 @@ struct OogiePipe {
     }
     
     //======(OogiePipe)=============================================
+    // 12/6 also apply delay here??
     func getOlderPtr(offset:Int) -> Int
     {
-        var p = bptr - offset
+        let lild = min(PS.delay,bptr) //keep delay from going negative
+        var p = bptr - offset - lild   //12/6 apply delay, look at much older stuff
         while p < 0 {p = p + ibuffer.count} //make sure we are legal
         return p
     } //end getOlderPtr
@@ -144,7 +147,7 @@ struct OogiePipe {
     mutating func getFromOBuffer(clearFlags: Bool) -> Float{
         if clearFlags {gotData = false} //11/25
         if obuffer.count == 0 {return 0.0}
-        return obuffer[getOlderPtr(offset: 1)]
+        return obuffer[getOlderPtr(offset: 1)]  //get PREVIOUS entry, hence 1 offset
     }
     
     //======(OogiePipe)=============================================

@@ -10,49 +10,6 @@
 //   |____/ \__, |_| |_|\__|_| |_|____/ \__,_| \_/ \___|
 //           |___/                                      
 //				 
-//  product number: 495032459
-// HUEDOKU VERSION:
-//  DHS 11/27/14: Force load all samples as stereo.
-//                Still need to change fillbuffer: CRASHED first try! .....Pulled mono switching from fillbuffer
-// DHS 3/16/15:  Added playNoteWithDelay...
-//                Changed queue dims!
-// DHS 11/12     removed * in AudioFileID fileID declaration
-//               replaced AudioFileReadPackets with AudioFileReadPacketData
-// DHS 4/18/12:  For some reason RECORDING WAS on all the time! Disabled!
-// DHS 7/24/19   CHECK FOR CHANGES SINCE 2012!!!
-//               start adding properties: gain: float, more to come
-// DHS 9/24      prevent crash on zero envelope params
-// DHS 10/5      add sRates table, support for multiple sample rates
-// DHS 10/6      fix bug in fillBuffer, use buffer type to determine synth buffer
-//                 wraparound as opposed to assuming synths occupy low 8 buffers exclusively
-// DHS 10/17     add support for sample envelopes
-// DHS 11/9      add buildInPlace arg to buildEnvelope, copyBuffer, copyEnvelope
-//     4/12/20   just malloc swave ONCE
-//     6/25      change mono fadeout to 95% attenuation, 2% bailout
-//                 dividing portamento pitch step by 500x seems to work! (parameterize this?)
-//     7/17      add vibrato support
-//     7/28      reduce vibrato speed max
-//     8/1       playNote, use sampleOffset as simple percent
-//     8/2       added percussion to envelope-capable voices
-//     8/17      changed vibrato wave base to 200 to support GM Perc
-//                 THERE MUST BE A BETTER WAY!
-//    9/16   Thinking about adding chordVoice, need to store note offsets,
-//             what about using arpQueue???  only need to store 3 or 5 , 7 notes?
-// 9/25 Re-partition samples: 0..31 = work area (including vibrato waves)
-//                            32..end = loaded samples area...
-//    10/8  add sTuningOffsets and setNoteOffset
-//    10/31 add freeSampleMemory and cleanupBuffersAbove
-//  2/12/21 add fineTuning
-//  3/26    add dumpTone
-//  3/29    HUH??add sanity check in fillBuffers, WTF w/ negative indices!
-//  4/26    add midiNote clamp 0..128 in playNote
-//  4/29    pull swave, use unsigned char fileBuffer, support 32 bit files too
-//  4/30    getVibeLevel: input wave range 0..1 NOT -1..1!!
-//          getVibOffset: input wave range MAKE -1..1 to center vib freq
-//          also set DUTY to 0.5 when creating square vib waves, was random b4
-// 5/10     enlarge sample space to 1024
-// 5/19     add INV_SYNTH_TS
-// 5/24     add envelope size check
 // 6/21     comment out negative phase errs in fillbuffer
 // 6/25     code cleanup during sample loop testing, add loadupToneFromSynth
 //             add arpTones, redo arpeggiator data struct
@@ -63,6 +20,11 @@
 // 9/16     fix potential crash in getVibOffset
 // 10/27 256 tones at once now, better supports delay
 // 11/24    add new small envelopes, one per tone
+// 12/10    change buildEnvelope256 to handle zero time vals
+// 12/12    add EXT sample type, uses full path to sample
+// 12/20    add squareWave Duty to toneEvent
+// 12/21    implmement pKeyDetune
+
 #import <QuartzCore/CABase.h>
 #import "SynthDave.h"
 #include "oogieMidiStubs.h"
@@ -411,6 +373,7 @@ short *audioRecBuffer;
 - (void)buildSquareTable: (int) which
 {
 	int i,duty = DUTY_TIME * sineLength;
+    NSLog(@"...buildSquareTable %d %f",which,DUTY_TIME);
 	sBufs[which] = malloc(sineLength * sizeof(float));
 	if (!sBufs[which]) return;
 	for ( i = 0; i < duty; i++)  //first half is 0
@@ -554,7 +517,7 @@ short *audioRecBuffer;
     int bytesPerSample = 2;
     if (sNumPackets > 0 && sChans > 0) bytesPerSample = sPacketSize / (sNumPackets*sChans);
 
-    //NSLog(@" ...Buildsample[%d]: frames %d srate %d bps %d",which,totalFrames,lastSampleRate,bytesPerSample);
+    NSLog(@" ...Buildsample[%d]: frames %d srate %d bps %d",which,totalFrames,lastSampleRate,bytesPerSample);
 
     //DHS 4/12/20 saw overflow by 1 error, reduce loop by 1 to avoid
     unsigned char *pfileBuffer = (unsigned char*)fileBuffer; //4/29 point to incoming data...
@@ -754,34 +717,41 @@ short *audioRecBuffer;
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 // 11/23 render ADSR to fixed buffer size, call it 256 for now.
 //     first pass renders to a 512 byte buffer...
+// 12/10 cleanup, handle zero time values
 - (void)buildEnvelope256 : (int) which
 {
     if ( (ATTACK_TIME  == 0) && (DECAY_TIME   == 0) && //empty? baiul!
         (SUSTAIN_TIME == 0) && (RELEASE_TIME == 0) )  return;
-
     //clear work
     for (int i=0;i<256;i++) env256[i] = 0.0;
     for (int i=0;i<512;i++) env512[i] = 0.0;
-    float pmult = 100.0;  //ADSR vals come in range 0..1 convert to 0..100 for time lengths
-
+    //float pmult = 100.0;  //ADSR vals come in range 0..1 convert to 0..100 for time lengths
+    float pmult = 20.0; //12/10 shrink down time stretch a bit
     int s512 = 0; //  point to output buffer
-    float envStep = 1.0 / (ATTACK_TIME*pmult);
+    float envStep = 1.0;
     float envVal  = 0.0;
-    while (envVal < 1.0)    //OK go for attack...
+    if (ATTACK_TIME > 0) //12/10 handle zero attack!
     {
-        env512[s512] = MIN(1.0,envVal);
-        envVal+=envStep;
-        s512++;
-        if (s512 > 511) {NSLog(@" ENV A OVERFLOW");return;} //should NEVER HAPPEN
+        envStep = 1.0 / (ATTACK_TIME*pmult);
+        while (envVal < 1.0)    //OK go for attack...
+        {
+            env512[s512] = MIN(1.0,envVal);
+            envVal+=envStep;
+            s512++;
+            if (s512 > 511) {NSLog(@" ENV A OVERFLOW");return;} //should NEVER HAPPEN
+        }
     }
     envVal = 1.0; //prevent overshoot
-    envStep = (SUSTAIN_LEVEL - 1.0) / (DECAY_TIME*pmult); //time for decay
-    while (envVal > SUSTAIN_LEVEL) //should go down now?
+    if (DECAY_TIME > 0) //12/10 handle zero decay!
     {
-        env512[s512] = envVal;
-        envVal+=envStep;
-        s512++;
-        if (s512 > 511) {NSLog(@" ENV D OVERFLOW");return;} //should NEVER HAPPEN
+        envStep = (SUSTAIN_LEVEL - 1.0) / (DECAY_TIME*pmult); //time for decay
+        while (envVal > SUSTAIN_LEVEL) //should go down now?
+        {
+            env512[s512] = envVal;
+            envVal+=envStep;
+            s512++;
+            if (s512 > 511) {NSLog(@" ENV D OVERFLOW");return;} //should NEVER HAPPEN
+        }
     }
     envVal = SUSTAIN_LEVEL; //just in case of overshoot...
     for (int i=0;i<(int)(SUSTAIN_TIME*100.0);i++) //sustain is in percent...
@@ -790,13 +760,16 @@ short *audioRecBuffer;
         s512++;
         if (s512 > 511) {NSLog(@" ENV S OVERFLOW");return;} //should NEVER HAPPEN
     }
-    envStep = -SUSTAIN_LEVEL / (RELEASE_TIME*pmult); //time for decay
-    while (envVal > 0.0) //finish our envelope
+    if (RELEASE_TIME > 0) //12/10 handle zero release!
     {
-        env512[s512] = MAX(0.0,envVal);
-        envVal+=envStep;
-        s512++;
-        if (s512 > 511) {NSLog(@" ENV R FAIL");return;} //should NEVER HAPPEN
+        envStep = -SUSTAIN_LEVEL / (RELEASE_TIME*pmult); //time for decay
+        while (envVal > 0.0) //finish our envelope
+        {
+            env512[s512] = MAX(0.0,envVal);
+            envVal+=envStep;
+            s512++;
+            if (s512 > 511) {NSLog(@" ENV R FAIL");return;} //should NEVER HAPPEN
+        }
     }
     //TEST for (int i=0;i<512;i++) NSLog(@" env512[%d] = %f",i,env512[i]);
     
@@ -925,7 +898,7 @@ short *audioRecBuffer;
 //   the arpQueue is a circular queue!
 // ALSO note this doesnt handle case where queue is too small
 //   and we may unwind past play ptr!
-- (void)playNoteWithDelay : (int) midiNote : (int) wnum : (int) type : (int) delayms
+- (void) playNoteWithDelay : (int) midiNote : (int) wnum : (int) type : (int) delayms
 {
     double insertTime = CACurrentMediaTime() + (double)delayms*0.001;
     int n0 = arpPtr-1;
@@ -980,13 +953,29 @@ short *audioRecBuffer;
     midiNote = MAX(0,MIN(128,midiNote)); //4/26 handle wild notes!!!
     t.midiNote = midiNote;
     t.phase    = 0.0f;
-    //2/12/21 still need to change pitch using pKeyDetune!!!
     t.pitch    = pitches[midiNote];
+    if (pKeyDetune < 50 && midiNote > 0) //12/21 tune down ?
+    {
+        float flatPDiff = t.pitch - pitches[midiNote-1];
+        float fpercent  = ((float)pKeyDetune - 50.0)/50.0;
+        t.pitch += fpercent * flatPDiff;
+    }
+    else if (pKeyDetune > 50 && midiNote < 255) //12/21 tune up?
+    {
+        float flatPDiff = pitches[midiNote+1] - t.pitch;
+        float fpercent  = ((float)pKeyDetune - 50.0)/50.0;
+        t.pitch += fpercent * flatPDiff;
+    }
     if (type == SAMPLE_VOICE || type == PERCUSSION_VOICE)
     {
-        //8/1 sample offset for percussion AND samples now!
-        t.phase    = (int)((float)SAMPLE_OFFSET * (float)sBufLens[wnum] /
-                                  (float)sBufChans[wnum]); //compute offset, NOTE #chans
+        if (SAMPLE_OFFSET > 0)
+        {
+            //12/19wups change to float sample offset for percussion AND samples now!
+           t.phase    =  (float)SAMPLE_OFFSET * (float)sBufLens[wnum] /
+                                  (float)sBufChans[wnum]; //compute offset, NOTE #chans
+            //NSLog(@" sampoff %f phase %f",SAMPLE_OFFSET,t.phase);
+        }
+        
     }
     // 8/14/21 load raw env params too...
     //  just express in fractions of 0..255 for now
@@ -994,6 +983,7 @@ short *audioRecBuffer;
     t.envDecay   = (int)(255.0*DECAY_TIME);
     t.envSustain = (int)(255.0*SUSTAIN_TIME);
     t.envRelease = (int)(255.0*RELEASE_TIME);
+    t.sqwDuty    = (int)(255.0*DUTY_TIME); //12/20 add duty
     t.envStep    = 0.0f;
     //11/23 OLD  t.envDelta   = midiNote / 64.0f;
     t.waveNum    = wnum;
@@ -1007,17 +997,18 @@ short *audioRecBuffer;
 
     //2/12/21 fine tuning...
     float pgain  = 1.0;
-    if (pLevel < 50) //attenuate level by 2x
+    if (pLevel < 50) //attenuate level by 1/2
     {
         pgain = MAX(0.5,0.5 + 0.5 * (float)pLevel/50.0);
     }
     else if (pLevel > 50) //increase level by 2x
     {
-        pgain = MIN(2.0,1.0 + 0.5 * (float)pLevel/50.0);
+        pgain = MIN(2.0,1.0 + 0.5 * (float)(pLevel-50)/50.0); //12/20 change
     }
-    t.gain      = _gain * pgain * finalMixGain;
-    t.detune      = detune;
-    t.mono       = _mono;
+    //NSLog(@" pgain %f",pgain);
+    t.gain     = _gain * pgain * finalMixGain;
+    t.detune   = detune;
+    t.mono     = _mono;
     t.lpan     = glpan;     //see setPan!
     t.rpan     = grpan;     //see setPan!
     t.portamentoTime  = portamentoTime;
@@ -1104,7 +1095,7 @@ short *audioRecBuffer;
 
 //------==(SYNTHDAVE)==---------==(SYNTHDAVE)==---------==(SYNTHDAVE)==------
 // DHS 11-9 need to change to support mono synth...
-- (void)playNote:(int)midiNote :(int)wnum :(int)type
+- (void) playNote : (int)midiNote : (int)wnum : (int)type
 {
     int n,foundit=0;
     newUnique++;
@@ -2271,6 +2262,15 @@ short *audioRecBuffer;
             if (name == NULL) return;
             fileURL = [[NSURL alloc] initFileURLWithPath: name];  //file not found!
         }
+    else if ([type  isEqual: @"EXT"] ) //12/12/21 external sample: has full path
+    {
+        if ([name containsString:@"file://"]) //OUCH! get rid of this shit!
+        {
+            NSRange nrange = NSMakeRange(7,name.length-7);
+            fileURL = [[NSURL alloc] initFileURLWithPath: [name substringWithRange:nrange]];
+        }
+        else fileURL = [[NSURL alloc] initFileURLWithPath: name];
+    }
     else
         {
             NSString *soundFilePath  = [[NSBundle mainBundle] pathForResource:name ofType:type];
@@ -2281,11 +2281,6 @@ short *audioRecBuffer;
            fileURL = [[NSURL alloc] initFileURLWithPath: soundFilePath];
         }
     //NSLog(@" sample file url %@",fileURL);
-    
-    if ([name containsString:@"222"])
-    {
-        NSLog(@" found weird one");
-    }
     
     err = AudioFileOpenURL ((__bridge CFURLRef) fileURL, kAudioFileReadPermission,0,&fileID);
 
@@ -2311,9 +2306,9 @@ short *audioRecBuffer;
 	theSize = sizeof(packetCount);
 	err = AudioFileGetProperty(fileID, kAudioFilePropertyAudioDataPacketCount,
 							   &theSize, &packetCount);	
-//    NSLog(@"LoadSamle:[%@]duration %4.2f mSampleRate %d packetCount %llu mBytesPerPacket %d chans %d",name,
-//          (float)(packetCount/sChans)/(float)outFormat.mSampleRate,
-//          (int)outFormat.mSampleRate,packetCount,(int)outFormat.mBytesPerPacket,outFormat.mChannelsPerFrame);
+    NSLog(@"LoadSample:[%@]duration %4.2f mSampleRate %d packetCount %llu mBytesPerPacket %d chans %d",name,
+          (float)(packetCount/sChans)/(float)outFormat.mSampleRate,
+          (int)outFormat.mSampleRate,packetCount,(int)outFormat.mBytesPerPacket,outFormat.mChannelsPerFrame);
     bCount = 0;
 	theSize = sizeof(bCount);
 	if (!err) err = AudioFileGetProperty(fileID, kAudioFilePropertyAudioDataByteCount,
@@ -2610,7 +2605,7 @@ double drand(double lo_range,double hi_range )
     ToneEvent t = tones[which];
     NSLog(@" Tone Dump %d ============================",which);
     NSLog(@" midiNote/pitch/phase %d %f %f",t.midiNote,t.pitch,t.phase);
-    NSLog(@" adsr %d %d %d %d needsEnvelope %d",t.envAttack,t.envDecay,t.envSustain,t.envRelease,t.needsEnvelope);
+    NSLog(@" adsr %d %d %d %d / duty %d / needsEnvelope %d",t.envAttack,t.envDecay,t.envSustain,t.envRelease,t.sqwDuty,t.needsEnvelope);
     NSLog(@" toneType/wave/mono/detune %d %d %d %d",t.toneType,t.waveNum,t.mono,t.detune);
     NSLog(@" envStep/Delta/gain/lpan/rpan  %f %f %f %f %f",t.envStep,t.envDelta,t.gain,t.lpan,t.rpan);
     NSLog(@" port lastNote/Time/PitchFinish/PitchStep %d %f %f %f",

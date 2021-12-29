@@ -10,7 +10,8 @@
 //  7/9  add oogieStyles
 //  9/18 add configureViewFromVC, huge but effective, works on all control panels
 //  10/3 addpickerSlider: unit sliders please!, also changed picker width
-//  11/25 add buildEnvelope256 / makeADSRImage
+//  11/25 add build Envelope256 / makeADSRImage
+//  12/10 return all zero results in buildEnvelope256 for 0 ADSR
 #import "genOogie.h"
 
 @implementation genOogie
@@ -96,7 +97,7 @@ static genOogie *sharedInstance = nil;
     //9/15 everything lives in an UIView...
     UIView *psRow = [[UIView alloc] init];
     [psRow setFrame : CGRectMake(xi,yi,xs,ys)];
-    psRow.backgroundColor = [UIColor blueColor]; //was clear
+    psRow.backgroundColor = [UIColor clearColor]; 
     [parent addSubview:psRow];
 
     //get 4 columns...
@@ -239,7 +240,11 @@ static genOogie *sharedInstance = nil;
 - (void) buildEnvelope256 : (float)attack : (float)decay : (float)sustain : (float)slevel : (float)release : (float*)results
 {
     if ( (attack  == 0) && (decay   == 0) && //empty? baiul!
-        (sustain == 0) && (release == 0) )  return;
+        (sustain == 0) && (release == 0) )
+    {
+        for (int i=0;i<256;i++) results[i] = 0.0; //12/10 pass back all zero results
+        return;
+    }
     if (results == nil) return;
     float env512[512];  //yup big stack push!
     float afrak,dfrak,sfrak; //fractional markers for adsr separation lines
@@ -432,7 +437,7 @@ static genOogie *sharedInstance = nil;
         NSNumber *tagnum = tagsByName[key];
         if (tagnum != nil) //Found it!?
         {
-            int tag = tagnum.intValue;
+            //int tag = tagnum.intValue;
             NSObject* genericControl = controlsByTag[tagnum];
             //our dict contains arrays, we want the last item
             NSArray* a = pDict[key];

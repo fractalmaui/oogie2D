@@ -14,6 +14,7 @@
 //  9/28 pulled numeric param dict entries
 //  10/3 NOTE defaults (field 4) are in slider units! WTF???
 //  11/9 change defaults a bit
+//  11/28 add wrapS/wrapT params
 import Foundation
 
 class OogieShapeParams: NSObject {
@@ -31,11 +32,13 @@ class OogieShapeParams: NSObject {
     let VParams     : [Any] = ["TexYoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
     let USParams    : [Any] = ["TexXscale" , "double", 0.1 , 10.0 , 1.0, 10.0, 0.0 ] //11/9 change defaults to 1
     let VSParams    : [Any] = ["TexYscale" , "double", 0.1 , 10.0 , 1.0, 10.0, 0.0 ]
+    let WrapSParams : [Any] = ["WrapS" , "string", "clamp","repeat","clampBorder","mirror"]
+    let WrapTParams : [Any] = ["WrapT" , "string", "clamp","repeat","clampBorder","mirror"]
     let SNameParams : [Any] = ["Name",      "text", "mt"]
     let SCommParams : [Any] = ["Comment",   "text", "mt"]
 
     let shapeParamNames : [String] = ["Texture", "Rotation","RotationType",
-    "XPos","YPos","ZPos","TexXoffset","TexYoffset","TexXscale","TexYscale","Name","Comment"]
+    "XPos","YPos","ZPos","TexXoffset","TexYoffset","TexXscale","TexYscale","WrapS","WrapT","Name","Comment"]
     let shapeParamNamesOKForPipe : [String] = ["Rotation","RotationType","TexXoffset",
                                                "TexYoffset","TexXscale","TexYscale"]
     var shapeParamsDictionary = Dictionary<String, [Any]>()
@@ -61,6 +64,8 @@ class OogieShapeParams: NSObject {
         shapeParamsDictionary["texyoffset"] = VParams
         shapeParamsDictionary["texxscale"] = USParams
         shapeParamsDictionary["texyscale"] = VSParams
+        shapeParamsDictionary["wraps"]     = WrapSParams //11/28
+        shapeParamsDictionary["wrapt"]     = WrapTParams
         shapeParamsDictionary["name"] = SNameParams
         shapeParamsDictionary["comment"] = SCommParams
     } //end setupShapeParams

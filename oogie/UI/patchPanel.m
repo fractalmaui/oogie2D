@@ -18,6 +18,10 @@
 //         pull factoryReset, add resetControls
 //  11/5   add makeADSRImage , general code cleanup
 //  11/24  redo envelope display, generate ADSR herein!, cleanup non-percKit randomize
+//  11/29  cosmetic, add bottom bevel panel
+//  12/13  fix bug hiding bevelPanel, add NEED_ARROWS
+//  12/21  add upanel hide/show to configureView, cleanup also
+//             pull all left/right button stuff
 #define ARC4RANDOM_MAX      0x100000000
 #define PERCKIT_VOICE 2
 
@@ -48,6 +52,7 @@ float env256[256]; //work array used in envelope rendering
 {
     self = [super initWithFrame:CGRectZero];
     if (self) {
+        NSLog(@"patchPanel init...");
         goog = [genOogie sharedInstance]; //MUST setup before UI!
         paramEdits = [edits sharedInstance];  //for saving param edits in documents
         _isUp = FALSE; //8/21
@@ -107,6 +112,7 @@ float env256[256]; //work array used in envelope rendering
 //  will have controls that are flat and squished out!
 -(void) setupView:(CGRect)frame
 {
+    NSLog(@"patchPanel setupView...");
     [self setupCannedData];
 
     viewWid    = frame.size.width;
@@ -129,7 +135,7 @@ float env256[256]; //work array used in envelope rendering
     ys = viewHit;
     scrollView = [[UIScrollView alloc] init];
     scrollView.frame = CGRectMake(xi,yi,xs,ys);
-    scrollView.backgroundColor = [UIColor clearColor]; // 6/19/21 [UIColor colorWithRed:0 green:0 blue:0.2 alpha:1]; //[UIColor blueColor]; //blackColor]; //[UIColor redColor];
+    scrollView.backgroundColor = [UIColor yellowColor]; // 6/19/21 [UIColor colorWithRed:0 green:0 blue:0.2 alpha:1]; //[UIColor blueColor]; //blackColor]; //[UIColor redColor];
     scrollView.showsVerticalScrollIndicator = TRUE;
 //    // Panel heights... redid 5/20 for taller sliders
 //    uHit  = 140;  //universal (top) panel
@@ -139,6 +145,8 @@ float env256[256]; //work array used in envelope rendering
 //    mHit  = 0;    // 9/23 no midi panel   95;   //midi panel
 //    pkHit = 650;  //percKit panel  7/9/21 adjust
     [self addSubview:scrollView];
+
+#ifdef NEED_ARROWS
 
     xi = 0; //10/1 add edit label / button
     yi = 0;
@@ -158,10 +166,9 @@ float env256[256]; //work array used in envelope rendering
     dismissButton.backgroundColor = [UIColor clearColor];
     [dismissButton addTarget:self action:@selector(dismissSelect:) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:dismissButton];
-
+    
     // 9/24 HEADER, top buttons and title info 
     xi = OOG_XMARGIN;
-    yi = 30;
     xs = viewWid - 2*OOG_XMARGIN;
     ys = OOG_HEADER_HIT;  //7/9
     header = [[UIView alloc] init];
@@ -171,7 +178,6 @@ float env256[256]; //work array used in envelope rendering
     header.layer.shadowOffset  = CGSizeMake(0,10);
     header.layer.shadowOpacity = 0.3;
     [self addSubview:header];
-    
  
     yi = 0;
     xs = viewWid*0.5; //9/16 not too wide
@@ -215,7 +221,6 @@ float env256[256]; //work array used in envelope rendering
     resetButton.layer.borderColor  = borderColor.CGColor;
     [resetButton addTarget:self action:@selector(resetSelect:) forControlEvents:UIControlEventTouchUpInside];
     [header addSubview:resetButton];
-    
     //Left/Right switch UI buttons...
     xs = buttonHit;
     xi = viewWid - 2*OOG_XMARGIN - 2*xs;
@@ -231,10 +236,10 @@ float env256[256]; //work array used in envelope rendering
     [goRightButton addTarget:self action:@selector(rightSelect:) forControlEvents:UIControlEventTouchUpInside];
     [header addSubview:goRightButton];
     goRightButton.enabled = FALSE;  //9/30
-    //9/24 end header area
-    
-    //int sliderNum = 0;
     int panelY    = 60; //8/6 move down for title/help button
+#else
+    int panelY  = 0; //for top panel...
+#endif
     int panelSkip = 5; //Space between panels
     int panelTopMargin = 3;
     
@@ -248,9 +253,9 @@ float env256[256]; //work array used in envelope rendering
     [uPanel setFrame : CGRectMake(xi,panelY,xs,uHit)];
     uPanel.backgroundColor = [UIColor colorWithRed:0.3 green:0.3 blue:0.5 alpha:1];
     [scrollView addSubview:uPanel];
-    yi = 5*panelTopMargin;
+    yi = panelTopMargin;
     // args: parent, tag, label, yoff, ysize
-    //Add Pickers for Wave / Poly
+    //Add Pickers for Wave
     [self addPickerRow:uPanel : iPicker : PICKER_BASE_TAG + iParam : paPickerNames[iPicker] : yi : OOG_PICKER_HIT];
     yi += (OOG_PICKER_HIT - 15); //5/24 test squnch pickers together
     iPicker++;
@@ -266,7 +271,7 @@ float env256[256]; //work array used in envelope rendering
     [ePanel setFrame : CGRectMake(xi,panelY,xs,eHit)];
     ePanel.backgroundColor = [UIColor colorWithRed:0.3 green:0.3 blue:0.5 alpha:1];
     [scrollView addSubview:ePanel];
-    yi = panelTopMargin;
+    yi = 2*panelTopMargin;
     xs = viewWid;
     ys = OOG_SLIDER_HIT;
     UILabel *l1 = [[UILabel alloc] initWithFrame: //label goes from col 1 to 2
@@ -328,6 +333,14 @@ float env256[256]; //work array used in envelope rendering
     xi = OOG_XMARGIN; //6/19/21
     xs = viewWid - 2*OOG_XMARGIN;
     pkHit = 10*OOG_SLIDER_HIT + 8*OOG_PICKER_HIT + 8*OOG_YSPACER + 2*OOG_YMARGIN;
+    //11/29 add rounded panel beneath our last panel , cosmetic
+    bevelPanel = [[UIView alloc] init]; //12/13 make class member name / comments panel...
+    [bevelPanel setFrame : CGRectMake(xi,panelY+20,xs,pkHit)]; //asdf
+    bevelPanel.backgroundColor = [UIColor colorWithRed:0.3 green:0.3 blue:0.7 alpha:1];
+    bevelPanel.layer.cornerRadius = 20;
+    bevelPanel.clipsToBounds      = TRUE;
+    [scrollView addSubview:bevelPanel];
+    //this is the panel controls are added to
     [pkPanel setFrame : CGRectMake(xi,panelY,xs,pkHit)];
     pkPanel.backgroundColor = [UIColor colorWithRed:0.3 green:0.3 blue:0.7 alpha:1];
     [scrollView addSubview:pkPanel];
@@ -355,32 +368,17 @@ float env256[256]; //work array used in envelope rendering
         iParam++;
     }
     
-    int scrollHit = 1400; //11/13 add room at bottom
+    int scrollHit = 1300; //11/13 add room at bottom
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
 
 } //end setupView
 
 
 //======(patchPanel)==========================================
-// handles L/R swipe gesture over scrolling view...
-// NOTE swipe direction is opposite from LR button direction!
-- (void)swipeGestureDetected:(UISwipeGestureRecognizer *)swipeGesture
+- (void) resizeView : (CGRect)frame
 {
-    int dir = (int)swipeGesture.direction;
-    if (dir == 1) //right
-        [self leftSelect:nil];  //9/9
-    else
-        [self rightSelect:nil];  //9/9
-} //end swipeGestureDetected
-
-
-//======(patchPanel)==========================================
-// 9/7 ignore slider moves!
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
-      if ([touch.view isKindOfClass:[UISlider class]]) {
-          return NO; // ignore the touch
-      }
-      return YES; // handle the touch
+    self.frame = frame;
+    scrollView.frame = frame;
 }
 
 //======(patchPanel)==========================================
@@ -388,8 +386,6 @@ float env256[256]; //work array used in envelope rendering
 {
     return YES;
 }
-
-
 
 //======(controlPanel)==========================================
 // 9/16 redo adds a canned label/picker set...
@@ -441,22 +437,24 @@ float env256[256]; //work array used in envelope rendering
     }
 } //end setEdited
 
+
 //======(patchPanel)==========================================
 -(void) configureView
 {
     // dig out type param ... percKit type is special!
     NSArray *ra = _paramDict[@"type"];
     NSNumber *nn = @0;  //10/2 handle nil errz
-    patchType = nn.intValue; //11/24
     if (ra != nil && ra.count >0) nn = ra.lastObject;
+    patchType = nn.intValue; //12/13 wups was in wrong place
     //Load sample names into all perc pickers...
     NSString *s = @"no name"; //get voice name for title
     NSArray *a  = [_paramDict objectForKey:@"name"];
     if (a.count > 0) s = a.lastObject;
     [self configureViewWithReset : FALSE];
     //handle percKit pickers...
-    int percPickerOffset = 1; //10/2 
-    if (patchType == PERCKIT_VOICE)
+    int percPickerOffset = 1; //10/2
+    BOOL gotPercKit = (patchType == PERCKIT_VOICE); //12/21
+    if (gotPercKit)
     {
         for (int i=0;i<8;i++)
         {
@@ -472,16 +470,9 @@ float env256[256]; //work array used in envelope rendering
                     [allPickers[whichPicker] selectRow: foundit inComponent:0 animated:YES];
             }
         } //end i loop
-        //Hide percKit panel for most voice types
-        pkPanel.hidden = FALSE;
-        [self enableADSRControls : FALSE];
-
     } //end nn.intValue
     else
     {
-        pkPanel.hidden = TRUE;
-        [self enableADSRControls : TRUE];
-        //11/24 extract ADSR values...
         for (int i=1;i<6;i++)
         {
             NSString *pname = paAllParams[i];
@@ -495,10 +486,19 @@ float env256[256]; //work array used in envelope rendering
         [goog buildEnvelope256:aa:dd:ss:slsl:rr:env256];
         adsrImage.image = [goog makeADSRImage:256 :64 : env256];
     }
-    
+    //12/21 new enable/disables
+    [self enableUPanelControls : (patchType == SYNTH_VOICE)];
+    [self enableADSRControls   : !gotPercKit];
+    pkPanel.hidden             = !gotPercKit;
+    bevelPanel.hidden          = !gotPercKit;
+
+    int scrollHit = gotPercKit ? 1300 : 600; //12/21 vary scroll height
+    scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
+
+
     NSArray *edits = [paramEdits getEditKeys:_patchName]; //10/3 check for edits
     if (edits && edits.count > 0) [self setEdited];
-}
+} //end configureView
 
 //======(patchPanel)==========================================
 // This is huge. it should be made to work with any control panel!
@@ -539,12 +539,23 @@ float env256[256]; //work array used in envelope rendering
 -(void) enableADSRControls : (BOOL) enabled
 {
     adsrImage.hidden = !enabled;
-    for (int i = 0;i<6;i++) //first slider is in ADSR now 9/8
+    for (int i = 0;i<7;i++) //12/20 add sampleoff to sliders included herein
     {
         UISlider *s = (UISlider*)allSliders[i];
         s.enabled = enabled;
     }
 } //end enableADSRControls
+ 
+//======(patchPanel)==========================================
+// 12/21 sets top panel on/off
+-(void) enableUPanelControls : (BOOL) enabled
+{
+    for (int i = 0;i<1;i++) //12/20 add sampleoff to pickers included herein
+    {
+        UIPickerView *p = (UIPickerView*)allPickers[i];
+        [p setUserInteractionEnabled:enabled];
+    }
+} //end enableUPanelControls
  
 //======(patchPanel)==========================================
 // 8/3 update session analytics here..
@@ -662,18 +673,6 @@ float env256[256]; //work array used in envelope rendering
     [self randomizeParams  ];
     resetButton.hidden = FALSE; //indicate param change
 } //end diceSelect
-
-//======(controlPanel)==========================================
-- (IBAction)leftSelect:(id)sender
-{
-    [self.delegate didSelectLeft];
-}
-
-//======(controlPanel)==========================================
-- (IBAction)rightSelect:(id)sender
-{
-    [self.delegate didSelectRight];
-}
 
 //======(patchPanel)==========================================
 - (IBAction)resetSelect:(id)sender

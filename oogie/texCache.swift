@@ -10,7 +10,8 @@
 //  Created by Dave Scruton on 9/3/19.
 //  Copyright © 2019 fractallonomy. All rights reserved.
 //  https://stackoverflow.com/questions/40396110/convert-uiimage-to-base64-string-in-swift
-//
+//  Textures live in this folder:
+//  /...appshit/Library/Caches/textures
 //  BUG in deleteImageFile!!
 //   {Error Domain=NSPOSIXErrorDomain Code=2 "No such file or directory"}}
 // 10/7/21 change cachesDirectory, use bundleID
@@ -20,6 +21,8 @@
 // 11/9  add grads 000
 // 11/11 add getRandomTextureName
 // 11/15 add defaultTexture
+// 12/15 add keysSortedByDate,Alpha
+// 12/27 add fabric (maybe in its own folder?)
 
 import Foundation
 
@@ -31,10 +34,12 @@ class texCache {
     var cacheMasterURL  : URL
     var cacheMasterFile = ""
     var texDict         = Dictionary<String, UIImage>()
+    var texAttrs        = Dictionary<String, Dictionary<FileAttributeKey,Any>>()
     var thumbDict       = Dictionary<String, UIImage>() //10/28
     var cacheSize       = 0
     var cacheNames      : [String] = []
     let defaultTexture  = UIImage(named:"spectrumOLD")
+    var old80sDate      = Date()
 
     //=====(texCache)=============================================
     //This makes sure your singletons are truly unique and prevents
@@ -47,6 +52,15 @@ class texCache {
         cachesDirectory = DataManager.getCacheDirectory().appendingPathComponent(bundle!)
         cacheMasterURL  = cachesDirectory.appendingPathComponent(cacheMasterFile)
         //print(" cache URL \(cacheMasterURL)")
+        
+        //get olllld date for use in sorting builtin textures vs new ones
+        var dco = DateComponents()
+        dco.year  = 1980
+        dco.month = 1
+        dco.day   = 1
+        let cal = Calendar(identifier: .gregorian)
+        old80sDate = cal.date(from:dco)!
+        
         
         loadMasterCacheFile()
         loadCache()
@@ -134,6 +148,7 @@ class texCache {
     //=====(texCache)=============================================
     // boilerplate from stackoverflow,
     private func loadCacheImage(fileName: String) -> UIImage? {
+        
         let fileURL = cachesDirectory.appendingPathComponent(fileName)
         do {
             let imageData = try Data(contentsOf: fileURL)
@@ -149,8 +164,10 @@ class texCache {
     func loadCache()
     {
         //11/9 add canned grad(s)
-        for tname in ["grads000","Chex"]  //11/20 multiple canned textures
+        for tname in ["grads000","chex000","mondrian_composite",
+                      "fabric01.jpg","fabric02.jpg","fabric03.jpg","fabric04.jpg"]  //11/20 multiple canned textures
         {
+            print("load tex " + tname)
             if let texture = UIImage(named: tname) //11/20
             {
                 texDict[tname]   = texture
@@ -164,9 +181,64 @@ class texCache {
             {
                 texDict[nextFileName] = nextImage
                 thumbDict[nextFileName] = getThumbWith(image: nextImage)  //10/28
+                saveAttributesForFile(fname: nextFileName)
             }
         } //end for...
     } //end loadCache
+    
+    //=====(texCache)=============================================
+    //  12/16 new
+    func saveAttributesForFile (fname:String)
+    {
+        // get attrs...
+        let fileURL = cachesDirectory.appendingPathComponent(fname)
+        do{
+            let fm = try FileManager.default.attributesOfItem(atPath: fileURL.path) //12/15 file attrs
+            texAttrs[fname] = fm
+        }
+        catch{
+        }
+    } //end saveAttributesForFile
+    
+    //=====(texCache)=============================================
+    // 12/15 for sorting cache items...
+    func keysSortedByAlpha() -> [String]
+    {
+        return texDict.keys.sorted()
+    } //end keysSortedByAlpha
+    
+    //=====(texCache)=============================================
+    // 12/15 for sorting cache items...
+    func keysSortedByDate() -> [String]
+    {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy.MM.dd.HH.mm.ss"
+        var workArray = [String]()
+        print("degug: keysbydate")
+        for key in texDict.keys  //loop over all keys
+        {
+            var cDate = old80sDate //start w ollld date
+            if let attr = texAttrs[key]  //get attr if it exists
+            {
+                cDate = attr[FileAttributeKey.creationDate] as! Date
+            }
+            let s =  dateFormatter.string(from: cDate) + "%" + key
+            print(s)
+            workArray.append(s)
+        }
+        var results = [String]()
+        for s in workArray.sorted()
+        {
+            let pair = s.split(separator:"%")
+            if pair.count > 1
+            {
+                let skey = String(pair[1])
+                results.append(skey)
+                print("...result \(skey)")
+            }
+        }
+        return results
+    } //end keysSortedByDate
     
     //=====(texCache)=============================================
     // 9/28 moved from mainVC
@@ -214,6 +286,7 @@ class texCache {
         updateMasterFile(latestFileName: fileName)
         texDict[fileName] = image
         thumbDict[fileName] = getThumbWith(image: image)
+        saveAttributesForFile(fname: fileName) //12/16
         cacheNames.append(fileName)
     }
 
@@ -234,7 +307,7 @@ class texCache {
     public func createLilThumb(ii : UIImage) -> UIImage {
         let isize = CGSize(width: 32, height: 32)
         UIGraphicsBeginImageContextWithOptions(isize, false, 1)
-        let context = UIGraphicsGetCurrentContext()!
+        //12/16 let context = UIGraphicsGetCurrentContext()!
         ii.draw(in: CGRect(origin: CGPoint.zero, size: isize))
         let resultImage = UIGraphicsGetImageFromCurrentImageContext()!
         UIGraphicsEndImageContext()

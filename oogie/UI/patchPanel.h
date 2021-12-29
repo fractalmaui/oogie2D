@@ -28,6 +28,7 @@
     //Panels: universal,envelope,channels,gestures,midi
     UIView *header;
     UIView *uPanel,*ePanel,*cPanel,*mPanel,*ftPanel,*pkPanel;
+    UIView *bevelPanel; //12/13
     UIImageView *adsrImage;
 
     int uHit,eHit,cHit,mHit,ftHit,pkHit;
@@ -53,6 +54,7 @@
     float aa,dd,ss,rr,slsl;  //11/24 for temp adsr work
     int patchType; //11/24 keep track of type for UI/ other things
     int percKitParamStart;
+    
 }
 
 
@@ -69,8 +71,9 @@
 @property (nonatomic, strong) NSDictionary *paramDict;
 @property(nonatomic,assign)   int whichSamp;
 
-- (void)setupView:(CGRect)frame;
+- (void) setupView:(CGRect)frame;
 - (void) configureView;
+- (void) resizeView : (CGRect)frame;
 
 
 @end
@@ -80,12 +83,9 @@
 @protocol patchPanelDelegate <NSObject>
 @optional
 -(void) didSetPatchValue  : (int) which : (float) newVal : (NSString*) pname : (NSString*) pvalue : (BOOL)undoable;
--(void) didSelectRight ;
--(void) didSelectLeft ;
 -(void) didSelectPatchDice ;
 -(void) didSelectPatchReset ;
 -(void) didSelectPatchDismiss ; 
--(void) updateProModeInfo : (NSString*) infostr ;  //5/19
 @end
 
 

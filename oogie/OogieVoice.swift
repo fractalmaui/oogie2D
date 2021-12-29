@@ -20,7 +20,9 @@
 //  10/20 add inScalars
 //  10/25 add xtraParam support
 //  10/27 playColors returns last note now
-//  11/10 add quant , getQuantTime 
+//  11/10 add quant , getQuantTime
+//  11/29 allow black colors in setInputColor
+//  12/13 remove get/set PatchParam, etc, moved to oogiePatch
 import Foundation
 
 let SYNTH_TYPE = 1001
@@ -338,7 +340,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         let angle = shape.angle
         //print("getShapeColor:voice \(OVS.key) shape \(OVS.shapeKey) : angle \(angle)")//
         // 11/3 fix math error in xpercent!
-        var xpercent = (angle + aoff - OVS.xCoord) / twoPi  //11/3 apply xcoord B4 dividing!
+        var xpercent = (angle + aoff - OVS.xCoord) / (2.0 * .pi)  //11/29 apply xcoord B4 dividing!
         xpercent = -1.0 * xpercent                     //  and flip X direction
         //Keep us in range 0..1
         while xpercent > 1.0 {xpercent = xpercent - 1.0}
@@ -464,74 +466,6 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
     } //end getParamDictWith
     
     //-----------(oogieVoice)=============================================
-    // 9/28 new: this is sloppy. patches may want to be independent from voices??
-    // 10/2 HOKEY: this does param conversion CUSTOM for perclooxpans!!!
-    func getPatchParamDict() -> Dictionary<String,Any>
-    {
-        var d = Dictionary<String, Any>()
-        for pname in OPaP.patchParamNames //look at all params...
-        {
-            let plow = pname.lowercased()
-            if plow == "percloox" || plow == "perclooxpans" {continue} //bail on percloox for now...
-            //print("pack patch param \(pname)")
-            let pTuple = getPatchParam(named : plow , pIndex:0)
-            let sv = pTuple.sParam
-            var dv = pTuple.dParam as Double
-            if let paramz = OPaP.patchParamsDictionary[plow]  //get param info...
-            {
-                var workArray = paramz  //copy
-                if let ptype = paramz[1] as? String
-                {
-                    if ptype == "double"  //double type? do some conversion
-                    {
-                        let lolim  = paramz[6] as! Double
-                        let lrange = paramz[5] as! Double
-                        if lrange != 0.0 //9/16 DO not apply range shift to int params!
-                        {
-                            dv = (dv - lolim) / lrange
-                        }
-                        workArray.append(NSNumber(value:dv))
-                    } //end double/int type
-                    else if ptype == "int"     //9/16 int type? no conversion
-                    {
-                        workArray.append(NSNumber(value:dv))
-                    }
-                    else //string?
-                    {
-                        workArray.append(sv)
-                    }
-                }  //end let ptype
-                d[plow] = workArray
-            } //end let paramz
-        } //end for pname
-        ///Now append percloox / perclooxpans
-        var pass = 0
-        for pplow in [ "percloox" , "perclooxpans" ]
-        {
-            for i in 0...7
-            {
-                if var workArray = OPaP.patchParamsDictionary[pplow]  //get param info...
-                {
-                    let pTuple = getPatchParam(named : pplow , pIndex:i)
-                    let dv = pTuple.dParam //double param
-                    let sv = pTuple.sParam //string param
-                    ///print("pass \(pass) loop \(i)")
-                    /// pass 0:percloox is a string, pass 1:pans is a number
-                    if pass == 0  { workArray.append(sv) }
-                    else          { workArray.append(NSNumber(value:dv/255.0)) } //10/2 pan needs conversion...
-                   // print("..........dv \(dv) sv \(sv)")
-                    // name = percloox_3   or  perclooxpans_2, etc
-                    d[pplow + "_" + String(i)]  = workArray //append digit to param name
-                }
-            }
-            pass = pass + 1
-        }
-        return d
-    } //end getPatchParamDict
- 
-
-    
-    //-----------(oogieVoice)=============================================
     //TEMP, improve this!
     func getPatchDictWithValues() -> Dictionary<String,Any>
     {
@@ -616,7 +550,14 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
     func loadVoice(name:String)
     {
         OVS.name = name
-        OVS = DataManager.loadVoice(name, with: OVStruct.self)
+        //  12/3 OLD          self.OVScene.OSC = try DataManager.loadScene("pipey", with: OSCStruct.self)
+        do{  //12/3 add try/catch to all datamanager loads
+            OVS = try DataManager.loadVoice(name, with: OVStruct.self)
+        }
+        catch{
+            print("failure loading voice!");
+        }
+
         // DHS 9/27 add type to patch getter
         //6/29/21 FIX! OOP = allP.getPatchByName(name: OVS.patchName)
         //10/15 figger out which buffers to use...
@@ -646,8 +587,8 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         {
         case "name"         : OVS.name    = sval
         case "comment"      : OVS.comment = sval
-        case "latitude"     : OVS.yCoord = dval
-        case "longitude"    : OVS.xCoord = dval
+        case "latitude"     : OVS.yCoord  = dval
+        case "longitude"    : OVS.xCoord  = dval
         case "patch"        : OVS.patchName = sval
         case "type"         : break
         case "scale"        : OVS.keySig     = ival
@@ -687,47 +628,6 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         } //end switch
         paramListDirty = true
     } //end setParam
-
-    //-----------(oogieVoice)=============================================
-    // 10/1 new: note pIndex param for accessing percLoox
-    func setPatchParam(named name : String , toDouble dval: Double , toString sval: String)
-    {
-        let ival = Int(dval) //some params are stored as integers!
-        print("setPatchParam \(name) -> \(dval)  \(sval)")
-        switch (name)  //depending on param, set double or string
-        {
-        case "name":        OOP.name = sval
-        case "wave":        OOP.wave = ival
-        case "type":        OOP.type = ival
-        case "attack":      OOP.attack = dval
-        case "decay":       OOP.decay = dval
-        case "sustain":     OOP.sustain = dval
-        case "slevel":      OOP.sLevel = dval
-        case "release":     OOP.release = dval
-        case "duty":        OOP.duty = dval
-        case "sampleoffset":OOP.sampleOffset = ival
-        case "pkeydetune":  OOP.pKeyDetune = ival
-        case "pkeyoffset":  OOP.pKeyOffset = ival
-        case "plevel":      OOP.pLevel = ival
-        case "percloox_0":  OOP.percLoox[0] = sval
-        case "percloox_1":  OOP.percLoox[1] = sval
-        case "percloox_2":  OOP.percLoox[2] = sval
-        case "percloox_3":  OOP.percLoox[3] = sval
-        case "percloox_4":  OOP.percLoox[4] = sval
-        case "percloox_5":  OOP.percLoox[5] = sval
-        case "percloox_6":  OOP.percLoox[6] = sval
-        case "percloox_7":  OOP.percLoox[7] = sval
-        case "perclooxpans_0":  OOP.percLooxPans[0] = ival
-        case "perclooxpans_1":  OOP.percLooxPans[1] = ival
-        case "perclooxpans_2":  OOP.percLooxPans[2] = ival
-        case "perclooxpans_3":  OOP.percLooxPans[3] = ival
-        case "perclooxpans_4":  OOP.percLooxPans[4] = ival
-        case "perclooxpans_5":  OOP.percLooxPans[5] = ival
-        case "perclooxpans_6":  OOP.percLooxPans[6] = ival
-        case "perclooxpans_7":  OOP.percLooxPans[7] = ival
-        default:print("Error:Bad patch param in set:" + name)
-        }
-    } //end setPatchParam
 
     //-----------(oogieVoice)=============================================
     // 4/22/20 gets param by name, returns tuple
@@ -783,38 +683,6 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         return(name , dp , sp) //pack up name,double,string
     } //end getParam
 
-    //-----------(oogieVoice)=============================================
-    // 9/28 new: note pIndex param for accessing percLoox
-    func getPatchParam(named name : String, pIndex: Int) -> (name:String , dParam:Double , sParam:String )
-    {
-        var dp = 0.0
-        var sp = ""
-        var isString = false  //do i need this??
-        let pptr = min(7,max(0,pIndex)) //legalize perc index...
-        switch (name)  //depending on param, set double or string
-        {
-        case "name":        sp = OOP.name;isString = true
-        case "type":        dp = Double(OOP.type)
-        case "wave":        dp = Double(OOP.wave)
-        case "attack":      dp = Double(OOP.attack)
-        case "decay":       dp = Double(OOP.decay)
-        case "sustain":     dp = Double(OOP.sustain)
-        case "slevel":      dp = Double(OOP.sLevel)
-        case "release":     dp = Double(OOP.release)
-        case "duty":        dp = Double(OOP.duty)
-        case "sampleoffset":dp = Double(OOP.sampleOffset)
-        case "pkeydetune":  dp = Double(OOP.pKeyDetune)
-        case "pkeyoffset":  dp = Double(OOP.pKeyOffset)
-        case "plevel":      dp = Double(OOP.pLevel)
-        case "percloox":    sp = OOP.percLoox[pptr];isString = true
-        case "perclooxpans":dp = Double(OOP.percLooxPans[pptr])
-        default:print("Error:Bad patch param in get:" + name)
-        }
-        if !isString  {sp = String(format: "%4.2f", dp)} // pack double as string
-        return(name , dp , sp) //pack up name,double,string
-    } //end getPatchParam
-
-    
     //-----------(oogieVoice)=============================================
     // future-proof? packs some vars into xtraParams as a string
     //  call right before save to file
@@ -883,7 +751,6 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
     func playColors(angle : Double, rr : Int ,gg : Int ,bb : Int, verbose : Bool) -> Int
     {
         var inkeyNote = 0
-        //var inkeyOldNote = 0
         var noteToPlay = 0
         //this sets midiNote!
         setInputColor(chr: rr, chg: gg, chb: bb)
@@ -893,10 +760,10 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
             //9/11 use sample num from voice... for perc/samples now
             bufferPointer = OVS.whichSamp
         }
-        if verbose { print("....playColors:NOTE:\(midiNote) NPV:\(nchan) \(pchan) \(vchan)") }
-         //DEBUG print("....playColors:NOTE:\(midiNote) type:\(OOP.type) uid:\(uid)")
+        if verbose { print("....playColors:NOTE:\(midiNote) NPV:\(nchan) \(pchan) \(vchan)  lnchan \(lnchan)") }
+        //print("....playColors:NOTE:\(midiNote) type:\(OOP.type) uid:\(uid)  n:lnchan \(nchan) : \(lnchan)")
         let vt    = OOP.type
-        if midiNote > 0  || OVS.rotTrigger != 0//Play something?
+        if midiNote > 0  || OVS.rotTrigger != 0  //Play something?
         {
             (sfx() as! soundFX).setSynthMIDI(Int32(OVS.midiDevice), Int32(OVS.midiChannel)) //chan: 0-16
             let nc = (sfx() as! soundFX).getSynthNoteCount()
@@ -917,6 +784,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
             {
                 gotTriggered = (abs (nchan - lnchan) > OVS.thresh) && nc < 12 //5/2
                 if (nc >= 20){ print("   ...SYNTH notecount \(nc)") }
+                //print("...triggered \(gotTriggered) n:lnchan \(nchan) : \(lnchan) thresh \(OVS.thresh) ")
             }
             else //use beats trigger?
             {
@@ -1099,10 +967,11 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
                 addToDebugHistory(n:noteToPlay) //4/19 add debug tracker
             } //end abs toler check
         } //end midinote...
-        else  //11/20 zer0 note? clear old note too
-        {
-            lnchan = 0
-        }
+        //DHS 11/29 testo
+//        else  //11/20 zer0 note? clear old note too
+//        {
+//            lnchan = 0
+//        }
         return noteToPlay
     } //end playColors
     
@@ -1146,7 +1015,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
             if let pname = key as? String
             {
                 var ppname = pname //work var...
-                print("pname \(pname) ") //look for percloox_0... etc
+                //print("pname \(pname) ") //look for percloox_0... etc
                 let a = pname.split(separator: "_")
                 if a.count > 1
                 {
@@ -1176,7 +1045,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
                         }
                         //Finally! now set the patch param to reflect edit...
                         //print(" apply edit to \(pname) value \(dd)")
-                        setPatchParam(named: pname, toDouble: dd, toString: ssn)
+                        OOP.setParam(named: pname, toDouble: dd, toString: ssn) //12/13 change patch get/set
                     }
                 } //end let ssn
            } //end let pname
@@ -1401,15 +1270,15 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         var tvchan = 0
         let tschan = 0
         //let pf     = 0.0
-
-        if (chr==0) && (chg==0) && (chb==0) //black means no sound/note/center pan
-        {
-            nchan = 0
-            pchan = 128
-            vchan = 0
-            midiNote = 0
-            return
-        }
+//11/29 test: allow black as a note
+//        if (chr==0) && (chg==0) && (chb==0) //black means no sound/note/center pan
+//        {
+//            nchan = 0
+//            pchan = 128
+//            vchan = 0
+//            midiNote = 0
+//            return
+//        }
         pchan = 128
         vchan = 128
         //get MusiColors(TM) data...

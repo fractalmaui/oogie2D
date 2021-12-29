@@ -14,7 +14,8 @@
 //  Params for oogiePipe objects. singleton, created once
 //  9/28 pulled numeric param dict entries
 //  10/5 add invert params
-
+//  12/6 add pipe delay
+//  12/10 fix scale err in lo/hi ranges!
 import Foundation
 import SceneKit
 
@@ -22,18 +23,19 @@ import SceneKit
 @objc class OogiePipeParams: NSObject {
 
     static let sharedInstance = OogiePipeParams()
-    //12/1 add params
-    let InputChanParams      : [Any]   = ["InputChannel", "string", "Red", "Green", "Blue", "Hue",
-                                      "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow"]
+    //Params: Name,Type,Min,Max,Default,DisplayMult,DisplayOffset?? (string params need a list of items)
+    let InputChanParams      : [Any] = ["InputChannel", "string", "Red", "Green", "Blue", "Hue",
+                                        "Luminosity", "Saturation", "Cyan", "Magenta", "Yellow"]
     let OutputParamParams    : [Any] = ["OutputParam",  "string","mt"]
     //Not confusing at all, huh? This is the param where the pipename is entered
-    let PipeLoRangeParams    : [Any] = ["LoRange" , "double", 0.0 , 255.0 , 128.0, 255.0, 0.0 ]
-    let PipeHiRangeParams    : [Any] = ["HiRange" , "double", 0.0 , 255.0 , 128.0, 255.0, 0.0 ]
-    let InvertParams    : [Any] = ["Invert",  "string","off","on"]
-    let PipeNameParams       : [Any] = ["Name",         "text", "mt"]
-    let PipeCommParams       : [Any] = ["Comment",      "text", "mt"]
+    let PipeLoRangeParams    : [Any] = ["LoRange" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
+    let PipeHiRangeParams    : [Any] = ["HiRange" , "double", 0.0 , 1.0 , 1.0, 1.0, 0.0 ]
+    let PipeDelayParams      : [Any] = ["Delay"   , "double", 0.0 , 100.0 , 0.0,   100.0, 0.0 ]
+    let InvertParams         : [Any] = ["Invert"  , "string","off","on"]
+    let PipeNameParams       : [Any] = ["Name"    , "text", "mt"]
+    let PipeCommParams       : [Any] = ["Comment" , "text", "mt"]
     // This is an array of all parameter names...
-    let pipeParamNames : [String] = ["InputChannel", "OutputParam","LoRange","HiRange","Name","Comment"]
+    let pipeParamNames : [String] = ["InputChannel", "OutputParam","LoRange","HiRange","Delay","Name","Comment"]
 
     var pipeParamsDictionary = Dictionary<String, [Any]>()
 
@@ -53,6 +55,7 @@ import SceneKit
         pipeParamsDictionary["lorange"]      = PipeLoRangeParams
         pipeParamsDictionary["hirange"]      = PipeHiRangeParams
         pipeParamsDictionary["invert"]       = InvertParams
+        pipeParamsDictionary["delay"]        = PipeDelayParams //12/6 wups
         pipeParamsDictionary["name"]         = PipeNameParams
         pipeParamsDictionary["comment"]      = PipeCommParams
     } //end setupParams

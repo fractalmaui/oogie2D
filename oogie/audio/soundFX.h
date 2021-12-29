@@ -62,6 +62,8 @@
 // 3/27/21 no need -(void) loadAudioBKGDForOOGIE : (int) immediateSampleNum;
 // 4/16 obsolete -(void) loadAudioForOOGIE;
 -(NSArray *) loadSamplesNow : (NSString*)pname : (int) sampleBase;
+-(int) loadExternalSamplesNow : (int) sampleBase : (NSArray*) samplePaths; //12/12
+
 -(NSMutableDictionary*) loadGeneralMidiNames;
 -(void) copyBuffer : (int) from : (int) to : (BOOL) clear;
 -(void) copyBufferOutResampled : (int) bnum : (int)fsize : (float*) fbuf;

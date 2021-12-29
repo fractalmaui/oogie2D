@@ -12,9 +12,6 @@
 
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-//#import "flurryAnalytics.h"
-//#import "miniHelp.h"
-//#import "obPopup.h"
 #import "genOogie.h"
 #import "oogieStyles.h"
 #import "soundFX.h"
@@ -29,9 +26,6 @@
     UIButton *proButton; //hides pro controls
     UIButton *helpButton;
     UIButton *diceButton;
-    UIButton *goLeftButton;
-    UIButton *goRightButton;
-    
     UIButton *loNotebutton;
     UIButton *hiNotebutton;
     UIButton *dismissButton;
@@ -59,12 +53,6 @@
 
     int diceRolls;  //9/9 for analytics
     int resets;     //9/9 for analytics
-//    int sChanges[MAX_CONTROL_SLIDERS]; //count the changes!
-//    int pChanges[MAX_CONTROL_PICKERS];
-    
-    //flurryAnalytics *fanal; //8/3
-    //obPopup *obp; //onboarding popup panel
-    //miniHelp *mhelp;
     soundFX *sfx; //8/27 for sample silencer
     
     UILongPressGestureRecognizer *undoLPGesture;
@@ -83,8 +71,7 @@
 
 
 -(void) setupView:(CGRect)frame;
-- (void) configureView;
-- (void)updateSessionAnalytics;
+-(void) configureView;
 -(void) resetPatchPicker : (int)index;
 
 
@@ -92,9 +79,7 @@
 
 @protocol controlPanelDelegate <NSObject>
 @optional
--(void) didSetControlValue  : (int) which : (float) newVal : (NSString*) pname : (NSString*) pvalue : (BOOL)undoable;
--(void) didSelectRight ;
--(void) didSelectLeft ;  
+-(void) didSetControlValue  : (float) newVal : (NSString*) pname : (NSString*) pvalue : (BOOL)undoable;
 -(void) controlNeedsProMode ;
 -(void) didSelectControlDice ; //4/28
 -(void) didSelectControlReset ; //7/11

@@ -9,6 +9,8 @@
 //  TodoApp
 //
 //  From Github 8/3/19
+//  adding error handling to json reads:
+//   https://stackoverflow.com/questions/50909240/trying-to-write-a-generic-function-for-parsing-json-into-codable-structs
 //
 //  Note everything is static. This allows calls to these methods
 //   without instantiating an object.
@@ -25,6 +27,10 @@
 //  2/4/21 add getSceneVersion,getVersionFromSceneString
 // 11/1  add loadUserPatchesToDict, minor code cleanup to
 // 11/7  add cloud folder oogieShare
+// 12/3  add exception throwing to all loads
+// 12/12 add getSoundPackURL
+// 12/10 add createLibrarySubfolders
+// 12/20 add error info in loadAllToDict
 import Foundation
 
 public class DataManager {
@@ -59,6 +65,25 @@ public class DataManager {
             NSLog("Unable to create directory \(error.debugDescription)")
         }
     } //end createSubfolders
+    
+    //======(DataManager)=============================================
+    // 12/10 new, create folder(s) in library area for installing soundpacks
+    static func createLibrarySubfolders()
+    {
+        if let url = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+        {
+            let urlSP  = url.appendingPathComponent("SPS")
+            do
+            {
+                try FileManager.default.createDirectory(atPath: urlSP.path, withIntermediateDirectories: true, attributes: nil)
+            }
+            catch let error as NSError
+            {
+                NSLog("Unable to create directory \(error.debugDescription)")
+            }
+        }
+    } //end createLibrarySubfolders
+
     
     //======(DataManager)=============================================
     // get Document Directory
@@ -287,7 +312,7 @@ public class DataManager {
             self.gotDMError(msg: error.localizedDescription)
         }
     }
-    
+
     //======(DataManager)=============================================
     // 12/27 new
     static func getDumpString <T:Encodable> (_ object:T) -> String
@@ -367,10 +392,10 @@ public class DataManager {
     
     //======(DataManager)=============================================
     //  patches may come from more than one folder, hence the url
-    static func loadPatch <T:Decodable> ( url:URL , with fileName:String, with type:T.Type) -> T{
-        return load( url ,  with: fileName,  with: type)
+    static func loadPatch <T:Decodable> ( url:URL , with fileName:String, with type:T.Type) throws -> T{
+        return try load( url ,  with: fileName,  with: type)
     }
-    
+
     //======(DataManager)=============================================
     static func sceneExists( fileName:String) -> Bool
     {
@@ -386,21 +411,19 @@ public class DataManager {
     }
     
     //======(DataManager)=============================================
-    static func loadScene <T:Decodable> (_ fileName:String, with type:T.Type) -> T{
-        //print("loadScene \(getSceneDirectory())\(fileName))") // 10/4 debug
-        return load( getSceneDirectory(),  with: fileName,  with: type)
+    static func loadScene <T:Decodable> (_ fileName:String, with type:T.Type) throws -> T{
+        return try load( getSceneDirectory(),  with: fileName,  with: type)
     }
-    
+
     //======(DataManager)=============================================
     // 11/8 new
-    static func loadCloudScene <T:Decodable> (_ fileName:String, with type:T.Type) -> T{
-        //print("loadCloudScene \(getOogieshareDirectory())\(fileName))") // 10/4 debug
-        return load( getOogieshareDirectory(),  with: fileName,  with: type)
+    static func loadCloudScene <T:Decodable> (_ fileName:String, with type:T.Type) throws -> T{
+        return try load( getOogieshareDirectory(),  with: fileName,  with: type)
     }
     
     //======(DataManager)=============================================
-    static func loadVoice <T:Decodable> (_ fileName:String, with type:T.Type) -> T{
-        return load( getVoiceDirectory(),  with: fileName,  with: type)
+    static func loadVoice <T:Decodable> (_ fileName:String, with type:T.Type) throws -> T{
+        return try load( getVoiceDirectory(),  with: fileName,  with: type)
     }
     
     //======(DataManager)=============================================
@@ -421,26 +444,12 @@ public class DataManager {
     }
     
     //======(DataManager)=============================================
-    // Load any kind of codable objects, needs URL
-    // 10/27 OUCH! How do I return on an error w/o a fatal?
-    static func load <T:Decodable> (_ url : URL , with fileName:String, with type:T.Type) -> T {
+    // 12/3 add exception handling, simpler but less error detail
+    static func load <T:Decodable> (_ url : URL , with fileName:String, with type:T.Type) throws -> T {
         let url2 = url.appendingPathComponent(fileName, isDirectory: false)
-        print("Load \(url2)")
-        if !FileManager.default.fileExists(atPath: url2.path) {
-            fatalError("File not found at path \(url2.path)")
-        }
-        if let data = FileManager.default.contents(atPath: url2.path) {
-            do {
-                let model = try JSONDecoder().decode(type, from: data)
-                return model
-            }catch{
-                fatalError( error.localizedDescription)
-            }
-        }else{
-            fatalError("Data unavailable at path \(url2.path)")
-        }
+        return try JSONDecoder().decode(type, from: (FileManager.default.contents(atPath: url2.path))!)
     } //end load
-    
+
     //======(DataManager)=============================================
     // Load any kind of codable objects
     // 10/27 OUCH! How do I return on an error w/o a fatal?
@@ -496,6 +505,20 @@ public class DataManager {
         }
         return path
     } //end getBuiltinPatchFolderPath
+    
+    //======(DataManager)=============================================
+    func getSoundPackURL ( spname: String , subFolder : String , fname : String) -> URL?
+    {
+        let path         = "SPS/" + spname + "/" + subFolder
+        if let url = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+        {
+            let urlSP  = url.appendingPathComponent(path)
+            let url2   = urlSP.appendingPathComponent(fname, isDirectory: false)
+            return url2
+        }
+        return nil
+    } //end getSoundPackURL
+
     
     //======(DataManager)=============================================
     static func loadUpDictWithPatchesFromSubfolder  <T:Decodable> (_ type:T.Type , subFolder : String , fromFactory : Bool) -> Dictionary<String, T>
@@ -572,11 +595,16 @@ public class DataManager {
             let files = try FileManager.default.contentsOfDirectory(atPath: url.path)
             var ourDict = Dictionary<String, T>()
             for fileName in files {
-                ourDict[fileName] = loadPatch( url: url, with:fileName, with: type)
+                do{ // 12/2 try/catch for errors!
+                    ourDict[fileName] = try loadPatch( url: url, with:fileName, with: type)
+                }
+                catch{
+                    print("loadalltodict failure:" + fileName)  //12/20 add error info
+                }
             }
             return ourDict
         }catch{
-            fatalError("loadAllToDict:bad load")
+            fatalError("loadAllToDict:bad load:" + url.absoluteString) //12/20 add error info
         }
     } //end loadAllToDict
     
@@ -587,7 +615,13 @@ public class DataManager {
             let files = try FileManager.default.contentsOfDirectory(atPath: url.path)
             var modelObjects = [T]()
             for fileName in files {
-                modelObjects.append(loadPatch( url: url, with:fileName, with: type))
+                do{ // 12/2 try/catch for errors!
+                    modelObjects.append(try loadPatch( url: url, with:fileName, with: type))
+                }
+                catch{
+                    print("boom loadalltodict")
+                }
+
             }
             return modelObjects
         }catch{

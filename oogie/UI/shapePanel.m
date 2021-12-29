@@ -19,7 +19,11 @@
 //            between marker update and pipe update.!?!?!?!?
 //  10/28 add image indicator over texture picker
 //  10/29 close KB if panel closes, see lastSelectedTextField , move sPanel down
-// 10/30 add shouldChangeCharactersInRange delegate callback
+//  10/30 add shouldChangeCharactersInRange delegate callback
+//  11/27 add wrapS/T pickers
+//  11/29 cosmetic, add bottom bevel panel
+//  12/15 pull which from didSetShapeValue delegate method
+//  12/21 pull l/r buttons
 #import "shapePanel.h"
 
 @implementation shapePanel
@@ -65,10 +69,12 @@
     if (allParams != nil) return; //only go thru once!
     //NSLog(@" setup canned shape Param data...");
     allParams      = @[@"texture",@"rotation",@"rotationtype",@"xpos",@"ypos",@"zpos",
-                       @"texxoffset",@"texyoffset",@"texxscale",@"texyscale",@"name",@"comment"];
+                       @"texxoffset",@"texyoffset",@"texxscale",@"texyscale",  @"wraps",@"wrapt",   //11/28 add wrapst
+                       @"name",@"comment"];
     sliderNames    = @[@"Rotation",@"Shape XPos",@"Shape YPos",@"Shape ZPos",
                        @"Tex UPos",@"Tex YPos",@"Tex UScale",@"Tex VScale"];
-    pickerNames    = @[@"Texture",@"RotType"];
+    pickerNames    = @[@"Texture",@"RotType", @"Tex WrapS", @"Tex WrapT"]; //11/29 wups
+    wrapNames      = @[@"Clamp",@"Repeat",@"ClampBorder",@"Mirror"];
     textFieldNames = @[@"Name",@"Comments"];
     
     rotTypeParams = @[@"Manual", @"BPMX1", @"BPMX2", @"BPMX3", @"BPMX4", @"BPMX5", @"BPMX6", @"BPMX7", @"BPMX8"];
@@ -177,7 +183,7 @@
     xi = OOG_XMARGIN;
     //9/3 add dice where helpbutton WAS
      diceButton = [UIButton buttonWithType:UIButtonTypeCustom];
-     [diceButton setImage:[UIImage imageNamed:@"bluedice.png"] forState:UIControlStateNormal];
+     [diceButton setImage:[UIImage imageNamed:@"greendice.png"] forState:UIControlStateNormal];
      int inset = 4; //10/27 tiny dice!
      CGRect rr = CGRectMake(xi+inset, yi+inset, xs-2*inset, ys-2*inset);
      [diceButton setFrame:rr];
@@ -219,7 +225,19 @@
     xi = OOG_XMARGIN;
     yi = 90; //10/29 move down a bit
     xs = viewWid-2*OOG_XMARGIN;
-    ys = 2*OOG_PICKER_HIT +  8*OOG_SLIDER_HIT + 2*OOG_TEXT_HIT + 2*OOG_PICKER_HIT + 2*OOG_YMARGIN;
+#ifdef ADDWRAPPICKERS
+    ys = 4*OOG_PICKER_HIT +  8*OOG_SLIDER_HIT + 2*OOG_TEXT_HIT + 2*OOG_PICKER_HIT + 3*OOG_YMARGIN; //11/28
+#else
+    ys = 4*OOG_PICKER_HIT +  8*OOG_SLIDER_HIT + 2*OOG_TEXT_HIT +  3*OOG_YMARGIN;  
+#endif
+    //11/29 add rounded panel beneath our last panel , cosmetic
+    UIView *bevelPanel = [[UIView alloc] init]; //name / comments panel...
+    [bevelPanel setFrame : CGRectMake(xi,yi+20,xs,ys)]; //asdf
+    bevelPanel.backgroundColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1];
+    bevelPanel.layer.cornerRadius = 20;
+    bevelPanel.clipsToBounds      = TRUE;
+    [scrollView addSubview:bevelPanel];
+    //this is the panel controls are added to
     UIView *sPanel = [[UIView alloc] init];
     [sPanel setFrame : CGRectMake(xi,yi,xs,ys)];
     sPanel.backgroundColor = [UIColor colorWithRed:0.2 green:0.2 blue:0.2 alpha:1];
@@ -293,6 +311,22 @@
         iParam++;
     }
 
+#ifdef ADDWRAPPICKERS
+    //11/28 add wrapS/T pickers
+    [self addPickerRow:sPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
+    yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
+    iPicker++;
+    iParam++;
+    [self addPickerRow:sPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
+    yi +=  (OOG_PICKER_HIT+OOG_YSPACER);
+    iPicker++;
+    iParam++;
+#else
+    iPicker+=2;
+    iParam+=2;
+#endif
+
+
     //9/11 text entry fields... 9/20 fix yoffset bug
     [self addTextRow:sPanel :iText :TEXT_BASE_TAG + iParam : textFieldNames[iText] : yi : OOG_TEXT_HIT ];
     yi += (OOG_TEXT_HIT+OOG_YSPACER);
@@ -308,22 +342,9 @@
     //if (cappDelegate.gotIPad) scrollHit+=120; //3/27 ipad needs a bit more room
     
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
-                         
-    [self clearAnalytics];
 
 } //end setupView
 
-//======(shapePanel)==========================================
-//9/9 for session analytics
--(void) clearAnalytics
-{
-    //8/3 for session analytics: count activities
-    diceRolls = 0; //9/9 for analytics
-    resets    = 0; //9/9 for analytics
-//    for (int i=0;i<MAX_SHAPE_SLIDERS;i++) sChanges[i] = 0;
-//    for (int i=0;i<MAX_SHAPE_PICKERS;i++) pChanges[i] = 0;
-}
- 
 //======(shapePanel)==========================================
 // 9/7 ignore slider moves!
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
@@ -458,12 +479,12 @@
     if (aa != nil) //11/9 update thumb to match setting
     {
         NSString *s = aa.lastObject;   //should be our setting?
-        NSLog(@"texture %@",s);
+        //NSLog(@"texture %@",s);
         [self updateThumbImageByKey : s : 1]; //11/9 do not use row 0 here!
     }
     [self updateTextureDisplay];
     [self configureViewWithReset : FALSE];
-}
+} //end configureView
 
 //======(controlPanel)==========================================
 // This is huge. it should be made to work with any control panel!
@@ -474,8 +495,10 @@
     if (reset)  noresetparams = @[@"texture",@"name",@"comment"]; // 11/9 dont change texture on reset!
     else        noresetparams = @[@"name",@"comment"];
     NSMutableDictionary *pickerchoices = [[NSMutableDictionary alloc] init];
-    [pickerchoices setObject:_texNames forKey:@0];  //textures are on picker 8
+    [pickerchoices setObject:_texNames forKey:@0];      //textures are on picker 8
     [pickerchoices setObject:rotTypeParams forKey:@2];  //rotation types are on picker 2
+//    [pickerchoices setObject:wrapNames forKey:@10];     //wrap S
+//    [pickerchoices setObject:wrapNames forKey:@11];     //wrap T
     NSDictionary *resetDict = [goog configureViewFromVC:reset : _paramDict : allParams :
                      allPickers : allSliders : allTextFields :
                noresetparams : pickerchoices];
@@ -504,7 +527,7 @@
         NSNumber *nt = ra[0];
         NSNumber *nv = ra[1];
         NSString *ns = ra[2];
-        [self.delegate didSetShapeValue : nt.intValue : nv.floatValue:key:ns:FALSE];
+        [self.delegate didSetShapeValue : nv.floatValue:key:ns:FALSE]; //12/15
     }
 } //end sendUpdatedParamsToParent
 
@@ -576,7 +599,7 @@
     int tagMinusBase = ((int)slider.tag % 1000); // 7/11 new name
     float value = slider.value;
     NSString *name = dice ? @"" : allParams[tagMinusBase];
-    [self.delegate didSetShapeValue:tagMinusBase:value:allParams[tagMinusBase]:name:TRUE];
+    [self.delegate didSetShapeValue: value:allParams[tagMinusBase]:name:TRUE];  //12/15
 } //end updateSliderAndDelegateValue
 
 
@@ -662,11 +685,14 @@
     {
         title = _texNames[row];
     }
-    if (tag == PICKER_BASE_TAG + 2) //rotation type
+    else if (tag == PICKER_BASE_TAG + 2) //rotation type
     {
         title = rotTypeParams[row];
     }
-
+    else if ( (tag == PICKER_BASE_TAG + 10) || (tag == PICKER_BASE_TAG + 11) ) //wraps/t
+    {
+        title = wrapNames[row];
+    }
     return title;
 }
 
@@ -688,6 +714,7 @@
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
     //int which = 0;
     int liltag = (int)pickerView.tag % 1000;
+    NSString *fieldName = @"";   //12/15 simplify
     if (liltag == 0)
     {
         NSString *txt = [self getPickerTitleForTagAndRow:(int)pickerView.tag:(int)row];
@@ -695,10 +722,15 @@
         {
             [self updateThumbImageByKey : txt : (int)row]; //11/9 move to method
         }
-        [self.delegate didSetShapeValue:liltag :(float)row: allParams[liltag] : _texNames[row] :  !rollingDiceNow && !resettingNow];
+        fieldName =  _texNames[row];
+        [self.delegate didSetShapeValue: (float)row: allParams[liltag] : _texNames[row] :  !rollingDiceNow && !resettingNow];  //12/15
     }
-    else
-        [self.delegate didSetShapeValue:liltag :(float)row:allParams[liltag]: rotTypeParams[row] : !rollingDiceNow && !resettingNow];    
+    else if (liltag == 2) //11/28rot type
+        fieldName =  rotTypeParams[row];
+    else   //11/28 wrapS/T
+        fieldName =  wrapNames[row];
+
+    [self.delegate didSetShapeValue: (float)row:allParams[liltag]: fieldName : !rollingDiceNow && !resettingNow]; //12/15
 }
 
 
@@ -706,12 +738,9 @@
 // tell the picker how many rows are available for a given component
 - (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component {
     int tag = (int)pickerView.tag;
-    //NSLog(@" picker#rows for tag %d",tag);
-    
-    if ( tag == PICKER_BASE_TAG)  return _texNames.count;
-    else                          return rotTypeParams.count; //10/1
-//    return 0; //empty (failed above test?)
-    
+    if      ( tag == PICKER_BASE_TAG)       return _texNames.count;
+    else if ( tag == PICKER_BASE_TAG + 2)   return rotTypeParams.count; //10/1
+    else                                    return wrapNames.count; //11/28 add wrapST
 }
 
 //-------<UIPickerViewDelegate>-----------------------------
@@ -787,13 +816,11 @@
     [textField resignFirstResponder]; //Close keyboard
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
-    [self.delegate didSetShapeValue:liltag :0.0: allParams[liltag] : s : FALSE];   //9/20
+    [self.delegate didSetShapeValue: 0.0: allParams[liltag] : s : FALSE];   //12/15
     // 9/21 take care of name update at top of menu
     if ([allParams[liltag] isEqualToString:@"name"]) titleLabel.text = s;
     return YES;
 }
-
-
 
 //=====<DUH>======================================================================
 // Only assumes square puzzles... colors already set up too!

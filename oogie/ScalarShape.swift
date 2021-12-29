@@ -13,10 +13,17 @@
 //  Created Oct 9 2021
 //
 //  Scalar is a single-value parameter controller for oogie2D/AR
+//    the center of its coord system is the control cylinder, and
+//     the pipe needs to be drawn from there to target object
 //  10/15 complex! added pipe mech, similar to pipe but not enuf to resuse code!
 //  10/20 make pipe orange, add animation on scalar change
 //  10/26 remove VERSION_2D crap
 //  11/3  add dice shape for randomizer
+//  12/14  redo both box labels, redo update Indicator
+//  12/19  add dvalue arg to update Indicator
+//  12/23  redo completely, use self as base object NOT scalarObj,
+//          add move scalar support
+//
 import SceneKit
  
 class ScalarShape: SCNNode {
@@ -25,135 +32,126 @@ class ScalarShape: SCNNode {
     var uid = ""
     var key = "" //5/3
     
-    var pedestalBox   = SCNBox()
-    var indicatorBox  = SCNBox()
-    var pedestalNode  = SCNNode()
-    var indicatorNode = SCNNode()
-    var cylNode       = SCNNode()
-    var cylBasePos    =  SCNVector3()
+    var pedestalBox    = SCNBox()
+    var indicatorBox   = SCNBox()
+    var pedestalNode   = SCNNode()
+    var indicatorNode  = SCNNode()
+    var cylNode        = SCNNode()
+    var cylPos         =  SCNVector3()
     var mainPipeParent = SCNNode()
     //piping
-    var ballz : [SCNNode] = []
-    var cylz  : [SCNNode] = []
+    var ballz         : [SCNNode] = []
+    var cylz          : [SCNNode] = []
     var ballGeomz     : [SCNSphere] = []
     var cylGeometries : [SCNGeometry] = []
-    var cylHeights : [Float] = []
-
+    var cylHeights    : [Float] = []
 
     //10/11 add torii / box label panels
     var torus1       = SCNTorus() //used for top/bottom torus
-    var scalarNode   = SCNNode()
+    var controlNode  = SCNNode()
     var torusNode1   = SCNNode()
     var torusNode2   = SCNNode()
     var diceCube     = SCNBox()
     var diceNode     = SCNNode()
-    //see this about setting compiler switches, also use in mainVC for marker placement
-    //   and for use of startPosition in AR version
-    
-    // 10/26 remove VERSION_2D crap
-    var floory  = Float(-0.3)
-    let shapeYoff = Float(0.3)
-    //Generally AR should be 1/4 size of 2D
-    let overallScale : CGFloat = 0.025
+    //Canned geometry sizes and positions, remember SCNVector3 likes Float
+    var floory       = Float(-0.3)
+    let shapeYoff    = Float(0.3)
     let torusRad     : CGFloat = 0.022
     let pipeRad      : CGFloat = 0.005
     let markerHit    : Double  = 0.05  //1/13
     let shapeRad     : Double  = 0.25
-    let bwid : CGFloat =  0.05 //info box size
-    let bhit : CGFloat =  0.005
+    let bwid : CGFloat = 0.05 //info box size
+    let bhit : CGFloat = 0.02
     let crad : CGFloat = 0.02 // main cyl rad
     let chit : CGFloat = 0.2  //main cyl hite
     let phit : CGFloat = 0.02  //main cyl pedestal
-
+    let labelWid = 640   //bitmap dims for info label
+    let labelHit = 80
     var pipeColor = UIColor.yellow
 
-    var boxPanel     = SCNBox()
+    var boxPanel1     = SCNBox()   //12/14 now we have 2 panels, for different parts of label
+    var boxPanel2     = SCNBox()
     var panelNodes   : [SCNNode] = []
-    var jsize = CGSize(width: 512, height: 32) //overall description image size
 
     var fadeTimer = Timer()
     var fadeCount : Int = 0
     
     //-----------(ScalarShape)=============================================
-    // NOTE this basically functions as the init, returned node is added
-    //   as a child of this object...
+    // 12/23 complete redo, adds controlNode to self, doesnt return any node
+    // sPos00 is control position, spos01 is target position
     func create3DScalar(uid: String ,  sPos00  : SCNVector3 ,
                         tlat : Double , tlon : Double , sPos01  : SCNVector3 ,
-                        isShape: Bool, newNode : Bool ) -> SCNNode
+                        objType: String, newNode : Bool )
     {
-        
+        let pipeStart = SCNVector3(0,0,0) //12/21 this will change if scalar moves since pipe is defined in scalar 3D coords
+        let pipeEnd   = SCNVector3( sPos01.x - sPos00.x,  //define pipe end relative to our zero origin
+                                    sPos01.y - sPos00.y,
+                                    sPos01.z - sPos00.z)
+
+        self.position = sPos00  //scalar is centered around start position
         if newNode
         {
             self.uid        = uid //incoming uid
             pipeColor =  UIColor(red: 0.4, green: 0.4, blue: 0.2, alpha: 1) //10/20 new dorabge color
-            scalarNode = createControlShape(sPos00:sPos00)
-            scalarNode.name = ""  //9/27 reset name as object gets added...
+            controlNode = createControlShape(atPos:pipeStart)
+            controlNode.name = ""  //9/27 reset name as object gets added...
+            self.addChildNode(controlNode)
         }
-        else
+        else //12/21 handle scalar move
         {
-            print("edit scalar node")
+            self.position = sPos00 //this moves the whole shebang!
         }
-        
-        //Get xz positioning for child nodes...
-//        let xpos = Float(sPos00.x)
-//        let zpos = Float(sPos00.z)
-        //start pipe from heart of scalar to target object...
-        // spos00 is scalar new location as passed in...
-        mainPipeParent = create3DPipe(  sPos00  : sPos00 ,
-                                        tlat : tlat , tlon : tlon , sPos01  : sPos01 ,
-                                        isShape: isShape, newNode : newNode)
+        mainPipeParent = create3DPipe(  sPos00  : pipeStart ,
+                                        tlat : tlat , tlon : tlon , sPos01  : pipeEnd ,
+                                        objType: objType, newNode : newNode) //12/24
         if newNode //10/20 adding for first time?
         {
-            scalarNode.addChildNode(mainPipeParent)
+            self.addChildNode(mainPipeParent)
             
             //10/11 add torii to indicate select status
             torus1 = SCNTorus(ringRadius: torusRad, pipeRadius: 3*pipeRad) //10/20 fatten torii
             torus1.firstMaterial?.emission.contents  = UIColor.white
             torusNode1 = SCNNode(geometry: torus1)
-            // var torYoff = Float(phit) //bottom torus
-            var torusPos = cylBasePos  //3d location, bottom of cylinder
+            var torusPos = cylPos  //3d location, bottom of cylinder
+            torusPos.y = torusPos.y - 0.5*Float(chit)
             torusNode1.position = torusPos; //SCNVector3(xpos,torYoff,zpos)
             torusNode1.scale    = SCNVector3(0.1,0.1,0.1)
-            scalarNode.addChildNode(torusNode1)
+            self.addChildNode(torusNode1)
             torusNode2 = SCNNode(geometry: torus1)
             torusPos.y = torusPos.y + Float(chit) //2nd torus, top of cylinder
             torusNode2.position = torusPos
             torusNode2.scale    = SCNVector3(0.1,0.1,0.1)
-            scalarNode.addChildNode(torusNode2)
+            self.addChildNode(torusNode2)
         }
-        
-        return scalarNode
-    }
+    } //end create3DScalar
 
     
     //-----------(ScalarShape)=============================================
     func addBoxPanel(fillColor:UIColor,sPos00  : SCNVector3) -> (bparent : SCNNode , bpanel:SCNBox)
     {
-        //var xpos = sPos00.x
-        //var zpos = sPos00.z
-        let bparent = SCNNode()
+        let bparent      = SCNNode()
         bparent.position = sPos00
-        //add filler box
-        let inset = bhit * 0.2
-        let fillerBox = SCNBox(width: 2*bwid-inset, height:bhit+inset , length: 2*bwid-inset, chamferRadius: 0)
-        fillerBox.firstMaterial?.diffuse.contents  = fillColor
-        fillerBox.firstMaterial?.emission.contents = fillColor
-        let fboxNode = SCNNode(geometry: fillerBox)
-        fboxNode.position = SCNVector3(0,0,0)
-        bparent.addChildNode(fboxNode)
+        let inset        = bhit * 0.2
+        //12/23 NOT FOR NOW...add filler box
+//        let fillerBox = SCNBox(width: 2*bwid-inset, height:bhit+inset , length: 2*bwid-inset, chamferRadius: 0)
+//        fillerBox.firstMaterial?.diffuse.contents  = fillColor
+//        fillerBox.firstMaterial?.emission.contents = fillColor
+//        let fboxNode = SCNNode(geometry: fillerBox)
+//        fboxNode.position = SCNVector3(0,0,0)
+//        bparent.addChildNode(fboxNode)
         
-        //10/11 add box name panels, 4 around marker
-        boxPanel = SCNBox(width: 2*bwid-inset, height:bhit , length: bhit, chamferRadius: 0)
-        let ii = createTALLLabelImage(label: "...",frame:CGRect(x: 0, y: 0, width: 400, height: 32))
-        boxPanel.firstMaterial?.diffuse.contents  = ii
-        boxPanel.firstMaterial?.emission.contents = ii
+        //12/14 start w/ empty black boxes...
+        let boxPanel = SCNBox(width: 2*bwid-inset, height:bhit , length: bhit*0.2, chamferRadius: 0) //12/14 redo geom
+        boxPanel.firstMaterial?.diffuse.contents  = UIColor.black
+        boxPanel.firstMaterial?.emission.contents = UIColor.black
+
         for i in 0...3
         {
             let boxNode = SCNNode(geometry: boxPanel)
             boxNode.position = SCNVector3(0,0,0)
             //pivot makes 4 boxes almost mate at corners, but there is enuf
             //  of a bevel on the corners to hide box ends
-            boxNode.pivot = SCNMatrix4MakeTranslation(0.0, 0.0 , Float(bwid * 0.91))
+            boxNode.pivot = SCNMatrix4MakeTranslation(0.0, 0.0 , Float(bwid * 1.02)) //12/14 was 0.91
             let pRot = Double(i) * .pi / 2.0
             boxNode.rotation = SCNVector4Make(0, 1, 0, Float(pRot))
             bparent.addChildNode(boxNode)
@@ -179,51 +177,38 @@ class ScalarShape: SCNNode {
 
     //-----------(ScalarShape)=============================================
     // make tex cylinder, add indicator boxes
-    func createControlShape(sPos00 : SCNVector3) -> SCNNode
+    func createControlShape(atPos : SCNVector3) -> SCNNode
     {
-        let xpos = sPos00.x
-        let zpos = sPos00.z
-
         let mainNode = SCNNode()  // ok heres our pipe parent
-        
-        let f = CGRect(x: 0, y: 0, width: 128, height: 128)
-        let t = createGridImage(frame:f , bg:.clear , fg:.white , xg : 16 , yg : 20 )
-//        let t = createGridImage(frame:f , bg:.white , fg:.black , xg : 16 , yg : 20 )
-
-        //starting point for cylinder and its children
-//        let s0 = SCNVector3(Float(xpos),Float(phit + chit/2.0),Float(zpos))
-        
-        //wow this is a kluge
-        let s0 = SCNVector3(Float(xpos),floory + Float(chit * 0.5) + 0.15,Float(zpos)) //keep control near pipes
-        cylBasePos   = s0                       //get mutable copy...
-        cylBasePos.y = cylBasePos.y - 0.5*Float(chit) //  and save bottom of cylinder for later
-        let cylNode = createTexCylinder(pos: s0,hite: chit , rad: crad, ii:t)
+        let f        = CGRect(x: 0, y: 0, width: 128, height: 128)
+        let t        = createGridImage(frame:f , bg:.clear , fg:.white , xg : 16 , yg : 20 )
+        cylPos       = SCNVector3(atPos.x ,floory + 0.15,atPos.z) //keep control near pipes
+        let cylNode  = createTexCylinder(pos: cylPos,hite: chit , rad: crad, ii:t)
         mainNode.addChildNode(cylNode)
         
         diceCube = SCNBox() //11/3 add dice box on top
-        diceCube.firstMaterial?.emission.contents = UIImage(named: "bluedice")
-        diceCube.firstMaterial?.diffuse.contents = UIImage(named: "bluedice")
+        diceCube.firstMaterial?.emission.contents = UIImage(named: "yellowdice")
+        diceCube.firstMaterial?.diffuse.contents  = UIImage(named: "yellowdice")
         diceNode = SCNNode(geometry: diceCube)
-        diceNode.position = SCNVector3(s0.x, s0.y + Float(0.8*chit) ,s0.z)
+        diceNode.position = SCNVector3(cylPos.x , cylPos.y + Float(0.8*chit) , cylPos.z)
         diceNode.scale    = SCNVector3(0.06,0.06,0.06)
-        diceNode.name = "dice_" + uid
+        diceNode.name     = "dice_" + uid
         mainNode.addChildNode(diceNode)
 
-        
-        // add some box panels, one will move up and down, one is fixed...
-        // NOTE : cylBasePos is computed in createTclinder!! move it out?
-        let ptuple = addBoxPanel(fillColor:UIColor.clear, sPos00:cylBasePos) //sPos00)
+        // add 2 box panels, one will move up and down, one is fixed...
+        var s1 = cylPos
+        s1.y = s1.y - 0.5*Float(chit) - Float(bhit) //move pedestal down a bit
+        let ptuple = addBoxPanel(fillColor:UIColor.clear, sPos00:s1)
         pedestalNode = ptuple.bparent //main parent node
         pedestalBox  = ptuple.bpanel //handle to where labels go
         mainNode.addChildNode(pedestalNode)
         
-        let ituple = addBoxPanel(fillColor:UIColor.red, sPos00:cylBasePos)  //sPos00)
+        let ituple = addBoxPanel(fillColor:UIColor.red, sPos00:cylPos)  //sPos00)
         indicatorNode = ituple.bparent //main parent node
         indicatorBox  = ituple.bpanel //handle to where labels go
         mainNode.addChildNode(indicatorNode)
         return mainNode
     } //end createControlShape
-
     
     //-----------(ScalarShape)=============================================
     // 9/26 new
@@ -291,13 +276,14 @@ class ScalarShape: SCNNode {
         context.setFillColor(UIColor.black.cgColor);
         context.fill(frame);
         //First draw pipe label...
-        let xi = CGFloat(0.0)
-        let yi = CGFloat(0.0)
         let xs = frame.size.width
         let ys = frame.size.height
-        let textFont = UIFont(name: "Helvetica Bold", size: CGFloat(ys*1.3))! //10/20 make xtra big
+        let fontHit = ys * 0.6
+        let xi = CGFloat(0.0)
+        let yi = CGFloat(0.5*ys - 0.5*fontHit)
+        let textFont = UIFont(name: "Helvetica Bold", size: fontHit )! //12/14 make font small, to fit more chars
         let text_style=NSMutableParagraphStyle()
-        text_style.alignment=NSTextAlignment.center
+        text_style.alignment=NSTextAlignment.left  //12/14 was center
         let textFontAttributes = [
             NSAttributedString.Key.font: textFont,
             NSAttributedString.Key.foregroundColor: UIColor.white,
@@ -313,9 +299,10 @@ class ScalarShape: SCNNode {
     //-----------(oogieScalar)=============================================
     // 10/15 simpler than regular pipe, always goes from scaler base
     //    to target, so there is no from lat/lon
+    // 12/24 change issShape to objjType
     func create3DPipe( sPos00  : SCNVector3 ,
                        tlat : Double , tlon : Double , sPos01  : SCNVector3 ,
-                       isShape: Bool, newNode : Bool
+                       objType: String, newNode : Bool
      ) -> SCNNode
      {
          //print("SCALAR: create3DPipe: uid \(uid) ballz \(ballz.count)")
@@ -341,10 +328,10 @@ class ScalarShape: SCNNode {
          floory = min(floory,ty0)
          let ty1 =  sPos01.y - shapeYoff
          floory = min(floory,ty1)
-
+//         print("pipe from \(sPos00) to \(sPos01)  cylbase \(cylPos)")
          //Get cylinder from our scalar pos to floor
-         let p0  = cylBasePos // sPos00   //try our new lower base position
-         var floorPos0 = cylBasePos // sPos00
+         let p0  =  sPos00   //12/21 was cylPos! try our new lower base position
+         var floorPos0 =  sPos00
          floorPos0.y = floory //set floor point, will use down below
         
          //get 1st floor point... add ball..
@@ -389,7 +376,7 @@ class ScalarShape: SCNNode {
          var epfz: Float = 0.0
          var enlen: Double = 1.0
 
-         if (!isShape) // route pipe to marker, has lots of elbows
+         if objType == "voice" // route pipe to marker, has lots of elbows
          {
              //Second half of pipe, same but for  sPos01 pos, lat lon
              nx =  cos( tlon) * cos( tlat) //1/14 wups need to incorporate cosine!
@@ -485,7 +472,7 @@ class ScalarShape: SCNNode {
                  cIndex+=1
              }
          }
-         else //trivial pipe to shape?
+         else if objType == "shape" //trivial pipe to shape?
          {
              //print("pipe2shape")
              let floorPos1 = SCNVector3( sPos01.x,floory, sPos01.z) //floor below shape
@@ -670,33 +657,45 @@ class ScalarShape: SCNNode {
 
     //-----------(ScalarShape)=============================================
     // floating indicator, value goes from 0 to 1
-    func updateIndicator(with:String , value : CGFloat)
+    // 12/14 redo args
+    func updateIndicator(toObject:String , value : CGFloat, dvalue : CGFloat)
     {
-        updateBoxPanel(parent: indicatorNode, panel: indicatorBox, label: with, uhit: value)
+        let valueLabel : String = toObject + ":" + String(format: "%.2f",dvalue)
+        updateBoxPanel(parent: indicatorNode, panel: indicatorBox, label: valueLabel, uhit: value)
     }
 
     //-----------(ScalarShape)=============================================
-    // pedestal shape contains main label
-    func updateLabel(with:String )
+    //12/14 new name... pedestal shape contains main label
+    func updatePedestalLabel(with:String )
     {
         updateBoxPanel(parent: pedestalNode, panel: pedestalBox, label: with, uhit: -1.0)
     }
-
+    
     //  uhit is UNIT height, always 0..1 if negative, dont apply offset!
     // NOTE this needs unit,phit,chit predefined above...!!!
     //-----------(ScalarShape)=============================================
+    //12/14 only update name
     func updateBoxPanel(parent:SCNNode ,panel:SCNBox,label:String, uhit: CGFloat)
     {
         //set labels...
-        let ii = createTALLLabelImage(label: label,frame:CGRect(x: 0, y: 0, width: 400, height: 32))
-        panel.firstMaterial?.diffuse.contents  = ii
+        let ii = createTALLLabelImage(label: label,frame:CGRect(x: 0, y: 0, width: labelWid, height: labelHit))
+        panel.firstMaterial?.diffuse.contents  = ii //12/14 wups wrong box
         panel.firstMaterial?.emission.contents = ii
-        var s1 = cylBasePos
+        let xs:Float = 0.5
+        let ys:Float = 1.0
+        let xt:Float = 0.0
+        let yt:Float = 0.0
+        let scale       = SCNMatrix4MakeScale(xs, ys, 0)   //12/14 new scaling
+        let translation = SCNMatrix4MakeTranslation(xt, yt, 0)
+        let transform   = SCNMatrix4Mult(scale,translation)
+        panel.firstMaterial?.diffuse.contentsTransform  = transform
+        panel.firstMaterial?.emission.contentsTransform = transform
+        var s1 = cylPos
         if uhit >= 0.0 //need to shift up?
         {
-            s1.y = s1.y + Float(chit * uhit)
+            s1.y = s1.y - 0.5*Float(chit) + Float(chit * uhit) //12/23
+            parent.position = s1 //12/19
         }
-        parent.position = s1
     } //end updateBoxPanel
 
         

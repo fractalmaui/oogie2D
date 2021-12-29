@@ -66,8 +66,10 @@ class Marker: SCNNode {
     var boxletParent = SCNNode()
     var lat = 0.0 //11/25 store lat lon here too
     var lon = 0.0
+    var oldrf : CGFloat = 0.0   //for liveMarkers
+    var oldgf : CGFloat = 0.0
+    var oldbf : CGFloat = 0.0
 
-    
     //10/26 remove VERSION_2D crap
     let overallScale : CGFloat = 0.25
 
@@ -171,10 +173,10 @@ class Marker: SCNNode {
         yy = cmykTuple.Yellow
     } //end updateRGBValues
     
-    
+    let RGBDELTA : CGFloat = 0.03
     //-------(Marker)-------------------------------------
     //vals 0.0 to 1.0
-    func updateMarkerPetalsAndColor ()
+    func updateMarkerPetalsAndColor (liveMarkers : Int)
     {
         //update our petals
         updatePetals(rval: rr, gval: gg, bval: bb,
@@ -186,14 +188,24 @@ class Marker: SCNNode {
             let hueRot = .pi * Double(hh)/255.0
             hueIndicator.rotation = SCNVector4Make(0, 1, 0, Float(hueRot))
         }
-
-        //Always have to convert one way or another!
-//
         // it looks like every time a color is created a memory leak happens.
-        //coneColor = UIColor(red: rf, green: gf, blue: bf, alpha: 1)
         //OUCH: memory leak here!!! loses a TON every second!
-//        mainCone.firstMaterial?.diffuse.contents  = coneColor
-//        mainCone.firstMaterial?.emission.contents = coneColor
+        if liveMarkers == 1 //11/29 added flag
+        {
+            let rf = CGFloat(rr)/255.0
+            let gf = CGFloat(gg)/255.0
+            let bf = CGFloat(bb)/255.0
+            //print("lm rgb \(rf) \(gf) \(bf)")
+            if (abs(oldrf-rf) > RGBDELTA || abs(oldgf-gf) > RGBDELTA || abs(oldbf-bf) > RGBDELTA) //got new color?
+            {
+                let tc = UIColor(red: rf, green: gf, blue: bf, alpha: 1)
+                mainCone.firstMaterial?.diffuse.contents  = tc
+                mainCone.firstMaterial?.emission.contents = tc
+                oldrf = rf //save for next comparision
+                oldgf = gf
+                oldbf = bf
+            }
+        }
         
     } //end updateMarkerPetalsAndColor
     
@@ -520,8 +532,8 @@ class Marker: SCNNode {
         
         //11/11 add dice control
         diceCube = SCNBox() //11/3 add dice box on top
-        diceCube.firstMaterial?.emission.contents = UIImage(named: "bluedice")
-        diceCube.firstMaterial?.diffuse.contents = UIImage(named: "bluedice")
+        diceCube.firstMaterial?.emission.contents = UIImage(named: "yellowdice")
+        diceCube.firstMaterial?.diffuse.contents = UIImage(named: "yellowdice")
         diceNode = SCNNode(geometry: diceCube)
         diceNode.position = SCNVector3(0, 0.43,0)
         diceNode.scale    = SCNVector3(0.1,0.1,0.1)
@@ -639,7 +651,7 @@ class Marker: SCNNode {
         case PERCKIT_VOICE:    texture = UIImage(named: "percKitIcon")
         default:               texture = UIImage(named: "synthIcon")
         }
-        typeCube.firstMaterial?.emission.contents = texture
+        typeCube.firstMaterial?.emission.contents = texture  
     } //end updateTypeInt
     
     //-------(Marker)-------------------------------------

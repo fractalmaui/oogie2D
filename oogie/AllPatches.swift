@@ -18,12 +18,14 @@
 //  9/14 add createADSRImage and support funcs
 //  10/12 merge all patches into one Dict
 //  10/19 redid process to load / name soundpacks
-//  12/17 pull loadPurchasedSoundPacks
-//  1/25  add patch name sort in loadPurchasedPatches
 //  4/26  cleanup
 //  6/23  add 4 new sPatches entries:RampLead, etc, using xtraParams field
 //  8/2   updates to handle oogiecammetalshop as productID
 //  11/1  add loadUserPatches
+//  12/5  add getRandomSynthPatchName etc
+//  12/10 add call to createLibrarySubfolders
+//  12/12 add loadAllPurchasedSoundPacks, getSoundPackSampleToPatchLookups
+//  12/13 add getPatchNamesForSoundpack
 import Foundation
 import UIKit
 
@@ -38,6 +40,11 @@ import UIKit
     var patchesDict       = Dictionary<String, OogiePatch>() //10/12
     var allPatchCount     = 0 //patchesDict.count?
     var GMNamesDictionary = Dictionary<String, String>()
+    var synthPatchNames      = [String]() //12/5 4 dicts for getting random patch names
+    var percussionPatchNames = [String]()
+    var percKitPatchNames    = [String]()
+    var samplePatchNames     = [String]()
+
     var soundPacks        = Dictionary<String, SPStruct>()
     var allSoundPackNames = [String]() // 10/11 keep names in order!
     var purchasedSoundPackNames = [String]() // 10/21 
@@ -66,14 +73,97 @@ import UIKit
     {
         loadBuiltinPatches()
         loadFactorySoundPacks()
-        loadUserPatches() //11/1 
+        loadUserPatches() //11/1
+        loadAllPurchasedSoundPacks()
     }
+
+    //----(AllPatches)==============================================
+    //12/12 load all addon soundtrack patches, in library folder under SPS
+    @objc func loadAllPurchasedSoundPacks()
+    {
+        let path = "SPS"  //we are loading patches...
+        if let url = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+        {
+            let urlSPS  = url.appendingPathComponent(path)
+            do{
+                //var workSoundPack = SPStruct()
+                //get all soundpack toplevel folders
+                let TLfiles = try FileManager.default.contentsOfDirectory(atPath: urlSPS.path)
+                for spname in TLfiles.sorted() { loadPurchasedSoundPack(spname: spname) }
+            } //end do
+            catch{
+                print("error loading addon toplevel")
+            }
+        } //end let url
+    } //end loadAllPurchasedSoundPacks
+    
+    //----(AllPatches)==============================================
+    // 12/12 load addon soundpack patches, should be in library area
+    //  samples must be loaded separately AFTER this is done
+    @objc func loadPurchasedSoundPack(spname:String)
+    {
+        print("Load Soundpack:" + spname)
+        let path = "SPS/" + spname + "/patches"  //we are loading patches...
+        if let url = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+        {
+            let urlSP  = url.appendingPathComponent(path)
+            do{
+                var workSoundPack = SPStruct()
+                var files = try FileManager.default.contentsOfDirectory(atPath: urlSP.path)
+                files = files.sorted() //1/31/21 sort filenames!
+                for filename in files
+                {
+                    do
+                    {
+                        let workPatch = try DataManager.loadPatch(url: urlSP, with: filename, with: OogiePatch.self)
+                        //print("  ...load userSoundPatch patch \(filename)")
+                        workSoundPack.addPatch(name: filename, patch: workPatch)
+                        patchesDict[filename] = workPatch  //10/24 need to save in dict?
+                    }
+                    catch{
+                        print("error reading patch " + filename)
+                    }
+                     
+                }  //end for filename
+                soundPacks[spname] = workSoundPack  //1/31/21 was in wrong place!
+            } //end do
+            catch{
+                print("error loading soundpack:" + spname)
+            }
+        }
+        if !allSoundPackNames.contains(spname) //10/28 check for dupes, add spname
+        {
+            allSoundPackNames.append(spname)
+        }
+    } //end loadPurchasedSoundPack
+    
+    //----(AllPatches)==============================================
+    //12/13 new
+    @objc func getPatchNamesForSoundpack (spname : String) -> [String]
+    {
+        var pnames = [String]()
+        if let testSP = soundPacks[spname]
+        {
+            getSoundPackByName(name: spname)
+            let psize = testSP.patchNames.count
+            if psize > 0
+            {
+                for i in 0..<psize
+                {
+                    let pname = testSP.patchNames[i]
+                    pnames.append(pname)
+                }
+            }
+        }
+        return pnames
+    } //end getPatchNamesForSoundpack
 
     //----(AllPatches)==============================================
     //how come i need this? oogie2d gets around this somehow!?
     @objc func createSubfolders()
     {
         DataManager.createSubfolders()
+        DataManager.createLibrarySubfolders() //12/10 add library area for downloaded soundpacks
     }
     
     
@@ -294,15 +384,20 @@ import UIKit
         var wP      = Dictionary<String, OogiePatch>()
         wP = DataManager.loadBuiltinSynthPatchesToDict(OogiePatch.self,
                                                         fromFactory: true)
+        synthPatchNames = wP.keys.sorted() //12/5 keep names. unsorted
         for (pname,patch) in wP {patchesDict[pname] = patch} //install patches
         wP = DataManager.loadBuiltinPercussionPatchesToDict(OogiePatch.self,
                                                         fromFactory: true)
+        percussionPatchNames = wP.keys.sorted() //12/5 keep names. unsorted
         for (pname,patch) in wP {patchesDict[pname] = patch} //install patches
         wP = DataManager.loadBuiltinPercKitPatchesToDict(OogiePatch.self,
                                                         fromFactory: true)
+        
+        percKitPatchNames = wP.keys.sorted() //12/5 keep names. unsorted
         for (pname,patch) in wP {patchesDict[pname] = patch} //install patches
         wP = DataManager.loadBuiltinCritterPatchesToDict(OogiePatch.self,
                                                         fromFactory: true)
+        samplePatchNames = wP.keys.sorted() //12/5 keep names. unsorted
         for (pname,patch) in wP {patchesDict[pname] = patch} //install patches
         wP = DataManager.loadBuiltinWeirdnessPatchesToDict(OogiePatch.self,
                                                         fromFactory: true)
@@ -442,7 +537,7 @@ import UIKit
                 for fileName in files {
                     if !fileName.contains("#") //1/31/21
                     {
-                        var upatch = OogiePatch()
+                        let upatch  = OogiePatch() //12/25
                         upatch.name = fileName //store sample name
                         print("  ...load userSoundPatch patch \(fileName)")
                         userSoundPack.addPatch(name: fileName, patch: upatch)
@@ -475,18 +570,38 @@ import UIKit
         if !allSoundPackNames.contains(USER_SP_NAME) //10/28 check for dupes
         {
             allSoundPackNames.append(USER_SP_NAME)
-            print("asp add \(USER_SP_NAME)")
+            //print("asp add \(USER_SP_NAME)")
         }
     } //end loadUserSoundPack
     
     //----(AllPatches)==============================================
     // 11/11 for 3D dice control, just get rand patch name
     @objc func getRandomPatchName() -> String
-    {//asdf
+    {
         let keys = Array(patchesDict.keys)
         let rint = Int.random(in: 0..<keys.count)
         return keys[rint]
     }
+    //----(AllPatches)==============================================
+    // 12/5 patch randomizers for each type of patch
+    @objc func getRandomSynthPatchName() -> String
+    {
+        return synthPatchNames[Int.random(in: 0..<synthPatchNames.count)]
+    }
+    @objc func getRandomPercussionPatchName() -> String
+    {
+        return percussionPatchNames[Int.random(in: 0..<percussionPatchNames.count)]
+    }
+    @objc func getRandomPercKitPatchName() -> String
+    {
+        return percKitPatchNames[Int.random(in: 0..<percKitPatchNames.count)]
+    }
+    @objc func getRandomSamplePatchName() -> String
+    {
+        return samplePatchNames[Int.random(in: 0..<samplePatchNames.count)]
+    }
+
+    
     
     //----(AllPatches)==============================================
     // 10/29 for refunds (not yet implemented)
@@ -556,6 +671,24 @@ import UIKit
             i+=1
         }
     } //end getSoundPackPatch
+
+    //----(AllPatches)==============================================
+    //12/12 new,  populates patch var with desired patch in Soundpack
+    @objc func getSoundPackSampleToPatchLookups(spname : String) -> Dictionary<String, String>
+    {
+        var results = Dictionary<String, String>()
+        if let spwork = soundPacks[spname]  //find soundpack
+        {
+            for i in 0..<spwork.patches.count
+            {
+                let patch = spwork.patches[i]
+                let pname = spwork.patchNames[i]  //patch NAME
+                let sname = patch.name    //sample name
+                results[sname] = pname  //store lookup
+            } //end for i
+        } //end let spwork
+        return results
+    } //end getSoundPackSampleToPatchLookups
     
     //----(AllPatches)==============================================
     // 10/12 for unpacking FACTORY patches! clumsy exhaustive search!
@@ -587,7 +720,7 @@ import UIKit
             {
                 let sf = file.split(separator: ".")
                 let pname = String(sf[0])
-                var oop     = OogiePatch()
+                let oop     = OogiePatch()
                 oop.name    = pname
                 oop.attack  = 0
                 oop.decay   = 0
@@ -614,7 +747,7 @@ import UIKit
         {
             let sf = file.split(separator: ".")
             let pname = String(sf[0])
-            var oop     = OogiePatch()
+            let oop     = OogiePatch()   //12/25
             oop.name    = pname
             oop.attack  = 0
             oop.decay   = 0
@@ -643,7 +776,7 @@ import UIKit
             {
                 let sf = file.split(separator: ".")
                 let pname = String(sf[0])
-                var oop     = OogiePatch()
+                let oop     = OogiePatch()  //12/25
                 oop.name    = pname
                 oop.attack  = 0
                 oop.decay   = 0

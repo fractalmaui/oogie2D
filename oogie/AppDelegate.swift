@@ -37,6 +37,9 @@
 //  10/25 add copyFactoryScenes... copyInFactoryStuff
 //  10/27  add percussionBase , percussionTop
 //  11/21  add masterTune, masterTempo
+//  11/29  add liveMarkers
+//  12/2   add haltAudio preset
+//  12/12  made copyFactoryScenesToDocuments destructive
 import UIKit
 
 
@@ -49,12 +52,14 @@ var appSettings = Dictionary<String, Any>()
 
     var window: UIWindow?
     
-    var versionStr = ""
+    @objc var versionStr = "" //12/17
     //All patches: singleton, holds built-in and locally saved patches...
     var allP = AllPatches.sharedInstance
     var masterPitch = 0 //4/19 master pitch shift in notes
     @objc var masterTune  = 0 //11/21
     @objc var masterTempo = 135 //11/21
+    @objc var liveMarkers = 0 //11/29 live marker color updating, memory hog!
+    @objc var haltAudio = 1 //12/2 shut off audio during childVCs
 
     //Audio Sound Effects...
     var sfx = soundFX.sharedInstance
@@ -72,7 +77,7 @@ var appSettings = Dictionary<String, Any>()
     var OScP =  OogieScalarParams.sharedInstance  //10/13 new scalar type
     
     var verbose = false //10/12 for debug output
-
+    
     //========AppDelegate==============================================
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -138,12 +143,14 @@ var appSettings = Dictionary<String, Any>()
     func didLoadSFX()
     {
         //Honk a horn to indiucate we've started!
-        (sfx() as! soundFX).makeTicSound(withPitchandLevelandPan: 6,64,20,128)
-        print("OK! samples loaded now")
+        // 12/10 no audio yet ?? (sfx() as! soundFX).makeTicSound(withPitchandLevelandPan: 6,64,20,128)
+        //print("OK! samples loaded now")
     }
 
     let skMasterTempo       = "masterTempo"
     let skMasterTune        = "masterTune"
+    let skLiveMarkers       = "liveMarkers"
+    let skHaltAudio         = "haltAudio"
     let skSpinTimerPeriod   = "spinTimerPeriod"
     let skColorTimerPeriod  = "colorTimerPeriod"
     let skBlinkTimerPeriod  = "blinkTimerPeriod"
@@ -160,6 +167,8 @@ var appSettings = Dictionary<String, Any>()
         {
             defaults.setValue(135, forKey: skMasterTempo)
             defaults.setValue(0,   forKey: skMasterTune)
+            defaults.setValue(0,   forKey: skLiveMarkers)
+            defaults.setValue(1,   forKey: skHaltAudio)
             defaults.setValue(0.1, forKey: skColorTimerPeriod)
             defaults.setValue(0.1, forKey: skSpinTimerPeriod)
             defaults.setValue(0.1, forKey: skBlinkTimerPeriod)
@@ -171,15 +180,25 @@ var appSettings = Dictionary<String, Any>()
         //print("blinktimer is \(defaults.double(forKey: "blinkTimerPeriod"))")
         appSettings[skMasterTempo]       = defaults.double(forKey: skMasterTempo)
         appSettings[skMasterTune]        = defaults.double(forKey: skMasterTune)
+        appSettings[skLiveMarkers]       = defaults.double(forKey: skLiveMarkers)
+        appSettings[skHaltAudio]         = defaults.double(forKey: skHaltAudio)
         appSettings[skColorTimerPeriod]  = defaults.double(forKey: skColorTimerPeriod)
         appSettings[skSpinTimerPeriod]   = defaults.string(forKey: skSpinTimerPeriod)
         appSettings[skBlinkTimerPeriod]  = defaults.double(forKey: skBlinkTimerPeriod)
         appSettings[skCopyFactoryScenes] = defaults.double(forKey: skCopyFactoryScenes)
+        
+        print("app settings \(appSettings)")
         if let d = appSettings[skMasterTempo] as? Double{
             masterTempo = Int(d)
         }
         if let d = appSettings[skMasterTune] as? Double{
             masterTune  = Int(d)
+        }
+        if let d = appSettings[skLiveMarkers] as? Double{
+            liveMarkers  = Int(d)
+        }
+        if let d = appSettings[skHaltAudio] as? Double{
+            haltAudio  = Int(d)
         }
     } //end loadSettings
 
@@ -199,6 +218,22 @@ var appSettings = Dictionary<String, Any>()
         masterTempo = value;
        // let defaults = UserDefaults.standard
         UserDefaults.standard.set(value, forKey: skMasterTempo)
+    }
+
+    //====(AppDelegate)----------------------------------------------
+    //11/29
+    @objc func updateLiveMarkers(value : Int)
+    {
+        liveMarkers = value;
+        UserDefaults.standard.set(value, forKey: skLiveMarkers)
+    }
+
+    //====(AppDelegate)----------------------------------------------
+    //11/29
+    @objc func updateHaltAudio(value : Int)
+    {
+        haltAudio = value;
+        UserDefaults.standard.set(value, forKey: skHaltAudio)
     }
 
     //====(AppDelegate)----------------------------------------------
@@ -301,23 +336,27 @@ var appSettings = Dictionary<String, Any>()
             //let filteredFiles = dirContents.filter { $0.contains(".oos")}
             for fileName in dirContents
             {
-                if let dURL = documentsURL{
-                    let factoryFolderName = "FactorySettings/Scenes/" + fileName
-                    let sceneFolderName   = "scenes/" + fileName
-                    let sourceURL = Bundle.main.bundleURL.appendingPathComponent(factoryFolderName)
-                    if let destURL   = documentsURL?.appendingPathComponent(sceneFolderName)
-                    {
-                        do {
-                            //print("copy from \(sourceURL) to \(destURL)")
-                            try FileManager.default.copyItem(at: sourceURL, to: destURL)
-                            print("...copied \(fs):\(fileName)")
+                let factoryFolderName = "FactorySettings/Scenes/" + fileName
+                let sceneFolderName   = "scenes/" + fileName
+                let sourceURL = Bundle.main.bundleURL.appendingPathComponent(factoryFolderName)
+                if let destURL   = documentsURL?.appendingPathComponent(sceneFolderName)
+                {
+                    
+                    do {
+                        // 12/12 remove any old scenes first
+                        if FileManager.default.fileExists(atPath: destURL.path) {
+                            try FileManager.default.removeItem(at: destURL)
                         }
-                        catch{
-                            print("...error copying \(fs):\(fileName)")
-                        }
+                        //print("copy from \(sourceURL) to \(destURL)")
+                        try FileManager.default.copyItem(at: sourceURL, to: destURL)
+                        print("...copied \(fs):\(fileName)")
                     }
-                }
-            }
+                    catch{
+                        print("...error copying \(fs):\(fileName)")
+                    }
+                } //end let destURL
+                //}
+            } //end for filename
             setCopyFactoryScenesFlag(value:0) //clear our defaults flag so we dont repeat!
         }
         catch
@@ -325,7 +364,7 @@ var appSettings = Dictionary<String, Any>()
             print("error finding \(fs)")
         }
     } //end copyFactoryScenesToDocuments
-
-
+    
+    
 } //end AppDelegate
 

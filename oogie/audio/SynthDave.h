@@ -29,6 +29,7 @@
 // 6/25/21 add arpTones, redo arpeggiator data struct
 // 11/23/21 add env256 array, render all envelopes into 256 buffer
 // 11/25    remove old envelope crap
+// 12/20  add squareWave duty to toneEvent. DUH.
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioUnit/AudioUnit.h>
 #import <AudioToolbox/AudioFile.h>
@@ -113,6 +114,7 @@ typedef struct
 	int envDecay;           //  ADSR Support... 
 	int envSustain;         //  ADSR Support...
 	int envRelease;         //  ADSR Support...
+    int sqwDuty;            //  squareWave duty in percent?
     int toneType;           //  Synth/Perc/etc
     int waveNum;            //  Ranp sine etc
     int mono;               //  Monophonic Synth/Sample mode... 0 by default

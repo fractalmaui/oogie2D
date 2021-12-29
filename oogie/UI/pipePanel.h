@@ -28,8 +28,6 @@
     UIButton *proButton; //hides pro controls
     UIButton *helpButton;
     UIButton *diceButton;
-    UIButton *goLeftButton;
-    UIButton *goRightButton;
     UITextField *lastSelectedTextField; //10/29
 
     UIImageView *dataImageView;
@@ -90,10 +88,7 @@
 
 @protocol pipePanelDelegate <NSObject>
 @optional
--(void) didSetPipeValue  : (int) which : (float) newVal : (NSString*) pname : (NSString*) pvalue : (BOOL)undoable;
-//-(void) didSelectRight ;
-//-(void) didSelectLeft ;
-//-(void) controlNeedsProMode ;
+-(void) didSetPipeValue  : (float) newVal : (NSString*) pname : (NSString*) pvalue : (BOOL)undoable;
 -(void) didSelectPipeDice ;
 -(void) didSelectPipeReset ;
 -(void) didSelectPipeDismiss ; //9/24

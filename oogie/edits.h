@@ -9,12 +9,8 @@
 //
 //  Created by Dave Scruton on 6/27/20.
 //  Copyright © 1990 - 2021 fractallonomy, inc. All Rights Reserved.
-//
-
+//  12/3 renamed -> loadEditsFromDocs
 #import <Foundation/Foundation.h>
-//#import "oogieVoice.h"  //8/12/21 DHS oogieCam -> oogie2D
-
-NS_ASSUME_NONNULL_BEGIN
 
 @interface edits : NSObject
 {
@@ -25,10 +21,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (id)sharedInstance;
 
--(void) loadFromDocs;
+-(void) loadEditsFromDocs;
 -(void) saveToDocs;
 -(void) addEdit : (NSString *) patchName :(NSString *) paramName : (NSString *) value;
-//-(void) applyEditsToVoice : (NSString *) patchName : (oogieVoice*) ov;
+-(void) factoryReset;
 -(void) removeAllEdits : (NSString *) patchName;
 -(void) removeEdit : (NSString *) patchName :(NSString *) paramName;
 -(NSArray *) getEditKeys : (NSString *) patchName;
@@ -41,4 +37,3 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-NS_ASSUME_NONNULL_END

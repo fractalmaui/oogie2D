@@ -27,8 +27,6 @@
     UIButton *resetButton;
     UIButton *helpButton;
     UIButton *diceButton;
-    UIButton *goLeftButton;
-    UIButton *goRightButton;
 
     UIImageView *dataImageView;
 
@@ -82,7 +80,7 @@
 
 @protocol scalarPanelDelegate <NSObject>
 @optional
--(void) didSetScalarValue  : (int) which : (float) newVal : (NSString*) pname : (NSString*) pvalue : (BOOL)undoable;
+-(void) didSetScalarValue  : (float) newVal : (NSString*) pname : (NSString*) pvalue : (BOOL)undoable;
 -(void) didSelectScalarDice ;
 -(void) didSelectScalarReset ;
 -(void) didSelectScalarDismiss ; //9/24

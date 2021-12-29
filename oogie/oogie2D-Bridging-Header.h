@@ -14,6 +14,7 @@
 #import "shapePanel.h"
 #import "settingsVC.h"
 #import "samplesVC.h"
+#import "patchVC.h"
 #import "imageEditVC.h"
 #import "edits.h"
 #import "genOogie.h"

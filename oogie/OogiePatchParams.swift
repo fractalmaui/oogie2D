@@ -32,9 +32,10 @@ import Foundation
     let DutyParams      : [Any] = ["Duty" ,       "double", 0.0   , 100.0   , 50.0, 100.0, 0.0 ]
     // NOTE this is in percent!
     let SampOffParams   : [Any] = ["SampleOffset" ,  "double", 0.0   , 100.0   , 0.0, 100.0, 0.0 ]
-    let PKeyDetuneParams : [Any] = ["PKeyDetune" ,   "double", 0.0   , 255.0   , 0.0, 255.0, 0.0 ]
-    let PKeyOffsetParams : [Any] = ["PKeyOffset" ,   "double", 0.0   , 255.0   , 0.0, 255.0, 0.0 ]
-    let PPLevelParams    : [Any] = ["PLevel" ,   "double", 0.0   , 255.0   , 0.0, 255.0, 0.0 ]
+
+    let PKeyDetuneParams : [Any] = ["PKeyDetune" ,   "double", 0.0   , 100.0   , 50.0, 100.0, 0.0 ]
+    let PKeyOffsetParams : [Any] = ["PKeyOffset" ,   "double", 0.0   , 100.0   , 50.0, 100.0, 0.0 ]
+    let PPLevelParams    : [Any] = ["PLevel" ,       "double", 0.0   , 100.0   , 50.0, 100.0, 0.0 ]
     //These two are used to setup 8 sliders / choosers
     let PPercLooxParams    : [Any] = ["percLoox" ,   "string", "" ]
     let PPercLooxPanParams : [Any] = ["percLooxPans" ,   "double", 0.0   , 255.0   , 0.0, 255.0, 0.0 ]

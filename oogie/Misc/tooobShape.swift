@@ -47,9 +47,6 @@ class tooobShape: SCNNode {
     func createToob(sPos00  : SCNVector3 ) -> SCNNode
     {
         var tooobNode = SCNNode()
-        var tooobPos  = sPos00
-        //OUCH this alters center of scene rotation!
-        //        tooobPos.z = tooobPos.z - Float(chit) * 0.4 //back tooob off to bkgd
         let f = CGRect(x: 0, y: 0, width: 512, height: 512)
         let t = createGridImage(frame:f , bg:.clear , fg:.white , xg : 16 , yg : 20 )
         toobGeometry = SCNTube(innerRadius: crad * 0.98, outerRadius: crad, height: chit)
@@ -57,7 +54,7 @@ class tooobShape: SCNNode {
         toobGeometry.firstMaterial?.emission.contents  = t
         toobGeometry.firstMaterial?.isDoubleSided = true
         tooobNode = SCNNode(geometry:toobGeometry)
-        tooobNode.position = tooobPos
+        tooobNode.position = sPos00
         //rotate 90 degrees on x axis to make tooob go down Z axis
         tooobNode.eulerAngles = SCNVector3Make(-Float.pi / 2.0 , 0, 0)
         tooobNode.name = "tooob"

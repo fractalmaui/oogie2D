@@ -28,6 +28,7 @@
 // 5/17  add # punct check in loadSamplesNow
 // 6/26  pull queueNote
 //  11/25 remove old envelope crap
+// 12/12 add loadExternalSamplesNow
 #include "soundFX.h"
 
 @implementation soundFX
@@ -624,6 +625,21 @@ int HH,LL,SS;  //Used in rgb -> HLS
         sampnum++;
     }
 } //End loadAudio
+
+//=========(soundFX)========================================================================
+// 12/12 new! for loading external soundpacks after addon from cloud (oogieAR)
+-(int) loadExternalSamplesNow : (int) sampleBase : (NSArray*) samplePaths
+{
+    int sampnum = sampleBase;
+    for(int loop=0;loop<samplePaths.count;loop++)
+    {
+        if (sampnum >= MAX_SAMPLES) break; //DHS aug 2012 fix. was using loop!
+        [synth loadSample:samplePaths[loop]:@"EXT"];  //NOTE new type arg!
+        [synth buildSampleTable:sampnum];
+        sampnum++;
+    }
+    return sampnum;  //this is now the end of sample storage
+} //end loadExternalSamplesNow
 
 
 //=========(soundFX)========================================================================

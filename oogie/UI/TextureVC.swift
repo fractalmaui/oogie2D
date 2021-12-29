@@ -12,6 +12,8 @@
 //  2/6 use edited image from chooser, get auth early in plusSelect
 //  11/13 redo look to match samplesVC
 //  11/15 add textureDefault to texCache
+//  12/15 add header, sort panel, sorting
+//  12/17 hide edit button, what does it do?
 import Foundation
 import UIKit
 import Photos
@@ -30,9 +32,6 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
 {
 
     var delegate: TextureVCDelegate?
-
-    var textures : [UIImage] = []
-    var texnames : [String]  = []
     
     var ieVC = imageEditVC()
     
@@ -43,20 +42,43 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
     //@IBOutlet weak var minusButton: UIButton!
     @IBOutlet weak var collectionView: UICollectionView!
     
+    @IBOutlet weak var headerView: UIView!
+    
+    @IBOutlet weak var sortView: UIView!
+    
     @IBOutlet weak var editButton: UIButton!
     @IBOutlet weak var addButton: UIButton!
     @IBOutlet weak var doneButton: UIButton!
+    
+    @IBOutlet weak var sortNamButton: UIButton!
+    @IBOutlet weak var sortDateButton: UIButton!
+    @IBOutlet weak var sortDirButton: UIButton!
+    
     let tc = texCache.sharedInstance  
     var oldIndexPath : (IndexPath) = IndexPath.init()
     var selectedRow  = 0
     var defaultCount = 0
     
+    var sortMode = 0  // alpha date
+    
+    let upArrow = UIImage(named:"arrowUp")
+    let dnArrow = UIImage(named:"arrowDown")
+    
+    var keysSortedByDate = [String]() //12/16 these come in presorted from cache
+    var keysSortedByName = [String]()
+    var keyCount = 0
+    var sortDir = 0  //0 normal 1 reverse?
+    var keysSortedProperly = [String]()
+    let emptyImage = UIImage(named: "empty64")
     var imagePicker = UIImagePickerController()
     
+    let deepPurple = UIColor(red: 0.0, green: 0, blue: 0.25, alpha: 1)
 
     //======(TextureVC)=================================================
     override func viewDidLoad() {
-        loadImages()
+        //loadImages()
+        
+
         //minusButton.isHidden = true
         let xmargin :CGFloat = 20.0
         let borderWid :CGFloat = 5.0
@@ -78,16 +100,66 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
         editButton.clipsToBounds      = true;
         editButton.layer.borderWidth  = borderWid;
         editButton.layer.borderColor  = borderColor.cgColor;
+        editButton.isHidden           = true;  //12/17 hide edit button, what does it do?
+
+        sortDirButton.setTitle("", for: .normal) //WTF? why does this say button?
+        
         ieVC.delegate = self //11/15
+        
+        getFreshlySortedKeys()
     }
     
     //======(TextureVC)=================================================
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        //add color grad to header
+        let g = CAGradientLayer()
+        g.frame = headerView.bounds
+        g.colors = [UIColor.black.cgColor,deepPurple.cgColor]  //top black, bottom purpledelete
+        headerView.layer.insertSublayer(g, at: 0)
+
+        sortView.backgroundColor = deepPurple //12/17
+        
+        updateSortButtonColors()
+        updateSortDirButton()
+
+    }
+
+    //======(TextureVC)=================================================
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+    }
+    
+    
+    //======(TextureVC)=================================================
+    @IBAction func sortByNameSelect(_ sender: Any) {
+        sortMode = 0
+        updateSortButtonColors()
+        collectionView.reloadData()
+    }
+    
+    //======(TextureVC)=================================================
+    @IBAction func sortByDateSelect(_ sender: Any) {
+        sortMode = 1
+        updateSortButtonColors()
+        collectionView.reloadData()
+    }
+    
+    //======(TextureVC)=================================================
+    @IBAction func sortDirSelect(_ sender: Any) {
+        if sortDir == 0 {sortDir = 1} //toggle
+        else            {sortDir = 0}
+        updateSortDirButton()
+        collectionView.reloadData()
+    }
+
+    //======(TextureVC)=================================================
     func functionsMenu(row:Int)
     {
-        let fname = texnames[row]
-        //        {
+        let fname = keysSortedProperly[row]
         let alert = UIAlertController(title: fname, message: nil, preferredStyle: UIAlertControllerStyle.alert)
-        alert.view.tintColor = UIColor.black //2/6 black text
+        //12/19 test for dark mode    alert.view.tintColor = UIColor.black //2/6 black text
         alert.addAction(UIAlertAction(title: "Delete Texture", style: .default, handler: { action in
             self.deleteTexture(fname:fname)
         }))
@@ -97,8 +169,6 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
         self.present(alert, animated: true, completion: nil)
-        
-        //        }
     } //end functionsMenu
     
     
@@ -109,7 +179,7 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
         if segue.identifier == "imageEditVCSegue" {
             if let nextViewController = segue.destination as? imageEditVC {
                 var ii = tc.defaultTexture
-                if texnames[selectedRow] != "default" { ii = tc.texDict[texnames[selectedRow]] }
+                ii = tc.texDict[keysSortedProperly[selectedRow]]
                 nextViewController.image2edit = ii;
                 nextViewController.delegate   = self //11/15 just in case
             }
@@ -125,12 +195,10 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
             infoAlert(title:"Cannot delete default texture" , message : fname)
             return
         }
-
         tc.deleteTextureCompletely(name: fname)
         delegate?.deletedTexture(name: fname)        
         //clean up local storage, reload...
-        texnames.remove(at: selectedRow)
-        textures.remove(at: selectedRow)
+        getFreshlySortedKeys()
         collectionView.reloadData()
     }
 
@@ -141,30 +209,6 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
 
     }
 
-    //======(TextureVC)=================================================
-    func loadImages()
-    {
-        //load builtins first
-        //10/25 test pattern support
-        if let ii = tc.defaultTexture  { textures.append(ii) } //11/15 add default to TC
-        texnames.append("default")
-        defaultCount = 1
-        
-        //Loop over texture cache
-        for (name, texture) in tc.texDict
-        {
-            addImageToArrays(image: texture, name: name)
-        }
-        
-    }
-    
-    //======(TextureVC)=================================================
-    func addImageToArrays(image : UIImage , name : String)
-    {
-        textures.append(image)
-        texnames.append(name)
-    } //end addImageToArrays
-    
     //======(TextureVC)=================================================
     @IBAction func plusSelect(_ sender: Any) {
         
@@ -189,11 +233,9 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
     
     //======(TextureVC)=================================================
     @IBAction func minusSelect(_ sender: Any) {
-        let tname = texnames[selectedRow]
+        let tname = keysSortedProperly[selectedRow]
         tc.deleteTextureCompletely(name:tname)
-        //remove from local storage
-        texnames.remove(at: selectedRow)
-        textures.remove(at: selectedRow)
+        getFreshlySortedKeys()
         collectionView.reloadData()
     }
 
@@ -201,12 +243,43 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
     @IBAction func dismissSelect(_ sender: Any) {
         dismiss(animated: true, completion: nil)
         delegate?.cancelledTextures()
-
     }
+    
+    //======(TextureVC)=================================================
+    func getFreshlySortedKeys()
+    {
+        keysSortedByDate = tc.keysSortedByDate()
+        keysSortedByName = tc.keysSortedByAlpha()
+        keyCount = keysSortedByName.count
+        keysSortedProperly = keysSortedByName //this will change on refresh
+    }
+
+    //======(TextureVC)=================================================
+    func updateSortDirButton()
+    {
+        var ii = dnArrow
+        if sortDir == 1 {ii = upArrow}
+        sortDirButton.setImage(ii, for: .normal)
+    }
+    
+    //======(TextureVC)=================================================
+    func updateSortButtonColors()
+    {
+        if sortMode == 1
+        {
+            sortNamButton.backgroundColor  = UIColor.darkGray
+            sortDateButton.backgroundColor = UIColor.blue
+        }
+        else
+        {
+            sortNamButton.backgroundColor  = UIColor.blue
+            sortDateButton.backgroundColor = UIColor.darkGray
+        }
+    } //end updateSortButtonColors
     
     //====<UICollectionViewDelegate>===============================================
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return textures.count
+        return keyCount //textures.count
     }
     
     //====<UICollectionViewDelegate>==================================
@@ -231,9 +304,32 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath as IndexPath) as! TextureCell
         let row = indexPath.row
-        cell.texLabel.text  = texnames[row]
-        cell.texImage.image = textures[row]
         
+        //12/16 handle sorting options...
+        
+        var texName = ""
+        let rrow = max(0,keyCount - row - 1)
+        if keyCount > 0
+        {
+            switch(sortMode)
+            {
+            case 0: //alpha
+                if sortDir == 0 { texName = keysSortedByName[row] }
+                else            { texName = keysSortedByName[rrow]}
+            case 1: //date
+                if sortDir == 0 { texName = keysSortedByDate[row] }
+                else            { texName = keysSortedByDate[rrow]}
+            default: texName = ""
+            }
+        } //end keycount
+        //print("...row \(row) name \(texName)")
+        keysSortedProperly[row] = texName //for picking stuff
+        cell.texLabel.text = texName
+        if let ii = tc.texDict[texName]
+            {cell.texImage.image = ii}
+        else
+            {cell.texImage.image = emptyImage}
+
         cell.layer.borderWidth = 1
         cell.layer.cornerRadius = 8
         
@@ -265,7 +361,8 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
                 if let iname = asset?.value(forKey: "filename") as? String
                 {
                     tc.addImage(fileName: iname, image: image)
-                    addImageToArrays(image: image, name: iname)
+                    //addImageToArrays(image: image, name: iname)
+                    getFreshlySortedKeys()
                     self.collectionView.reloadData()
                     delegate?.gotTexture(name: iname, tex: image) //11/16 notify parent
                 }
@@ -293,9 +390,9 @@ class TextureVC: UIViewController,UICollectionViewDataSource,
     //---------<imageEditVCDelegate>------------------------------------------------
     // hmmm need different method name?
     func didEdit(_ i: UIImage!) {
-        let newName = texnames[selectedRow] + "0"
+        let newName = keysSortedProperly[selectedRow] + "0"
         tc.addImage(fileName: newName, image: i) //save new texture!
-        addImageToArrays(image: i, name: newName)
+        getFreshlySortedKeys()
         collectionView.reloadData()
         infoAlert(title:"Added new texture" , message : "edited and saved as:" + newName)
     } //end didEdit

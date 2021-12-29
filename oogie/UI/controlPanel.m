@@ -13,18 +13,6 @@
 //                this is used to set current values, and defaults for reset.
 //            The configure UI and randomize UI functions are now in genOogie...
 //           
-// 5/23  make pro button only on RH side, add enable/disble for bottom 6 sliders
-// 5/24  shrink picker rows more to make neighbors visible
-// 6/19  fix ppanel size bug
-// 6/27  update dice to handle delay sliders
-// 7/9   add oogieStyle
-// 7/11  variable cleanup , hook up to undo, add undoable arg to didsetControlValue
-// 8/11 MIGRATE to oogie2D> get rid of cappDelegate for now,
-//         flurryAnalytics,miniHelp,obPopup
-// 9/17 redo params to read input / defaults from incoming dictionary
-// 9/18 add randomize, remove sendAllParamsToParent, add sendUpdatedParamsToParent
-// 9/21 remove footer, add top edit label
-// 9/24 add dismiss button
 // 10/21 add delete button
 // 10/27 add resetPatchPicker
 // 10/28 fix layout bugs reset button / editlabel
@@ -32,25 +20,20 @@
 // 10/30 add shouldChangeCharactersInRange delegate callback
 // 11/1   shrink editLabel, repeat on other panels?
 // 11/10 add quant field
+// 11/29 for channel sliders, enable ONLY if picker is set to top value
+//         weird cosmetic bug, slider doesnt gray out when it should!
+//        pull demoNotification, add bottom bevel panel
+// 12/15 pull which from didSetControlValue
+// 12/21 remoe l/r buttons
 #import "controlPanel.h"
-//#import "AppDelegate.h" //KEEP this OUT of viewController.h!!
 
 @implementation controlPanel
-
-#define NORMAL_CONTROLS
-#define GOT_DIGITALDELAY
-
-NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so it matches order in SYNTH
-
 
 //======(controlPanel)==========================================
 - (id)init
 {
     self = [super initWithFrame:CGRectZero];
     if (self) {
-
-      //  cappDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
-        // 9/15 add UI utilities
         goog = [genOogie sharedInstance];
         _spNames = @[];
         _paNames = @[];
@@ -66,10 +49,6 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
         allTextFields  = [[NSMutableArray alloc] init];
         
         lastSelectedTextField = nil; //10/29 indicate no select
-        // 8/12 add notification for ProMode demo...
-        [[NSNotificationCenter defaultCenter]
-                                addObserver: self selector:@selector(demoNotification:)
-                                       name: @"demoNotification" object:nil];
         _wasEdited = FALSE; //9/8
         sfx   = [soundFX sharedInstance];  //8/27
         diceUndo = FALSE; //7/9
@@ -84,21 +63,22 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
 {
     if (allParams != nil) return; //only go thru once!
     //NSLog(@" setup canned voice Param data...");
-    allParams      = @[@"patch",@"soundpack",
+    allParams      = @[@"patch",@"soundpack",@"latitude", @"longitude",
                        @"threshold",@"bottommidi",@"topmidi",@"keysig",@"poly",@"quant",
                        @"nchan",@"nfixed",@"vchan",@"vfixed",@"pchan",@"pfixed", //10/3
                        @"level",@"portamento",
                        @"viblevel" ,@"vibspeed",@"vibwave",
                        @"vibelevel" ,@"vibespeed",@"vibewave",
                        @"delaytime" ,@"delaysustain",@"delaymix",
-                       @"latitude", @"longitude",@"name",@"comment"];
-    sliderNames    = @[@"Threshold",@"Bottom Note",@"Top Note",
+                       @"name",@"comment"];
+    sliderNames    = @[@"Latitude", @"Longitude",
+                       @"Threshold",@"Bottom Note",@"Top Note",
                        @"NChannel", @"VChannel", @"PChannel",
                        @"Overdrive",@"Portamento",
                        @"FVib Level" ,@"FVib Speed" ,
                        @"AVib Level" ,@"AVib Speed",
-                       @"Delay Time" ,@"Delay Sustain",@"Delay Mix",
-                       @"Latitude", @"Longitude"];
+                       @"Delay Time" ,@"Delay Sustain",@"Delay Mix"];
+                       ;
     // note some picker names arent used...
     pickerNames    = @[@"Patch",@"SoundPack",@"KeySig",@"Mono/Poly",@"Quantize",@"mt",@"mt",@"mt",@"FVib Wave",@"AVib Wave"];
     textFieldNames = @[@"Name",@"Comments"];
@@ -135,6 +115,9 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     buttonWid = viewWid * 0.12; //10/4 REDO button height,scale w/width
     buttonHit = OOG_HEADER_HIT; //buttonWid;
     
+    //11/29 NO PRO BUTTON EVER
+    proButton.hidden = TRUE; // 8/11 FIX gotPro;
+
     self.frame = frame;
     self.backgroundColor = [UIColor redColor]; // 6/19/21 colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.1];
     int xs,ys,xi,yi;
@@ -152,16 +135,6 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     scrollView.backgroundColor = [UIColor clearColor];
     scrollView.showsVerticalScrollIndicator = TRUE;
     [self addSubview:scrollView];
-    
-    // Add L/R swipe detect...
-    UISwipeGestureRecognizer *swipeRGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeGestureDetected:)];
-    swipeRGesture.direction = 1; //RIGHT
-    swipeRGesture.delegate  = self; //9/7 for checking gestures
-    [scrollView addGestureRecognizer:swipeRGesture];
-    UISwipeGestureRecognizer *swipeLGesture = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeGestureDetected:)];
-    swipeLGesture.direction = 2; //LEFT
-    swipeLGesture.delegate  = self; //9/7 for checking gestures
-    [scrollView addGestureRecognizer:swipeLGesture];
 
     int panelSkip = 5; //Space between panels
     int i=0; //6/8
@@ -210,15 +183,7 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     titleLabel.text = @"...";
     titleLabel.textAlignment = NSTextAlignmentCenter;
     [header addSubview : titleLabel];
-    
-    xs = viewWid*0.2; //10/19 narrow help button
-    xi = viewWid * 0.5 - xs*0.5;;
-    helpButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [helpButton setFrame:CGRectMake(xi,yi,xs,ys)];
-    helpButton.backgroundColor = [UIColor clearColor];
-    [helpButton addTarget:self action:@selector(helpSelect:) forControlEvents:UIControlEventTouchUpInside];
-    [header addSubview:helpButton];
-    
+        
     xs = buttonHit;
     ys = buttonHit;
     xi = OOG_XMARGIN;
@@ -259,34 +224,10 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     [deleteButton addTarget:self action:@selector(deleteSelect:) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:deleteButton];
 
-    //7/9 add longpress on dice for undo
-    undoLPGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(LPGestureUndo:)];
-    undoLPGesture.numberOfTouchesRequired = 1;
-    undoLPGesture.delegate = self;
-    undoLPGesture.cancelsTouchesInView = NO;
-    [diceButton addGestureRecognizer:undoLPGesture];
 
-
-    //Left/Right switch UI buttons...
-    xs = buttonHit;
-    xi = viewWid - 2*OOG_XMARGIN - 2*xs;
-    goLeftButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [goLeftButton setImage:[UIImage imageNamed:@"arrowLeft"] forState:UIControlStateNormal];
-    [goLeftButton setFrame:CGRectMake(xi,yi, xs,ys)];
-    [goLeftButton addTarget:self action:@selector(leftSelect:) forControlEvents:UIControlEventTouchUpInside];
-    goLeftButton.enabled = FALSE;
-    [header addSubview:goLeftButton];
-    xi+=xs;
-    goRightButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [goRightButton setImage:[UIImage imageNamed:@"arrowRight"] forState:UIControlStateNormal];
-    [goRightButton setFrame:CGRectMake(xi,yi, xs,ys)];
-    [goRightButton addTarget:self action:@selector(rightSelect:) forControlEvents:UIControlEventTouchUpInside];
-    [header addSubview:goRightButton];
-    //9/24 END header controls
-    
-    //Patch / Soundpack Panel...
+    //Patch / Soundpack / latlon Panel...
     int panelY = 60; //10/3
-    int pahit = 180;
+    int pahit = 3*OOG_SLIDER_HIT + 2*OOG_PICKER_HIT + 2*OOG_YMARGIN;
     yi = panelY;
     ys = pahit;
     xi = OOG_XMARGIN;
@@ -296,7 +237,6 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     paPanel.backgroundColor = [UIColor colorWithRed:0.41 green:0.41 blue:0.41 alpha:1];
     [scrollView addSubview : paPanel];
      yi = 10;
-     //int ypro = yi;
      ys = OOG_SLIDER_HIT;
      xs = viewWid*0.9;
      UILabel *l4 = [[UILabel alloc] initWithFrame:
@@ -313,6 +253,18 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     yi += ys;
     [self addPickerRow:paPanel : iPicker : PICKER_BASE_TAG + iParam : pickerNames[iPicker] : yi : OOG_PICKER_HIT];
     iPicker++;
+    iParam++;
+    yi += ys;
+    ys = OOG_SLIDER_HIT;
+    // 11/25 move lat/lon up to top of menu
+    [self addSliderRow:paPanel : iSlider : SLIDER_BASE_TAG + iParam : @"Latitude (Y)" : yi :
+        OOG_SLIDER_HIT: 0.0 : 1.0];
+    iSlider++;
+    iParam++;
+    yi+=ys;
+    [self addSliderRow:paPanel : iSlider : SLIDER_BASE_TAG + iParam : @"Longitude (X)" : yi :
+        OOG_SLIDER_HIT:0.0 : 1.0];
+    iSlider++;
     iParam++;
 
     //Add color panel-------------------------------------
@@ -462,45 +414,29 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     //assume right below pPanel...
     yi = pPanel.frame.origin.y + pPanel.frame.size.height + panelSkip;
     xs = viewWid - 2*OOG_XMARGIN;
-    ys = 3*OOG_SLIDER_HIT + 2*OOG_TEXT_HIT + 2*OOG_YMARGIN; // + 2*OOG_PICKER_HIT + 10*OOG_YSPACER ;
-    UIView *llPanel = [[UIView alloc] init];
-    [llPanel setFrame : CGRectMake(xi,yi,xs,ys)];
-    llPanel.backgroundColor = [UIColor colorWithRed:0.0 green:0.4 blue:0.4 alpha:1];
-    [scrollView addSubview:llPanel];
+    ys = 2*OOG_TEXT_HIT + 3*OOG_YMARGIN; // + 2*OOG_PICKER_HIT + 10*OOG_YSPACER ;
+    //11/29 add rounded panel beneath our last panel , cosmetic
+    UIView *bevelPanel = [[UIView alloc] init]; //name / comments panel...
+    [bevelPanel setFrame : CGRectMake(xi,yi+20,xs,ys)]; //asdf
+    bevelPanel.backgroundColor = [UIColor colorWithRed:0.0 green:0.4 blue:0.4 alpha:1];
+    bevelPanel.layer.cornerRadius = 20;
+    bevelPanel.clipsToBounds      = TRUE;
+    [scrollView addSubview:bevelPanel];
+    //this is the panel controls are added to
+    UIView *ncPanel = [[UIView alloc] init]; //name / comments panel...
+    [ncPanel setFrame : CGRectMake(xi,yi,xs,ys)];
+    ncPanel.backgroundColor = [UIColor colorWithRed:0.0 green:0.4 blue:0.4 alpha:1];
+    [scrollView addSubview:ncPanel];
 
-    //8/12 add stuff for oogie2D / oogieAR
+    //11/25 pulled lat/lon, now just name / comment fields
     yi = OOG_YMARGIN;
-    ys = OOG_SLIDER_HIT;
-    // CHECK number, is it 15?? or 14? above were 3 sliders at 12...
-    // 9/15 KRASH sending slider tag 15!
-    [self addSliderRow:llPanel : iSlider : SLIDER_BASE_TAG + iParam : @"Latitude (Y)" : yi :
-        OOG_SLIDER_HIT: 0.0 : 1.0];
-    iSlider++;
-    iParam++;
-    yi+=ys;
-    [self addSliderRow:llPanel : iSlider : SLIDER_BASE_TAG + iParam : @"Longitude (X)" : yi :
-        OOG_SLIDER_HIT:0.0 : 1.0];
-    iSlider++;
-    iParam++;
-    //9/11 text entry fields...9/20 fix yoffset bug
-    yi += (OOG_SLIDER_HIT+OOG_YSPACER);
-    [self addTextRow:llPanel :0 :TEXT_BASE_TAG + iParam : textFieldNames[0] :yi :OOG_TEXT_HIT ];
+    [self addTextRow:ncPanel :0 :TEXT_BASE_TAG + iParam : textFieldNames[0] :yi :OOG_TEXT_HIT ];
     iParam++;
     yi += (OOG_TEXT_HIT+OOG_YSPACER);
-    [self addTextRow:llPanel :1 :TEXT_BASE_TAG + iParam : textFieldNames[1] :yi :OOG_TEXT_HIT ];
+    [self addTextRow:ncPanel :1 :TEXT_BASE_TAG + iParam : textFieldNames[1] :yi :OOG_TEXT_HIT ];
     iParam++;
 
-    //5/23 make pro button only on RH side where controls are
-    CGRect pRect = pPanel.frame;
-    pRect.origin.x = pRect.size.width * 0.2; // 8/4 enlarge button to left , was 0.4
-    proButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [proButton setFrame:pRect]; //5/23
-    [proButton setTitleColor:[UIColor blueColor] forState:UIControlStateNormal];
-    proButton.backgroundColor    = [UIColor clearColor];
-    [proButton addTarget:self action:@selector(proSelect:) forControlEvents:UIControlEventTouchUpInside];
-    [scrollView addSubview:proButton];
-    
-    UIView *vLabel = [[UIView alloc] init];
+   UIView *vLabel = [[UIView alloc] init];
     xi = viewWid;
     yi = viewHit/2;
     xs = 30;
@@ -510,60 +446,12 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     vLabel.backgroundColor = [UIColor colorWithRed:0.3 green:0.3 blue:0.3 alpha:1];
     [self addSubview:vLabel];
 
-//    xi = 0;
-//    yi = 0; //9/14 Popup needs to be at SCREEN TOP, not viewTOP
-//    xs = viewWid;
-//    ys = viewHit;
-    // 8/11     obp = [[obPopup alloc] initWithFrameAndSizetype:CGRectMake(xi,yi,xs,ys):OB_SIZE_HELP];
-    // 8/11     obp.delegate = self;
-    //10/24 use settings bundle flags to determine the enuf buttons visibility
-  //  obp.showEnufButton = ( [cappDelegate getOnboardingFlag : OB_SILENCE_HELP] == 0) ;
-    // 8/11       [self addSubview:obp];
-    // 8/8 this contains all the help info for popups...
-   // 8/11 mhelp = [miniHelp sharedInstance];
-
-    
     //Scrolling area...
     int scrollHit = 1500; //11/13 add empty padding ab tobbom
     //if (cappDelegate.gotIPad) scrollHit+=120; //3/27 ipad needs a bit more room
     
     scrollView.contentSize = CGSizeMake(viewWid, scrollHit);
-                         
-    [self clearAnalytics];
-
 } //end setupView
-
-//======(controlPanel)==========================================
-//9/9 for session analytics
--(void) clearAnalytics
-{
-    //8/3 for session analytics: count activities
-    diceRolls = 0; //9/9 for analytics
-    resets    = 0; //9/9 for analytics
-//    for (int i=0;i<MAX_CONTROL_SLIDERS;i++) sChanges[i] = 0;
-//    for (int i=0;i<MAX_CONTROL_PICKERS;i++) pChanges[i] = 0;
-}
-
-//======(controlPanel)==========================================
-// handles L/R swipe gesture over scrolling view...
-// NOTE swipe direction is opposite from LR button direction!
-- (void)swipeGestureDetected:(UISwipeGestureRecognizer *)swipeGesture
-{
-    int dir = (int)swipeGesture.direction;
-    if (dir == 1) //right
-        [self leftSelect:nil];  //9/9
-    else
-        [self rightSelect:nil];  //9/9
-} //end swipeGestureDetected
-
-//======(controlPanel)==========================================
-// 9/7 ignore slider moves!
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
-      if ([touch.view isKindOfClass:[UISlider class]]) {
-          return NO; // ignore the touch
-      }
-      return YES; // handle the touch
-}
 
 //======(controlPanel)==========================================
 - (BOOL)prefersStatusBarHidden
@@ -723,14 +611,19 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     {
         [self sendUpdatedParamsToParent:resetDict];
     }
-    
+    //11/29 need to disable channel sliders if matching pickers arent at top setting
+    for (int i=0;i<3;i++) //for each channel picker... 10,12,14
+    {
+        int pickerTag = 10 + 2*i;
+        NSNumber*nn = [goog getNumberForParam : _paramDict : allParams[pickerTag]]; //get value for picker
+        int matchingSlider = 5 + i;
+        //NSLog(@" chan %d picker %d",i,nn.intValue);
+        UISlider *s = (UISlider*)allSliders[matchingSlider];
+        [s setEnabled : (nn.intValue == (colorChannels.count-1))];  //last item? enable slider
+    }
+
     resetButton.hidden = !_wasEdited;
-    // 4/30 WTF? why wasnt this here earlier?
-    //BOOL gotPro = (cappDelegate.proMode || cappDelegate.proModeDemo);
-    proButton.hidden = TRUE; // 8/11 FIX gotPro;
-
 } //end configureViewWithReset
-
 
 
 //======(controlPanel)==========================================
@@ -743,12 +636,11 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
         NSNumber *nt = ra[0];
         NSNumber *nv = ra[1];
         NSString *ns = ra[2];
-        [self.delegate didSetControlValue:nt.intValue:nv.floatValue:key:ns:FALSE];
+        [self.delegate didSetControlValue:nv.floatValue:key:ns:FALSE]; //12/15
     }
 } //end sendUpdatedParamsToParent
 
 //======(controlPanel)==========================================
-// 8/3 update session analytics here..
 -(void)sliderStoppedDragging:(id)sender
 {
     [self updateSliderAndDelegateValue : sender : FALSE]; //9/23
@@ -769,7 +661,7 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     int tagMinusBase = ((int)slider.tag % 1000); // 7/11 new name
     float value = slider.value;
     NSString *name = dice ? @"" : allParams[tagMinusBase];
-    [self.delegate didSetControlValue:tagMinusBase:value:allParams[tagMinusBase]:name:TRUE];
+    [self.delegate didSetControlValue:value:allParams[tagMinusBase]:name:TRUE]; //12/15
 } //end updateSliderAndDelegateValue
 
 
@@ -780,47 +672,6 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     [self.delegate didSelectControlDismiss];
 }
 
-//======(controlPanel)==========================================
-- (IBAction)helpSelect:(id)sender
-{
-    [self putUpOBHelpInstructions];
-}
-
-//======(controlPanel)==========================================
-// 8/28 redo w/ bullet points
--(void) putUpOBHelpInstructions
-{
-    //if ( [cappDelegate getOnboardingFlag : OB_SILENCE_HELP] != 0) return; //No mini help?
-// 8/11
-//    obp.titleText       = mhelp.obLiveControlsTitle;
-//    obp.blurb1Text      = mhelp.obLiveControlsBlurb1;
-//    obp.blurb2Text      = mhelp.obLiveControlsBlurb2;
-//    obp.bulletStrings   = mhelp.obLiveControlsBullets;
-//    obp.obType          = 0; //type doesnt matter here
-//    obp.hasBulletPoints = TRUE;
-//    [obp update];
-//    obp.yTop = _yTop; //9/14 CLUGE tell popup where it is on screen
-//    [obp bounceIn];
-}
-
-//======(controlPanel)==========================================
-- (IBAction)proSelect:(id)sender
-{
-    [self.delegate controlNeedsProMode]; //9/8 pass buck to parent
-}
-
-//======(controlPanel)==========================================
-- (IBAction)loNoteSelect:(id)sender
-{
-    NSLog(@" lonote");
-}
-
-
-//======(controlPanel)==========================================
-- (void)LPGestureUndo:(UILongPressGestureRecognizer *)recognizer
-{
-    diceUndo = TRUE;   //7/9 handitoff to dice...
-}
 
 //======(controlPanel)==========================================
 // 9/18  make this generic too, and return a list of updates for delegate.
@@ -828,7 +679,7 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
 //    and reuse this method here and in configureView!
 -(void) randomizeParams
 {
-    NSLog(@" RANDOMIZE");
+    //NSLog(@" RANDOMIZE");
     NSArray *norandomizeparams = @[@"patch",@"soundpack",@"name",@"comment",@"delaysustain",@"threshold"];
 
     NSMutableDictionary *resetDict = [goog randomizeFromVC : allParams : allPickers : allSliders : norandomizeparams];
@@ -860,19 +711,6 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     [self.delegate didSelectControlDelete];
 } //end deleteSelect
 
-
-//======(controlPanel)==========================================
-- (IBAction)leftSelect:(id)sender
-{
-    [self.delegate didSelectLeft];
-}
-
-//======(controlPanel)==========================================
-- (IBAction)rightSelect:(id)sender
-{
-    [self.delegate didSelectRight];
-}
-
 //======(controlPanel)==========================================
 - (IBAction)resetSelect:(id)sender
 {
@@ -892,42 +730,12 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     resettingNow       = FALSE;
 } //end resetControls
 
-//======(controlPanel)==========================================
-//8/3
--(void)updateSessionAnalytics
-{
-    //NSLog(@" duh collected analytics for flurry");
-//    for (int i=0;i<MAX_CONTROL_SLIDERS;i++)
-//    {
-//        if (sChanges[i] > 0) //report changes to analytics
-//        {
-//            //NSLog(@" slider[%d] %d",i,sChanges[i]);
-//            //NSString *sname = sliderKeys[i];
-//            //8/11 FIX[fanal updateSliderCount:sname:sChanges[i]];
-//        }
-//    }
-//    for (int i=0;i<MAX_CONTROL_PICKERS;i++)
-//    {
-//        if (pChanges[i] > 0) //report changes to analytics
-//        {
-//            //NSLog(@" picker[%d] %d",i,pChanges[i]);
-//            //NSString *pname = pickerKeys[i];
-//            //8/11 FIX[fanal updatePickerCount:pname:pChanges[i]];
-//        }
-//    }
-//    //8/11 FIX[fanal updateDiceCount : @"LDI" : diceRolls]; //9/9
-//    //8/11 FIX [fanal updateMiscCount : @"LRE" : resets]; //9/9
-//    [self clearAnalytics]; //9/9 clear for next session
-
-} //end updateSessionAnalytics
-
 
 //======(controlPanel)==========================================
 - (NSString *)getPickerTitleForTagAndRow : (int)tag : (int)row
 {
-   // NSLog(@" get picker tag %d",row);
     NSString *title = @"";
-    //tags pickers, 0 / 1  / 5,6  / 6,8,10 / 16  / 19
+    //tags pickers, 0 / 1  / 7,8,9 / 10,12,14 / 20 / 23
     if (tag == PICKER_BASE_TAG) //patch
     {
         if (_paNames != nil) title = _paNames[row];
@@ -936,23 +744,27 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     {
         if (_spNames != nil) title = _spNames[row];
     }
-    if (tag == PICKER_BASE_TAG+5)
+    if (tag == PICKER_BASE_TAG+7)
     {
         title = keySigs[row];
     }
-    if (tag == PICKER_BASE_TAG+6)
+    if (tag == PICKER_BASE_TAG+8)
     {
         title = monoPoly[row];
     }
-    if (tag == PICKER_BASE_TAG+7) //11/10 add quant cboice
+    if (tag == PICKER_BASE_TAG+9) //11/10 add quant cboice
     {
         title = quants[row];
     }
-    else if ( tag == PICKER_BASE_TAG+8 || tag == PICKER_BASE_TAG+10 || tag == PICKER_BASE_TAG+12)
+    else if ( tag == PICKER_BASE_TAG+10 || tag == PICKER_BASE_TAG+12 || tag == PICKER_BASE_TAG+14)
     {
         title = colorChannels[row];
     }
-    else if (tag == PICKER_BASE_TAG+18 || tag == PICKER_BASE_TAG+21)
+    else if (tag == PICKER_BASE_TAG+20 || tag == PICKER_BASE_TAG+23)
+    {
+        title = vibratoWaves[row];
+    }
+    else if (tag == PICKER_BASE_TAG+20 || tag == PICKER_BASE_TAG+23)
     {
         title = vibratoWaves[row];
     }
@@ -977,11 +789,17 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
         }
         else patchName = @"random";
     }
-    [self.delegate didSetControlValue:liltag :(float)row : allParams[liltag] : patchName :
-                                    !rollingDiceNow && !resettingNow];   //7/11
-    //8/3 update picker activity count
-//    int pMinusBase = (int)(pickerView.tag-PICKER_BASE_TAG);
-//    if (pMinusBase>=0 && pMinusBase<MAX_CONTROL_PICKERS) pChanges[pMinusBase]++;
+    //11/29  for pickers 10,12,14 disable sliders 5,6,7 (index not tag!) if set to row 9
+    // NOTE THIS will break if you add any pickers or sliders above this point in the UI!
+    if (liltag == 10 || liltag == 12 || liltag == 14)
+    {
+        int whichSlider = 5 + (liltag-10)/2; //need slider 5,6,7 for picker 10,12,14
+        UISlider *s = (UISlider*)allSliders[whichSlider];
+        [s setEnabled : (row == (colorChannels.count-1))];  //last item? enable slider
+        [s setNeedsDisplay];
+    }
+    [self.delegate didSetControlValue:(float)row : allParams[liltag] : patchName :
+                                    !rollingDiceNow && !resettingNow];   //12/15
 }
 
  
@@ -989,7 +807,7 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
 // tell the picker how many rows are available for a given component
 - (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component {
     int tag = (int)pickerView.tag;
-    //tags pickers, 0 / 1  / 5,6  / 6,8,10 / 16  / 19
+    //tags pickers, 0 / 1  / 7,8,9 / 10,12,14 / 20 / 23
     if ( tag == PICKER_BASE_TAG) //patch
         {
             if (_paNames != nil) return _paNames.count;
@@ -998,16 +816,16 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
         {
             if (_spNames != nil) return _spNames.count;
         }
-    else if ( tag == PICKER_BASE_TAG + 5)
-        return keySigs.count; //keysig
-    else if ( tag == PICKER_BASE_TAG + 6)
-        return monoPoly.count; //10/3 mono/poly
     else if ( tag == PICKER_BASE_TAG + 7)
+        return keySigs.count; //keysig
+    else if ( tag == PICKER_BASE_TAG + 8)
+        return monoPoly.count; //10/3 mono/poly
+    else if ( tag == PICKER_BASE_TAG + 9)
         return quants.count; //11/10 quantize
     // 10/3 color channels
-    else if ( tag == PICKER_BASE_TAG+8 || tag == PICKER_BASE_TAG+10 || tag == PICKER_BASE_TAG+12)
+    else if ( tag == PICKER_BASE_TAG+10 || tag == PICKER_BASE_TAG+12 || tag == PICKER_BASE_TAG+14)
         return colorChannels.count; //keysig
-    else if ( tag == PICKER_BASE_TAG+18 || tag == PICKER_BASE_TAG+21 )  //vib ratos
+    else if ( tag == PICKER_BASE_TAG+20 || tag == PICKER_BASE_TAG+23 )  //vib ratos
         return vibratoWaves.count;
     return 0; //empty (failed above test?)
     
@@ -1038,37 +856,13 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
 {
     return 15;
 }
-
  
 //-------<UIPickerViewDelegate>-----------------------------
 // tell the picker the width of each row for a given component
 - (CGFloat)pickerView:(UIPickerView *)pickerView widthForComponent:(NSInteger)component {
  int sectionWidth = 150;
- 
  return sectionWidth;
 }
-
-
-
-//=======<obPopupDelegate>======================================
-//- (void)obPopupDidSelectOK : (int)obType
-//{
-//}
-
-//=======<obPopupDelegate>======================================
-//- (void)obPopupDidSelectEnoughHelp : (int)obType
-//{
-//    //10/24 tell app Delegate to turn off minihelp... WHY do i need to use constant here!?
-//    //[cappDelegate setOnboardingFlag : OB_SILENCE_HELP : 2]; //8/21 add int arg
-//}
-
-// 4/3 clear live controls upon end of demo
-// 4/23 OK to do ui calls from notification!
-- (void)demoNotification:(NSNotification *)notification
-{
-        [self resetControls];    //clear any effects changes...
-}
-
 
 #pragma mark - UITextFieldDelegate
 
@@ -1107,12 +901,11 @@ NSString *OLDvibratoWaves[] = {@"Sine",@"Saw",@"Square",@"Ramp"}; //4/30 make so
     [textField resignFirstResponder]; //Close keyboard
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
-    [self.delegate didSetControlValue:liltag : 0.0 : allParams[liltag] : s: FALSE];
+    [self.delegate didSetControlValue: 0.0 : allParams[liltag] : s: FALSE];  //12/15
     // 9/21 take care of name update at top of menu
     if ([allParams[liltag] isEqualToString:@"name"]) titleLabel.text = s;
     return YES;
 }
-
 
 //======(patchPanel)==========================================
 // 9/16 redo adds a canned label/picker/slider set...

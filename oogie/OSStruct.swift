@@ -19,6 +19,7 @@
 //  2/3   add comment field
 //  10/7  change name default
 //  10/25 add xtraparams
+//  11/28 add wrapS/T params
 import SceneKit
 
 //Parameter area...
@@ -39,13 +40,15 @@ struct OSStruct : Codable {
     var vCoord       : Double
     var uScale       : Double
     var vScale       : Double
+    var wrapS        : Int   //11/28 new params, S/T texture wrap modes
+    var wrapT        : Int
     var rotation     : Double
     var rotSpeed     : Double
     var rotXaxis     : Double
     var rotYaxis     : Double
     var rotZaxis     : Double
     var uid          : String
-    var xtraParams  : String //10/25. ADD NEW FIELD for audio 3D placement, whatever in the future...
+    var xtraParams   : String //10/25. ADD NEW FIELD for audio 3D placement, whatever in the future...
 
 
     //======(OSStruct)=============================================
@@ -70,6 +73,8 @@ struct OSStruct : Codable {
         rotXaxis  = 0.0
         rotZaxis  = 0.0
         rotYaxis  = 1.0
+        wrapS     = 2   //12/17 2 = repeat texture mode
+        wrapT     = 2
         uid = "shape_" + ProcessInfo.processInfo.globallyUniqueString
     }
     

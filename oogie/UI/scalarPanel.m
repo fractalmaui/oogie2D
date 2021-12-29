@@ -12,6 +12,8 @@
 //  10/21 add delete button
 // 10/29 close KB if panel closes, see lastSelectedTextField
 // 10/30 add shouldChangeCharactersInRange delegate callback
+// 11/29 cosmetic, add bottom bevel panel
+// 12/15 pull which from didSetScalarValue delegate method
 #import "scalarPanel.h"
 
 @implementation scalarPanel
@@ -45,8 +47,8 @@
 {
     if (allParams != nil) return; //only go thru once!
     //NSLog(@" setup canned pipe Param data...");
-    allParams      = @[@"value",@"outputparam",@"lorange",@"hirange",@"invert",@"name",@"comment"];
-    sliderNames    = @[@"value",@"LoRange",@"HiRange"];
+    allParams      = @[@"value",@"outputparam",@"lorange",@"hirange",@"invert",@"xpos",@"zpos",@"name",@"comment"];
+    sliderNames    = @[@"value",@"LoRange",@"HiRange",@"Xpos",@"Zpos"];
     pickerNames    = @[@"OutputParam",@"Invert"];
     textFieldNames = @[@"Name",@"Comments"];
     
@@ -193,9 +195,17 @@
     
     //Add main controls panel-------------------------------------
     xi = OOG_XMARGIN;
-    yi = 60; //skip down below edit area
+    yi = 40; //skip down below edit area
     xs = viewWid-2*OOG_XMARGIN;
-    ys = 8*OOG_SLIDER_HIT + 3*OOG_TEXT_HIT + 2*OOG_PICKER_HIT + 2*OOG_YMARGIN;
+    ys = 7*OOG_SLIDER_HIT + 2*OOG_TEXT_HIT + 2*OOG_PICKER_HIT + 2*OOG_YMARGIN;
+    //11/29 add rounded panel beneath our last panel , cosmetic
+    UIView *bevelPanel = [[UIView alloc] init]; //name / comments panel...
+    [bevelPanel setFrame : CGRectMake(xi,yi+20,xs,ys)]; //asdf
+    bevelPanel.backgroundColor = [UIColor colorWithRed:0 green:0.5 blue:0.5 alpha:1];
+    bevelPanel.layer.cornerRadius = 20;
+    bevelPanel.clipsToBounds      = TRUE;
+    [scrollView addSubview:bevelPanel];
+    //this is the panel controls are added to
     UIView *mPanel = [[UIView alloc] init];
     [mPanel setFrame : CGRectMake(xi,yi,xs,ys)];
     mPanel.backgroundColor = [UIColor colorWithRed:0 green:0.5 blue:0.5 alpha:1];
@@ -229,6 +239,14 @@
     iPicker++;
     iParam++;
     
+    for (int i=0;i<2;i++) //12/21 add X/Z position sliders
+    {
+        [self addSliderRow:mPanel : iSlider : SLIDER_BASE_TAG + iParam : sliderNames[iSlider] : yi : OOG_SLIDER_HIT:0.0:1.0];
+        yi += (OOG_SLIDER_HIT+OOG_YSPACER);
+        iSlider++;
+        iParam++;
+    }
+
     // 2 text entry fields... name / comment 9/20 fix yoffset bug
     yi += (OOG_TEXT_HIT+OOG_YSPACER);
     [self addTextRow:mPanel :iText :TEXT_BASE_TAG + iParam : textFieldNames[iText] :yi :OOG_TEXT_HIT ];
@@ -296,7 +314,7 @@
         // hook it up to callbacks
         [slider addTarget:self action:@selector(sliderAction:) forControlEvents:UIControlEventValueChanged];
         [slider addTarget:self action:@selector(sliderStoppedDragging:) forControlEvents:UIControlEventTouchUpInside|UIControlEventTouchUpOutside];
-        NSLog(@" add scalar slider %@ at %d",slider,index);
+        //NSLog(@" add scalar slider %@ at %d",slider,index);
         [allSliders addObject:slider];
     }
 } //end addSliderRow
@@ -313,7 +331,7 @@
         UIPickerView * picker = A[0];
         picker.delegate   = self;
         picker.dataSource = self;
-        NSLog(@" add scalar picker %@ at %d",picker,index);
+        //NSLog(@" add scalar picker %@ at %d",picker,index);
         [allPickers addObject:picker];
     }
     
@@ -370,10 +388,10 @@
     for (NSString*key in paramsDict.allKeys)
     {
         NSArray *ra = paramsDict[key];
-        NSNumber *nt = ra[0];
+        //NSNumber *nt = ra[0];
         NSNumber *nv = ra[1];
         NSString *ns = ra[2];
-        [self.delegate didSetScalarValue : nt.intValue : nv.floatValue:key:ns:FALSE];
+        [self.delegate didSetScalarValue : nv.floatValue:key:ns:FALSE]; //12/15
     }
 } //end sendUpdatedParamsToParent
 
@@ -416,7 +434,7 @@
     int tagMinusBase = ((int)slider.tag % 1000); // 7/11 new name
     float value = slider.value;
     NSString *name = dice ? @"" : allParams[tagMinusBase];
-    [self.delegate didSetScalarValue:tagMinusBase:value:allParams[tagMinusBase]:name:TRUE];
+    [self.delegate didSetScalarValue: value:allParams[tagMinusBase]:name:TRUE]; //12/15
 } //end updateSliderAndDelegateValue
 
 
@@ -538,10 +556,12 @@
     if (!_wasEdited) {_wasEdited = TRUE; resetButton.hidden = FALSE;} //9/8 show reset button now!
     int liltag = (int)pickerView.tag % 1000;
     BOOL undoable = !rollingDiceNow && !resettingNow;
+    NSString *fieldName = @""; //12/15 simplify
     if (liltag == 1)
-        [self.delegate didSetScalarValue:liltag :(float)row: allParams[liltag] :_outputNames[row]: undoable];
+        fieldName = _outputNames[row];
     else if (liltag == 4) // 10/5 invert picker
-        [self.delegate didSetScalarValue:liltag :(float)row: allParams[liltag] :invertParams[row]: undoable];
+        fieldName = invertParams[row];
+    [self.delegate didSetScalarValue: (float)row: allParams[liltag]: fieldName: undoable]; //12/15
 }
 
 
@@ -623,7 +643,7 @@
     [textField resignFirstResponder]; //Close keyboard
     NSString *s = textField.text;
     int liltag = (int)textField.tag - TEXT_BASE_TAG;
-    [self.delegate didSetScalarValue:liltag :0.0: allParams[liltag] : s : FALSE];   //9/20
+    [self.delegate didSetScalarValue: 0.0: allParams[liltag] : s : FALSE];   //12/15
     // 9/21 take care of name update at top of menu
     if ([allParams[liltag] isEqualToString:@"name"]) titleLabel.text = s;
     return YES;

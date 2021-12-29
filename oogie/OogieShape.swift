@@ -22,6 +22,7 @@
 //  11/7 try texture Cache thumb in setBitmap
 //  11/9 change computeCurrentAngle
 //  11/15 add default texture to texCache
+//  11/28 add wrapS/wrapT params to OOS struct
 import Foundation
 
 
@@ -72,7 +73,6 @@ class OogieShape: NSObject {
         return OSP.shapeParamNames.count   //9/19/21
     }
 
-    
     //-----------(oogieShape)=============================================
     // 4/22/20 gets param named "whatever", returns tuple
     // 4/25    add isString	
@@ -94,6 +94,8 @@ class OogieShape: NSObject {
         case "texyoffset":   dp = OOS.vCoord
         case "texxscale":    dp = OOS.uScale
         case "texyscale":    dp = OOS.vScale
+        case "wraps":        dp = Double(OOS.wrapS)  //11/28
+        case "wrapt":        dp = Double(OOS.wrapT)
         case "name":         sp = OOS.name
                              isString = true
         case "comment":      sp = OOS.comment
@@ -174,7 +176,7 @@ class OogieShape: NSObject {
             } //end let paramz
         } //end for pname
         return d
-    } //end getParamList
+    } //end getParamDict
     
     //-----------(oogieShape)=============================================
     // 11/9 redo so refDate / refAngle constantly change
@@ -186,6 +188,7 @@ class OogieShape: NSObject {
         oldTInterval = timeInterval
         refDate  = cDate  //11/9/21 should handle speed changes better this way
         refAngle = refAngle + (2.0 * Double.pi)*(timeInterval/rotTime) //11/9 advance angle
+        //print("angle \(refAngle)")
         return refAngle
     } //end computeCurrentAngle
     
@@ -306,6 +309,8 @@ class OogieShape: NSObject {
         case "texyoffset"  : OOS.vCoord   = dval
         case "texxscale"   : OOS.uScale   = dval
         case "texyscale"   : OOS.vScale   = dval
+        case "wraps"       : OOS.wrapS    = Int(dval) //11/28
+        case "wrapt"       : OOS.wrapT    = Int(dval)
         case "name"        : OOS.name     = sval
         case "comment"     : OOS.comment  = sval
         default:print("Error:Bad shape param in set")

@@ -12,17 +12,18 @@
 //  Copyright © 2019 fractallonomy. All rights reserved.
 //
 // 11/29 add highlighted
-// 1/14  fix bug in normals in create3DPipe
-// 1/22  redo create3DPipe, simplify args
+// 1/14  fix bug in normals in create 3DPipe
+// 1/22  redo create 3DPipe, simplify args
 // 2/3   add shapeYoff to ceiling calc
 // 4/23  increase pipe radius : should this be in DB settings?
 // 5/4   add uid name to sphere nodes
 // 10/5  add dataImage access
 // 10/6  add wraparound support to pipeDataImage, pull image from pipe 3d label
-//        redo createPipeDataImage
+//        redo create PipeDataImage
 // 10/22 fix bug in create3DPipe
 // 10/23 fix AR infobox size bug
 // 10/26 get rid of 2D support for coords, various float var type changes
+// 12/24 in create3DPipe change is Shape to obj Type
 import Foundation
 import UIKit
 import SceneKit
@@ -197,13 +198,13 @@ class PipeShape: SCNNode {
 
     //-----------(oogiePipe)=============================================
     // 1/22 combine all args into OogiePipe struct
-    // 1/28 add isShape arg
+    // 12/24 replace issShape with objjType string
     //-----------(oogiePipe)=============================================
      //-----------(oogiePipe)=============================================
     func create3DPipe(uid: String ,  //9/25
                         flat : Double , flon : Double , sPos00  : SCNVector3 ,
                        tlat : Double , tlon : Double , sPos01  : SCNVector3 ,
-                       isShape: Bool, newNode : Bool
+                       objType: String, newNode : Bool
      ) -> SCNNode
      {
          var cIndex = 0 //local pointer to cylinder nodes during update
@@ -321,7 +322,7 @@ class PipeShape: SCNNode {
             cIndex+=1
          }
 
-         if (!isShape) //DHS 11/27 big lat means go to shape, trivial 2nd half of pipe
+         if objType == "voice" //DHS 11/27 big lat means go to shape, trivial 2nd half of pipe
          {
              //Second half of pipe, same but for  sPos01 pos, lat lon
              nx =  cos( tlon) * cos( tlat) //1/14 wups need to incorporate cosine!
@@ -409,7 +410,7 @@ class PipeShape: SCNNode {
                  cIndex+=1
              }
          }
-         else //trivial pipe to shape?
+         else if objType == "shape" //Shape Object
          {
              //print("pipe2shape")
              let cp3 = SCNVector3( sPos01.x,ceilingy, sPos01.z) //ceiling above shape

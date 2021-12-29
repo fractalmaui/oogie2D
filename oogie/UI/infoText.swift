@@ -17,7 +17,8 @@
 //  9/11  fix possible krash in updateit
 // CLUGE???????
 //  9/19  For now, lets assume integer fields are choosers ALWAYS and require a string output...
-
+//  11/29 add special case for midi fields, truncate nueric output
+//          pull min/max err checks too
 import UIKit
 import Foundation
 let TINT_TTYPE    = 1 //10/21 wups
@@ -258,23 +259,6 @@ class infoText: UIView {
     {
         fadeIn() //11/4 checked for redundancy, OK here now
         var workVal = value
-        var minErr  = false
-        var maxErr  = false
-        if workVal < minVal
-        {
-            minErr  = true
-            workVal = minVal
-        }
-        if workVal > maxVal
-        {
-            maxErr  = true
-            workVal = maxVal
-        }
-        if showWarnings
-        {
-            TLWarning.isHidden = !minErr
-            TRWarning.isHidden = !maxErr 
-        }
         TLlabel.isHidden     = false
         TRlabel.isHidden     = false
         HIImageView.isHidden = false
@@ -314,7 +298,27 @@ class infoText: UIView {
         {
             TLlabel.text = String(minVal)
             TRlabel.text = String(maxVal)
-            titleLabel.text = paramName + " = "  + String(format: "%4.2f", workVal) //10/21
+            var t = ""
+            //11/29 special cases: midi needs to be shown as a string!
+            if paramName == "bottommidi" || paramName == "topmidi"
+            {
+                t = getMidiNoteString(noteval: Int(workVal))
+            }
+            else if paramName == "latitude" || paramName == "longitude" //11/29 special lat/lon
+            {
+                let angleVal = Int(workVal * 180.0 / .pi)
+                t = String(angleVal)
+            }
+            //11/29 most shape params need floating point output
+            else if ["xpos","ypos","zpos","texxoffset","texyoffset","texxscale","texyscale"].contains( paramName )
+            {
+                t = String(format:"%4.2f", workVal)
+            }
+            else //most controls: just show integer param value
+            {
+                t =  String(Int(workVal)) //11/29 trunc output
+            }
+            titleLabel.text = paramName + " = " + t
         }
         if fieldType != TFLOAT_TTYPE
         {
@@ -322,6 +326,16 @@ class infoText: UIView {
         }
         HIImageView.image = updateHImage(value :  workVal)
     } //end updateit
+
+    func getMidiNoteString (noteval : Int) -> String
+    {
+        let na = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
+        let whichnote = noteval % 12
+        let whichoct  = noteval / 12
+        let nout = na[whichnote] + String(whichoct)
+        return nout
+    }
+
     
     
     //------<infoText>-----------------------------------------
