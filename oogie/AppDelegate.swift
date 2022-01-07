@@ -40,6 +40,8 @@
 //  11/29  add liveMarkers
 //  12/2   add haltAudio preset
 //  12/12  made copyFactoryScenesToDocuments destructive
+//  12/29  add promptForDeletes
+//  12/31  PULL CRITTERS FOR NOW
 import UIKit
 
 
@@ -60,6 +62,7 @@ var appSettings = Dictionary<String, Any>()
     @objc var masterTempo = 135 //11/21
     @objc var liveMarkers = 0 //11/29 live marker color updating, memory hog!
     @objc var haltAudio = 1 //12/2 shut off audio during childVCs
+    @objc var promptForDeletes = 1 //12/29 ask before deleting voices etc
 
     //Audio Sound Effects...
     var sfx = soundFX.sharedInstance
@@ -94,7 +97,7 @@ var appSettings = Dictionary<String, Any>()
         
         
         //Get version string
-        if let nsObject: AnyObject? = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as AnyObject?
+        if let nsObject: AnyObject = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as AnyObject?
         {
             versionStr = nsObject as! String
         }
@@ -151,6 +154,7 @@ var appSettings = Dictionary<String, Any>()
     let skMasterTune        = "masterTune"
     let skLiveMarkers       = "liveMarkers"
     let skHaltAudio         = "haltAudio"
+    let skPromptForDeletes  = "promptForDeletes"
     let skSpinTimerPeriod   = "spinTimerPeriod"
     let skColorTimerPeriod  = "colorTimerPeriod"
     let skBlinkTimerPeriod  = "blinkTimerPeriod"
@@ -169,6 +173,7 @@ var appSettings = Dictionary<String, Any>()
             defaults.setValue(0,   forKey: skMasterTune)
             defaults.setValue(0,   forKey: skLiveMarkers)
             defaults.setValue(1,   forKey: skHaltAudio)
+            defaults.setValue(1,   forKey: skPromptForDeletes)
             defaults.setValue(0.1, forKey: skColorTimerPeriod)
             defaults.setValue(0.1, forKey: skSpinTimerPeriod)
             defaults.setValue(0.1, forKey: skBlinkTimerPeriod)
@@ -182,6 +187,7 @@ var appSettings = Dictionary<String, Any>()
         appSettings[skMasterTune]        = defaults.double(forKey: skMasterTune)
         appSettings[skLiveMarkers]       = defaults.double(forKey: skLiveMarkers)
         appSettings[skHaltAudio]         = defaults.double(forKey: skHaltAudio)
+        appSettings[skPromptForDeletes]  = defaults.double(forKey: skPromptForDeletes)
         appSettings[skColorTimerPeriod]  = defaults.double(forKey: skColorTimerPeriod)
         appSettings[skSpinTimerPeriod]   = defaults.string(forKey: skSpinTimerPeriod)
         appSettings[skBlinkTimerPeriod]  = defaults.double(forKey: skBlinkTimerPeriod)
@@ -199,6 +205,9 @@ var appSettings = Dictionary<String, Any>()
         }
         if let d = appSettings[skHaltAudio] as? Double{
             haltAudio  = Int(d)
+        }
+        if let d = appSettings[skPromptForDeletes] as? Double{
+            promptForDeletes  = Int(d)
         }
     } //end loadSettings
 
@@ -237,6 +246,14 @@ var appSettings = Dictionary<String, Any>()
     }
 
     //====(AppDelegate)----------------------------------------------
+    // 12/29
+    @objc func updatePromptForDeletes(value : Int)
+    {
+        promptForDeletes = value;
+        UserDefaults.standard.set(value, forKey: skPromptForDeletes)
+    }
+
+    //====(AppDelegate)----------------------------------------------
     //11/21
     @objc func updateMasterTune(value : Int)
     {
@@ -250,7 +267,8 @@ var appSettings = Dictionary<String, Any>()
     //  6/12/20 redid
     func loadSamples()
     {
-        let folders = ["GMPercussion","animals","weirdness"]   //9/11 add weirdness soundpack
+        //12/31 PULL CRITTERS FOR NOW
+        let folders = ["GMPercussion","weirdness"]   //9/11 add weirdness soundpack
         var fcount = 0
         var sampnum = LOAD_SAMPLE_OFFSET //32?  starting point for samples...
         percussionBase = Int(sampnum) //10/27

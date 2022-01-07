@@ -33,6 +33,8 @@
 //  12/18  in playAllPipesMarkers get color even for muted Voices
 //  12/23  redo scalar 3D model / coords
 //  12/25  remove knobMode in play AllPipes...
+//  12/29  add getListOfShapeVoices , deleteVoicesBy
+//  12/30  add outpipes delete in deleteVoice
 import Foundation
 import SceneKit
 class OogieScene: NSObject {
@@ -706,6 +708,13 @@ class OogieScene: NSObject {
     } //end deleteShapeBy
 
     //-----------(oogieScene)=============================================
+    // 12/29  removes list of voices
+    func deleteVoicesBy(list:[String])
+    {
+        for vuid in list { deleteVoiceBy(uid: vuid) }
+    } //end delete VoicesBy list
+
+    //-----------(oogieScene)=============================================
     // 10/27 removes voice from scene / SCNNode
     func deleteVoiceBy(uid:String)  //9/27 uid
     {
@@ -713,21 +722,20 @@ class OogieScene: NSObject {
         if markers3D[uid] != nil  //11/19
         {
             markers3D[uid]!.removeFromParentNode()
-            if let voice = sceneVoices[uid]
-            {
-                //10/21 delete any scalars going to this voice...
-                for uid in voice.inPipes   { deletePipeBy(uid: uid) }
-                for uid in voice.inScalars { deleteScalarBy(uid: uid ) }
+            if sceneVoices[uid] != nil
+            {       // delete any pipes / scalars going to or from this voice...
+                for uid in sceneVoices[uid]!.inPipes   { deletePipeBy(uid: uid) }
+                for uid in sceneVoices[uid]!.outPipes  { deletePipeBy(uid: uid) } //12/30 WUPS forgot
+                for uid in sceneVoices[uid]!.inScalars { deleteScalarBy(uid: uid ) }
             }
             markers3D.removeValue(forKey: uid) //4/28 new dict
             sceneVoices.removeValue(forKey: uid)       //  and remove data structure
         }
-        // 2/6 what about input pipes?
         if selectedMarkerKey == uid {selectedMarkerKey = "" }
+        if soloVoiceID       == uid {soloVoiceID = ""} //12/30 disable solo on delete!
         savingEdits = false // 11/16
     } //end deleteVoiceBy
-
-
+    
     //-----------(oogieScene)=============================================
     // 1/22 data bookkeeping, remove pipe UID from source voice outPipes set
     func removeVoiceOutputPipe(pipe:OogiePipe)
@@ -739,8 +747,6 @@ class OogieScene: NSObject {
         }
     } //end removeVoiceOutputPipe
     
-    
-
     //-----------(oogieScene)=============================================
     // 2/1 clears internal dictionaries of oogieVoices, Shapes and Pipes
     func clearOogieStructs()
@@ -869,6 +875,19 @@ class OogieScene: NSObject {
         for (_,voice) in sceneVoices {list.append(voice.OVS.name)}
         return list
     }
+
+    //-----------(oogieScene)=============================================
+    //12/29 returns uids of all voices around a shape
+    func getListOfShapeVoices(suid:String) -> [String]
+    {
+        var vuids = [String]()
+        for (_,voice) in sceneVoices
+        {
+            //match? Clobber it!
+            if voice.OVS.shapeKey == suid { vuids.append(voice.uid) }
+        }
+        return vuids
+    } //end getListOfShapeVoices
 
     //-----------(oogieScene)=============================================
     // convenience func, gets dict of name -> UID pairs
@@ -1211,9 +1230,9 @@ class OogieScene: NSObject {
     //  maybe merge later?
     func loadCurrentShapeParams()
     {
-        if let vArray = OSP.shapeParamsDictionary[selectedFieldName]
+        if let vArray = OSP.shapeParamsDictionary[selectedFieldName] //1/3/22 is selectedFieldName best? 
         {
-            breakOutSelectedFields(vArray: vArray)
+            breakOutSelectedFields(vArray: vArray)  //1/3/22 IRONICALLY  breakOutSelectedFields also sets selectedFieldName AGAIN!
         }
     } //end loadCurrentShapeParams
 
@@ -1902,6 +1921,8 @@ class OogieScene: NSObject {
     
     //-----------(oogieScene)=============================================
     //12/15  broke out from updatePipeByVoice...only should be called if we are selected!!!
+    //1/2/22 KRASH HERE moving a shape with a voice=controlled pipe
+    
     func updatePipeByUID(_ puid:String)
     {
         if let pipeObj = scenePipes[puid]           //   find pipe struct
@@ -2056,8 +2077,9 @@ class OogieScene: NSObject {
 
             var playit = true //10/17 add solo support
             if soloVoiceID != "" && workVoice.uid != soloVoiceID {playit = false}
-            //12/18 moved above muted check
+            //RGB Colors coming back from texture sampling...
             let rgbaTuple = workVoice.getShapeColor(shape:sceneShapes[workVoice.OVS.shapeKey]!) //find color under marker
+            //This part generates all sound!
             if  playit && !workVoice.muted  //10/17 add mute
             {
                 if sceneShapes[workVoice.OVS.shapeKey] != nil //11/16 remove optionals
@@ -2067,7 +2089,8 @@ class OogieScene: NSObject {
                     setupSynthOrSample(oov: workVoice) //load synth ADSR, send note out
                     //DHS try and get current angle computed from shape
                     // 10/27 returns int now for gotPlayed
-                    let gotPlayed = workVoice.playColors(angle: sceneShapes[workVoice.OVS.shapeKey]!.computeCurrentAngle(),                                                            rr: rgbaTuple.R,  gg: rgbaTuple.G, bb: rgbaTuple.B,verbose:verbose) //10/12 add verbose
+                    let gotPlayed = workVoice.playColors(angle: sceneShapes[workVoice.OVS.shapeKey]!.computeCurrentAngle(),                                               rr: rgbaTuple.R,  gg: rgbaTuple.G, bb: rgbaTuple.B,
+                                                       verbose:verbose) //10/12 add verbose
                     updates3D.append(String(format: "updateMarkerPlayed:%@:%d",key,gotPlayed))
                 }
             }
@@ -2116,7 +2139,30 @@ class OogieScene: NSObject {
     } //end paramToUnit
     
     //-----------(oogieScene)=============================================
+    //1/1 bew
+    func handleSoloToggle()
+    {
+        if soloVoiceID == ""
+        {
+            for (_,m) in markers3D
+            {
+                m.clearNoSolo()  //just clear all solo indicators
+            }
+        }
+        else
+        {
+            for (uid,m) in markers3D
+            {
+                if uid == soloVoiceID {m.clearNoSolo()}
+                else                  {m.setNoSolo()}
+            }
+        }
+    } //end handleSoloToggle
+    
+    //-----------(oogieScene)=============================================
     //11/9 redo, cleanup
+    // 1/2/22 KRASH: multipipes demo, was changing pipe range...
+//    saveEditBackToSceneWith
     func saveEditBackToSceneWith(objType:String)
     {
         savingEdits = true

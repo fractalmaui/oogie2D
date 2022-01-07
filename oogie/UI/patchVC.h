@@ -53,6 +53,8 @@
 @property (nonatomic, unsafe_unretained) id <patchVCDelegate> delegate;
 
 -(void)configureView;
+-(void) setPatchAndPackPickersFor: (NSString*)patchName : (NSString*)packName;
+
 
 @end
 

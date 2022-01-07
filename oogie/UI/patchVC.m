@@ -218,6 +218,16 @@
 }
 
 //----(patchVC)------------------------------------------------------------
+// 12/30 for external patch select
+-(void) setPatchAndPackPickersFor: (NSString*)patchName : (NSString*)packName
+{
+    unsigned long row = [_spNames indexOfObject:packName];
+    [_packPicker selectRow:row inComponent:0 animated:NO];
+    row = [_paNames indexOfObject:patchName];
+    [_patchPicker selectRow:row inComponent:0 animated:NO];
+}
+
+//----(patchVC)------------------------------------------------------------
 // 12/20 build up a synth voice from scratch and play a tone
 - (void)playTestNote:(int)note
 {

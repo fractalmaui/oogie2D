@@ -14,6 +14,7 @@
 //  5/2   integrate pixelData.h/m, stores bitmap data ONCE and accesses an array
 //  5/14  add cleanup for bmp data
 //  11/15 add defaultTexture to texCache
+//  1/7/22 fix XY bug in getPixelColor
 // https://stackoverflow.com/questions/32297704/convert-uiimage-to-nsdata-and-convert-back-to-uiimage-in-swift
 
 import Foundation
@@ -71,10 +72,10 @@ class oogieBmp: NSObject {
         let pixelsHigh = Int(image.size.height)
         let xcoord : Double = (Double(pos.x) * xscale) + Double(pixelsWide)*xoff
         let ycoord : Double = (Double(pos.y) * yscale) + Double(pixelsHigh)*yoff
-        let xcint  : Int32 = Int32(xcoord) % hit
-        let ycint  : Int32 = Int32(ycoord) % wid
+        let xcint  : Int32 = Int32(xcoord) % wid  //1/7/22 wid/hit WAS backwards!!!!
+        let ycint  : Int32 = Int32(ycoord) % hit
         let color  = pd.getRGBAtPoint(xcint,ycint)
-        //          print("XY \(xcoord),\(ycoord) c \(color) vs c2 \(c2)")
+        //print(" .....getPixelColor XY \(xcint),\(ycint) c \(color) ")
         if let finalColor = color {return finalColor}
         return UIColor.black
     } //end getPixelColor

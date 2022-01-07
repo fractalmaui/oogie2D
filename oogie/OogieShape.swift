@@ -221,11 +221,13 @@ class OogieShape: NSObject {
         }
         OOS.rotSpeed = rspeed //ok set new speed now
         setTimerSpeed(rs:rspeed)
-    } //end setRotationTypeForSelectedShape
+    } //end setRotationTypeAndSpeed
     
     //-----------(oogieShape)=============================================
      func setTimerSpeed(rs : Double)
      {
+         print("BUG HERE~!!!!")
+         //spomehow setting rottime fucks things up!!
          rotTime  = rs
          refAngle = angle    //5/6 reset reference angle and date
          refDate  = Date()
@@ -298,7 +300,9 @@ class OogieShape: NSObject {
         switch (name)
         {
         case "texture"     : break  //4/27 no action here
-        case "rotation"    : OOS.rotSpeed = dval
+        case "rotation"    :
+            OOS.rotSpeed = dval
+            //1/3/22 bug here: something makes shape vanish on rot change
             setTimerSpeed(rs : OOS.rotSpeed)  //5/7 update spin timer
         case "rotationtype": OOS.rotation = floor(dval + 0.5) //4/27 fractions make no sense
               setRotationTypeAndSpeed() //5/7 set internal rot speed
@@ -313,9 +317,9 @@ class OogieShape: NSObject {
         case "wrapt"       : OOS.wrapT    = Int(dval)
         case "name"        : OOS.name     = sval
         case "comment"     : OOS.comment  = sval
-        default:print("Error:Bad shape param in set")
+        default:print("Error:Bad oogieShape param in set")
         }
         paramListDirty = true
     } //end setParam
     
-}
+} //end oogieShape

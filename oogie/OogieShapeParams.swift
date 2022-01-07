@@ -23,11 +23,12 @@ class OogieShapeParams: NSObject {
  
     //Parmas: Name,Type,Min,Max,Default,DisplayMult,DisplayOffset?? (string params need a list of items)
     let TexParams   : [Any] = ["Texture", "texture", "mt"]
-    let RotParams   : [Any] = ["Rotation" , "double", 0.0  , 100.0   , 5.0, 10.0, 0.0 ] //11/9 change default to 5
+    let RotParams   : [Any] = ["Rotation" , "double", 0.0  , 100.0   , 5.0, 100.0, 0.0 ] //1/3/22 redo
+//    let RotParams   : [Any] = ["Rotation" , "double", 0.0  , 100.0   , 5.0, 10.0, 0.0 ] //11/9 change default to 5
     let RotTypeParams  : [Any] = ["RotationType", "string" , "Manual", "BPMX1", "BPMX2", "BPMX3", "BPMX4", "BPMX5", "BPMX6", "BPMX7", "BPMX8" ]
-    let XParams     : [Any] = ["XPos" , "double", -maxMeters , maxMeters , 0.0, 10.0, -5.0 ] //10/3 changed default
-    let YParams     : [Any] = ["YPos" , "double", -maxMeters , maxMeters , 0.0, 10.0, -5.0 ]
-    let ZParams     : [Any] = ["ZPos" , "double", -maxMeters , maxMeters , 0.0, 10.0, -5.0 ]
+    let XParams     : [Any] = ["XPos" , "double", -maxMeters , maxMeters , 0.0, 20.0, -10.0 ] //1/2 changed again for -10...10 range
+    let YParams     : [Any] = ["YPos" , "double", -maxMeters , maxMeters , 0.0, 20.0, -10.0 ]
+    let ZParams     : [Any] = ["ZPos" , "double", -maxMeters , maxMeters , 0.0, 20.0, -10.0 ]
     let UParams     : [Any] = ["TexXoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
     let VParams     : [Any] = ["TexYoffset" , "double", 0.0 , 1.0 , 0.0, 1.0, 0.0 ]
     let USParams    : [Any] = ["TexXscale" , "double", 0.1 , 10.0 , 1.0, 10.0, 0.0 ] //11/9 change defaults to 1

@@ -47,6 +47,9 @@
 //             fix display bug in handleScalarTouchesMoved
 //  12/21  remove patchPanel, use patchVC  , remove shiftPanelLeft/Right
 //  12/24  replace all issShape bools with objjType strings
+//  12/29  implement deleteAllShapeVoices, add prompt flags for all deletes, object arg to delete scalar/pipe
+//  1/1    in loadPatchByName, add detune for userSamples patches
+//  1/2    redo param in/max in editParam
 import UIKit
 import SceneKit
 
@@ -109,7 +112,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     var setVC = settingsVC()
     var pVC   = patchVC()
     var workPatch = OogiePatch() //12/20 for patchVC editor
-    
+    var patchToEdit = ""         //12/30 used to select patch to edit
     var chooser = chooserVC()
 
     var viewWid :CGFloat = 0
@@ -292,12 +295,6 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         menuButton.frame = pRect
         menuButton.backgroundColor = .yellow
 
-        //11/29 moved recbutton yet again!  works w/ slot?
-        pRect = CGRect(x: viewWid - pwh - xyinset  , y: 110, width: pwh, height: pwh) //11/13 rec button
-        recButton.frame = pRect
-        recButton.layer.cornerRadius = pwh*0.5  //11/13
-        recButton.isHidden = false
-
         resetButton.isHidden = true  //no reset for now
 
         //8/11/21 voiceEditPanels view... double wide
@@ -338,13 +335,17 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         scalarEditPanels.addSubview(scPanel)
         scPanel.delegate = self
         scalarEditPanels.frame = CGRect(x: 0 , y: Int(viewHit) , width: Int(2*viewWid), height: allphit)
-        
-        //Sept 28 NEW top label!
-        pLabel = infoText(frame: CGRect(x: 0,y: 32,width: viewWid,height: 80))
+        //1/3 shrink infolabel
+        pLabel = infoText(frame: CGRect(x: 0,y: 32,width: viewWid,height: 40))
         pLabel.frame = CGRect(x: 0 , y: 32, width: 375, height: 80)
         self.view.addSubview(pLabel)
         pLabel.infoView.alpha = 0 //Hide label initially
 
+        //11/29 moved recbutton yet again!  works w/ slot?
+        pRect = CGRect(x: viewWid - pwh - xyinset  , y: 24, width: pwh, height: pwh) //11/13 rec button
+        recButton.frame = pRect
+        recButton.layer.cornerRadius = pwh*0.5  //11/13
+        recButton.isHidden = false
         self.view.bringSubview(toFront: recButton); //pop rec button up on top of status label
 
 
@@ -651,6 +652,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     {
         for r in sceneChanges //loop over array of update indicators
         {
+            print("sceneChange :" + r)
             switch r
             {
             case "movemarker": // Marker moved?
@@ -858,6 +860,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end setMasterPitchShiftForAllVoices
     
     //=====<oogie2D mainVC>====================================================
+    // 1/2 this method looks LATE. slider display values seem to show the LAST param edited, for shapes at least. WTF?
      // called when patch,pipe,scalar,shape or voice are changed.
      func editParam( _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
      {
@@ -872,6 +875,8 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
          //let ptype = OVP.getParamType(pname: pname)
          if pname != oldvpname //user changed parameter? load up info to UI
          {
+             OVScene.selectedFieldName = pname //1/3 moved from below
+
              var choiceStrings : [String] = []
              var pt = TFLOAT_TTYPE
              if ptype == "int"
@@ -888,24 +893,30 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
              {
                 pt = TSTRING_TTYPE
              }
-            //9/22 WOW the pmax may be totally wrong here!
-            var pmax : Double = 100.0
-            if whatWeBeEditing == "pipe" {pmax = 255.0} //9/22 more range for pipe params?
-             pLabel.setupForParam( pname : pname , ptype : pt ,
-                                   pmin : 0 , pmax : pmax , choiceStrings: choiceStrings)
-             oldvpname = pname; //remember for next time
-             OVScene.selectedFieldName = pname
+             //1/3/22 NOTE: combine ptype get above with these calls somehow, maybe just return the type?
+             //  how about return a tuple with type , min , max, default?
              if      whatWeBeEditing == "voice"  {OVScene.loadCurrentVoiceParams()}
              else if whatWeBeEditing == "scalar" {OVScene.loadCurrentScalarParams()}
              else if whatWeBeEditing == "shape"  {OVScene.loadCurrentShapeParams()}
              else if whatWeBeEditing == "pipe"   {OVScene.loadCurrentPipeParams()}
              else if whatWeBeEditing == "patch"  {OVScene.loadCurrentPatchParams()} //9/30 new
-         }
+
+             //1/2 get min/max back from scene...
+             let pmin = OVScene.selectedFieldMin
+             let pmax = OVScene.selectedFieldMax
+             print("param " + pname + "min \(pmin)  max \(pmax)")
+              pLabel.setupForParam( pname : pname , ptype : pt , //1/2 use scene min/max
+                                    pmin : Double(pmin) , pmax : Double(pmax) , choiceStrings: choiceStrings)
+              oldvpname = pname; //remember for next time
+//1/3 WRONG PLACE?              OVScene.selectedFieldName = pname
+         } //end if pname
          //convert from slider unit to proper units...
          // 9/30 there is a problem here for some param types???
         if OVScene.selectedFieldType == "double" //10/2 check for double type param
         {
+            //print("...indouble \(displayVal)")
             displayVal = OVScene.unitToParam (inval : displayVal)  //oknconvertit
+            //print("...   converted... \(displayVal)")
             //12/25 HOKEY? handle scalar snap output
             if whatWeBeEditing == "scalar" && ["xpos","zpos"].contains(pname)
                 { displayVal = OVScene.selectedScalar.snapToGrid(dxyz: displayVal) }
@@ -972,14 +983,11 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
 
         guard let touch = touches.first else {return}
         latestTouch = touch
-        print("touchesmoved...\(latestTouch)")
-        if let pov = skView.pointOfView
-        {
-            print("pov \(pov)")
-        }
-        
-        
-        
+//        print("touchesmoved...\(latestTouch)")
+//        if let pov = skView.pointOfView
+//        {
+//            print("pov \(pov)")
+//        }
         guard let sceneView   = skView else {return}
         let t1 = latestTouch.location(in: sceneView)
         let t2 = latestTouch.previousLocation(in: sceneView)
@@ -1224,7 +1232,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 loadRandomPatchToSelectedVoice() //can it be this easy??? control panel needs update too?
                 if OVScene.markers3D[luid] != nil
                 {
-                    print("new type \(OVScene.selectedVoice.OOP.type)")
+                    //print("new type \(OVScene.selectedVoice.OOP.type)")
                     OVScene.markers3D[luid]!.updateTypeInt(newTypeInt : Int32(OVScene.selectedVoice.OOP.type))
                 }
                 if whatWeBeEditing == "voice" && luid == OVScene.selectedMarkerKey  //11/29 currently editing this voice?
@@ -1308,7 +1316,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     OVScene.editing = whatWeBeEditing;
                     if let smname = selectedMarker.name  //update param label w/ name
                     {
-                        self.pLabel.updateLabelOnly(lStr:"Selected " + smname)
+                        self.pLabel.updateLabelOnly(lStr:"Select " + smname)
                         selectedMarker.updatePanels(nameStr: smname) //10/4 fix
                     }
                     OVScene.selectedVoice     = testVoice //Get associated voice for this marker
@@ -1348,7 +1356,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             {
                 whatWeBeEditing = "scalar"   //2/6 WTF?
                 
-                self.pLabel.updateLabelOnly(lStr:"Selected " + self.selectedScalarShape.name!)
+                self.pLabel.updateLabelOnly(lStr:"Select " + self.selectedScalarShape.name!)
                 if let testScalarObj = OVScene.sceneScalars[uid] //got legit voice?
                 {
                     OVScene.selectedScalar     = testScalarObj
@@ -1396,7 +1404,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             if selectedSphere.highlighted  //hilited? Set up edit
             {
                 whatWeBeEditing = "shape"   //2/6 WTF?
-                self.pLabel.updateLabelOnly(lStr:"Selected " + self.selectedSphere.name!)
+                self.pLabel.updateLabelOnly(lStr:"Select " + self.selectedSphere.name!)
                 if let testShape = OVScene.sceneShapes[uid] //got legit voice?
                 {
                     OVScene.selectedShape     = testShape
@@ -1451,7 +1459,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 selected = true
                 if selectedPipeShape.highlighted  //hilited? Set up edit
                 {
-                    self.pLabel.updateLabelOnly(lStr:"Selected " + spo.PS.name)
+                    self.pLabel.updateLabelOnly(lStr:"Select " + spo.PS.name)
                     shiftPanelUp(panel: pipeEditPanels) //9/11 shift controls so they are visible
                     piPanel.paramDict = OVScene.selectedPipe.getParamDict()
                     //WOW THIS IS HOKEY!
@@ -1574,16 +1582,17 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.pkeys.isHidden = !self.pkeys.isHidden
         }))
         alert.addAction(UIAlertAction(title: "Patches...", style: .default, handler: { action in
+            self.patchToEdit = ""  //12/30
             self.performSegue(withIdentifier: "patchVCSegue", sender: self) //10/24
         }))
         alert.addAction(UIAlertAction(title: "Samples...", style: .default, handler: { action in
             self.performSegue(withIdentifier: "samplesVCSegue", sender: self) //10/24
         }))
-        alert.addAction(UIAlertAction(title: "Settings...", style: .default, handler: { action in
-            self.performSegue(withIdentifier: "settingsVCSegue", sender: self) //10/24
-        }))
         alert.addAction(UIAlertAction(title: "Textures...", style: .default, handler: { action in
             self.performSegue(withIdentifier: "textureSegue", sender: self)
+        }))
+        alert.addAction(UIAlertAction(title: "General Settings...", style: .default, handler: { action in
+            self.performSegue(withIdentifier: "settingsVCSegue", sender: self) //10/24
         }))
         alert.addAction(UIAlertAction(title: "Select...", style: .default, handler: { action in
             self.selectObjectMenu()
@@ -1678,8 +1687,9 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         let alert = UIAlertController(title: v.OVS.name, message: nil, preferredStyle: UIAlertControllerStyle.alert)
         //12/19 alert.view.tintColor = UIColor.black //lightText, works in darkmode
 
-        alert.addAction(UIAlertAction(title: "Edit this Patch...", style: .default, handler: { action in
-            self.performSegue(withIdentifier: "EditPatchSegue", sender: self)
+        alert.addAction(UIAlertAction(title: "Edit Voice Patch...", style: .default, handler: { action in
+            self.patchToEdit = v.OVS.patchName //12/30
+            self.performSegue(withIdentifier: "patchVCSegue", sender: self)
         }))
         //12/19  alert.view.tintColor = UIColor.black //2/6 black text
         
@@ -1695,6 +1705,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                 self.OVScene.soloVoiceID = ""
             }
             self.selectedMarker.toggleHighlight() //WHY IS thiS HERE???
+            self.OVScene.handleSoloToggle()
         }))
 
         tstr = "Mute"
@@ -1712,7 +1723,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.addVoiceToScene(nextOVS: v.OVS, op: "clonelon") //12/10 add clone lat/lon
         }))
         alert.addAction(UIAlertAction(title: "Delete...", style: .default, handler: { action in
-            self.deleteVoicePrompt(v:v) //12/5 new arg
+            self.deleteVoice(v:v) //12/5 new arg
         }))
         alert.addAction(UIAlertAction(title: "Reset", style: .default, handler: { action in
             let key = v.OVS.key
@@ -1745,7 +1756,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         let alert = UIAlertController(title: self.OVScene.selectedPipe.PS.name, message: nil, preferredStyle: UIAlertControllerStyle.alert)
         //12/19 alert.view.tintColor = UIColor.black //2/6 black text
         alert.addAction(UIAlertAction(title: "Delete Pipe...", style: .default, handler: { action in
-            self.deletePipePrompt()
+            self.deletePipe(p:self.OVScene.selectedPipe)
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
@@ -1759,7 +1770,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         let alert = UIAlertController(title: self.OVScene.selectedScalar.SS.name, message: nil, preferredStyle: UIAlertControllerStyle.alert)
         //12/19 alert.view.tintColor = UIColor.black //2/6 black text
         alert.addAction(UIAlertAction(title: "Delete Scalar...", style: .default, handler: { action in
-            self.deleteScalarPrompt()
+            self.deleteScalar(s:self.OVScene.selectedScalar)
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
@@ -1777,13 +1788,13 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             self.addShapeToScene(shapeOSS: s.OOS, op: "clone")
         }))
         alert.addAction(UIAlertAction(title: "Delete", style: .default, handler: { action in
-            self.deleteShapePrompt(s:s) //12/10
+            self.deleteShape(s:s) //12/10
         }))
         alert.addAction(UIAlertAction(title: "Add Voice", style: .default, handler: { action in
             self.addVoiceToScene(nextOVS: self.OVScene.selectedVoice.OVS,  op: "new")
         }))
-        alert.addAction(UIAlertAction(title: "Clear Shape Voices NOW", style: .default, handler: { action in
-            self.clearShapeVoices(s:s) //12/4 new
+        alert.addAction(UIAlertAction(title: "Delete all Voices on Shape ...", style: .default, handler: { action in
+            self.deleteAllShapeVoices(s:s) //12/4 new
         }))
         alert.addAction(UIAlertAction(title: "CarpetBomb...", style: .default, handler: { action in
             self.carpetBombPhaseOne(s:s)  //12/4 new
@@ -1803,10 +1814,23 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end shapeMenu
     
     //=====<oogie2D mainVC>====================================================
-    func clearShapeVoices(s: OogieShape)
-    {
-        print("clear shape voices \(s)")
-    }
+    // 12/29 new, w prompt For Deletes
+    func deleteAllShapeVoices(s: OogieShape)
+    {   //First get a count and UID list
+        let vuids = OVScene.getListOfShapeVoices(suid:s.OOS.uid) //12/29 get voices on this shape
+        if appDelegate.promptForDeletes != 0 //12/29
+        {
+            let tit   = "Delete all voices for shape " + s.OOS.name + "?"
+            let alert = UIAlertController(title: tit, message: String(vuids.count) + " voices will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
+                self.OVScene.deleteVoicesBy(list: vuids)
+            }))
+            alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
+            }))
+            self.present(alert, animated: true, completion: nil)
+        }
+        else { self.OVScene.deleteVoicesBy(list: vuids) }  //12/29 delete w/o prompt
+    } //end deleteAllShapeVoices
 
     //=====<oogie2D mainVC>====================================================
     // 12/4 scatter stuff around the shape..  does NOT check for existing voices.
@@ -1974,21 +1998,28 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     } //end createBombingPattern
     
     //=====<oogie2D mainVC>====================================================
-    // 10/21 pull arg
-    // 12/10 add shape arg
-    func deleteShapePrompt(s: OogieShape)
+    // 12/29 add prompt flag
+    func deleteShape(s: OogieShape)
     {
-        let tit   = "Delete shape " + s.OOS.name + "?"
-        let alert = UIAlertController(title: tit, message: "Shape will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
-        //12/19 alert.view.tintColor = UIColor.black //lightText, works in darkmode
-        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
-            self.shiftPanelDown(panel: self.shapeEditPanels)
-            self.OVScene.deleteShapeBy(uid: s.OOS.uid) //12/10
-        }))
-        alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
-        }))
-        self.present(alert, animated: true, completion: nil)
-    }  //end deleteShapePrompt
+        if appDelegate.promptForDeletes != 0 //12/29
+        {
+            let tit   = "Delete shape " + s.OOS.name + "?"
+            let alert = UIAlertController(title: tit, message: "Shape will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
+            //12/19 alert.view.tintColor = UIColor.black //lightText, works in darkmode
+            alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
+                self.shiftPanelDown(panel: self.shapeEditPanels)
+                self.OVScene.deleteShapeBy(uid: s.OOS.uid) //12/10
+            }))
+            alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
+            }))
+            self.present(alert, animated: true, completion: nil)
+        }
+        else //perform delete w/o prompt
+        {
+            self.shiftPanelDown(panel: self.shapeEditPanels) //12/29 if shape selected
+            self.OVScene.deleteShapeBy(uid: s.OOS.uid)
+        }
+    }  //end deleteShape
     
     
     //=====<oogie2D mainVC>====================================================
@@ -2072,54 +2103,77 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
         }))
         self.present(alert, animated: true, completion: nil)
-    }
-
+    } //end addPipeStepThree
+    
     //=====<oogie2D mainVC>====================================================
-    // 11/30
-    func deletePipePrompt()
+    // 12/29 add prompt flag
+    func deletePipe(p:OogiePipe)
     {
-        let alert = UIAlertController(title: "Delete Selected Pipe?", message: "Pipe will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
-        //12/19 alert.view.tintColor = UIColor.black //lightText, works in darkmode
-        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
-            self.shiftPanelDown(panel: self.pipeEditPanels)
+        if appDelegate.promptForDeletes != 0 //12/29
+        {
+            let alert = UIAlertController(title: "Delete Selected Pipe?", message: "Pipe will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
+            //12/19 alert.view.tintColor = UIColor.black //lightText, works in darkmode
+            alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
+                self.shiftPanelDown(panel: self.pipeEditPanels)
+                self.OVScene.deletePipeBy(uid: p.PS.uid) //9/25
+            }))
+            alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
+            }))
+            self.present(alert, animated: true, completion: nil)
+        }
+        else
+        {
+            self.shiftPanelDown(panel: self.pipeEditPanels) //12/29 if selected
             self.OVScene.deletePipeBy(uid: self.OVScene.selectedPipe.PS.uid) //9/25
-        }))
-        alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
-        }))
-        self.present(alert, animated: true, completion: nil)
-    }  //end deletePipePrompt
-
+        }
+    }  //end deletePipe
   
     //=====<oogie2D mainVC>====================================================
-    // 10/21
-    func deleteScalarPrompt()
+    // 12/29 add prompt flag, s arg
+    func deleteScalar(s:OogieScalar)
     {
-        let alert = UIAlertController(title: "Delete Selected Scalar?", message: "Scalar will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
-        //12/19 alert.view.tintColor = UIColor.black //lightText, works in darkmode
-        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
-            self.shiftPanelDown(panel: self.scalarEditPanels)
+        if appDelegate.promptForDeletes != 0 //12/29
+        {
+            let alert = UIAlertController(title: "Delete Scalar?", message: "Scalar will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
+            //12/19 alert.view.tintColor = UIColor.black //lightText, works in darkmode
+            alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
+                self.shiftPanelDown(panel: self.scalarEditPanels)
+                self.OVScene.deleteScalarBy(uid: s.SS.uid) //9/25
+            }))
+            alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
+            }))
+            self.present(alert, animated: true, completion: nil)
+        }
+        else
+        {
+            self.shiftPanelDown(panel: self.scalarEditPanels) //12/29 if selected?
             self.OVScene.deleteScalarBy(uid: self.OVScene.selectedScalar.SS.uid) //9/25
-        }))
-        alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
-        }))
-        self.present(alert, animated: true, completion: nil)
-    }  //end deleteScalarPrompt
-
+        }
+    }  //end deleteScalar
+    
     //=====<oogie2D mainVC>====================================================
-    // 12/5 add v arg
-    func deleteVoicePrompt(v:OogieVoice)
+    // 12/29 add prompt flag
+    func deleteVoice(v:OogieVoice)
     {
-        let tit   = "Delete voice " + v.OVS.name + "?"
-        let alert = UIAlertController(title: tit, message: "Voice will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
-        //12/19 alert.view.tintColor = UIColor.black //lightText, works in darkmode
-        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
-            self.shiftPanelDown(panel: self.voiceEditPanels)
+        if appDelegate.promptForDeletes != 0 //12/29
+        {
+            let tit   = "Delete voice " + v.OVS.name + "?"
+            let alert = UIAlertController(title: tit, message: "Voice will be permanently removed", preferredStyle: UIAlertControllerStyle.alert)
+            //12/19 alert.view.tintColor = UIColor.black //lightText, works in darkmode
+            alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { action in
+                self.shiftPanelDown(panel: self.voiceEditPanels)
+                self.OVScene.deleteVoiceBy(uid: v.uid)  //12/5 use uid from incoming voice
+            }))
+            alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
+            }))
+            self.present(alert, animated: true, completion: nil)
+        }
+        else
+        {
+            self.shiftPanelDown(panel: self.voiceEditPanels) //12/29 incase selected...
             self.OVScene.deleteVoiceBy(uid: v.uid)  //12/5 use uid from incoming voice
-        }))
-        alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: { action in
-        }))
-        self.present(alert, animated: true, completion: nil)
-    }  //end deleteVoicePrompt
+        }
+    }  //end deleteVoice
 
     //=====<oogie2D mainVC>====================================================
     func dumpBuffers()
@@ -2289,7 +2343,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
                     let fnameParts = fff.split(separator: ".")
                     if (fnameParts.count >= 1)
                     {
-                        print("link user sample \(fff) to buf \(sampnum)")
+                        //print("link user sample \(fff) to buf \(sampnum)")
                         allP.linkBufferToPatch(nn: NSNumber(value: sampnum), ss: fff)
                         sampnum = sampnum + 1
                     }
@@ -2915,6 +2969,10 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
             //print("loadPatchByName: \(oop)")
             //let ovsel = self.OVScene.selectedVoice // 10/8 shorthand
             OVScene.selectedVoice.OOP = oop
+            if OVSoundPack == "UserSamples" //1/1 make sure user samples detune
+            {
+                OVScene.selectedVoice.OVS.detune = 1
+            }
             if let editDict = (paramEdits() as! edits).getForPatch(pName) //12/3 why unwrap error now?  10/1 apply any edits
             {
                 OVScene.selectedVoice.applyEditsWith(dict: editDict) //modify voices patch to suit edits
@@ -3000,7 +3058,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         deselectAndCloseEditPanel()
     }
     func didSelectControlDelete() {   //10/21 new for dismiss button on panel
-        self.deleteVoicePrompt(v:OVScene.selectedVoice) //12/5 new arg
+        self.deleteVoice(v:OVScene.selectedVoice) //12/5 new arg
         deselectAndCloseEditPanel()
     }
     //10/30 NOTE these are common to all panels!
@@ -3122,14 +3180,16 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         deselectAndCloseEditPanel()
     }
     func didSelectScalarDelete() {   //10/21 new for dismiss button on panel
-        self.deleteScalarPrompt()
+        self.deleteScalar(s:self.OVScene.selectedScalar)
         deselectAndCloseEditPanel()
     }
 
     //=====<shapePanelDelegate>====================================================
     // 9/15 redid to handle  OVScene.loadCurrentShapeParams
+    //  1/3/22 HORRIBLE error changing rotation speed
     func didSetShapeValue( _ newVal: Float, _ pname: String!, _ pvalue: String!, _ undoable: Bool)
     {
+        print("set shape value " + pname + " \(newVal) string\(pvalue)")
         OVScene.savingEdits = true //11/25 prevent krashes?
         if pname == "texture" //texture?  10/7 use string! 11/25 TEST
         {
@@ -3167,7 +3227,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         deselectAndCloseEditPanel()
     }
     func didSelectShapeDelete() {   //10/21 new for dismiss button on panel
-        self.deleteShapePrompt(s:OVScene.selectedShape) //12/10
+        self.deleteShape(s:OVScene.selectedShape) //12/10
         deselectAndCloseEditPanel()
     }
 
@@ -3193,7 +3253,7 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
         deselectAndCloseEditPanel()
     }
     func didSelectPipeDelete() {   //10/21 new for dismiss button on panel
-        self.deletePipePrompt()
+        self.deletePipe(p:self.OVScene.selectedPipe)
         deselectAndCloseEditPanel()
     }
     func needPipeDataImage() {   //10/5
@@ -3343,14 +3403,26 @@ class ViewController: UIViewController,UITextFieldDelegate,TextureVCDelegate,cho
     // fields can be setup with patch names, etc!
     func patchVCDidAppear()
     {
+        
+        
         print("patchVCDidAppear... refresh w new data???")
         pVC.spNames     = allP.allSoundPackNames
-        pVC.paNames     = allP.getPatchNamesForSoundpack(spname: OVSoundPack) //12/17
         pVC.sampleNames = allP.getGMPercussionNames()
         pVC.patLookups  = allP.patLookups  //12/20
-
         pVC.configureView()
-        //asdf
+        
+        if patchToEdit != "" //12/30
+        {
+            let spname  = allP.getSoundPackNameByPatchName(pname: patchToEdit)
+            if spname != "" {pVC.paNames  = allP.getPatchNamesForSoundpack(spname: spname)}
+            patchVCDidSetPatch( patchToEdit)
+            pVC.setPatchAndPackPickersFor(patchToEdit, spname)
+        }
+        else
+        {
+            pVC.paNames     = allP.getPatchNamesForSoundpack(spname: OVSoundPack) //12/17
+        }
+         
     }
     
 

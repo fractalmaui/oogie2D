@@ -164,8 +164,11 @@ class texCache {
     func loadCache()
     {
         //11/9 add canned grad(s)
+        //11/20 multiple canned textures
         for tname in ["grads000","chex000","mondrian_composite",
-                      "fabric01.jpg","fabric02.jpg","fabric03.jpg","fabric04.jpg"]  //11/20 multiple canned textures
+                      "fabric01.jpg","fabric02.jpg","fabric03.jpg","fabric04.jpg","fabric05.jpg",
+                      "samcham.jpg","earthclouds.jpg"
+                     ]
         {
             print("load tex " + tname)
             if let texture = UIImage(named: tname) //11/20

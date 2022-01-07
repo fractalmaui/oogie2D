@@ -52,11 +52,12 @@ class infoText: UIView {
     let TLArrow = "<--"
     let TRArrow = "-->"
 
-    let wwhit = 70
+    var framHit:Int = 70
+    var framWid:Int = 414
     var fieldType = TSTRING_TTYPE
     var fadeTimer = Timer() //11/4
 
-    let bigfonthit = 32   //11/13/21 shrink for more content
+    let bigfonthit = 28   //1/3/22 shrink again for more content
 
     
     override init(frame: CGRect) {
@@ -83,8 +84,10 @@ class infoText: UIView {
         self.backgroundColor = .clear
         infoView = UIView()
         
+        framHit = Int(frame.size.height)
+        framWid = Int(frame.size.width)
         let tinyinset = 10
-        HIFrame = CGRect(x: tinyinset, y: 20, width: Int(frame.size.width)-2*tinyinset, height: 15)
+        HIFrame = CGRect(x: tinyinset, y: 20, width: framWid-2*tinyinset, height: 15)
         HIImageView = UIImageView()
         HIImageView.frame = HIFrame
         HIImageView.backgroundColor = .red
@@ -101,11 +104,14 @@ class infoText: UIView {
         // 2/5 make label a bit taller...
         let fontmargin = 12
         titleLabel = UILabel()
-        titleLabel.frame = CGRect(x: 0, y: wwhit - bigfonthit-fontmargin,
-                                  width: Int(frame.size.width), height: bigfonthit+2*fontmargin)
+        //  1/3 scale to initial frame
+        titleLabel.frame = CGRect(x: 0, y: 0,
+                                  width: framWid, height: framHit)
+//        titleLabel.frame = CGRect(x: 0, y: framHit - bigfonthit - fontmargin,
+//                                  width: framWid, height: bigfonthit+2*fontmargin)
         titleLabel.text = "Item"
         titleLabel.textColor = .white
-        titleLabel.textAlignment = .center
+        titleLabel.textAlignment = .left  // 1/3 amatueurish?  center
         titleLabel.font = titleLabel.font.withSize(CGFloat(bigfonthit))
         titleLabel.backgroundColor = .clear
         infoView.addSubview(titleLabel)
@@ -123,7 +129,7 @@ class infoText: UIView {
         infoView.addSubview(TLlabel)
         
         TRlabel = UILabel()
-        TRlabel.frame = CGRect(x: Int(frame.size.width) - sidewid - tinyinset, y: 0, width: sidewid, height: tinyfonthit)
+        TRlabel.frame = CGRect(x: framWid - sidewid - tinyinset, y: 0, width: sidewid, height: tinyfonthit)
         TRlabel.text = "Next Item"
         TRlabel.textColor = .white
         TRlabel.textAlignment = .right
@@ -142,7 +148,7 @@ class infoText: UIView {
         TLWarning.isHidden = true
         
         TRWarning = UILabel()
-        TRWarning.frame = CGRect(x: Int(frame.size.width)-tinyinset - 30, y: 20, width: 30, height: 30)
+        TRWarning.frame = CGRect(x: framWid-tinyinset - 30, y: 20, width: 30, height: 30)
         TRWarning.text = "!"
         TRWarning.textColor = .white
         TRWarning.textAlignment = .center

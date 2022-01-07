@@ -28,6 +28,7 @@
     int note,oldnote,octave;
     int liveMarkers;
     int haltAudio;
+    int promptForDeletes;
     NSArray* noteOffsets;
 }
 
@@ -44,6 +45,7 @@
 @property (weak, nonatomic) IBOutlet UISwitch *liveMarkersSwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *haltAudioSwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *verboseSwitch;
+@property (weak, nonatomic) IBOutlet UISwitch *promptForDeletesSwitch;
 
 @property (nonatomic, assign) BOOL showStatistics; //for controlling sceneView stats, NOT saved 
 @property (nonatomic, assign) BOOL verbose;        //12/9 debug output switch , pull for delivery!

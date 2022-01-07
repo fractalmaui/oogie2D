@@ -18,7 +18,6 @@
 		720796062465239C0052CE39 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 720796052465239B0052CE39 /* Settings.bundle */; };
 		7208A4C922E2C7F3000AA144 /* Marker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7208A4C822E2C7F3000AA144 /* Marker.swift */; };
 		721857B926F1A08800D21B62 /* pipePanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 721857B826F1A08800D21B62 /* pipePanel.m */; };
-		72246CF5268DD9C100EC9F11 /* animals in Resources */ = {isa = PBXBuildFile; fileRef = 72246CF2268DD76000EC9F11 /* animals */; };
 		723091A7244EC1CD00A45527 /* RepeatingTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 723091A6244EC1CD00A45527 /* RepeatingTimer.swift */; };
 		7234888D272B4F23004C927D /* tooobShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7234888C272B4F23004C927D /* tooobShape.swift */; };
 		7234888F272B572A004C927D /* noteResidue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7234888E272B572A004C927D /* noteResidue.swift */; };
@@ -62,6 +61,9 @@
 		72869F9B276AA89E000BE2FA /* mondrian_composite.png in Resources */ = {isa = PBXBuildFile; fileRef = 72869F9A276AA89E000BE2FA /* mondrian_composite.png */; };
 		72869F9F276B0FAD000BE2FA /* arrowDown.png in Resources */ = {isa = PBXBuildFile; fileRef = 72869F9D276B0FAD000BE2FA /* arrowDown.png */; };
 		72869FA0276B0FAD000BE2FA /* arrowUp.png in Resources */ = {isa = PBXBuildFile; fileRef = 72869F9E276B0FAD000BE2FA /* arrowUp.png */; };
+		728F07C5277F7BE3005DEA21 /* fabric05.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 728F07C4277F7BE2005DEA21 /* fabric05.jpg */; };
+		728F07C8277F7BE9005DEA21 /* samcham.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 728F07C6277F7BE9005DEA21 /* samcham.jpg */; };
+		728F07C9277F7BE9005DEA21 /* earthclouds.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 728F07C7277F7BE9005DEA21 /* earthclouds.jpg */; };
 		729599A326C61C44000A1C5F /* patchPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = 729599A226C61C44000A1C5F /* patchPanel.m */; };
 		729599A826C61CC1000A1C5F /* edits.m in Sources */ = {isa = PBXBuildFile; fileRef = 729599A726C61CC1000A1C5F /* edits.m */; };
 		729905A726EDAC0900CFF5EE /* weirdness in Resources */ = {isa = PBXBuildFile; fileRef = 729905A626EDABE700CFF5EE /* weirdness */; };
@@ -157,7 +159,6 @@
 		721857B726F1A08800D21B62 /* pipePanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pipePanel.h; sourceTree = "<group>"; };
 		721857B826F1A08800D21B62 /* pipePanel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = pipePanel.m; sourceTree = "<group>"; };
 		721FAF3C2338795000DC3091 /* GMidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GMidi.h; sourceTree = "<group>"; };
-		72246CF2268DD76000EC9F11 /* animals */ = {isa = PBXFileReference; lastKnownFileType = folder; path = animals; sourceTree = "<group>"; };
 		723091A6244EC1CD00A45527 /* RepeatingTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatingTimer.swift; sourceTree = "<group>"; };
 		7234888C272B4F23004C927D /* tooobShape.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = tooobShape.swift; sourceTree = "<group>"; };
 		7234888E272B572A004C927D /* noteResidue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = noteResidue.swift; sourceTree = "<group>"; };
@@ -213,9 +214,12 @@
 		7283A65C234085400088560D /* infoText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = infoText.swift; sourceTree = "<group>"; };
 		7284A2612722105A00106779 /* redx.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = redx.png; path = Resources/redx.png; sourceTree = SOURCE_ROOT; };
 		7284A2632722108F00106779 /* cyandice.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = cyandice.png; path = Resources/cyandice.png; sourceTree = SOURCE_ROOT; };
-		72869F9A276AA89E000BE2FA /* mondrian_composite.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = mondrian_composite.png; path = Resources/mondrian_composite.png; sourceTree = SOURCE_ROOT; };
+		72869F9A276AA89E000BE2FA /* mondrian_composite.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = mondrian_composite.png; path = oogie/Resources/mondrian_composite.png; sourceTree = SOURCE_ROOT; };
 		72869F9D276B0FAD000BE2FA /* arrowDown.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = arrowDown.png; path = Resources/arrowDown.png; sourceTree = SOURCE_ROOT; };
 		72869F9E276B0FAD000BE2FA /* arrowUp.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = arrowUp.png; path = Resources/arrowUp.png; sourceTree = SOURCE_ROOT; };
+		728F07C4277F7BE2005DEA21 /* fabric05.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = fabric05.jpg; path = Resources/fabric05.jpg; sourceTree = SOURCE_ROOT; };
+		728F07C6277F7BE9005DEA21 /* samcham.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = samcham.jpg; path = Resources/samcham.jpg; sourceTree = SOURCE_ROOT; };
+		728F07C7277F7BE9005DEA21 /* earthclouds.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = earthclouds.jpg; path = Resources/earthclouds.jpg; sourceTree = SOURCE_ROOT; };
 		729599A126C61C44000A1C5F /* patchPanel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = patchPanel.h; sourceTree = "<group>"; };
 		729599A226C61C44000A1C5F /* patchPanel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = patchPanel.m; sourceTree = "<group>"; };
 		729599A626C61CC1000A1C5F /* edits.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = edits.h; sourceTree = "<group>"; };
@@ -368,7 +372,6 @@
 				720220B9238C6B6B001F7483 /* PipeShape.swift */,
 				727F08DE23680A8E0054C517 /* PipeStruct.swift */,
 				723091A6244EC1CD00A45527 /* RepeatingTimer.swift */,
-				72869F9A276AA89E000BE2FA /* mondrian_composite.png */,
 				72EE83812312536B00FFAAE1 /* Resources */,
 				72D7BE2827128B76008CA0F9 /* ScalarShape.swift */,
 				72CE35F7271762EA006C57D0 /* ScalarStruct.swift */,
@@ -423,7 +426,6 @@
 			isa = PBXGroup;
 			children = (
 				729905A626EDABE700CFF5EE /* weirdness */,
-				72246CF2268DD76000EC9F11 /* animals */,
 				72FAEDE823AC969200FFCEA5 /* GMPercussion */,
 				72372EDD2373DC890065F58A /* Misc */,
 			);
@@ -469,6 +471,7 @@
 		72EE83812312536B00FFAAE1 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				72869F9A276AA89E000BE2FA /* mondrian_composite.png */,
 				724EFD7D276B98E70020FBD4 /* empty64x64.png */,
 				72869F9D276B0FAD000BE2FA /* arrowDown.png */,
 				72869F9E276B0FAD000BE2FA /* arrowUp.png */,
@@ -493,8 +496,11 @@
 				72DC1BD126EDCEC400760016 /* fineGear.png */,
 				72C08C67277A63C200804E90 /* fabric01.jpg */,
 				72C08C69277A664500804E90 /* fabric02.jpg */,
+				728F07C7277F7BE9005DEA21 /* earthclouds.jpg */,
+				728F07C6277F7BE9005DEA21 /* samcham.jpg */,
 				72C08C6B277A664500804E90 /* fabric03.jpg */,
 				72C08C6A277A664500804E90 /* fabric04.jpg */,
+				728F07C4277F7BE2005DEA21 /* fabric05.jpg */,
 				72DC1C0A26EDCF2F00760016 /* greendice.png */,
 				72DC1BE226EDCEC500760016 /* helpit.jpg */,
 				72DC1BCF26EDCEC400760016 /* icon256.png */,
@@ -600,7 +606,6 @@
 				72DC1C0326EDCEC600760016 /* spectrumGradient.png in Resources */,
 				729905A726EDAC0900CFF5EE /* weirdness in Resources */,
 				7275E5F2271027A90086EEEA /* shapeIcon.jpg in Resources */,
-				72246CF5268DD9C100EC9F11 /* animals in Resources */,
 				72DC1C0F26EDCF2F00760016 /* greendice.png in Resources */,
 				72DC1BF926EDCEC600760016 /* ProfileNOT.png in Resources */,
 				72DAD053274071D800349EF6 /* cancelBtn.png in Resources */,
@@ -612,6 +617,7 @@
 				72DAD04F274071D800349EF6 /* rerecordBtn.png in Resources */,
 				72DC1BFD26EDCEC600760016 /* oogieLogoNotes.png in Resources */,
 				72DC1BFF26EDCEC600760016 /* white64x64.png in Resources */,
+				728F07C8277F7BE9005DEA21 /* samcham.jpg in Resources */,
 				72DC1BEB26EDCEC600760016 /* meashst.jpg in Resources */,
 				7284A2622722105A00106779 /* redx.png in Resources */,
 				72869F9B276AA89E000BE2FA /* mondrian_composite.png in Resources */,
@@ -646,6 +652,7 @@
 				72DAD052274071D800349EF6 /* continueBtn.png in Resources */,
 				72372EDE2373DC890065F58A /* Misc in Resources */,
 				72DC1C0E26EDCF2F00760016 /* bluedice.png in Resources */,
+				728F07C9277F7BE9005DEA21 /* earthclouds.jpg in Resources */,
 				72C08C6D277A664600804E90 /* fabric04.jpg in Resources */,
 				5226E9171FD4481B00C72C21 /* Assets.xcassets in Resources */,
 				72DC1BF626EDCEC600760016 /* bottomBevel.png in Resources */,
@@ -664,6 +671,7 @@
 				72DC1BFB26EDCEC600760016 /* oogieLogo.png in Resources */,
 				725C4C752725327700760BC6 /* spkr3.png in Resources */,
 				72E5196F272486D3007B3F38 /* leverIcon.png in Resources */,
+				728F07C5277F7BE3005DEA21 /* fabric05.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -871,11 +879,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.1.045;
+				CURRENT_PROJECT_VERSION = 1.1.046;
 				DEVELOPMENT_TEAM = HV8UXF4ZBD;
 				INFOPLIST_FILE = oogie/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.1.045;
+				MARKETING_VERSION = 1.1.046;
 				PRODUCT_BUNDLE_IDENTIFIER = com.frak.oogie2d;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG VERSION_2D USE_TESTPATTERN";
@@ -890,11 +898,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.1.045;
+				CURRENT_PROJECT_VERSION = 1.1.046;
 				DEVELOPMENT_TEAM = HV8UXF4ZBD;
 				INFOPLIST_FILE = oogie/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.1.045;
+				MARKETING_VERSION = 1.1.046;
 				PRODUCT_BUNDLE_IDENTIFIER = com.frak.oogie2d;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[arch=*]" = VERSION_2D;

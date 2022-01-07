@@ -18,6 +18,7 @@
 //  12/9     add verbose flag/switch
 //  12/12    add more functions to reset, now factory reset
 //  12/16    add header w gradient, add version label
+//  12/29    add promptForDeletes
 #import "settingsVC.h"
 //NOTE this varies between 2D and AR versions!
 //#import "oogie-Swift.h"
@@ -70,11 +71,11 @@
     g.colors = @[ (id)blackColor.CGColor,(id)deepPurple.CGColor ];
     [_headerView.layer insertSublayer:g atIndex:0];
 
-    tempo         = (int)sappDelegate.masterTempo;
-    tune          = (int)sappDelegate.masterTune;
-    liveMarkers   = (int)sappDelegate.liveMarkers; //11/29
-    haltAudio     = (int)sappDelegate.haltAudio; //12/2
-
+    tempo            = (int)sappDelegate.masterTempo;
+    tune             = (int)sappDelegate.masterTune;
+    liveMarkers      = (int)sappDelegate.liveMarkers; //11/29
+    haltAudio        = (int)sappDelegate.haltAudio; //12/2
+    promptForDeletes = (int)sappDelegate.promptForDeletes; //12/29
     oldnote = 0;
     octave  = 0;
     
@@ -103,16 +104,18 @@
     [_tuneSlider   setValue:(float)tune];
     _tuneLabel.text = [NSString stringWithFormat:@"%d",tune];
     
-    [_statsSwitch setOn       : _showStatistics];
-    [_liveMarkersSwitch setOn :( liveMarkers == 1)];
-    [_haltAudioSwitch setOn   :( haltAudio == 1)];
-    [_verboseSwitch setOn     : _verbose];
+    [_statsSwitch setOn            : _showStatistics];
+    [_liveMarkersSwitch setOn      : ( liveMarkers == 1)];
+    [_haltAudioSwitch setOn        : ( haltAudio == 1)];
+    [_verboseSwitch setOn          : _verbose];
+    [_promptForDeletesSwitch setOn : ( promptForDeletes == 1)];
 
     //12/1 add bkgd color, still looks bad
-    [_statsSwitch       setBackgroundColor:[UIColor darkGrayColor]];
-    [_liveMarkersSwitch setBackgroundColor:[UIColor darkGrayColor]];
-    [_haltAudioSwitch   setBackgroundColor:[UIColor darkGrayColor]];
-    [_verboseSwitch     setBackgroundColor:[UIColor darkGrayColor]];
+    [_statsSwitch            setBackgroundColor:[UIColor darkGrayColor]];
+    [_liveMarkersSwitch      setBackgroundColor:[UIColor darkGrayColor]];
+    [_haltAudioSwitch        setBackgroundColor:[UIColor darkGrayColor]];
+    [_verboseSwitch          setBackgroundColor:[UIColor darkGrayColor]];
+    [_promptForDeletesSwitch setBackgroundColor:[UIColor darkGrayColor]];
 } //end configureView
 
 
@@ -136,10 +139,12 @@
 -(void) updateAppDelegate
 {
     AppDelegate *sappDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
-    [sappDelegate updateMasterTempoWithValue: tempo];
-    [sappDelegate updateMasterTuneWithValue : tune];
-    [sappDelegate updateLiveMarkersWithValue: liveMarkers ]; //11/29
-    [sappDelegate updateHaltAudioWithValue  : haltAudio ]; //12/2
+    [sappDelegate updateMasterTempoWithValue      : tempo];
+    [sappDelegate updateMasterTuneWithValue       : tune];
+    [sappDelegate updateLiveMarkersWithValue      : liveMarkers ]; //11/29
+    [sappDelegate updateHaltAudioWithValue        : haltAudio ]; //12/2
+    [sappDelegate updatePromptForDeletesWithValue : promptForDeletes ]; //12/29
+    
     [self.delegate settingsVCChanged];
 }
 
@@ -222,6 +227,16 @@
     [self.delegate settingsVCChanged];
 }
 
+//======(settingsVC)==========================================
+// 12/29 new
+- (IBAction)promptForDeletesSwitchChanged:(id)sender
+{
+    UISwitch *sw = (UISwitch*)sender;
+    promptForDeletes = sw.on ? 1 : 0;
+    [self updateAppDelegate]; //let app know this switch got changed
+
+}
+
 
 //======(settingsVC)==========================================
 // 12/12 redo for factory reset
@@ -239,6 +254,7 @@
             tune        = 0;
             haltAudio   = 1; //12/2
             liveMarkers = 0;
+            promptForDeletes = 1; //12/29
             [self configureView];
             [self updateAppDelegate];
             [self.delegate didResetSettingsVC];

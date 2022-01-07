@@ -2306,7 +2306,7 @@ short *audioRecBuffer;
 	theSize = sizeof(packetCount);
 	err = AudioFileGetProperty(fileID, kAudioFilePropertyAudioDataPacketCount,
 							   &theSize, &packetCount);	
-    NSLog(@"LoadSample:[%@]duration %4.2f mSampleRate %d packetCount %llu mBytesPerPacket %d chans %d",name,
+    NSLog(@" ...LoadSample:[%@]duration %4.2f mSampleRate %d packetCount %llu mBytesPerPacket %d chans %d",name,
           (float)(packetCount/sChans)/(float)outFormat.mSampleRate,
           (int)outFormat.mSampleRate,packetCount,(int)outFormat.mBytesPerPacket,outFormat.mChannelsPerFrame);
     bCount = 0;

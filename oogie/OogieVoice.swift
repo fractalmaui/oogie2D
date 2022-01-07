@@ -37,6 +37,9 @@ let  SYNTHSL_DEFAULT   = 40.0
 let  SYNTHR_DEFAULT    = 20.0
 let  SYNTHDUTY_DEFAULT = 50.0
 
+let halfpi = .pi / 2.0
+let twopi  = .pi * 2.0
+
 let MAX_CBOX_FRAMES = 20 //11/18 for playColors support 
 
 
@@ -332,24 +335,23 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
     //  XYCoord are in radian units, Y is -pi/2 to pi/2
     //   most math is done in 0..1 XY coords, then bmp size applied
     // 5/3 moved in from mainVC, reduce args
-//    func getShapeColor(shape: SphereShape, xCoord : Double , yCoord : Double , angle : Double) -> (R:Int , G:Int , B:Int , A:Int)
     func getShapeColor(shape:OogieShape) -> (R:Int , G:Int , B:Int , A:Int)
     {
-        let aoff = Double.pi / 2.0  //10/25 why are we a 1/4 turn off?
-        //get angle from sloppy global! bail with black color if not present
+        let aoff = halfpi  //1/7/22 use canned .pi vars
+        //get radian angle from shape...
         let angle = shape.angle
-        //print("getShapeColor:voice \(OVS.key) shape \(OVS.shapeKey) : angle \(angle)")//
         // 11/3 fix math error in xpercent!
-        var xpercent = (angle + aoff - OVS.xCoord) / (2.0 * .pi)  //11/29 apply xcoord B4 dividing!
+        var xpercent = (angle + aoff - OVS.xCoord) / twopi  //11/29 apply xcoord B4 dividing!
+        //print("get ShapeColor:shape angle \(angle) initial xper \(xpercent)")
         xpercent = -1.0 * xpercent                     //  and flip X direction
         //Keep us in range 0..1
         while xpercent > 1.0 {xpercent = xpercent - 1.0}
         while xpercent < 0.0 {xpercent = xpercent + 1.0}
-        let ypercent = 1.0 - ((OVS.yCoord + .pi/2) / .pi)
+        let ypercent = 1.0 - ((OVS.yCoord + halfpi) / .pi)    //1/7/22 use canned .pi vars
         let bmpX = Int(Double(shape.bmp.wid) * xpercent)
         let bmpY = Int(Double(shape.bmp.hit) * ypercent) //9/15 redo!
         let cp = CGPoint(x: bmpX, y: bmpY)
-        //print("gsc[\(shape.name)] cp \(cp)")
+        //print(" get ShapeColor:  xy% \(Int(100.0*xpercent)),\(Int(100.0*ypercent)) cp \(cp) bwid\(shape.bmp.wid)")
         let pColor = shape.bmp.getPixelColor(pos: cp) //pColor is class member
         //Sloppy! need to get RGB though...
         var pr : CGFloat = 0.0
@@ -760,7 +762,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
             //9/11 use sample num from voice... for perc/samples now
             bufferPointer = OVS.whichSamp
         }
-        if verbose { print("....playColors:NOTE:\(midiNote) NPV:\(nchan) \(pchan) \(vchan)  lnchan \(lnchan)") }
+        if verbose { print("....playColors:NOTE:\(midiNote) NPV:\(nchan) \(pchan) \(vchan)  ... RGB ( \(rr),\(gg),\(bb) )") }
         //print("....playColors:NOTE:\(midiNote) type:\(OOP.type) uid:\(uid)  n:lnchan \(nchan) : \(lnchan)")
         let vt    = OOP.type
         if midiNote > 0  || OVS.rotTrigger != 0  //Play something?
@@ -794,7 +796,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
             //if (abs (nchan - lnchan) > 2*OVS.thresh) && nc < 12
             if gotTriggered // 4/19
             {
-                if verbose { print("....triggered:Midinote \(midiNote)") }
+                if verbose { print("..t \(midiNote)") }
                 //print(" toler check: nchan \(nchan) lnchan \(lnchan) nc \(nc) thresh \(OVS.thresh)",nchan,lnchan,nc )
                 //11/10 handle quantize...
                 quantTime = 0
@@ -867,7 +869,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
                     if quantTime == 0 //No Quant, play now
                     {
                         (sfx() as! soundFX).playNote(Int32(noteToPlay), Int32(bptr) ,Int32(vt))
-                        if verbose { print(" ...synthNote bptr[\(bptr)]:\(noteToPlay)") }
+                        if verbose { print("                                                                          ..synthNote bptr[\(bptr)]:\(noteToPlay)") }
                     }
                     else
                     {
@@ -1411,7 +1413,7 @@ var debugHistory = [debugTuple?](repeating: nil, count: dhmax)
         OOP.duty       = 0;
         OVS.sampleOffset = Int.random(in:0...30);
         OVS.whichSamp    = Int.random(in:builtinBase...builtinMax)
-        print("rand perc buffer \(OVS.whichSamp)")
+        //print("rand perc buffer \(OVS.whichSamp)")
         OVS.panMode      = Int.random(in:0...11);
         OVS.panFixed     = Int.random(in:0...255);
         OVS.detune       = Int(Double.random(in:0...1.5)); // 9/1 copy from oogiecam

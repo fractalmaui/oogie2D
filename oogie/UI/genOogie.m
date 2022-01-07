@@ -430,7 +430,7 @@ static genOogie *sharedInstance = nil;
         if (reset) //reset? make sure some stuff doesnt reset!
         {
             if ([noResetParams containsObject: key] ) //bad params!
-                {NSLog(@" bing! bad param %@",key);ok=FALSE;}
+                {ok=FALSE;} //NSLog(@" bing! bad param %@",key);
         }
         if (!ok) continue;
         //NSLog(@"key %@",key);

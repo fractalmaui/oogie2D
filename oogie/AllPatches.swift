@@ -26,6 +26,8 @@
 //  12/10 add call to createLibrarySubfolders
 //  12/12 add loadAllPurchasedSoundPacks, getSoundPackSampleToPatchLookups
 //  12/13 add getPatchNamesForSoundpack
+//  12/30 add getSoundPackNameByPatchName
+//  12/31 PULL CRITTERS FOR NOW
 import Foundation
 import UIKit
 
@@ -49,7 +51,7 @@ import UIKit
     var allSoundPackNames = [String]() // 10/11 keep names in order!
     var purchasedSoundPackNames = [String]() // 10/21 
     let SYNTH_PERC_SP_NAME = "Synth/Perc" //10/19
-    let CRITTERS_SP_NAME  = "Critters" //10/19
+//12/31 PULL CRITTERS FOR NOW    let CRITTERS_SP_NAME  = "Critters" //10/19
     let WEIRDNESS_SP_NAME = "Weirdness" //10/19
     let USER_SP_NAME      = "UserSamples" //10/19
     var bufLookups        = Dictionary<NSNumber, String>()
@@ -395,10 +397,11 @@ import UIKit
         
         percKitPatchNames = wP.keys.sorted() //12/5 keep names. unsorted
         for (pname,patch) in wP {patchesDict[pname] = patch} //install patches
-        wP = DataManager.loadBuiltinCritterPatchesToDict(OogiePatch.self,
-                                                        fromFactory: true)
-        samplePatchNames = wP.keys.sorted() //12/5 keep names. unsorted
-        for (pname,patch) in wP {patchesDict[pname] = patch} //install patches
+//12/31 PULL CRITTERS FOR NOW
+//        wP = DataManager.loadBuiltinCritterPatchesToDict(OogiePatch.self,
+//                                                        fromFactory: true)
+//        samplePatchNames = wP.keys.sorted() //12/5 keep names. unsorted
+//        for (pname,patch) in wP {patchesDict[pname] = patch} //install patches
         wP = DataManager.loadBuiltinWeirdnessPatchesToDict(OogiePatch.self,
                                                         fromFactory: true)
         for (pname,patch) in wP {patchesDict[pname] = patch} //install patches
@@ -417,13 +420,14 @@ import UIKit
                      "Open HiHat","Closed HiHat","Ride 1","Ride 2",
                      "Lo Conga","Claves","Lo Mid Tom","Tambourine",
                      "DrumKit1","DrumKit2","DrumKit3","DrumKit4"]
-    var cPatches = [ "squirrely","lickety","twerty","crow","peacock",
-                     "doggie","cougar","barky","toadie","crickety",
-                     "froggie","alleycat","kitty","wolfie","chirpy",
-                     "hootie","moose","donkey","goose","elephant",
-                     "monkey","rooster","chicken","terrier","cow",
-                     "horse","cicada","flipper","piggie","hawk",
-                     "seal","spooky"]
+//12/31 PULL CRITTERS FOR NOW
+//    var cPatches = [ "squirrely","lickety","twerty","crow","peacock",
+//                     "doggie","cougar","barky","toadie","crickety",
+//                     "froggie","alleycat","kitty","wolfie","chirpy",
+//                     "hootie","moose","donkey","goose","elephant",
+//                     "monkey","rooster","chicken","terrier","cow",
+//                     "horse","cicada","flipper","piggie","hawk",
+//                     "seal","spooky"]
     var wPatches = [ "bananapeel","bleep","blip","bongocan","broken",
                       "chandelier","chemicals","clicks","cocktail","drumtrickle",
                       "explosion","fairydust","flipper","gerbil","glassstrings",
@@ -500,14 +504,15 @@ import UIKit
         allSoundPackNames.append(SYNTH_PERC_SP_NAME)
         
         //Load critters, also builtin, all samples
-        var factorySoundPack2 = SPStruct()
-        for pname in cPatches
-        {
-            unpackPatch(name: pname)
-            factorySoundPack2.addPatch(name: pname, patch: patch)
-        }
-        soundPacks[CRITTERS_SP_NAME] = factorySoundPack2
-        allSoundPackNames.append(CRITTERS_SP_NAME)
+//12/31 PULL CRITTERS FOR NOW
+//        var factorySoundPack2 = SPStruct()
+//        for pname in cPatches
+//        {
+//            unpackPatch(name: pname)
+//            factorySoundPack2.addPatch(name: pname, patch: patch)
+//        }
+//        soundPacks[CRITTERS_SP_NAME] = factorySoundPack2
+//        allSoundPackNames.append(CRITTERS_SP_NAME)
         
         //8/30/21 Load weirdness, also builtin, all samples
         var factorySoundPack3 = SPStruct()
@@ -538,6 +543,7 @@ import UIKit
                     if !fileName.contains("#") //1/31/21
                     {
                         let upatch  = OogiePatch() //12/25
+                        upatch.type = Int(SAMPLE_VOICE)  //1/1/22 add type and detune
                         upatch.name = fileName //store sample name
                         print("  ...load userSoundPatch patch \(fileName)")
                         userSoundPack.addPatch(name: fileName, patch: upatch)
@@ -648,6 +654,21 @@ import UIKit
         if index < 0 || index >= allSoundPackNames.count {return ""}
         return allSoundPackNames[index]; //10/11 redo
     }
+    
+    
+    //----(AllPatches)==============================================
+    // 12/30 exhaustive search, need a dictionary for this?
+    @objc func getSoundPackNameByPatchName (pname : String) -> String
+    {
+        for (spname,soundpack) in soundPacks //look at every soundpack!
+        {
+            for pn in soundpack.patchNames //...and every patch...
+            {
+                if pn.lowercased() == pname.lowercased() {return spname} //match
+            }
+        }
+        return ""; //no match
+    } //end getSoundPackNameByPatchName
     
     //----(AllPatches)==============================================
     @objc func getSoundPackPatchNameByIndex (index : Int) -> String

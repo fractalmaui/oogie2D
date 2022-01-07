@@ -29,6 +29,7 @@
 // 11/13 add menu box, add args to createPetalImage
 // 11/15  may be memory leak in updatePetals??? or updatePetalsAndColor?
 // 11/19 updateActivity just shows crosshairs now, no color changing. called from mainVC FG once again
+// 1/1   add noSolo box
 //  Try to animate torus on select / deselect: change cone inieial color too
 //   https://developer.apple.com/documentation/scenekit/animation/animating_scenekit_content
 import UIKit
@@ -53,6 +54,9 @@ class Marker: SCNNode {
     var diceNode     = SCNNode()
     var menuCube     = SCNBox()   //11/13
     var menuNode     = SCNNode()
+    var noSoloCube   = SCNBox()   //11/11
+    var noSoloNode   = SCNNode()
+    var noSoloShown  = false
     var hueIndicator = SCNNode()
     var cubeNodeRot  = 0.0
     let cubeNodeRotStep = 0.1 //11/16/21 move this to settings?
@@ -358,8 +362,19 @@ class Marker: SCNNode {
         return resultImage
     } //end createNamePlateImage
 
+    //-------(Marker)-------------------------------------
+    func setNoSolo()
+    {
+        noSoloShown = true
+        noSoloNode.isHidden = !noSoloShown
+    }
+    //-------(Marker)-------------------------------------
+    func clearNoSolo()
+    {
+        noSoloShown = false
+        noSoloNode.isHidden = !noSoloShown
+    }
 
-    
     //-------(Marker)-------------------------------------
     func toggleHighlight()
     {
@@ -510,6 +525,17 @@ class Marker: SCNNode {
             hueIndicator.rotation = SCNVector4Make(0, 1, 0, Float(hueRot))
             sphereNode.addChildNode(hueIndicator)
         }
+        
+        //1/1/22 add noSolo box
+        noSoloCube = SCNBox() //1/1 add noSolo box AROUND cone
+        noSoloCube.firstMaterial?.emission.contents = UIColor.darkGray
+        noSoloCube.firstMaterial?.diffuse.contents  = UIColor.darkGray
+        noSoloNode = SCNNode(geometry: menuCube)
+        noSoloNode.position = SCNVector3(0, 0.0,0)
+        noSoloNode.scale    = SCNVector3(0.35,0.21,0.35)
+        noSoloNode.name = "noSolo_" + uid
+        sphereNode.addChildNode(noSoloNode)
+        noSoloNode.isHidden = true
         
         typeCube = SCNBox()
         typeCube.firstMaterial?.emission.contents = synthIcon
